@@ -199,6 +199,50 @@ body.questionnaire #indice{display:none}
 .annule{margin-top:10px;padding:8px 12px;border-radius:8px;background:#eef6ea;border:1px solid rgba(63,122,82,.4);font-size:13.5px}
 .curseur{display:flex;gap:12px;align-items:center;margin:14px 0}.curseur input{flex:1;accent-color:#b98532}.curseur output{font:600 20px var(--serif);min-width:70px;text-align:right}
 @media (max-width:640px){.perso-ed>div{grid-template-columns:1fr}#entete h1{max-width:60vw;font-size:18px}#niveau{min-width:0}.cartes{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}#sc-avatar{width:56px;height:56px}.bulle h2{font-size:18px}.perso-ed{grid-template-columns:1fr}}
+#equipe{position:fixed;left:10px;top:74px;bottom:14px;z-index:15;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:6px;width:364px;overflow:hidden;pointer-events:none}
+#equipe .membre{width:176px;flex:none}
+.bt.danger{border-color:rgba(192,87,62,.35)}.bt.danger.actif{background:#a8432e;color:#fff;border-color:#e08a72;animation:dec-pouls 1.6s infinite}
+@keyframes dec-pouls{50%{box-shadow:0 0 0 5px rgba(192,87,62,.25)}}
+.pastille:empty{display:none}
+#msg-attente{position:fixed;left:50%;top:var(--haut,84px);transform:translateX(-50%);z-index:25;max-width:min(560px,92vw);background:#5c3a12;color:#fbe9e2;border:1px solid #e2b866;border-radius:10px;padding:8px 14px;font:400 14px var(--sans);box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer}
+#radio-titre{
+.repondre{margin-top:16px;padding-top:10px;border-top:1px dashed rgba(92,79,63,.35)}.repondre textarea{width:100%;min-height:70px;border:1px solid rgba(92,79,63,.3);border-radius:8px;padding:8px;background:#fffdf6;color:var(--encre);font:inherit}
+.repondre .gros-micro-rep{font-size:15px;padding:9px 16px}.repondre [data-rep-res]{color:#2f7a46;font-weight:600}
+.msg .rep-lien{margin-top:6px;font-size:.9em}
+#radio-titre{position:fixed;left:14px;bottom:10px;z-index:16;font:italic 12px var(--serif);color:rgba(241,217,164,.6);pointer-events:none}
+#tuto{position:fixed;z-index:60;width:min(420px,92vw);background:#fffdf7;color:var(--encre);border:2px solid #e2b866;border-radius:16px;padding:14px 16px;box-shadow:0 16px 40px rgba(0,0,0,.55);font-size:15px;line-height:1.45}
+#tuto h3{margin:0 0 6px;font:400 20px var(--serif)}#tuto .pas{color:var(--encre2);font-size:12px}#tuto label{display:flex;gap:8px;align-items:flex-start;margin:4px 0}
+#tuto .cout{background:#f3ead4;border-radius:8px;padding:6px 10px;margin:8px 0;font-size:13.5px}
+.tuto-cible{outline:3px solid #e2b866!important;outline-offset:3px;border-radius:10px}
+.liste-j{list-style:none;padding:0;margin:8px 0}.liste-j li{padding:6px 0;border-bottom:1px dotted rgba(92,79,63,.3)}.liste-j time{color:var(--encre2);font-size:12px;margin-right:8px}
+.prop{padding:8px 0;border-bottom:1px dotted rgba(92,79,63,.3)}.prop label{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+#equipe .membre{pointer-events:auto;display:flex;gap:8px;align-items:flex-start;padding:6px 8px 7px 6px;border-radius:10px;background:rgba(26,23,19,.78);border:1px solid rgba(233,210,160,.18);border-left:4px solid var(--ce,#8a8174);color:#f1e3c3;cursor:pointer;text-align:left;font:inherit;box-shadow:0 6px 14px rgba(0,0,0,.35);transition:transform .15s,border-color .15s}
+#equipe .membre:hover,#equipe .membre:focus-visible{transform:translateX(2px);border-color:rgba(233,196,127,.55)}
+#equipe canvas{flex:none;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc)}
+#equipe .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#equipe .n{font:400 14px var(--serif);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f6e7c4}
+#equipe .e{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:#cdbf9f}
+#equipe .tl{flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25}
+#equipe .tl.inconnu{color:#e08a72}
+#equipe .rt{flex:none;color:#e2b866;font-variant-numeric:tabular-nums}
+#equipe .vie{height:4px;border-radius:2px;background:rgba(255,255,255,.12);overflow:hidden;margin-top:2px}#equipe .vie i{display:block;height:100%;background:var(--ce,#8a8174)}
+@media (max-width:900px){#equipe{top:auto!important;bottom:8px;left:8px;right:8px;width:auto;flex-direction:row;flex-wrap:nowrap;overflow-x:auto}#equipe .membre{width:160px}}
+#entete .bt{min-height:46px;min-width:clamp(104px,9.5vw,170px);justify-content:center;padding:8px 14px;border-radius:10px;font-weight:500;letter-spacing:.03em;
+  color:var(--encre,#2b241c);background:linear-gradient(180deg,var(--papier,#f4ecd9),color-mix(in srgb,var(--papier,#f4ecd9) 80%,#8a6a3a));border:1px solid rgba(43,38,32,.5);
+  box-shadow:inset 0 -3px 0 rgba(43,38,32,.22),0 2px 4px rgba(0,0,0,.35)}
+#entete .bt svg{width:20px;height:20px;color:var(--rouge,#8e2f21)}
+#entete .bt:hover{filter:brightness(1.05);transform:translateY(-1px)}#entete .bt:active{box-shadow:inset 0 1px 0 rgba(43,38,32,.22);transform:translateY(1px)}
+#entete .bt.fort,#entete #bt-optim{background:linear-gradient(180deg,#c8a06a,#b8895a);color:#1f1a14;min-width:clamp(170px,15vw,240px);font-size:15.5px}
+#entete #bt-assistant{box-shadow:0 0 0 2px #f1d9a4,0 0 18px rgba(241,200,110,.55),inset 0 -3px 0 rgba(43,38,32,.25)}
+#entete .bt.danger.actif{background:#a8432e;color:#fff;border-color:#e08a72}
+#entete #bt-notifs,#entete #bt-son{min-width:64px}
+#entete .outils{flex-basis:100%;display:flex;flex-wrap:wrap;gap:8px}#entete #nom{margin-right:auto}
+#horloge{font:400 16px var(--serif);color:#f1e3c3;white-space:nowrap;padding:6px 14px;border:1px solid var(--bord,rgba(233,210,160,.2));border-radius:999px;background:rgba(255,250,235,.05);font-variant-numeric:tabular-nums}
+#horloge b{font:700 18px var(--serif);color:#f1d9a4;margin-left:6px}
+#v1{display:flex;align-items:center;gap:10px;font:400 14px var(--serif);background:rgba(255,250,235,.05);border:1px solid var(--bord,rgba(233,210,160,.2));border-radius:999px;padding:6px 14px;color:#e8dcc2;white-space:nowrap}
+#v1 .piste{width:150px;height:12px;border-radius:6px;background:#3a3128;border:1px solid rgba(0,0,0,.4);overflow:hidden}#v1 .plein{height:100%;width:0;background:linear-gradient(90deg,#c9953e,#7fae5e);transition:width .8s}
+#v1 b{font:600 15px var(--sans);color:#f1d9a4}
+@media (max-width:900px){#v1 .piste{width:70px}#horloge{display:none}}
 @media (prefers-reduced-motion:reduce){#scene,#succes,#panneau,.carte{transition:none}.plume{animation:none}}
 </style>
 </head>
@@ -206,25 +250,38 @@ body.questionnaire #indice{display:none}
 <canvas id="bureau" aria-label="Le bureau du studio"></canvas>
 <header id="entete">
   <h1 id="nom">Studio</h1>
+  <div id="v1" title="Avancement pondéré de la roadmap"><span data-t="version">Version</span><div class="piste"><div class="plein" id="v1-plein"></div></div><b id="v1-pct">—</b></div>
+  <div id="horloge" aria-live="off"></div>
   <button type="button" id="niveau" title="Niveau du studio" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b> · <span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
   <nav class="outils" aria-label="Outils">
+    <button type="button" class="bt" id="bt-ensemble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg><span data-t="ensemble">Vue d’ensemble</span></button>
+    <button type="button" class="bt" id="bt-journal"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 2h8l2 2v10H3z"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3"/></svg><span data-t="journal">Journal</span></button>
+    <button type="button" class="bt" id="bt-optim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/><circle cx="8" cy="8" r="2.5"/></svg><span data-t="optimiser">Optimiser</span><b class="pastille" id="nb-optim"></b></button>
+    <button type="button" class="bt" id="bt-jassist"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2.5 2.5h11v8h-6l-3 3v-3h-2z"/><path d="M5 5.5h6M5 7.5h4"/></svg><span data-t="journal_assistant">Journal de l’assistant</span><b class="pastille" id="nb-jassist"></b></button>
+    <button type="button" class="bt" id="bt-perso"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="5" r="2.6"/><path d="M3 14c.5-3 2.5-4.5 5-4.5s4.5 1.5 5 4.5"/></svg><span data-t="personnaliser">Personnaliser</span></button>
+    <button type="button" class="bt" id="bt-plein"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><span data-t="plein_ecran">Plein écran</span></button>
+    <button type="button" class="bt danger" id="bt-couper" title="Tout couper"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5v4"/></svg><span data-t="tout_couper">Tout couper</span></button>
     <button type="button" class="bt" id="bt-decisions" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14a1.5 1.5 0 0 0 3 0"/></svg><span data-t="decisions">Décisions</span> <span class="pastille" id="nb-decisions"></span></button>
     <button type="button" class="bt" id="bt-notifs" aria-haspopup="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="9" rx="1.5"/><path d="M2.5 4l5.5 4 5.5-4"/></svg><span data-t="notifs">Notifications</span> <span class="pastille" id="nb-notifs"></span></button>
     <button type="button" class="bt" id="bt-rapport" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="1.5"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg><span data-t="rapport">Rapport</span></button>
     <button type="button" class="bt" id="bt-images" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.3"/><path d="M2 12l4-4 3 3 2-2 3.5 3.5"/></svg><span data-t="images">Images</span> <span class="pastille" id="nb-images"></span></button>
     <button type="button" class="bt" id="bt-recruter" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.5" cy="5" r="2.6"/><path d="M1.8 14c.4-3 2.3-4.6 4.7-4.6s4.3 1.6 4.7 4.6M12.5 4.5v5M10 7h5"/></svg><span data-t="recruter">Recruter</span></button>
     <button type="button" class="bt" id="bt-conv"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 3.5h9v6H6l-3 2.5v-2.5H2z"/><path d="M11 6h3v5.5h-1V14l-2.6-2.5H7"/></svg><span data-t="conversation">Conversation</span> <span class="pastille" id="nb-conv"></span></button>
-    <button type="button" class="bt" id="bt-reglages" title="Réglages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg></button>
+    <button type="button" class="bt" id="bt-reglages" title="Réglages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg><span data-t="reglages">Réglages</span></button>
     <button type="button" class="bt fort" id="bt-assistant"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5"/><path d="M3 8a5 5 0 0 0 10 0M8 13v2"/></svg><span data-t="appeler">Appeler l'assistant</span></button>
     <button type="button" class="bt" id="bt-son" title="Son"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="son-onde" d="M11 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
   </nav>
 </header>
 <aside id="notifs" hidden aria-label="Notifications"></aside>
+<aside id="equipe" aria-label="L'équipe"></aside>
 <div id="alerte-etat" role="alert" hidden></div>
 <div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer">×</button><div id="pn-corps"></div></div></div>
 <section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="sc-corps"></div></section>
 <div id="succes" role="status" aria-live="polite"></div>
 <div id="toasts"></div>
+<div id="msg-attente" hidden role="status"></div>
+<div id="radio-titre" hidden aria-live="off"></div>
+<div id="tuto" hidden role="dialog" aria-live="polite"></div>
 <div id="indice"></div>
 <script src="roadmap.js"></script>
 <script src="sprites.js"></script>
@@ -247,7 +304,7 @@ const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message |
 
 // ====================================================================== textes de l'interface
 const TXT = {
-  fr: { decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+  fr: { repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
     travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
@@ -258,7 +315,7 @@ const TXT = {
     repondre: 'Répondre', reponse_envoyee: 'Réponse envoyée', nouvelle_decision: 'Une décision t’attend', reponse_assistant: "Réponse de l'assistant", file: 'encore', a_suivre: 'à suivre',
     pas_envoye: 'Pas enregistré', son_on: 'Son activé', son_off: 'Son coupé', indice: 'Clique sur un poste pour sa fiche · A : appeler l’assistant', personne: 'Aucun poste pour l’instant : ils arrivent quand le questionnaire est fini.',
     role: 'Rôle', skills: 'Skills', aucune_etape: 'Aucune étape devant lui.', est_dispo: 'est disponible', a_fini: 'a fini', est_bloque: 'est bloqué', succes: 'Succès', grand_succes: 'Grand succès',
-    libre: 'libre', au_travail: 'au travail', en_attente: 'en attente', suite: 'suite', mission: 'Mission',
+    libre: 'libre', au_travail: 'au travail', en_attente: 'en attente', suite: 'suite', mission: 'Mission', inconnu: 'état inconnu', pose_questions: 'te pose les questions du projet', equipe_titre: 'Ouvrir la fiche',
     recruter: 'Recruter', recrutement: 'Recrutement', recruter_titre: 'Un nouveau poste dans le studio', rec_nom_affiche: 'Son nom', rec_nom: 'Identifiant (fichier de l’agent)',
     rec_role: 'Rôle (une ligne)', rec_mission: 'Mission (écris ou dicte ce que tu attends de lui)', rec_bureau: 'Rattaché à (facultatif)', rec_skills: 'Skills à appeler (facultatif, séparés par des virgules)',
     rec_couleur: 'Couleur de sa tenue', rec_apparence: 'Accessoire', rec_lancer: 'Le lancer tout de suite (Claude lit la demande et démarre l’agent)', rec_remplacer: 'Remplacer une recrue du studio du même nom (jamais un agent écrit à la main)',
@@ -276,7 +333,7 @@ const TXT = {
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Alimentation arrêtée depuis {m} min : la page calcule l’état elle-même (relance studio_etat.py ou veille_studio.py).', illisible: 'Fichier illisible ignoré' },
-  en: { decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+  en: { repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
@@ -287,7 +344,7 @@ const TXT = {
     repondre: 'Answer', reponse_envoyee: 'Answer sent', nouvelle_decision: 'A decision needs you', reponse_assistant: 'Answer from the assistant', file: 'more', a_suivre: 'queued',
     pas_envoye: 'Not saved', son_on: 'Sound on', son_off: 'Sound off', indice: 'Click a desk for details · A: call the assistant', personne: 'No desks yet: they arrive when the questionnaire is done.',
     role: 'Role', skills: 'Skills', aucune_etape: 'No steps ahead.', est_dispo: 'is available', a_fini: 'is done', est_bloque: 'is blocked', succes: 'Achievement', grand_succes: 'Big achievement',
-    libre: 'free', au_travail: 'working', en_attente: 'waiting', suite: 'next', mission: 'Mission',
+    libre: 'free', au_travail: 'working', en_attente: 'waiting', suite: 'next', mission: 'Mission', inconnu: 'unknown state', pose_questions: 'is asking you the project questions', equipe_titre: 'Open the card',
     recruter: 'Hire', recrutement: 'Hiring', recruter_titre: 'A new desk in the studio', rec_nom_affiche: 'Name', rec_nom: 'Identifier (agent file)',
     rec_role: 'Role (one line)', rec_mission: 'Mission (type or dictate what you expect)', rec_bureau: 'Attached to (optional)', rec_skills: 'Skills to call (optional, comma-separated)',
     rec_couleur: 'Outfit colour', rec_apparence: 'Accessory', rec_lancer: 'Start right away (Claude reads the request and launches the agent)', rec_remplacer: 'Replace a studio recruit with the same name (never a hand-written agent)',
@@ -350,7 +407,10 @@ async function chargerTout() {
   const conf = await lire('studio.config.json'); if (conf) CONF = conf;
   const lg = String(CONF.langue || (PROFIL.maitre && PROFIL.maitre.langue) || document.documentElement.lang || 'fr').slice(0, 2);
   if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
-  const [prof, etat, st, dec, rdec, rass, ded, sui, idx, rap, dstu, tdis, regl] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json'].map(lire));
+  const [prof, etat, st, dec, rdec, rass0, ded, sui, idx, rap, dstu, tdis, regl, jass] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json'].map(lire));
+  // réponses de l'assistant : celles qu'il écrit (reponses_assistant.json) et celles recopiées par le crochet Stop (journal_assistant.json)
+  const rass = (Array.isArray(rass0) ? rass0 : []).concat((Array.isArray(jass) ? jass : []).filter(x => x && x.texte).map(x => ({ id: 'j:' + x.id, cree_le: x.cree_le, titre: x.titre, texte: x.texte, journal: true })))
+    .sort((a, b) => String(a.cree_le || '').localeCompare(String(b.cree_le || '')));
   if (prof) { PROFIL = prof; for (const k of ['maitre', 'assistant']) if (PROFIL[k] && /\{\{/.test(String(PROFIL[k].nom || ''))) PROFIL[k].nom = ''; } ETAT = etat; STATUTS = st || {}; REPONSES_DEC = Array.isArray(rdec) ? rdec : [];
   // décisions de Claude + propositions du studio (renvois : decisions_studio.json, jamais appliquées sans réponse)
   DECISIONS = (Array.isArray(dec) ? dec : []).concat((Array.isArray(dstu) ? dstu : []).filter(x => x && x.id).map(x => Object.assign({}, x, { studio: true })));
@@ -369,6 +429,8 @@ async function chargerTout() {
   const neu = {}; postes().forEach((p, i) => { if (prog[i]) neu[p.id] = prog[i]; }); PROG = neu;
   if (Array.isArray(rass)) lireReponsesAssistant(rass);
   majEntete(); verifierDecisions(); verifierPostes(); Quest.suivis(); majOutils(); verifierRapport();
+  try { verifierMessages(); majCouper(); verifierOptim(); Radio.lancer(); const nj = REP_ASSIST.length - +LS.get('jassist_vus', REP_ASSIST.length); $('#nb-jassist').textContent = nj > 0 ? String(nj) : ''; } catch (err) { console.warn('parité', err); }
+  try { majEquipe(); } catch (err) { console.warn('bandeau du groupe', err); }
   FinTache.verifier(); majBandeauEtat(); Conv.maj(); embaucheAuto().catch(e => erreur('embauche auto', e));
 }
 // Alimentation figée : bandeau rouge (la page calcule alors l'état elle-même) ; fichier d'agent illisible : alerte une fois.
@@ -390,19 +452,24 @@ function majOutils() {
 // ====================================================================== son (synthétisé, coupé sur demande)
 const Son = (() => {
   let ctx = null, coupe = LS.get('son_coupe', false);
+  const vol = () => clamp(+LS.get('son_vol', 1), 0, 1);
   function bip(f, d, o = {}) {
     if (coupe) return;
     try {
       ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
       const at = ctx.currentTime + (o.at || 0), osc = ctx.createOscillator(), g = ctx.createGain();
       osc.type = o.type || 'sine'; osc.frequency.value = f;
-      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(o.gain || .04, at + .01); g.gain.exponentialRampToValueAtTime(.0001, at + d);
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(Math.max(.0002, (o.gain || .04) * vol()), at + .01); g.gain.exponentialRampToValueAtTime(.0001, at + d);
       osc.connect(g).connect(ctx.destination); osc.start(at); osc.stop(at + d + .05);
     } catch (e) { /* audio indisponible */ }
   }
   return {
     clic() { bip(880, .05, { gain: .02, type: 'triangle' }); },
-    cloche() { [1318, 1760].forEach((f, i) => bip(f, 1.2, { gain: .035, at: i * .18 })); },
+    cloche() { try { Radio.sourdine(3000); } catch (e) {} [1318, 1760].forEach((f, i) => bip(f, 1.2, { gain: .035, at: i * .18 })); },
+    touche() { bip(1800 + Math.random() * 900, .018, { type: 'square', gain: .005 }); },
+    porte() { bip(140, .25, { type: 'triangle', gain: .03 }); bip(95, .35, { type: 'sine', gain: .025, at: .18 }); },
+    gobelet() { bip(1250, .08, { type: 'triangle', gain: .012 }); bip(980, .1, { type: 'triangle', gain: .01, at: .09 }); },
+    contexte() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); return coupe ? null : ctx; } catch (e) { return null; } },
     construit() { [392, 523, 659].forEach((f, i) => bip(f, .25, { type: 'triangle', gain: .03, at: i * .07 })); },
     // chantier du studio (passage de palier) : perceuse en dents de scie modulées, puis coups de marteau
     perceuse() {
@@ -435,7 +502,7 @@ function toast(html, o = {}) {
   if (o.action) { const b = document.createElement('button'); b.textContent = o.action.libelle; b.onclick = () => { o.action.f(); fin(); }; el.appendChild(b); }
   $('#toasts').appendChild(el);
   const fin = () => { el.classList.add('part'); setTimeout(() => el.remove(), 450); };
-  setTimeout(fin, o.duree || 5000); return { fermer: fin, el };
+  setTimeout(fin, o.duree || (+LS.get('notif_duree', 5) * 1000)); return { fermer: fin, el };
 }
 const Notifs = (() => {
   let liste = LS.get('notifs', []);
@@ -480,7 +547,9 @@ const Panneau = (() => {
   function fermer() { if (!ouvert) return; ouvert = null; el.classList.remove('vu'); Voix.arreter(); setTimeout(() => { const n = FILE.shift(); if (n) montrer(n.cle, n.rendu, n.o); }, 420); }
   el.querySelector('.x').onclick = fermer;
   el.addEventListener('click', e => { if (e.target === el) fermer(); });
-  return { montrer, fermer, ouvert: () => ouvert };
+  // clic de l'utilisateur dans la barre du haut : remplace le panneau ouvert (la file des panneaux automatiques est gardée)
+  function remplacer(cle, rendu, o = {}) { if (ouvert) { ouvert = null; } montrer(cle, rendu, o); }
+  return { montrer, remplacer, fermer, ouvert: () => ouvert };
 })();
 
 // ====================================================================== bandeau des succès : file, une fois chacun, reprise au retour sur l'onglet
@@ -667,6 +736,50 @@ function verifierPostes() {
   }
   ETATS_PREC = neu; LS.set('etats_postes', neu);
 }
+// ====================================================================== répondre sous chaque réponse de l'assistant
+const BROUILLONS = LS.get('brouillons_rep', {});
+function blocRepondre(cle, enReponseA, titre) {
+  const id = 'rep-' + String(cle).replace(/[^A-Za-z0-9_-]/g, '_');
+  return `<div class="repondre" data-en-reponse="${esc(String(enReponseA || '').replace(/[^A-Za-z0-9_.:+-]/g, '-').slice(0, 120))}"><h3>${esc(titre || t('repondre_a'))}</h3>
+    <textarea id="${esc(id)}" maxlength="2000" placeholder="${esc(t('repondre_ph'))}">${esc(BROUILLONS[id] || '')}</textarea>
+    <div class="rangee"><button type="button" class="btp gros-micro-rep" data-micro="#${esc(id)}">🎙 ${esc(t('dicter'))}</button><button type="button" class="btp" data-rep-envoi="${esc(id)}">${esc(t('envoyer'))}</button><span class="discret" data-rep-res="${esc(id)}"></span></div></div>`;
+}
+document.addEventListener('input', e => { const x = e.target; if (x.matches && x.matches('.repondre textarea')) { BROUILLONS[x.id] = x.value; LS.set('brouillons_rep', BROUILLONS); } });
+document.addEventListener('click', async e => {
+  const m = e.target.closest('.repondre [data-micro]'); if (m) { const c = document.querySelector(m.dataset.micro); if (c) dicter(c, m); return; }
+  const b = e.target.closest('[data-rep-envoi]'); if (!b) return;
+  const id = b.dataset.repEnvoi, ta = document.getElementById(id), bloc = b.closest('.repondre'), res = bloc.querySelector('[data-rep-res]'), txt = ta && ta.value.trim();
+  if (!txt) { ta && ta.focus(); return; }
+  const corps = { cible: 'assistant', texte: txt, via: ta.dataset.via || 'ecrit', en_reponse_a: bloc.dataset.enReponse || '' };
+  ta.value = ''; delete BROUILLONS[id]; LS.set('brouillons_rep', BROUILLONS); res.textContent = t('envoye_ok'); Son.clic();
+  if (document.documentElement.dataset.essai === 'sans-envoi') { document.documentElement.dataset.dernierEnvoi = JSON.stringify(corps); return; }
+  try { const r = await poster('/api/demande', corps); try { Conv.envoye(r.id, 'assistant', txt); } catch (err) {} }
+  catch (err) { res.textContent = err.message; ta.value = txt; BROUILLONS[id] = txt; LS.set('brouillons_rep', BROUILLONS); }
+});
+window.__repondre = blocRepondre;   // essais
+
+// ====================================================================== bandeau du groupe (à gauche)
+const COUL_ETAT = { travaille: '#6fae5e', attend: '#c9953e', fini: '#4d6f9c', disponible: '#8fb3c9', bloque: '#c0573e' };
+function majEquipe() {
+  const box = $('#equipe'); if (!box) return;
+  { const h = ($('#entete') && $('#entete').offsetHeight) || 60, top = h + 8 + 'px'; if (box.style.top !== top) box.style.top = top; }
+  const travail = CONF.mode === 'travail', liste = travail ? postes() : [];
+  const items = [{ id: '__assistant', nom: nomAssistant(), look: () => lookDe('assistant'), e: { etat: 'travaille', pct: null, reste: null, ligne: { picto: '▶', texte: travail ? t('au_travail') : t('pose_questions') } }, clic: () => { const b = $('#bt-assistant'); if (b) b.click(); } }]
+    .concat(liste.map(p => ({ id: p.id, nom: nomPoste(p), look: () => lookPoste(p), e: etatPoste(p), clic: () => ficheposte(p) })));
+  const html = items.map(it => {
+    const e = it.e || {}, lg = e.ligne && String(e.ligne.texte || '').trim() ? e.ligne : { picto: '?', texte: t('inconnu') };
+    const complet = lg.picto + ' ' + lg.texte, pct = e.pct == null ? null : clamp(Math.round(e.pct), 0, 100);
+    const reste = (e.etat === 'travaille' || e.etat === 'bloque') && pct !== null && pct < 100 ? (e.reste == null ? '?' : '~' + duree(e.reste)) : '';
+    return `<button type="button" class="membre" data-id="${esc(it.id)}" style="--ce:${COUL_ETAT[e.etat] || '#8a8174'}" title="${esc(it.nom + ' · ' + complet + (pct !== null ? ' · ' + pct + ' %' : ''))}">
+      <canvas width="88" height="88"></canvas><span class="t"><span class="n">${esc(it.nom)}</span>
+      <span class="e"><span class="tl${lg.picto === '?' ? ' inconnu' : ''}">${esc(complet.length > 90 ? complet.slice(0, 88) + '…' : complet)}</span>${reste ? `<span class="rt">${esc(reste)}</span>` : ''}</span>
+      ${pct !== null ? `<span class="vie"><i style="width:${pct}%"></i></span>` : ''}</span></button>`;
+  }).join('');
+  if (box._html !== html) {
+    box._html = html; box.innerHTML = html;
+    items.forEach(it => { const b = box.querySelector(`[data-id="${CSS.escape(it.id)}"]`); if (!b) return; b.onclick = it.clic; try { Bureau.portrait(b.querySelector('canvas'), it.look()); } catch (err) {} });
+  }
+}
 function ficheposte(p) {
   Panneau.montrer('poste:' + p.id, el => {
     const e = etatPoste(p);
@@ -786,13 +899,29 @@ async function embaucheAuto() {
 
 // ====================================================================== réglages : rapport, automatismes (coupés par défaut : sobriété en jetons)
 function ouvrirReglages() {
-  Panneau.montrer('reglages', el => {
+  Panneau.remplacer('reglages', el => {
     const f = +(REGLAGES.frequence_rapport_min || (PROFIL.assistant && PROFIL.assistant.frequence_rapport_min) || 120);
     const coche = k => `<label class="reglage"><input type="checkbox" data-r="${k}"${auto(k) ? ' checked' : ''}> ${esc(t(k))}</label>`;
     el.innerHTML = `<div class="surtitre">${esc(t('reglages'))}</div><h2>${esc(t('reglages'))}</h2>
       <label class="reglage">${esc(t('frequence'))} <select id="rg-f">${[15, 30, 60, 120].map(x => `<option value="${x}"${x === f ? ' selected' : ''}>${x} min</option>`).join('')}</select></label>
-      ${coche('attribution_auto')}${coche('embauche_auto')}<p class="discret">${esc(t('auto_eco'))}</p>
+      ${coche('attribution_auto')}${coche('embauche_auto')}${coche('enchainement_auto')}${coche('point_auto')}${coche('optimisation_auto')}<p class="discret">${esc(t('auto_eco'))}</p>
+      <label class="reglage">${esc(t('volume'))} <input type="range" id="rg-vol" min="0" max="1" step="0.05" value="${esc(LS.get('son_vol', 1))}"></label>
+      <label class="reglage">${esc(t('notif_duree'))} <select id="rg-nd">${[5, 20, 60].map(x => `<option value="${x}"${x === +LS.get('notif_duree', 5) ? ' selected' : ''}>${x} s</option>`).join('')}</select></label>
+      <label class="reglage"><input type="checkbox" id="rg-amb"${LS.get('ambiance', true) ? ' checked' : ''}> ${esc(t('ambiance'))}</label>
+      <label class="reglage"><input type="checkbox" id="rg-babil"${LS.get('babil', true) ? ' checked' : ''}> ${esc(t('babil'))}</label>
+      <label class="reglage"><input type="checkbox" id="rg-radio"${LS.get('radio', false) ? ' checked' : ''}${Radio.liste().length ? '' : ' disabled'}> ${esc(t('radio'))}${Radio.liste().length ? ' (' + Radio.liste().length + ')' : ' : ' + esc(t('radio_aucune'))}</label>
+      <label class="reglage">${esc(t('radio_vol'))} <input type="range" id="rg-rvol" min="0" max="1" step="0.05" value="${esc(LS.get('radio_vol', .25))}"></label>
+      <p class="discret">${esc(t('legende'))} : ▶ ${esc(t('au_travail'))} · ⏸ ${esc(t('en_attente'))} · ↔ ${esc(t('suite'))} · ☕ ${esc(t('libre'))} · ? ${esc(t('inconnu'))}</p>
+      <div class="rangee"><button type="button" class="bts" id="rg-plein">${esc(t('plein_ecran'))}</button><button type="button" class="bts" id="rg-tuto">${esc(t('tuto_relancer'))}</button></div>
       <div class="rangee"><button type="button" class="btp" id="rg-ok">${esc(t('valider'))}</button><span class="discret" data-res></span></div>`;
+    el.querySelector('#rg-vol').oninput = e => LS.set('son_vol', +e.target.value);
+    el.querySelector('#rg-nd').onchange = e => LS.set('notif_duree', +e.target.value);
+    el.querySelector('#rg-amb').onchange = e => LS.set('ambiance', e.target.checked);
+    el.querySelector('#rg-babil').onchange = e => LS.set('babil', e.target.checked);
+    el.querySelector('#rg-radio').onchange = e => Radio.basculer(e.target.checked);
+    el.querySelector('#rg-rvol').oninput = e => Radio.volume(+e.target.value);
+    el.querySelector('#rg-plein').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
+    el.querySelector('#rg-tuto').onclick = () => { Panneau.fermer(); Tuto.lancer(); };
     el.querySelector('#rg-ok').onclick = async () => {
       const corps = { frequence_rapport_min: +el.querySelector('#rg-f').value };
       el.querySelectorAll('[data-r]').forEach(c => { corps[c.dataset.r] = c.checked; });
@@ -910,7 +1039,7 @@ const Conv = (() => {
     const statut = s => ({ nouvelle: t('depose'), prise: t('lu'), faite: t('traite') })[s] || '';
     z.innerHTML = l.length ? l.map(x => x.genre === 'moi'
       ? `<div class="msg moi"><small>${esc(t('toi'))}${x.cible && x.cible !== 'assistant' ? ' → ' + esc(x.cible) : ''} · ${esc(heure(x.t))}${statut(x.statut) ? ' · ' + esc(statut(x.statut)) : ''}</small><p>${esc(x.texte)}</p></div>`
-      : x.genre === 'lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><p>${esc(x.texte)}</p></div>`
+      : x.genre === 'lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><p>${esc(x.texte)}</p><details class="rep-lien"><summary>${esc(t('repondre'))}</summary>${blocRepondre('fil-' + x.id, x.id.replace(/^r:/, ''))}</details></div>`
       : `<div class="msg lui question" data-dec="${esc(x.d.id)}"><small>${esc(t('decision'))} · ${esc(heure(x.t))}</small><p><b>${esc(x.d.titre || '')}</b></p>${x.d.explication ? `<p>${esc(x.d.explication)}</p>` : ''}
           ${x.r ? `<p class="discret">✓ ${esc(t('repondu'))} : ${esc(x.r.choix || x.r.texte_libre || '')}</p>` : `<div class="choix-dec">${boutonsChoix(x.d)}</div>`}</div>`).join('')
       + (dernier && dernier.genre === 'lui' && /\?\s*["»)]*\s*$/.test(dernier.texte) ? `<p class="discret">${esc(t('reponds_ici'))}</p>` : '')
@@ -1017,6 +1146,7 @@ function ouvrirRapport() {
       <h3>${esc(t('a_decider'))}</h3>${dec.length ? `<div class="liste-dec">${dec.map(d => { const x = decisionDe(d); return `<div class="rangee"><span style="flex:1">? ${esc(String(d.titre || d.id || '').slice(0, 300))}</span>${x ? `<button type="button" class="btp" data-dec="${esc(x.id)}">${esc(t('decider'))}</button>` : `<button type="button" class="bts" data-cloche>${esc(t('ouvrir_cloche'))}</button>`}</div>`; }).join('')}</div>` : `<p class="discret">${esc(t('rien_a_decider'))}</p>`}`;
     Bureau.portrait(el.querySelector('canvas'), lookDe('assistant'));
     // une ligne « à décider » ouvre la décision correspondante, sinon la cloche : jamais un recrutement ni une tâche confiée
+    el.insertAdjacentHTML('beforeend', blocRepondre('rapport-' + cleRapport(r), 'rapport:' + cleRapport(r)));
     el.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) { Panneau.fermer(); ouvrirDecision(d); } });
     el.querySelectorAll('[data-cloche]').forEach(b => b.onclick = () => { Panneau.fermer(); ouvrirCloche(); });
   }, { large: true });
@@ -1759,6 +1889,7 @@ const Quest = (() => {
     }
   }
   return {
+    editeur: qui => editeurPerso({ cible: qui === 'assistant' ? 'assistant' : 'maitre' }), lirePerso,
     async demarrer() {
       QF = await lire(`questions.${LANGUE}.json`) || await lire('questions.fr.json');
       if (!QF) return;
@@ -1779,6 +1910,15 @@ const Quest = (() => {
 
 // ====================================================================== démarrage
 $('#bt-notifs').onclick = () => Notifs.basculer();
+$('#bt-ensemble').onclick = () => ouvrirEnsemble();
+$('#bt-plein').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
+setInterval(() => { const d = new Date(), h = $('#horloge'); if (h) h.innerHTML = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>';
+  const r = RM_C, pc = r && r.av && Number.isFinite(r.av.avance) ? r.av.avance : r && Number.isFinite(r.pct) ? r.pct : null; $('#v1-pct').textContent = pc === null ? '—' : pc + ' %'; $('#v1-plein').style.width = (pc || 0) + '%'; $('#v1').hidden = CONF.mode !== 'travail'; }, 1000);
+$('#bt-journal').onclick = () => ouvrirJournal();
+$('#bt-optim').onclick = () => ouvrirOptimisation();
+$('#bt-jassist').onclick = () => ouvrirJournalAssistant();
+$('#bt-perso').onclick = () => ouvrirPersonnaliser();
+$('#bt-couper').onclick = async () => { const c = {}; AUTOS.forEach(k => c[k] = false); try { await regler(c); Radio.basculer(false); toast(esc(t('coupe_ok'))); Son.clic(); } catch (e) { toast(esc(e.message), { erreur: true }); } };
 $('#bt-assistant').onclick = () => demander('assistant');
 $('#bt-recruter').onclick = () => recruter();
 $('#bt-images').onclick = () => ouvrirMur();
@@ -1790,6 +1930,231 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) veri
 $('#niveau').onclick = () => window.Roadmap && Roadmap.ouvrir();
 $('#bt-son').onclick = () => { const on = Son.basculer(); $('#son-onde').style.display = on ? '' : 'none'; toast(esc(on ? t('son_on') : t('son_off')), { duree: 1500 }); };
 if (Son.coupe()) $('#son-onde').style.display = 'none';
+
+// ====================================================================== parité avec le studio d'origine (0.3.1)
+// Radio : les musiques du jeu de l'utilisateur (etat.json « musiques »), lecture continue en playlist mélangée,
+// fondu enchaîné de 7 s à puissance égale, fin réelle détectée (silence final), sourdine pendant la cloche. Coupée par défaut.
+const Radio = (() => {
+  const FONDU = 7, SEUIL = Math.pow(10, -48 / 20);
+  let ctx = null, bus = null, sourd = null, courant = null, suivant = null, minuteur = 0, titre = '';
+  let sac = LS.get('radio_sac', []), dernier = LS.get('radio_dernier', null);
+  const fins = new Map(Object.entries(LS.get('radio_fins', {})));
+  const on = () => LS.get('radio', false) === true, vol = () => clamp(+LS.get('radio_vol', .25), 0, 1);
+  const liste = () => (ETAT && Array.isArray(ETAT.musiques)) ? ETAT.musiques : [];
+  const nom = f => String(f || '').replace(/^.*\//, '').replace(/\.\w+$/, '').replace(/^MUS_/i, '').replace(/[_-]+/g, ' ');
+  function contexte() {
+    if (ctx) return ctx;
+    try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    const lim = ctx.createDynamicsCompressor(); lim.threshold.value = -3; lim.ratio.value = 20; lim.attack.value = .002; lim.release.value = .2; lim.connect(ctx.destination);
+    sourd = ctx.createGain(); sourd.connect(lim); bus = ctx.createGain(); bus.gain.value = vol(); bus.connect(sourd); return ctx;
+  }
+  function tirer() {
+    const l = liste(); if (!l.length) return null; sac = sac.filter(x => l.includes(x));
+    if (!sac.length) { sac = l.slice(); for (let i = sac.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [sac[i], sac[j]] = [sac[j], sac[i]]; } if (sac.length > 1 && sac[0] === dernier) sac.push(sac.shift()); }
+    dernier = sac.shift(); LS.set('radio_sac', sac); LS.set('radio_dernier', dernier); return dernier;
+  }
+  async function analyser(src) {
+    if (fins.has(src)) return; fins.set(src, null);
+    try { const a = await ctx.decodeAudioData(await (await fetch(src)).arrayBuffer()); let fin = 0;
+      for (let c = 0; c < a.numberOfChannels; c++) { const d = a.getChannelData(c); for (let i = d.length - 1; i > 0; i -= 32) if (Math.abs(d[i]) > SEUIL) { fin = Math.max(fin, i / a.sampleRate); break; } }
+      if (fin > 0) { fins.set(src, Math.min(a.duration, fin + .25)); LS.set('radio_fins', Object.fromEntries([...fins].filter(([, v]) => v))); } } catch (e) {}
+  }
+  function piste(src) { const el = new Audio(); el.preload = 'auto'; el.src = src; const g = ctx.createGain(); g.gain.value = 0; ctx.createMediaElementSource(el).connect(g); g.connect(bus); analyser(src); return { el, g, src, fondu: false }; }
+  const courbe = (m, k = 1) => { const a = new Float32Array(128); for (let i = 0; i < 128; i++) { const x = i / 127 * Math.PI / 2; a[i] = k * (m ? Math.sin(x) : Math.cos(x)); } return a; };
+  function demarrer(p, fondu) { const t0 = ctx.currentTime; p.g.gain.cancelScheduledValues(t0); if (fondu) p.g.gain.setValueCurveAtTime(courbe(true), t0, FONDU); else { p.g.gain.setValueAtTime(0, t0); p.g.gain.linearRampToValueAtTime(1, t0 + 1.5); } p.el.play().catch(() => {}); titre = nom(p.src); majTitre(); }
+  function arreter(p, ms) { setTimeout(() => { try { p.el.pause(); p.g.disconnect(); p.el.removeAttribute('src'); p.el.load(); } catch (e) {} }, ms); }
+  function enchainer() {
+    if (!courant || courant.fondu) return; const a = courant; a.fondu = true; const t0 = ctx.currentTime, k = a.g.gain.value;
+    a.g.gain.cancelScheduledValues(t0); a.g.gain.setValueCurveAtTime(courbe(false, k), t0, FONDU); arreter(a, FONDU * 1000 + 400);
+    const s = suivant || (() => { const x = tirer(); return x && piste(x); })(); suivant = null; if (!s) { courant = null; return; } courant = s; demarrer(courant, true);
+  }
+  function surveiller() { clearInterval(minuteur); minuteur = setInterval(() => { if (!on() || !courant) return; const el = courant.el, d = el.duration; if (!isFinite(d) || d <= 0) return; const fin = fins.get(courant.src) || d;
+    if (!suivant && fin - el.currentTime < FONDU + 25) { const x = tirer(); if (x) suivant = piste(x); } if (!courant.fondu && (el.currentTime >= Math.max(0, fin - FONDU) || el.ended)) enchainer(); }, 200); }
+  function lancer() { if (!on() || !liste().length || !contexte()) return; if (ctx.state === 'suspended') ctx.resume().catch(() => {}); if (courant) return; const x = tirer(); if (!x) return; courant = piste(x); demarrer(courant, false); surveiller(); }
+  function couper() { for (const p of [courant, suivant]) if (p) { p.g.gain.setTargetAtTime(0, ctx.currentTime, .15); arreter(p, 800); } courant = suivant = null; clearInterval(minuteur); majTitre(); }
+  function majTitre() { const el = $('#radio-titre'); if (el) { const v = on() && courant && titre; el.textContent = v ? '♪ ' + titre : ''; el.hidden = !v; } }
+  return {
+    lancer, liste,
+    basculer(v) { LS.set('radio', v); if (v) lancer(); else if (ctx) couper(); majTitre(); },
+    volume(v) { LS.set('radio_vol', v); if (bus) bus.gain.setTargetAtTime(v, ctx.currentTime, .08); },
+    suivant() { if (courant) enchainer(); else lancer(); },
+    sourdine(ms = 2600) { if (!sourd) return; const t0 = ctx.currentTime; sourd.gain.cancelScheduledValues(t0); sourd.gain.setValueAtTime(sourd.gain.value, t0); sourd.gain.setTargetAtTime(.22, t0, .06); sourd.gain.setTargetAtTime(1, t0 + ms / 1000, .5); },
+    etat: () => ({ on: on(), titre: courant ? titre : '', n: liste().length }),
+  };
+})();
+document.addEventListener('pointerdown', () => Radio.lancer(), { capture: true });
+
+// Ambiance de bureau (clavier selon le nombre de personnages au travail) et petites conversations entre persos libres.
+setInterval(() => {
+  if (!LS.get('ambiance', true) || CONF.mode !== 'travail' || document.hidden) return;
+  const n = postes().filter(p => { try { return etatPoste(p).etat === 'travaille'; } catch (e) { return false; } }).length;
+  if (n && Math.random() < Math.min(.55, n * .09)) Son.touche();
+}, 220);
+const BABIL = {
+  fr: [['Tu as vu la roadmap ? On avance !', 'Oui, et sans casser le build.'], ['Un café ?', 'Avec plaisir, je relis juste ma tâche.'], ['Tu bloques sur quoi ?', 'Rien, je range mes notes.'], ['Belle journée au studio.', 'Et le jeu prend forme.']],
+  en: [['Seen the roadmap? We are moving!', 'Yes, and without breaking the build.'], ['Coffee?', 'Sure, just rereading my task.'], ['Stuck on something?', 'Nope, just tidying my notes.'], ['Nice day at the studio.', 'And the game is taking shape.']]
+};
+setInterval(() => {
+  if (!LS.get('babil', true) || CONF.mode !== 'travail' || document.hidden) return;
+  const libres = postes().filter(p => { try { return etatPoste(p).etat === 'disponible'; } catch (e) { return false; } }); if (libres.length < 2) return;
+  const a = libres[(Math.random() * libres.length) | 0], b = libres.find(x => x !== a), l = BABIL[LANGUE] || BABIL.en, d = l[(Math.random() * l.length) | 0];
+  Bureau.dire(a.id, d[0], 5); setTimeout(() => Bureau.dire(b.id, d[1], 5), 3200); if (Math.random() < .3) setTimeout(() => Son.gobelet(), 1200);
+}, 45000);
+
+// Touche V : dicter dans le dernier champ utilisé (sinon : demande à l'assistant)
+let DERNIER_CHAMP = null;
+document.addEventListener('focusin', e => { if (e.target.matches('textarea, input[type=text]')) DERNIER_CHAMP = e.target; });
+document.addEventListener('keydown', e => {
+  if ((e.key !== 'v' && e.key !== 'V') || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  const c = DERNIER_CHAMP && DERNIER_CHAMP.isConnected ? DERNIER_CHAMP : null, b = c && c.id && document.querySelector(`[data-micro="#${CSS.escape(c.id)}"]`);
+  e.preventDefault(); if (c && b) { c.focus(); dicter(c, b); } else demander('assistant');
+});
+
+// Message de l'utilisateur sans réponse depuis 10 min : bien visible
+function verifierMessages() {
+  const el = $('#msg-attente'); if (!el) return;
+  const l = (ETAT && Array.isArray(ETAT.messages) ? ETAT.messages : []).filter(m => m && m.statut === 'nouvelle' && Date.now() - Date.parse(m.cree_le || 0) > 10 * 60000);
+  el.style.setProperty('--haut', (($('#entete') && $('#entete').offsetHeight) || 70) + 8 + 'px');
+  if (!l.length) { el.hidden = true; return; }
+  const m = l[0], min = Math.round((Date.now() - Date.parse(m.cree_le)) / 60000);
+  el.textContent = `✉ « ${String(m.texte).slice(0, 70)} » · ${t('msg_attente')} ${min} min${l.length > 1 ? ' (+' + (l.length - 1) + ')' : ''}`; el.hidden = false; el.onclick = () => Conv.ouvrir();
+}
+
+// Automatismes : réglages et bouton « Tout couper » (rouge quand un automatisme tourne)
+const AUTOS = ['attribution_auto', 'embauche_auto', 'enchainement_auto', 'point_auto', 'optimisation_auto'];
+const autoOn = k => REGLAGES && REGLAGES[k] === true;
+function majCouper() { const n = AUTOS.filter(autoOn).length, b = $('#bt-couper'); if (!b) return; b.classList.toggle('actif', n > 0); b.title = n ? n + ' ' + t('auto_tournent') : t('tout_couper'); }
+async function regler(corps) { const r = await poster('/api/reglages', corps); REGLAGES = r.reglages || Object.assign({}, REGLAGES, corps); majCouper(); return REGLAGES; }
+function coutAutos(choix) {             // estimation grossière, en milliers de jetons par heure
+  const f = +(REGLAGES.frequence_rapport_min || 120), k = { attribution_auto: 200, embauche_auto: 60, enchainement_auto: 300, point_auto: Math.round(15 * 60 / f), optimisation_auto: 40 };
+  return AUTOS.filter(x => choix[x]).reduce((a, x) => a + k[x], 0);
+}
+
+// Vues de la barre du haut
+function ouvrirEnsemble() {
+  Panneau.remplacer('ensemble', el => {
+    const ps = postes(), sy = (ETAT && ETAT.systeme) || {}, gi = (ETAT && ETAT.git) || {};
+    el.innerHTML = `<div class="surtitre">${esc(CONF.nom || t('studio'))}</div><h2>${esc(t('ensemble'))}</h2><h3>${esc(t('ens_postes'))}</h3>
+      ${ps.map(p => { const e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct); return `<div class="prop" data-p="${esc(p.id)}" style="cursor:pointer"><b>${esc(nomPoste(p))}</b> · ${esc(e.ligne.picto + ' ' + e.ligne.texte)}${pc !== null ? `<div class="barre"><i style="width:${pc}%"></i><span>${pc} %${e.reste != null ? ' · ' + esc(duree(e.reste)) : ''}</span></div>` : ''}</div>`; }).join('') || `<p class="discret">${esc(t('journal_rien'))}</p>`}
+      ${Object.keys(sy).length ? `<h3>${esc(t('ens_systeme'))}</h3><p class="discret">${Object.entries(sy).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}
+      ${Object.keys(gi).length ? `<h3>${esc(t('ens_git'))}</h3><p class="discret">${Object.entries(gi).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}`;
+    el.querySelectorAll('[data-p]').forEach(d => d.onclick = () => { const p = postes().find(x => x.id === d.dataset.p); if (p) ficheposte(p); });
+  });
+}
+function ouvrirJournal() {
+  Panneau.remplacer('journal', el => {
+    const l = (LS.get('notifs', []) || []).slice().sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, 80);
+    el.innerHTML = `<div class="surtitre">${esc(CONF.nom || t('studio'))}</div><h2>${esc(t('journal'))}</h2>${l.length ? `<ol class="liste-j">${l.map(n => `<li><time>${esc(n.t ? new Date(n.t).toLocaleString(LANGUE, { weekday: 'short', hour: '2-digit', minute: '2-digit' }) : '')}</time><b>${esc(n.titre || '')}</b>${n.ligne ? ' · ' + esc(n.ligne) : ''}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('journal_rien'))}</p>`}`;
+  });
+}
+function ouvrirJournalAssistant() {
+  LS.set('jassist_vus', REP_ASSIST.length); $('#nb-jassist').textContent = '';
+  Panneau.remplacer('jassist', el => {
+    const l = REP_ASSIST.slice().reverse();
+    el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('journal_assistant'))}</h2>${l.length ? `<ol class="liste-j">${l.map((m, i) => `<li><time>${esc(String(m.cree_le || '').slice(5, 16).replace('T', ' '))}</time><a href="#" data-i="${i}"><b>${esc(String(m.titre || String(m.texte || '').split('\n')[0]).slice(0, 110))}</b></a><div data-plein="${i}" hidden style="white-space:pre-wrap;margin-top:6px">${esc(String(m.texte || ''))}</div></li>`).join('')}</ol>` : `<p class="discret">${esc(t('jassist_rien'))}</p>`}`;
+    el.querySelectorAll('[data-i]').forEach(a => a.onclick = ev => { ev.preventDefault(); const d = el.querySelector(`[data-plein="${a.dataset.i}"]`); d.hidden = !d.hidden; });
+  });
+}
+let OPTIM = null; const OPTIM_FAIT = new Set(LS.get('optim_fait', []));
+async function verifierOptim() {
+  const o = await lire('optimisation.json'); if (!o || !o.heure) return;
+  const neuf = !OPTIM || OPTIM.heure !== o.heure; OPTIM = o;
+  const nb = (o.propositions || []).filter(x => x && x.id && !OPTIM_FAIT.has(x.id)).length; $('#nb-optim').textContent = nb ? String(nb) : '';
+  if (neuf && LS.get('optim_vu', '') !== o.heure) { LS.set('optim_vu', o.heure); Notifs.ajouter({ id: 'optim-' + o.heure, type: 'info', titre: t('optim_titre'), ligne: o.resume || '', cible: {} }); }
+}
+function ouvrirOptimisation() {
+  Panneau.remplacer('optim', el => {
+    const o = OPTIM || {}, props = (o.propositions || []).filter(x => x && x.id);
+    el.innerHTML = `<div class="surtitre">${esc(t('optimiser'))}${o.heure ? ' · ' + esc(String(o.heure).replace(/^.*T/, '').slice(0, 5)) : ''}</div><h2>${esc(t('optim_titre'))}</h2>${o.resume ? `<p><i>${esc(o.resume)}</i></p>` : ''}
+      <div class="rangee"><button type="button" class="btp" data-demander>${esc(t('optim_demander'))}</button><span class="discret" data-res></span></div>
+      ${(o.actions_faites || []).length ? `<h3>${esc(t('optim_faites'))}</h3><ol class="liste-j">${o.actions_faites.map(a => `<li>✓ <b>${esc(a.titre || '')}</b>${a.detail ? ' · ' + esc(a.detail) : ''}</li>`).join('')}</ol>` : ''}
+      ${o.heure ? blocRepondre('optim-' + o.heure, 'optimisation:' + o.heure) : ''}
+      ${props.length ? `<h3>${esc(t('optim_props'))}</h3>${props.map(x => `<div class="prop">${OPTIM_FAIT.has(x.id) ? `<b>${esc(x.titre)}</b> <span class="discret">→ ${esc(t('deja_demande'))}</span>` : `<label><input type="checkbox" data-o="${esc(x.id)}"> <span><b>${esc(x.titre)}</b>${x.detail ? '<br>' + esc(x.detail) : ''}${x.gain_estime ? '<br><i>' + esc(x.gain_estime) + '</i>' : ''}</span></label>`}</div>`).join('')}
+        <div class="rangee" style="margin-top:10px"><button type="button" class="bts" data-tout>${esc(t('optim_tout'))}</button><button type="button" class="btp" data-lancer>${esc(t('optim_lancer'))}</button></div>` : (o.heure ? '' : `<p class="discret">${esc(t('optim_rien'))}</p>`)}`;
+    el.querySelector('[data-demander]').onclick = async () => { try { await poster('/api/demande', { cible: 'assistant', texte: t('optim_demande'), via: 'ecrit', sujet: 'optimisation' }); toast(esc(t('optim_envoyee'))); Son.clic(); } catch (e) { el.querySelector('[data-res]').textContent = e.message; } };
+    const tout = el.querySelector('[data-tout]'); if (tout) tout.onclick = () => el.querySelectorAll('[data-o]').forEach(c => c.checked = true);
+    const lancer = el.querySelector('[data-lancer]'); if (lancer) lancer.onclick = async () => {
+      const lot = [...el.querySelectorAll('[data-o]:checked')].map(c => props.find(x => x.id === c.dataset.o)).filter(Boolean); if (!lot.length) return;
+      const texte = t('optim_lot') + ' :\n' + lot.map((x, i) => `${i + 1}. ${x.titre}${x.detail ? ' : ' + x.detail : ''}`).join('\n');
+      try { await poster('/api/demande', { cible: 'assistant', texte: texte.slice(0, 2000), via: 'ecrit' }); lot.forEach(x => OPTIM_FAIT.add(x.id)); LS.set('optim_fait', [...OPTIM_FAIT].slice(-200)); toast(esc(lot.length + ' ' + t('optim_lancees'))); ouvrirOptimisation(); verifierOptim(); }
+      catch (e) { toast(esc(e.message), { erreur: true }); }
+    };
+  });
+}
+function ouvrirPersonnaliser(qui = 'maitre') {
+  Panneau.remplacer('perso', el => {
+    const p = PROFIL[qui] || {};
+    el.innerHTML = `<div class="surtitre">${esc(t('personnaliser'))}</div><div class="rangee">${['maitre', 'assistant'].map(q => `<button type="button" class="${q === qui ? 'btp' : 'bts'}" data-qui="${q}">${esc(t(q === 'maitre' ? 'perso_maitre' : 'perso_assistant'))}</button>`).join('')}</div>
+      <label class="reglage">${esc(t('perso_nom'))} <input type="text" id="pz-nom" maxlength="40" value="${esc(p.nom || '')}"></label>${Quest.editeur(qui)}
+      <div class="rangee" style="margin-top:10px"><button type="button" class="btp" data-ok>${esc(t('enregistrer'))}</button><span class="discret" data-res></span></div>`;
+    const ed = el.querySelector('.perso-ed'), maj = () => Bureau.portrait(el.querySelector('#pe-apercu'), Quest.lirePerso(ed));
+    ed.querySelectorAll('[data-k]').forEach(i => i.oninput = maj); ed.querySelectorAll('[data-pe]').forEach(b => b.hidden = true); maj();
+    el.querySelectorAll('[data-qui]').forEach(b => b.onclick = () => ouvrirPersonnaliser(b.dataset.qui));
+    el.querySelector('[data-ok]').onclick = async () => {
+      const corps = { [qui]: { nom: el.querySelector('#pz-nom').value.trim() || p.nom || '', apparence: Quest.lirePerso(ed) } };
+      try { const r = await poster('/api/profil', corps); PROFIL = r.profil || PROFIL; toast(esc(t('perso_ok'))); Son.clic(); try { majEquipe(); } catch (e) {} }
+      catch (e) { el.querySelector('[data-res]').textContent = e.message; }
+    };
+  });
+}
+
+// Tutoriel de départ : l'assistant présente le studio en 6 bulles, puis propose les automatismes (coupés tant qu'on n'a pas choisi)
+const Tuto = (() => {
+  const ETAPES = {
+    fr: [
+      ['#equipe', 'Ton équipe', 'À gauche, ton équipe : chaque perso montre sa tâche (▶ au travail, ⏸ en attente, ↔ entre deux étapes, ☕ libre) et son temps restant. Clique un perso pour sa fiche.'],
+      ['#bt-decisions, #niveau', 'La cloche', 'Quand il faut ton avis, une bulle « ? » apparaît au-dessus d’un perso et la cloche sonne. Tu réponds d’un clic, ou à la voix.'],
+      ['#bt-roadmap', 'La roadmap', 'La roadmap montre les jalons, l’avancement pondéré et le temps restant. Chaque jalon fermé débloque un succès.'],
+      ['#bt-assistant', 'Parle-lui', 'Le bouton « Appeler l’assistant » (ou la touche A) ouvre une demande. Dans n’importe quel champ, 🎙 ou la touche V lance la dictée.'],
+      ['#bt-optim', 'Optimiser', '« Optimiser » demande à l’assistant de faire le tour du studio et de proposer des améliorations : tu coches, il lance.'],
+      ['#bt-couper', 'Tout couper', 'Ce bouton devient rouge quand un automatisme tourne. Un clic, et tout s’arrête.']],
+    en: [
+      ['#equipe', 'Your team', 'On the left, your team: each character shows their task (▶ working, ⏸ waiting, ↔ between steps, ☕ free) and the time left. Click a character for their card.'],
+      ['#bt-decisions, #niveau', 'The bell', 'When your opinion is needed, a “?” bubble pops above a character and the bell rings. Answer with a click, or by voice.'],
+      ['#bt-roadmap', 'The roadmap', 'The roadmap shows milestones, weighted progress and time left. Each closed milestone unlocks an achievement.'],
+      ['#bt-assistant', 'Talk to it', '“Call the assistant” (or the A key) opens a request. In any field, 🎙 or the V key starts dictation.'],
+      ['#bt-optim', 'Optimize', '“Optimize” asks the assistant to tour the studio and suggest improvements: you tick, it launches.'],
+      ['#bt-couper', 'Stop all', 'This button turns red when an automation is running. One click and everything stops.']]
+  };
+  const FIN = {
+    fr: 'Pour finir : tu peux laisser le studio avancer seul. Tu peux aller te coucher ou au travail et laisser tourner ; avec Remote Control de Claude Code, tu suis depuis ton téléphone et tu peux tout couper. Rien ne s’active sans ton choix.',
+    en: 'Last step: you can let the studio move on by itself. Go to bed or to work and let it run; with Claude Code Remote Control you follow from your phone and can stop everything. Nothing turns on without your choice.'
+  };
+  let i = 0, cible = null;
+  const box = () => $('#tuto');
+  function placer(sel) {
+    if (cible) cible.classList.remove('tuto-cible'); cible = sel ? [...document.querySelectorAll(sel)].find(e => e.offsetParent !== null) : null;
+    const b = box(); if (cible) { cible.classList.add('tuto-cible'); const r = cible.getBoundingClientRect(); b.style.left = clamp(r.left, 8, innerWidth - b.offsetWidth - 8) + 'px'; b.style.top = clamp(r.bottom + 12, 8, innerHeight - b.offsetHeight - 8) + 'px'; }
+    else { b.style.left = Math.max(8, (innerWidth - b.offsetWidth) / 2) + 'px'; b.style.top = Math.max(70, (innerHeight - b.offsetHeight) / 3) + 'px'; }
+  }
+  function etape() {
+    const l = ETAPES[LANGUE] || ETAPES.en, b = box(); b.hidden = false;
+    if (i < l.length) {
+      const [sel, titre, texte] = l[i];
+      b.innerHTML = `<div class="pas">${esc(nomAssistant())} · ${i + 1} / ${l.length + 1}</div><h3>${esc(titre)}</h3><p>${esc(texte)}</p><div class="rangee"><button type="button" class="btp" data-s>${esc(t('tuto_suivant'))}</button><button type="button" class="bts" data-p>${esc(t('tuto_passer'))}</button></div>`;
+      b.querySelector('[data-s]').onclick = () => { Son.clic(); i++; etape(); }; b.querySelector('[data-p]').onclick = () => finir();
+      try { Bureau.dire('assistant', titre, 5); } catch (e) {}
+      requestAnimationFrame(() => placer(sel)); return;
+    }
+    const lib = k => t(k), choix = {}; AUTOS.forEach(k => choix[k] = false);
+    b.innerHTML = `<div class="pas">${esc(nomAssistant())} · ${l.length + 1} / ${l.length + 1}</div><h3>${esc(t('tuto_cout'))}</h3><p>${esc(FIN[LANGUE] || FIN.en)}</p>
+      <div data-cases hidden>${AUTOS.map(k => `<label><input type="checkbox" data-a="${k}"> <span>${esc(lib(k))}</span></label>`).join('')}</div>
+      <div class="cout" data-cout></div>
+      <div class="rangee"><button type="button" class="btp" data-tout>${esc(t('tuto_tout'))}</button><button type="button" class="bts" data-choix>${esc(t('tuto_choix'))}</button><button type="button" class="bts" data-tard>${esc(t('tuto_tard'))}</button></div>`;
+    const cout = () => { const c = {}; b.querySelectorAll('[data-a]').forEach(x => c[x.dataset.a] = x.checked); const tous = {}; AUTOS.forEach(k => tous[k] = true);
+      b.querySelector('[data-cout]').textContent = `≈ ${coutAutos(b.querySelector('[data-cases]').hidden ? tous : c)} k ${t('jetons_h')}`; };
+    b.querySelectorAll('[data-a]').forEach(x => x.onchange = cout); cout();
+    b.querySelector('[data-tout]').onclick = async () => { const c = {}; AUTOS.forEach(k => c[k] = true); try { await regler(c); } catch (e) { toast(esc(e.message), { erreur: true }); } finir(); };
+    b.querySelector('[data-choix]').onclick = async ev => { const z = b.querySelector('[data-cases]'); if (z.hidden) { z.hidden = false; ev.target.textContent = t('enregistrer'); cout(); placer(null); return; }
+      const c = {}; b.querySelectorAll('[data-a]').forEach(x => c[x.dataset.a] = x.checked); try { await regler(c); } catch (e) { toast(esc(e.message), { erreur: true }); } finir(); };
+    b.querySelector('[data-tard]').onclick = () => finir();
+    requestAnimationFrame(() => placer(null));
+  }
+  function finir() { const b = box(); b.hidden = true; if (cible) cible.classList.remove('tuto-cible'); cible = null; LS.set('tuto_vu', true); }
+  return { lancer() { i = 0; etape(); }, auto() { if (!LS.get('tuto_vu', false) && CONF.mode === 'travail') setTimeout(() => { if (!LS.get('tuto_vu', false)) { i = 0; etape(); } }, 2500); } };
+})();
+window.__parite = { radio: () => Radio.etat(), cout: c => coutAutos(c), tuto: () => Tuto.lancer() };   // essais
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (Panneau.ouvert()) Panneau.fermer(); else $('#notifs').hidden = true; }
   if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); demander('assistant'); }
@@ -1802,8 +2167,10 @@ document.addEventListener('click', e => { const n = $('#notifs'); if (!n.hidden 
     await Roadmap.installer({ langue: LANGUE, barre: document.querySelector('.outils'),
       succes: s => Succes.ajouter({ id: 'rm:' + (s.titre || ''), icone: s.icone, titre: s.titre, sous: s.sous, taille: s.taille, son: s.son, clic: s.clic, cible: { roadmap: true } }) });
     const rb = $('#bt-roadmap'); if (rb) $('.outils').insertBefore(rb, $('#bt-decisions'));
+    { const nav = $('.outils'); ['bt-conv', 'bt-ensemble', 'bt-images', 'bt-journal', 'bt-roadmap', 'bt-decisions', 'bt-assistant', 'bt-optim', 'bt-jassist', 'bt-perso', 'bt-recruter', 'bt-rapport', 'bt-notifs', 'bt-reglages', 'bt-plein', 'bt-couper', 'bt-son'].forEach(id => { const b = $('#' + id); if (b) nav.appendChild(b); }); }
   }
   await Quest.demarrer().catch(e => erreur('questionnaire', e));
+  Tuto.auto();
   setInterval(() => chargerTout().catch(e => erreur('chargement', e)), 10000);
 })();
 </script>

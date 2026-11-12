@@ -94,6 +94,20 @@ Phrases utiles ensuite : « point », « roadmap », « change la roadmap », «
 
 Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te rendre la main, il compare chaque fichier existant à la photo prise au départ et te prévient si l'un d'eux a changé. Aucun commit sans ton accord.
 
+## Nouveautés de la 0.3.1
+
+- **Le même studio que l'original**, adapté à ton projet : barre du haut complète (Vue d'ensemble, Journal, Optimiser, Journal de l'assistant, Personnaliser, Plein écran, **Tout couper**…), ton équipe à gauche, la radio avec les musiques de ton jeu (coupée par défaut), un tutoriel de départ.
+- **Tutoriel et automatismes** : au premier passage, l'assistant présente le studio en 6 bulles, puis propose les automatismes (attribution en fin de tâche, embauches, enchaînement des tâches, point régulier, optimisation) avec une estimation des jetons par heure. Rien ne s'active sans ton choix ; « Tout couper » arrête tout. Tu peux aller te coucher ou au travail et laisser tourner ; avec Remote Control de Claude Code, tu suis depuis ton téléphone et tu peux tout couper.
+- **Tout arrive dans le studio** :
+  - *Crochet Stop (facultatif, seulement avec ton accord)* : chaque réponse de l'assistant est recopiée dans `.studio/journal_assistant.json` et s'affiche dans le studio, avec un champ « Répondre » (micro, touche V) dessous. Il est écrit dans `<projet>/.claude/settings.local.json`, fusionné avec l'existant (copie `.bak`). **Le retirer** : `python -I -B <skill>/studio/outils/installer_crochet.py --projet <projet> --retirer`.
+  - *Questions* : chaque question du chat arrive sous la cloche, et une réponse donnée dans le studio vaut réponse dans le chat.
+  - *Actions sensibles* : un clic dans le studio ne suffit pas pour publier, pousser, supprimer ou dépenser des crédits : Claude Code te demande encore. Pour autoriser une action précise une fois pour toutes, ajoute-la dans `<projet>/.claude/settings.local.json` :
+
+    ```json
+    { "permissions": { "allow": [ "Bash(git push origin main)", "Bash(python -I -B tools/export_build.py:*)" ] } }
+    ```
+    N'y mets que des commandes que tu connais et dont tu acceptes l'effet sans relire.
+
 ## Nouveautés de la 0.2
 
 - **Bulles de décision dans la scène** : quand une décision t'attend, un « ? » doré flotte au-dessus du personnage concerné (sinon au-dessus de l'assistant, avec un compteur). Un clic l'ouvre en grand : choix, champ libre ou micro. Une fois répondue, la bulle s'envole.

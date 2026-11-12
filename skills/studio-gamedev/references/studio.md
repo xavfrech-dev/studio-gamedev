@@ -150,6 +150,16 @@ La **ligne du bandeau** (pictogramme ▶ ⏸ ↔ ☕ ⛔ + tâche, 40 caractère
 
 Traitement d'une demande vocale par Claude : lire le fichier, passer `statut` à `prise`, agir (ou transmettre à l'agent), répondre dans `reponses_assistant.json`, passer `statut` à `faite`. Une question à l'utilisateur : de préférence une décision (`decisions.json`, avec `poste` si elle concerne un personnage) plutôt qu'une réponse qui finit par « ? ». Une demande sensible (publier, supprimer, dépenser des crédits, pousser du code) devient une **décision** dans `decisions.json` ou une question dans la conversation : jamais exécutée sur la seule foi d'une dictée.
 
+### Ajouts 0.3.1
+
+| Fichier | Écrit par | Contenu |
+|---|---|---|
+| `journal_assistant.json` | crochet Stop (`outils/crochet_journal.py`, installé avec accord par `outils/installer_crochet.py`) | `[{id, cree_le, titre, texte, source:"crochet"}]`, 60 dernières réponses de l'assistant (clés et adresses masquées) ; la page les fusionne avec `reponses_assistant.json` |
+| `demandes_vocales/*.json` | page | champ facultatif `en_reponse_a` : id de la réponse ou du rapport sous lequel l'utilisateur a répondu |
+| `reglages.json` | page | `attribution_auto`, `embauche_auto`, `enchainement_auto`, `point_auto`, `optimisation_auto` (tous `false` par défaut, « Tout couper » les remet à `false`), `frequence_rapport_min` |
+| `optimisation.json` | assistant | `{heure, resume, actions_faites:[{titre, detail}], propositions:[{id, titre, detail, gain_estime}]}` : rapport « Optimiser » ; les propositions cochées reviennent en une seule demande |
+| `musique/` | alimentation | copie des musiques du jeu (`sources_musique` de la config, sinon dossiers `music`/`musique` des 3 premiers niveaux du projet ; 20 morceaux, 15 Mo chacun au plus) pour la radio du studio (coupée par défaut) |
+
 ## roadmap.json : la roadmap dans le studio
 
 Écrit par Claude **à la fin du questionnaire** (étape non sautable, `questionnaire.md`, « Roadmap générée ») dans `<projet>/.studio/roadmap.json` (versionné, lu par la page toutes les 10 s). Même contenu que `docs/ROADMAP.md`, mis à jour en même temps à chaque versement. Exemple court : `modeles/roadmap.json`. Textes dans la langue du projet.

@@ -11,7 +11,7 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
                       -> .studio/reponses_questionnaire.json (fusion, écriture atomique)
   /api/profil         {maitre?, assistant?, voix?}                 -> .studio/profil.json (fusion, valeurs bornées)
-  /api/demande        {cible, texte, via}                          -> .studio/demandes_vocales/<horodatage>_<cible>.json
+  /api/demande        {cible, texte, via, sujet?, en_reponse_a?}                          -> .studio/demandes_vocales/<horodatage>_<cible>.json
   /api/repondre       {id, choix?, texte_libre?}                   -> .studio/reponses.json (décision ou question de suivi)
   /api/reglages       {frequence_rapport_min?, attribution_auto?, embauche_auto?}  -> .studio/reglages.json
   /api/confier        {agent, mission, titre?, tache_id?, origine?}  -> .studio/demandes/<horodatage>_<agent>.json (tâche confiée)
@@ -468,6 +468,9 @@ def route_demande(d):
     sujet = texte(d, "sujet", 20)
     if sujet not in ("", "optimisation"):
         raise Refus(400, "sujet : optimisation ou rien")
+    en_rep = texte(d, "en_reponse_a", 120)       # réponse écrite sous une réponse de l'assistant (id de l'entrée)
+    if en_rep and not re.match(r"^[A-Za-z0-9_.:+-]{1,120}$", en_rep):
+        raise Refus(400, "en_reponse_a invalide")
     cle = ("demande", cible, sujet, " ".join(txt.split()).lower())
     deja = doublon(cle)
     if deja:
@@ -478,6 +481,8 @@ def route_demande(d):
     donnees = {"cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}
     if sujet:
         donnees["sujet"] = sujet
+    if en_rep:
+        donnees["en_reponse_a"] = en_rep
     ident = creer_unique(dossier, cible, donnees)
     return doublon(cle, {"ok": True, "id": ident})
 
@@ -820,7 +825,7 @@ def route_repondre(d):
 
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
-    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto") if k in d}
+    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto") if k in d}
     if any(not isinstance(v, bool) for v in bascules.values()):
         raise Refus(400, "réglage marche / arrêt : true ou false")
     if f is None and not bascules:

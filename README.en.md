@@ -94,6 +94,20 @@ It works too, even with a few hours of work and a foundation already in place. T
 
 Claude only creates files in `.studio/` (ignored by git). Before handing back, it compares every existing file with the snapshot taken at the start and tells you if one changed. No commit without your consent.
 
+## What's new in 0.3.1
+
+- **The same studio as the original**, adapted to your project: full top bar (Overview, Log, Optimize, Assistant log, Customize, Full screen, **Stop all**…), your team on the left, a radio playing your game's music (off by default), a first-run tutorial.
+- **Tutorial and automations**: on first run the assistant presents the studio in 6 bubbles, then offers the automations (assignment when a task ends, hiring, task chaining, regular report, optimization) with a tokens-per-hour estimate. Nothing turns on without your choice; “Stop all” stops everything. You can go to bed or to work and let it run; with Claude Code Remote Control you follow from your phone and can stop everything.
+- **Everything lands in the studio**:
+  - *Stop hook (optional, only with your consent)*: each assistant reply is copied to `.studio/journal_assistant.json` and shown in the studio with a “Reply” field (mic, V key). It is written to `<project>/.claude/settings.local.json`, merged with what is there (`.bak` backup). **Remove it**: `python -I -B <skill>/studio/outils/installer_crochet.py --projet <project> --retirer`.
+  - *Questions*: every chat question lands under the bell; an answer given in the studio counts as an answer in the chat.
+  - *Sensitive actions*: a click in the studio is not enough to publish, push, delete or spend credits; Claude Code still asks you. To allow a precise action once and for all, add it to `<project>/.claude/settings.local.json`:
+
+    ```json
+    { "permissions": { "allow": [ "Bash(git push origin main)", "Bash(python -I -B tools/export_build.py:*)" ] } }
+    ```
+    Only list commands you know and accept without review.
+
 ## What's new in 0.2
 
 - **Decision bubbles in the scene**: when a decision is waiting for you, a golden "?" floats above the character concerned (otherwise above the assistant, with a counter). One click opens it full size: choices, free text or microphone. Once answered, the bubble flies away.

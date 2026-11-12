@@ -617,6 +617,52 @@ class Studio:
         return out
 
     # ---------------- mur d'images
+    def musiques(self, conf):
+        """Radio du studio : les musiques du jeu de l'utilisateur, copiées dans .studio/musique/ (servies par le serveur).
+        Sources : conf["sources_musique"] (motifs dans le projet, comme sources_images) ; sinon les dossiers « music » ou
+        « musique » des trois premiers niveaux du projet. Rien s'il n'y en a pas. 20 morceaux, 15 Mo chacun au plus."""
+        motifs = [s_.get("motif") for s_ in (conf.get("sources_musique") or []) if isinstance(s_, dict) and isinstance(s_.get("motif"), str)]
+        if not motifs:
+            motifs = [f"{p}[Mm]usi[cq]*/{e}" for p in ("", "*/", "*/*/") for e in ("*.ogg", "*.mp3")]
+        dossier = self.f("musique")
+        trouves = {}
+        for m in motifs:
+            if "{{" in m:
+                continue
+            racine, motif = self.motif_permis(m)
+            if not motif:
+                continue
+            try:
+                fichiers = glob.glob(motif, recursive=True)[:200]
+            except Exception:
+                continue
+            for p in fichiers:
+                ext = os.path.splitext(p)[1].lower()
+                if ext in (".ogg", ".mp3", ".wav") and dans(os.path.realpath(p), racine) and 0 < os.path.getsize(p) <= 15 * 1024 * 1024:
+                    trouves[p] = ext
+        if not trouves:
+            return []
+        os.makedirs(dossier, exist_ok=True)
+        out, garder = [], set()
+        for p, ext in sorted(trouves.items())[:20]:
+            nom = re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(p))[0])[:60] + ext
+            dst = os.path.join(dossier, nom)
+            try:
+                if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(p):
+                    shutil.copyfile(p, dst + ".tmp")
+                    os.replace(dst + ".tmp", dst)
+            except OSError:
+                continue
+            garder.add(nom)
+            out.append("musique/" + nom)
+        for f in os.listdir(dossier):          # seul le dossier musique/ est nettoyé
+            if f not in garder:
+                try:
+                    os.remove(os.path.join(dossier, f))
+                except OSError:
+                    pass
+        return out
+
     def images(self, conf):
         """Copie les images récentes de sources_images dans .studio/mur/ (servies par le serveur) ; renvoie la liste."""
         mur = self.f("mur")
@@ -737,7 +783,7 @@ class Studio:
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "images": images, "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": sysinfo, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }

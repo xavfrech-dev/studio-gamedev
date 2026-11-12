@@ -1,0 +1,76 @@
+"""Installe (ou retire) le crochet « Stop » du studio dans <projet>/.claude/settings.local.json.
+
+Usage (seulement avec l'accord de l'utilisateur) :
+  python -I -B installer_crochet.py --projet <projet>            installe (fusion avec l'existant, jamais d'écrasement)
+  python -I -B installer_crochet.py --projet <projet> --retirer  retire seulement l'entrée du studio
+Le crochet (crochet_journal.py) recopie chaque réponse de l'assistant dans .studio/journal_assistant.json.
+Une copie de sauvegarde settings.local.json.bak est faite avant toute modification. Bibliothèque standard seulement."""
+import argparse
+import json
+import os
+import shutil
+import sys
+
+ICI = os.path.dirname(os.path.abspath(__file__))
+MARQUE = "crochet_journal.py"
+
+
+def commande():
+    exe = sys.executable or "python"
+    return f'"{exe}" -I -B "{os.path.join(ICI, MARQUE)}"'
+
+
+def lire(chemin):
+    if not os.path.exists(chemin):
+        return {}
+    with open(chemin, encoding="utf-8-sig") as f:
+        d = json.load(f)                      # un fichier illisible fait échouer l'installation : on n'écrase rien
+    if not isinstance(d, dict):
+        raise SystemExit("settings.local.json n'est pas un objet JSON : rien n'est modifié")
+    return d
+
+
+def main():
+    a = argparse.ArgumentParser()
+    a.add_argument("--projet", required=True)
+    a.add_argument("--retirer", action="store_true")
+    o = a.parse_args()
+    dossier = os.path.join(os.path.abspath(o.projet), ".claude")
+    chemin = os.path.join(dossier, "settings.local.json")
+    try:
+        d = lire(chemin)
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"settings.local.json illisible ({e}) : rien n'est modifié")
+    hooks = d.setdefault("hooks", {})
+    stop = hooks.setdefault("Stop", [])
+    if not isinstance(stop, list):
+        raise SystemExit("hooks.Stop n'est pas une liste : rien n'est modifié")
+    deja = [g for g in stop if isinstance(g, dict) and any(MARQUE in str(h.get("command", "")) for h in g.get("hooks", []) if isinstance(h, dict))]
+    if o.retirer:
+        if not deja:
+            print("rien à retirer")
+            return
+        hooks["Stop"] = [g for g in stop if g not in deja]
+        if not hooks["Stop"]:
+            del hooks["Stop"]
+        if not hooks:
+            del d["hooks"]
+        msg = "crochet du studio retiré"
+    else:
+        if deja:
+            print("déjà installé")
+            return
+        stop.append({"hooks": [{"type": "command", "command": commande(), "timeout": 20}]})
+        msg = "crochet du studio installé"
+    os.makedirs(dossier, exist_ok=True)
+    if os.path.exists(chemin):
+        shutil.copyfile(chemin, chemin + ".bak")
+    tmp = chemin + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, chemin)
+    print(f"{msg} : {chemin}")
+
+
+if __name__ == "__main__":
+    main()
