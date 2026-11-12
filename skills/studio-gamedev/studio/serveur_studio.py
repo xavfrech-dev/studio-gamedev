@@ -659,7 +659,7 @@ def nb_bureaux(conf):
 
 def garde_embauche_auto(conf, nom):
     """Embauche décidée par le studio : réglage activé, une par heure, 12 bureaux, jamais un ancien renvoyé."""
-    if not reglage("embauche_auto"):
+    if not reglage("embauche_auto") and not reglage("tyrannie_auto"):
         raise Refus(403, "embauches automatiques coupées (Réglages ou economie.embauche_auto)")
     if nb_bureaux(conf) >= NB_BUREAUX:
         raise Refus(409, f"le studio a déjà {NB_BUREAUX} bureaux")
@@ -716,8 +716,9 @@ def route_confier(d):
         autos = [(x, st) for _, x, st in demandes_du_poste(agent) if str(x.get("origine", "")).startswith("auto:")]
         if sum(1 for _, st in autos if not st.startswith(FINIS)) >= AUTO_ATTENTE_MAX:
             raise Refus(429, f"« {agent} » a déjà une attribution automatique en attente")
-        if sum(1 for x, _ in autos if time.time() - iso_t(x.get("cree_le")) < 3600) >= AUTO_PAR_HEURE:
-            raise Refus(429, f"{AUTO_PAR_HEURE} attributions automatiques par heure au plus pour « {agent} »")
+        plafond = 6 if reglage("tyrannie_auto") else AUTO_PAR_HEURE
+        if sum(1 for x, _ in autos if time.time() - iso_t(x.get("cree_le")) < 3600) >= plafond:
+            raise Refus(429, f"{plafond} attributions automatiques par heure au plus pour « {agent} »")
     donnees = {"nom": agent, "type": "tache", "titre": titre or court_titre(mission), "mission": mission, "origine": origine,
                "lancer": True, "statut": "nouvelle", "cree_le": maintenant()}
     if tache:
@@ -825,10 +826,13 @@ def route_repondre(d):
 
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
-    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto") if k in d}
+    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent") if k in d}
+    ordre = d.get("ordre_equipe")
+    if ordre is not None and (not isinstance(ordre, list) or len(ordre) > 60 or any(not isinstance(x, str) or not ID_RE.match(x) for x in ordre)):
+        raise Refus(400, "ordre_equipe : liste d'identifiants")
     if any(not isinstance(v, bool) for v in bascules.values()):
         raise Refus(400, "réglage marche / arrêt : true ou false")
-    if f is None and not bascules:
+    if f is None and not bascules and ordre is None:
         raise Refus(400, "aucun réglage")
     if f is not None and f not in (15, 30, 60, 120):
         raise Refus(400, "fréquence : 15, 30, 60 ou 120")
@@ -838,6 +842,14 @@ def route_reglages(d):
         r = {}
     if f is not None:
         r["frequence_rapport_min"] = f
+    if "mode_absent" in bascules:                 # mode nuit / absent : silence vers l'utilisateur, le studio continue
+        if bascules["mode_absent"] and not r.get("mode_absent"):
+            r["mode_absent_depuis"] = maintenant()
+        elif not bascules["mode_absent"] and r.get("mode_absent"):
+            r["absence_derniere"] = {"debut": r.get("mode_absent_depuis"), "fin": maintenant()}
+            r.pop("mode_absent_depuis", None)
+    if ordre is not None:
+        r["ordre_equipe"] = ordre
     r.update(bascules, maj=maintenant())
     ecrire_json(chemin, r)
     return {"ok": True, "reglages": r}

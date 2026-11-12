@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.4] - 2026-11-13
+
+### Ajouté
+- Tyrannie (réglage `tyrannie_auto`, coupé par défaut) : l'assistant devient contremaître. Il va voir les personnages inactifs avec une remontrance courte et drôle, l'attribution de fin de tâche passe à 30 s (6 par heure au plus, revérifié par le serveur), il dépose une demande listant les inactifs, embauche quand un métier manque et renvoie lui-même une recrue à 100 % sans travail de son métier depuis 30 min (le serveur refuse si une tâche est en cours), avec « Réintégrer » pendant 10 min. Sa barre dans le groupe = taux d'occupation de l'équipe. « Tout couper » la met en pause.
+- Bouton « chat » à côté du gros micro : petite fenêtre de saisie (Entrée = envoyer, Maj+Entrée = retour à la ligne, Échap = fermer), destinataire au choix, « envoyé » et message dans la conversation.
+- Ordre du groupe à gauche : glisser-déposer à la souris et au doigt, flèches haut et bas, enregistré dans `reglages.json` (`ordre_equipe`, d'un appareil à l'autre), nouveaux à la fin, bouton « ordre par défaut ».
+- Mode nuit / absent : plus aucune notification (sons d'événements, toasts, rapport plein écran, notifications du système), le studio continue de vivre et note tout ; `mode_absent` dans `reglages.json` ; lune discrète ; au retour, rapport « Pendant ton absence » (durée, ce qui a fini, équipe, décisions qui attendent, problèmes), une fois, et gardé au journal.
+
 ## [0.3.3] - 2026-11-13
 
 ### Ajouté

@@ -96,6 +96,7 @@ Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te r
 
 ## Nouveautés de la 0.3.1
 
+- **0.3.4 : tyrannie, chat, ordre du groupe, mode nuit** : un contremaître facultatif remet les inactifs au travail (coupé par défaut) ; un bouton chat à côté du micro ; le groupe se réorganise au glisser-déposer ; le mode nuit coupe toutes les notifications et te fait un résumé « Pendant ton absence » au retour.
 - **0.3.3 : gros micro et bulles d'infos** : un gros micro en bas de l'écran (ou la barre d'espace) pour parler au studio ; au survol d'un personnage, une bulle montre sa tâche, son pourcentage et son temps restant. Si le navigateur bloque le micro, le studio dit comment l'autoriser.
 - **0.3.2 : zoom et caméra** : molette pour zoomer, cliquer-glisser pour te déplacer, double-clic, boutons +, − et « recentrer » ; un clic sur un personnage le recentre.
 

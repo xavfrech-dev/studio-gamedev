@@ -96,6 +96,7 @@ Claude only creates files in `.studio/` (ignored by git). Before handing back, i
 
 ## What's new in 0.3.1
 
+- **0.3.4: tyranny, chat, team order, night mode**: an optional foreman puts idle agents back to work (off by default); a chat button next to the microphone; drag-and-drop the team list; night mode silences every notification and gives you a “While you were away” summary when you return.
 - **0.3.3: big microphone and info bubbles**: a big microphone at the bottom of the screen (or the space bar) to talk to the studio; hovering a character shows its task, percentage and time left. If the browser blocks the microphone, the studio explains how to allow it.
 - **0.3.2: zoom and camera**: mouse wheel to zoom, click-and-drag to move, double-click, +, − and “recenter” buttons; clicking a character recenters on it.
 

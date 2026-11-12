@@ -156,7 +156,7 @@ Traitement d'une demande vocale par Claude : lire le fichier, passer `statut` à
 |---|---|---|
 | `journal_assistant.json` | crochet Stop (`outils/crochet_journal.py`, installé avec accord par `outils/installer_crochet.py`) | `[{id, cree_le, titre, texte, source:"crochet"}]`, 60 dernières réponses de l'assistant (clés et adresses masquées) ; la page les fusionne avec `reponses_assistant.json` |
 | `demandes_vocales/*.json` | page | champ facultatif `en_reponse_a` : id de la réponse ou du rapport sous lequel l'utilisateur a répondu |
-| `reglages.json` | page | `attribution_auto`, `embauche_auto`, `enchainement_auto`, `point_auto`, `optimisation_auto` (tous `false` par défaut, « Tout couper » les remet à `false`), `frequence_rapport_min` |
+| `reglages.json` | page | `attribution_auto`, `embauche_auto`, `enchainement_auto`, `point_auto`, `optimisation_auto`, `tyrannie_auto` (tous `false` par défaut, « Tout couper » les remet à `false`), `frequence_rapport_min`, `mode_absent` (+ `mode_absent_depuis`, `absence_derniere`), `ordre_equipe` (ordre du groupe à gauche) |
 | `optimisation.json` | assistant | `{heure, resume, actions_faites:[{titre, detail}], propositions:[{id, titre, detail, gain_estime}]}` : rapport « Optimiser » ; les propositions cochées reviennent en une seule demande |
 | `musique/` | alimentation | copie des musiques du jeu (`sources_musique` de la config, sinon dossiers `music`/`musique` des 3 premiers niveaux du projet ; 20 morceaux, 15 Mo chacun au plus) pour la radio du studio (coupée par défaut) |
 
