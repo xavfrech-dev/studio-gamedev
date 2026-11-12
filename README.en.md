@@ -76,6 +76,14 @@ It works too, even with a few hours of work and a foundation already in place. T
 
 Claude only creates files in `.studio/` (ignored by git). Before handing back, it compares every existing file with the snapshot taken at the start and tells you if one changed. No commit without your consent.
 
+## What's new in 0.2
+
+- **Decision bubbles in the scene**: when a decision is waiting for you, a golden "?" floats above the character concerned (otherwise above the assistant, with a counter). One click opens it full size: choices, free text or microphone. Once answered, the bubble flies away.
+- **Conversation with the assistant** (new button): your messages with their status (posted, read, handled), its replies and its decisions with buttons. If a reply ends with a question but no decision, an "The assistant is asking you something" bubble shows up.
+- **End of task**: a character who has finished goes to wait next to the assistant. Its card offers "Give them a task", "Find yourself a task" or "Leave on break". Nothing starts without you, unless you turn on automatic assignment.
+- **Hiring and letting go**: a "Let go…" button on hires (with confirmation, refused while a task is running, nothing is deleted) and a "Former staff" list to rehire. The studio may suggest letting someone go under the bell, never does it on its own.
+- **Sturdier**: a watchdog (`studio/veille_studio.py`) restarts the feeder if it stops; red banner when the page state is more than a minute old; unreadable file skipped and reported; requests never overwritten.
+
 ## Token cost
 
 The studio makes Claude work, so it uses your subscription (or API key). The defaults are the most frugal:
@@ -88,10 +96,13 @@ The studio makes Claude work, so it uses your subscription (or API key). The def
 | `point_si_changement` | `true` | no report when nothing changed |
 | `enchainer` | `false` | a finished task does not start the next one without your approval: nothing runs while you are away |
 | `pause_si_absent_min` | 60 | after an hour without hearing from you, nothing new is started |
+| `optimisation_auto` | `false` | no automatic project analysis (an optimisation request: only one pending, 30 min between two) |
+| `attribution_auto` | `false` | at the end of a task, the character **waits for your choice**; at `true`, with no answer within 2 min the assistant gives it the next task (1 pending per character, 4 per hour) |
+| `embauche_auto` | `false` | a trade is missing: the studio **reports it**; at `true`, it hires on its own (1 per hour, 12 desks, a hire is never started automatically) |
 
 During the questionnaire, Claude waits for your answers with a small script that costs nothing (`attendre.py`): it never re-reads the page in a loop.
 
-These settings live in `.studio/studio.config.json`, `economie` block. The easiest way is to ask Claude: "chain the tasks", "a report every hour", "three agents". It never changes them on its own.
+These settings live in `.studio/studio.config.json`, `economie` block. The easiest way is to ask Claude: "chain the tasks", "a report every hour", "three agents". It never changes them on its own. `attribution_auto` and `embauche_auto` can also be set in the page ("Settings"); when off, the server refuses these automations. Letting someone go is never automatic.
 
 ## Voice (optional)
 
@@ -106,7 +117,7 @@ These settings live in `.studio/studio.config.json`, `economie` block. The easie
 - The studio stores no API key.
 - If you open a project you did not create (a cloned repository), Claude shows you its configuration and waits for your approval before starting anything.
 
-## Limits of version 0.1
+## Limits of version 0.2
 
 - Developed and tested on Windows. macOS and Linux should work (standard-library Python only) but have not been tested yet.
 - Claude does not drive your engine for you: it writes the code and runs what can be run from the command line (builds, tests). What shows on screen is yours to judge.
@@ -143,7 +154,7 @@ Then open the address shown (`http://127.0.0.1:8810/studio.html`, or the next fr
 | `skills/studio-gamedev/SKILL.md` | The skill's flow (phases 0 to 6) |
 | `skills/studio-gamedev/references/` | Questionnaire, skill routing, working rules, deliverables, studio contract |
 | `skills/studio-gamedev/modeles/` | Templates: GDD, ROADMAP, DECISIONS, CLAUDE.md, agent, config, profile, roadmap |
-| `skills/studio-gamedev/studio/` | The studio page, its local server, the office feeder, the questionnaire, 264 code-drawn SVG illustrations |
+| `skills/studio-gamedev/studio/` | The studio page, its local server, the office feeder and its watchdog, the questionnaire, 264 code-drawn SVG illustrations |
 | `commands/studio.md` | The `/studio-gamedev:studio` command |
 | `.claude-plugin/` | Plugin and marketplace manifests |
 

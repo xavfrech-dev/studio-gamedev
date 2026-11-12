@@ -22,6 +22,8 @@
     "enchainer": false,
     "pause_si_absent_min": 60,
     "optimisation_auto": false,
+    "attribution_auto": false,
+    "embauche_auto": false,
     "attente_max_s": 1800
   },
   "regles_agent": [

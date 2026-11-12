@@ -13,7 +13,10 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/profil         {maitre?, assistant?, voix?}                 -> .studio/profil.json (fusion, valeurs bornées)
   /api/demande        {cible, texte, via}                          -> .studio/demandes_vocales/<horodatage>_<cible>.json
   /api/repondre       {id, choix?, texte_libre?}                   -> .studio/reponses.json (décision ou question de suivi)
-  /api/reglages       {frequence_rapport_min}                      -> .studio/reglages.json
+  /api/reglages       {frequence_rapport_min?, attribution_auto?, embauche_auto?}  -> .studio/reglages.json
+  /api/confier        {agent, mission, titre?, tache_id?, origine?}  -> .studio/demandes/<horodatage>_<agent>.json (tâche confiée)
+  /api/renvoyer       {nom, motif?}                                -> recrue archivée : .studio/recrues/_anciens/, .studio/anciens/agents/
+  /api/reembaucher    {nom}                                        -> remet une recrue archivée dans l'équipe (lancer: false)
   /api/recruter       {nom, nom_affiche?, role, mission, poste?, couleur?, apparence?, skills?, lancer?, remplacer?, via?}
                       -> <dossier_agents>/<nom>.md (définition d'agent, dans le projet seulement),
                          .studio/recrues/<nom>.json (+ recrues/index.json), .studio/demandes/<horodatage>_<nom>.json
@@ -21,6 +24,11 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
 
 Sécurité : écoute 127.0.0.1 seulement ; en-têtes Host et Origin vérifiés (page du même serveur) ;
 corps JSON ≤ 64 Ko ; champs bornés ; écriture seulement dans les fichiers ci-dessus ; aucune commande exécutée.
+Demandes : nom unique (millisecondes + code au hasard) créé en mode exclusif, jamais d'écrasement ; la même demande
+(même route, même cible, même texte) reçue deux fois en moins de 60 s n'est écrite qu'une fois.
+Automatismes (attribution en fin de tâche, embauche) : refusés tant que le réglage n'est pas activé (economie ou
+reglages.json, coupés par défaut) ; au plus une attribution automatique en attente par poste et 4 par heure ;
+au plus une embauche automatique par heure, 12 bureaux. Un renvoi n'efface rien (archivage, réembauche possible).
 Un recrutement n'exécute rien : il écrit une demande que Claude lit (SKILL.md, « Demandes ») avant de lancer l'agent.
 « remplacer » n'écrase qu'une recrue écrite par ce studio (fiche recrues/<nom>.json + marque dans le fichier),
 jamais un agent écrit à la main ni un lien ; les règles de la config injectées dans l'agent sont bornées (20 × 200 caractères).
@@ -65,6 +73,14 @@ SOURCES = {"utilisateur", "deduit", "a_confirmer", "voix_a_interpreter"}
 VIAS = {"clic", "ecrit", "voix", "passer", "analyse"}
 ETATS = {"en_cours", "termine"}
 MODES = {"rapide", "complet", "adoption"}
+ORIGINE_RE = re.compile(r"^(page|tache:[A-Za-z0-9_.:-]{1,80}|auto:fin-de-tache)$")
+NB_BUREAUX = 12
+DOUBLON_S = 60
+AUTO_ATTENTE_MAX = 1        # attribution automatique : une seule en attente par poste
+AUTO_PAR_HEURE = 4          # … et 4 par heure et par poste au plus
+EMBAUCHE_AUTO_DELAI_S = 3600
+OPTIM_DELAI_MIN = 30
+FINIS = ("fini", "faite", "écart", "ecart", "annul", "pas lancé")
 
 # Valeurs permises de profil.json (references/questionnaire.md, « Format de profil.json »)
 PERMIS = {
@@ -140,6 +156,52 @@ def valeur_reponse(v):
 class Etat:
     projet = ""
     studio = ""  # <projet>/.studio
+
+
+def creer_unique(dossier, suffixe, donnees):
+    """Fichier au nom unique (horodatage, millisecondes + code au hasard), créé en mode exclusif : jamais d'écrasement."""
+    os.makedirs(dossier, exist_ok=True)
+    for _ in range(20):
+        t = time.time()
+        ident = time.strftime("%Y%m%d-%H%M%S", time.localtime(t)) + f"-{int(t * 1000) % 1000:03d}{os.urandom(2).hex()}_{suffixe}"
+        try:
+            with open(os.path.join(dossier, ident + ".json"), "x", encoding="utf-8") as f:
+                json.dump(dict(donnees, id=ident), f, ensure_ascii=False, indent=1)
+            return ident
+        except FileExistsError:
+            continue
+    raise Refus(503, "impossible de créer la demande")
+
+
+_RECENTS = {}
+
+
+def doublon(cle, resultat=None):
+    """Même demande (même route, même cible, même texte) en moins de 60 s : on renvoie le premier résultat."""
+    t = time.time()
+    for k in [k for k, (tk, _) in _RECENTS.items() if t - tk > DOUBLON_S]:
+        del _RECENTS[k]
+    if resultat is None:
+        return _RECENTS.get(cle, (0, None))[1]
+    _RECENTS[cle] = (t, resultat)
+    return resultat
+
+
+def reglage(nom):
+    """Marche / arrêt d'un automatisme : reglages.json (page), sinon economie de la config, sinon coupé."""
+    r = lire_json(os.path.join(Etat.studio, "reglages.json"), {})
+    if isinstance(r, dict) and isinstance(r.get(nom), bool):
+        return r[nom]
+    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    eco = conf.get("economie") if isinstance(conf, dict) and isinstance(conf.get("economie"), dict) else {}
+    return eco.get(nom) is True
+
+
+def iso_t(s):
+    try:
+        return time.mktime(time.strptime(str(s)[:19], "%Y-%m-%dT%H:%M:%S"))
+    except (ValueError, OverflowError):
+        return 0
 
 
 class Studio(SimpleHTTPRequestHandler):
@@ -247,7 +309,8 @@ class Studio(SimpleHTTPRequestHandler):
                 raise Refus(400, "objet JSON attendu")
             action = {"/api/questionnaire": route_questionnaire, "/api/profil": route_profil, "/api/demande": route_demande,
                       "/api/repondre": route_repondre, "/api/reglages": route_reglages,
-                      "/api/recruter": route_recruter}.get(route)
+                      "/api/recruter": route_recruter, "/api/confier": route_confier,
+                      "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher}.get(route)
             if not action:
                 raise Refus(404, "route inconnue")
             with VERROU:
@@ -402,11 +465,35 @@ def route_demande(d):
     via = texte(d, "via", 10) or "ecrit"
     if via not in ("voix", "ecrit"):
         raise Refus(400, "via : voix ou ecrit")
+    sujet = texte(d, "sujet", 20)
+    if sujet not in ("", "optimisation"):
+        raise Refus(400, "sujet : optimisation ou rien")
+    cle = ("demande", cible, sujet, " ".join(txt.split()).lower())
+    deja = doublon(cle)
+    if deja:
+        return dict(deja, doublon=True)
     dossier = os.path.join(Etat.studio, "demandes_vocales")
-    ident = time.strftime("%Y%m%d-%H%M%S") + f"-{int(time.time() * 1000) % 1000:03d}_{cible}"
-    ecrire_json(os.path.join(dossier, ident + ".json"),
-                {"id": ident, "cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"})
-    return {"ok": True, "id": ident}
+    if sujet == "optimisation":
+        garde_optimisation(dossier)
+    donnees = {"cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}
+    if sujet:
+        donnees["sujet"] = sujet
+    ident = creer_unique(dossier, cible, donnees)
+    return doublon(cle, {"ok": True, "id": ident})
+
+
+def garde_optimisation(dossier):
+    """Une seule demande d'optimisation en attente, et au moins 30 min entre deux."""
+    for f in sorted(os.listdir(dossier) if os.path.isdir(dossier) else [], reverse=True):
+        d = lire_json(os.path.join(dossier, f), None) if f.endswith(".json") else None
+        if not isinstance(d, dict) or d.get("sujet") != "optimisation":
+            continue
+        age = (time.time() - (iso_t(d.get("cree_le")) or os.path.getmtime(os.path.join(dossier, f)))) / 60
+        if age < OPTIM_DELAI_MIN:
+            raise Refus(429, f"optimisation déjà demandée il y a {int(age)} min (une toutes les {OPTIM_DELAI_MIN} min au plus)")
+        if d.get("statut") in ("nouvelle", "prise") and age < 6 * 60:
+            raise Refus(429, f"la demande d'optimisation d'il y a {int(age)} min attend encore sa réponse")
+        return
 
 
 def ids_postes():
@@ -523,6 +610,10 @@ def route_recruter(d):
     if via not in ("voix", "ecrit"):
         raise Refus(400, "via : voix ou ecrit")
     lancer, remplacer = d.get("lancer") is True, d.get("remplacer") is True
+    auto = d.get("auto") is True
+    if auto:
+        garde_embauche_auto(conf, nom)
+        lancer, remplacer = False, False
     agents = dossier_agents(conf)
     chemin_agent = os.path.join(agents, nom + ".md")
     if os.path.islink(chemin_agent) or (os.path.exists(chemin_agent) and not os.path.isfile(chemin_agent)):
@@ -543,16 +634,169 @@ def route_recruter(d):
         f.write(definition_agent(conf, v))
     os.replace(chemin_agent + ".tmp", chemin_agent)
     t = maintenant()
-    fiche = dict(v, couleur=couleur, apparence=apparence, lancer=lancer, via=via, cree_le=t,
+    fiche = dict(v, couleur=couleur, apparence=apparence, lancer=lancer, via=via, cree_le=t, origine="auto:embauche" if auto else "page",
                  agent=os.path.relpath(chemin_agent, Etat.projet).replace("\\", "/"))
     ecrire_json(os.path.join(Etat.studio, "recrues", nom + ".json"), fiche)
     idx_ch = os.path.join(Etat.studio, "recrues", "index.json")
     idx = lire_json(idx_ch, [])
     idx = [x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x != nom][-40:] + [nom]
     ecrire_json(idx_ch, idx)
-    ident = time.strftime("%Y%m%d-%H%M%S") + f"-{int(time.time() * 1000) % 1000:03d}_{nom}"
-    ecrire_json(os.path.join(Etat.studio, "demandes", ident + ".json"), dict(fiche, id=ident, type="recrutement", statut="nouvelle"))
+    ident = creer_unique(os.path.join(Etat.studio, "demandes"), nom, dict(fiche, type="recrutement", statut="nouvelle"))
     return {"ok": True, "fiche": fiche, "demande": "demandes/" + ident + ".json", "agent": fiche["agent"]}
+
+
+def nb_bureaux(conf):
+    base = [p for p in (conf.get("postes") or []) if isinstance(p, dict) and p.get("id")][:9]
+    ids = {p["id"] for p in base}
+    idx = lire_json(os.path.join(Etat.studio, "recrues", "index.json"), [])
+    return len(base) + len([x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x not in ids])
+
+
+def garde_embauche_auto(conf, nom):
+    """Embauche décidée par le studio : réglage activé, une par heure, 12 bureaux, jamais un ancien renvoyé."""
+    if not reglage("embauche_auto"):
+        raise Refus(403, "embauches automatiques coupées (Réglages ou economie.embauche_auto)")
+    if nb_bureaux(conf) >= NB_BUREAUX:
+        raise Refus(409, f"le studio a déjà {NB_BUREAUX} bureaux")
+    if os.path.exists(os.path.join(Etat.studio, "recrues", "_anciens", nom + ".json")):
+        raise Refus(409, f"« {nom} » a été renvoyé : seule une réembauche à la main le fait revenir")
+    dossier = os.path.join(Etat.studio, "recrues")
+    for f in (os.listdir(dossier) if os.path.isdir(dossier) else []):
+        x = lire_json(os.path.join(dossier, f), None) if f.endswith(".json") else None
+        if isinstance(x, dict) and x.get("origine") == "auto:embauche" and time.time() - iso_t(x.get("cree_le")) < EMBAUCHE_AUTO_DELAI_S:
+            raise Refus(429, "une embauche automatique par heure au plus")
+
+
+def demandes_du_poste(agent):
+    """[(fichier, demande, statut)] des demandes de .studio/demandes/ adressées à ce poste."""
+    dossier = os.path.join(Etat.studio, "demandes")
+    statuts = lire_json(os.path.join(dossier, "statuts.json"), {})
+    statuts = statuts if isinstance(statuts, dict) else {}
+    out = []
+    for f in sorted(os.listdir(dossier) if os.path.isdir(dossier) else []):
+        if not f.endswith(".json") or f == "statuts.json":
+            continue
+        x = lire_json(os.path.join(dossier, f), None)
+        if isinstance(x, dict) and (x.get("nom") or x.get("cible")) == agent:
+            st = statuts.get(f) if isinstance(statuts.get(f), dict) else {}
+            out.append((f, x, str(st.get("statut") or x.get("statut") or "nouvelle").lower()))
+    return out
+
+
+def court_titre(s):
+    s = " ".join(s.split())
+    return s if len(s) <= 120 else s[:119] + "…"
+
+
+def route_confier(d):
+    """Tâche confiée à un poste (fiche du personnage, fin de tâche) : une demande que Claude lit, rien n'est lancé."""
+    agent = texte(d, "agent", 40, True).lower()
+    if not CIBLE_RE.match(agent) or agent not in ids_postes():
+        raise Refus(404, "poste inconnu")
+    mission = texte(d, "mission", 4000, True)
+    titre = texte(d, "titre", 200).replace("\n", " ")
+    tache = texte(d, "tache_id", 80)
+    if tache and not ID_RE.match(tache):
+        raise Refus(400, "tache_id invalide")
+    origine = texte(d, "origine", 100) or ("tache:" + tache if tache else "page")
+    if not ORIGINE_RE.match(origine):
+        raise Refus(400, "origine invalide")
+    cle = ("confier", agent, origine, " ".join(mission.split()).lower())
+    deja = doublon(cle)
+    if deja:
+        return dict(deja, doublon=True)
+    if origine.startswith("auto:"):
+        if not reglage("attribution_auto"):
+            raise Refus(403, "attribution automatique coupée (Réglages ou economie.attribution_auto)")
+        autos = [(x, st) for _, x, st in demandes_du_poste(agent) if str(x.get("origine", "")).startswith("auto:")]
+        if sum(1 for _, st in autos if not st.startswith(FINIS)) >= AUTO_ATTENTE_MAX:
+            raise Refus(429, f"« {agent} » a déjà une attribution automatique en attente")
+        if sum(1 for x, _ in autos if time.time() - iso_t(x.get("cree_le")) < 3600) >= AUTO_PAR_HEURE:
+            raise Refus(429, f"{AUTO_PAR_HEURE} attributions automatiques par heure au plus pour « {agent} »")
+    donnees = {"nom": agent, "type": "tache", "titre": titre or court_titre(mission), "mission": mission, "origine": origine,
+               "lancer": True, "statut": "nouvelle", "cree_le": maintenant()}
+    if tache:
+        donnees["tache_id"] = tache
+    ident = creer_unique(os.path.join(Etat.studio, "demandes"), agent, donnees)
+    return doublon(cle, {"ok": True, "demande": "demandes/" + ident + ".json", "agent": agent})
+
+
+def recrue_occupee(nom):
+    """Raison pour laquelle une recrue ne peut pas partir (tâche en cours), sinon None."""
+    for f, _, st in demandes_du_poste(nom):
+        if not st.startswith(FINIS):
+            return f"demande {f} pas finie ({st})"
+    ch = os.path.join(Etat.studio, "progression", nom + ".json")
+    p = lire_json(ch, None)
+    if isinstance(p, dict) and isinstance(p.get("pct"), (int, float)) and p["pct"] < 100 and time.time() - os.path.getmtime(ch) < 30 * 60:
+        return f"travaille encore ({p['pct']} %)"
+    return None
+
+
+def index_noms(chemin, ajouter=None, retirer=None):
+    idx = lire_json(chemin, [])
+    idx = [x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x not in (ajouter, retirer)]
+    if ajouter:
+        idx.append(ajouter)
+    ecrire_json(chemin, idx[-60:])
+
+
+def route_renvoyer(d):
+    """Renvoi d'une recrue (jamais un poste de la config) : rien n'est effacé. La fiche va dans recrues/_anciens/,
+    la définition d'agent (seulement si elle porte la marque des recrues) dans .studio/anciens/agents/ : hors du
+    dossier des agents, elle n'est plus chargée ; « réembaucher » remet tout en place."""
+    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    nom = texte(d, "nom", 40, True).lower()
+    if nom in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
+        raise Refus(403, "les postes de base du studio ne se renvoient pas")
+    fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
+    if not NOM_RE.match(nom) or nom in NOMS_RESERVES or not os.path.isfile(fiche_ch):
+        raise Refus(404, f"recrue « {nom} » inconnue")
+    occupe = recrue_occupee(nom)
+    if occupe:
+        raise Refus(409, f"« {nom} » a une tâche en cours : {occupe}")
+    fiche = lire_json(fiche_ch, {}) or {}
+    fiche.update(renvoye_le=maintenant(), motif=texte(d, "motif", 200))
+    ecrire_json(os.path.join(Etat.studio, "recrues", "_anciens", nom + ".json"), fiche)
+    os.remove(fiche_ch)
+    agent = os.path.join(dossier_agents(conf), nom + ".md")
+    if os.path.isfile(agent) and not os.path.islink(agent):
+        try:
+            with open(agent, encoding="utf-8-sig", errors="replace") as f:
+                marque = MARQUE_RECRUE in f.read(4096)
+        except OSError:
+            marque = False
+        if marque:
+            os.makedirs(os.path.join(Etat.studio, "anciens", "agents"), exist_ok=True)
+            os.replace(agent, os.path.join(Etat.studio, "anciens", "agents", nom + ".md"))
+    index_noms(os.path.join(Etat.studio, "recrues", "index.json"), retirer=nom)
+    index_noms(os.path.join(Etat.studio, "recrues", "_anciens", "index.json"), ajouter=nom)
+    return {"ok": True, "renvoye": nom}
+
+
+def route_reembaucher(d):
+    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    nom = texte(d, "nom", 40, True).lower()
+    anc_f = os.path.join(Etat.studio, "recrues", "_anciens", nom + ".json")
+    if not NOM_RE.match(nom) or not os.path.isfile(anc_f):
+        raise Refus(404, f"ancien « {nom} » inconnu")
+    agent = os.path.join(dossier_agents(conf), nom + ".md")
+    if os.path.exists(os.path.join(Etat.studio, "recrues", nom + ".json")) or os.path.exists(agent):
+        raise Refus(409, f"« {nom} » existe déjà dans l'équipe")
+    if nb_bureaux(conf) >= NB_BUREAUX:
+        raise Refus(409, f"le studio a déjà {NB_BUREAUX} bureaux")
+    fiche = lire_json(anc_f, {}) or {}
+    fiche.pop("renvoye_le", None)
+    fiche.update(reembauche_le=maintenant(), lancer=False)
+    ecrire_json(os.path.join(Etat.studio, "recrues", nom + ".json"), fiche)
+    os.remove(anc_f)
+    anc_a = os.path.join(Etat.studio, "anciens", "agents", nom + ".md")
+    if os.path.isfile(anc_a):
+        os.makedirs(os.path.dirname(agent), exist_ok=True)
+        os.replace(anc_a, agent)
+    index_noms(os.path.join(Etat.studio, "recrues", "index.json"), ajouter=nom)
+    index_noms(os.path.join(Etat.studio, "recrues", "_anciens", "index.json"), retirer=nom)
+    return {"ok": True, "reembauche": nom, "fiche": fiche}
 
 
 def route_repondre(d):
@@ -564,9 +808,9 @@ def route_repondre(d):
     if not choix and not libre:
         raise Refus(400, "choisir une option ou écrire une réponse")
     chemin = os.path.join(Etat.studio, "reponses.json")
-    reponses = lire_json(chemin, [])
+    reponses = lire_json(chemin, None) if os.path.exists(chemin) else []
     if not isinstance(reponses, list):
-        reponses = []
+        raise Refus(503, "reponses.json illisible : rien n'est écrit (répare-le ou renomme-le)")
     reponses = [r for r in reponses if not (isinstance(r, dict) and r.get("id") == id_)]
     r = {"id": id_, "choix": choix, "texte_libre": libre, "repondu_le": maintenant()}
     reponses.append(r)
@@ -576,13 +820,20 @@ def route_repondre(d):
 
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
-    if f not in (15, 30, 60, 120):
+    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto") if k in d}
+    if any(not isinstance(v, bool) for v in bascules.values()):
+        raise Refus(400, "réglage marche / arrêt : true ou false")
+    if f is None and not bascules:
+        raise Refus(400, "aucun réglage")
+    if f is not None and f not in (15, 30, 60, 120):
         raise Refus(400, "fréquence : 15, 30, 60 ou 120")
     chemin = os.path.join(Etat.studio, "reglages.json")
     r = lire_json(chemin, {})
     if not isinstance(r, dict):
         r = {}
-    r.update(frequence_rapport_min=f, maj=maintenant())
+    if f is not None:
+        r["frequence_rapport_min"] = f
+    r.update(bascules, maj=maintenant())
     ecrire_json(chemin, r)
     return {"ok": True, "reglages": r}
 

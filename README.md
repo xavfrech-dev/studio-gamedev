@@ -76,6 +76,14 @@ Phrases utiles ensuite : « point », « roadmap », « change la roadmap », «
 
 Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te rendre la main, il compare chaque fichier existant à la photo prise au départ et te prévient si l'un d'eux a changé. Aucun commit sans ton accord.
 
+## Nouveautés de la 0.2
+
+- **Bulles de décision dans la scène** : quand une décision t'attend, un « ? » doré flotte au-dessus du personnage concerné (sinon au-dessus de l'assistant, avec un compteur). Un clic l'ouvre en grand : choix, champ libre ou micro. Une fois répondue, la bulle s'envole.
+- **Conversation avec l'assistant** (nouveau bouton) : tes messages avec leur statut (déposé, lu, traité), ses réponses et ses décisions avec boutons. Si sa réponse finit par une question sans décision, une bulle « L'assistant te pose une question » apparaît.
+- **Fin de tâche** : le personnage qui a fini va attendre près de l'assistant. Sa fiche propose « Lui confier une tâche », « Trouve-toi une tâche » ou « Laisser en pause ». Rien n'est lancé sans toi, sauf si tu actives l'attribution automatique.
+- **Embauche et renvoi** : bouton « Renvoyer… » sur les recrues (avec confirmation, refusé si une tâche est en cours, rien n'est effacé) et liste « Anciens » pour réembaucher. Le studio peut proposer un renvoi sous la cloche, jamais l'appliquer seul.
+- **Plus solide** : une veille (`studio/veille_studio.py`) relance l'alimentation si elle s'arrête ; bandeau rouge si l'état de la page date de plus d'une minute ; fichier illisible ignoré et signalé ; demandes jamais écrasées.
+
 ## Coût en jetons
 
 Le studio fait travailler Claude, donc il consomme ton abonnement (ou ta clé d'API). Les réglages par défaut sont les plus sobres :
@@ -88,10 +96,13 @@ Le studio fait travailler Claude, donc il consomme ton abonnement (ou ta clé d'
 | `point_si_changement` | `true` | pas de rapport si rien n'a bougé |
 | `enchainer` | `false` | une tâche finie ne lance pas la suivante sans ton accord : rien ne tourne pendant ton absence |
 | `pause_si_absent_min` | 60 | après une heure sans nouvelles de toi, plus rien n'est lancé |
+| `optimisation_auto` | `false` | pas d'analyse automatique du projet (une demande d'optimisation : une seule en attente, 30 min entre deux) |
+| `attribution_auto` | `false` | en fin de tâche, le personnage **attend ton choix** ; à `true`, sans réponse en 2 min l'assistant lui confie la tâche suivante (1 en attente par personnage, 4 par heure) |
+| `embauche_auto` | `false` | un métier manque : le studio **le signale** ; à `true`, il embauche seul (1 par heure, 12 bureaux, recrue jamais lancée d'office) |
 
 Pendant le questionnaire, Claude attend tes réponses avec un petit script qui ne consomme rien (`attendre.py`) : il ne relit pas la page en boucle.
 
-Ces réglages sont dans `.studio/studio.config.json`, bloc `economie`. Le plus simple est de demander à Claude : « enchaîne les tâches », « un point toutes les heures », « trois agents ». Il ne les change jamais de lui-même.
+Ces réglages sont dans `.studio/studio.config.json`, bloc `economie`. Le plus simple est de demander à Claude : « enchaîne les tâches », « un point toutes les heures », « trois agents ». Il ne les change jamais de lui-même. `attribution_auto` et `embauche_auto` se règlent aussi dans la page (« Réglages ») ; coupés, le serveur refuse ces automatismes. Les renvois ne sont jamais automatiques.
 
 ## Voix (facultatif)
 
@@ -106,7 +117,7 @@ Ces réglages sont dans `.studio/studio.config.json`, bloc `economie`. Le plus s
 - Aucune clé d'API n'est stockée par le studio.
 - Si tu ouvres un projet que tu n'as pas créé (un dépôt cloné), Claude te montre sa configuration et attend ton accord avant de lancer quoi que ce soit.
 
-## Limites de la version 0.1
+## Limites de la version 0.2
 
 - Développé et essayé sous Windows. macOS et Linux devraient marcher (Python standard seulement) mais n'ont pas encore été essayés.
 - Claude ne pilote pas ton moteur à ta place : il écrit le code et lance ce qui se lance en ligne de commande (builds, tests). Ce qui se voit à l'écran, c'est toi qui le juges.
@@ -143,7 +154,7 @@ Puis ouvre l'adresse affichée (`http://127.0.0.1:8810/studio.html`, ou le port 
 | `skills/studio-gamedev/SKILL.md` | Le déroulé du skill (phases 0 à 6) |
 | `skills/studio-gamedev/references/` | Questionnaire, routage vers les skills, règles de travail, livrables, contrat du studio |
 | `skills/studio-gamedev/modeles/` | Gabarits : GDD, ROADMAP, DECISIONS, CLAUDE.md, agent, config, profil, roadmap |
-| `skills/studio-gamedev/studio/` | La page du studio, son serveur local, l'alimentation du bureau, le questionnaire, 264 illustrations SVG tracées par code |
+| `skills/studio-gamedev/studio/` | La page du studio, son serveur local, l'alimentation du bureau et sa veille, le questionnaire, 264 illustrations SVG tracées par code |
 | `commands/studio.md` | La commande `/studio-gamedev:studio` |
 | `.claude-plugin/` | Manifeste du plugin et de la place de marché |
 

@@ -1,6 +1,7 @@
 """Alimentation du studio gamedev (Python 3.10+, bibliothèque standard seulement).
 
-Lancer :  python -I -B studio_etat.py --projet <dossier du projet>            (boucle : toutes les 10 s, s'arrête seul après 12 h)
+Lancer :  python -I -B studio_etat.py --projet <dossier du projet>            (boucle : toutes les 10 s, s'arrête seul après 12 h ;
+                                                                              --duree-h 0 : sans limite, c'est ce que fait veille_studio.py)
           python -I -B studio_etat.py --projet <dossier du projet> --une-fois  (un seul passage, pour un essai)
           --donnees <dossier>  dossier de données hors du projet, choisi par l'utilisateur : les motifs
                                « {donnees}/… » de sources_images s'y résolvent (sinon ils sont ignorés)
@@ -19,6 +20,8 @@ Lit aussi, en lecture seule : l'état git du projet s'il en est un (branche, fic
   suggestions.json         (toutes les 60 s)  analyse continue : alertes et conseils
   taches_disponibles.json  (toutes les 60 s)  tâches de roadmap prêtes (dépendances faites), par poste
   mur/                     (toutes les 90 s)  copies des dernières images (sources_images), servies par le serveur
+  decisions_studio.json    (toutes les 60 s)  propositions de renvoi (recrue libre depuis 24 h, plus rien pour son métier) :
+                                              la page les montre sous la cloche ; rien n'est jamais renvoyé sans réponse
 
 Règles (les mêmes que le studio d'origine) :
   - « disponible » seulement s'il ne reste rien à faire (ni étape restante, ni tâche de roadmap, ni demande, ni attente) ;
@@ -27,6 +30,10 @@ Règles (les mêmes que le studio d'origine) :
   - la ligne du bandeau (ligne.picto + ligne.texte) n'est jamais vide : tâche en cours, attente, suite ou « libre » ;
   - le % de la version 1 est l'avancement de la roadmap pondéré par l'effort ;
   - l'alerte d'inactivité de l'outil lourd se tait tant qu'une chaîne est active ;
+  - « fin de tâche » (champ fin_de_tache) seulement après un vrai calme : progression à 100 % immobile depuis 5 min,
+    plus rien devant lui, aucune chaîne active à son nom, aucune demande lancée ;
+  - les tâches sorties, écartées, abandonnées, reportées, remplacées ou retirées ne sont jamais proposées ;
+  - un fichier d'agent illisible (progression, recrue, demande) est ignoré et signalé (anomalies), le reste continue ;
   - tous les JSON sont lus avec ou sans BOM.
 Aucune commande reçue de la page n'est exécutée ; les seules commandes lancées sont fixes (git en lecture, liste des processus).
 """
@@ -50,6 +57,10 @@ CHAINE_MIN = 10         # chaîne active : une progression a bougé depuis 10 mi
 IMAGES_MAX = 36
 IMAGE_MAX_OCTETS = 12 * 1024 * 1024
 TECHNIQUE = re.compile(r"(^|_)(N|ORM|BC|R|M|AO|H|GL|N_GL|ORM_GL|mask|masque|normal|rough)$", re.I)
+CALME_FIN_MIN = 5       # fin de tâche : progression à 100 % immobile depuis 5 min
+RENVOI_LIBRE_H = 24     # proposition de renvoi : recrue libre depuis 24 h sans rien pour son métier
+# tâche qui ne se propose plus : statut hors liste, drapeau, ou mot dans la note / le titre
+EXCLUS = re.compile(r"\b(sorti|sortie|écart|ecart|abandonn|hors v1|hors version|remplac|report|retir|dropped|removed|postponed|out of scope|replaced)", re.I)
 SUBPROC = {"capture_output": True, "text": True, "timeout": 20, "encoding": "utf-8", "errors": "replace",
            "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
 
@@ -157,6 +168,26 @@ class Studio:
         self.debut = time.time()
         self.outil_vu = {}          # nom d'outil lourd -> dernière fois vu ouvert (départ : lancement du script)
         self.depuis = {}
+        self.anomalies = {}         # fichier d'agent illisible -> {fichier, raison, vu} : ignoré, signalé
+
+    def lire_agent(self, chemin):
+        """JSON écrit par un agent : illisible (ou pas un objet) = ignoré et noté dans les anomalies, jamais bloquant."""
+        rel = os.path.relpath(chemin, self.dossier).replace("\\", "/")
+        try:
+            with open(chemin, encoding="utf-8-sig") as f:
+                d = json.load(f)
+            if not isinstance(d, dict):
+                raise ValueError("objet JSON attendu")
+            self.anomalies.pop(rel, None)
+            return d
+        except FileNotFoundError:
+            self.anomalies.pop(rel, None)
+            return None
+        except Exception as e:  # noqa: un fichier fautif ne doit pas arrêter le studio
+            if age_min(chemin) is not None and age_min(chemin) < 0.05:
+                return None   # en cours d'écriture : on attend le passage suivant
+            self.anomalies[rel] = {"fichier": rel, "raison": court(f"{type(e).__name__} : {e}", 140), "vu": time.strftime("%H:%M")}
+            return None
 
     def f(self, *p):
         return os.path.join(self.dossier, *p)
@@ -253,7 +284,7 @@ class Studio:
         """{nom de fichier: (données, âge en min)}"""
         out = {}
         for f in glob.glob(self.f("progression", "*.json")):
-            d = lire_json(f, None)
+            d = self.lire_agent(f)
             if isinstance(d, dict):
                 out[os.path.basename(f)[:-5]] = (d, age_min(f) or 0)
         return out
@@ -261,8 +292,10 @@ class Studio:
     def recrues(self):
         out = []
         for f in sorted(glob.glob(self.f("recrues", "*.json")), key=lambda x: os.path.getmtime(x)):
-            r = lire_json(f, None)
-            if isinstance(r, dict) and r.get("nom") and os.path.basename(f) != "index.json":
+            if os.path.basename(f) == "index.json":
+                continue
+            r = self.lire_agent(f)
+            if isinstance(r, dict) and r.get("nom"):
                 out.append(r)
         return out
 
@@ -277,7 +310,7 @@ class Studio:
             b = os.path.basename(f)
             if b == "statuts.json":
                 continue
-            d = lire_json(f, None)
+            d = self.lire_agent(f)
             if not isinstance(d, dict):
                 continue
             poste = str(d.get("nom") or d.get("cible") or d.get("poste") or "")
@@ -287,7 +320,19 @@ class Studio:
             statut = str(st.get("statut") or d.get("statut") or ("en attente" if d.get("lancer", True) else "pas lancé")).lower()
             out.append({"fichier": b, "poste": poste, "titre": court(d.get("titre") or d.get("mission") or d.get("role") or d.get("texte") or "", 120),
                         "lancer": d.get("lancer", True) is not False, "statut": statut, "cree_le": str(d.get("cree_le") or ""),
-                        "maj": str(st.get("maj") or ""), "type": str(d.get("type") or "")})
+                        "maj": str(st.get("maj") or ""), "type": str(d.get("type") or ""), "origine": str(d.get("origine") or ""),
+                        "tache_id": str(d.get("tache_id") or "")})
+        return out
+
+    def messages(self):
+        """Fil de la page : les 40 derniers messages de l'utilisateur (demandes_vocales/), pour la vue Conversation."""
+        out = []
+        for f in sorted(glob.glob(self.f("demandes_vocales", "*.json")))[-40:]:
+            d = lire_json(f, None)
+            if isinstance(d, dict) and d.get("texte"):
+                out.append({"id": str(d.get("id") or os.path.basename(f)[:-5])[:80], "cible": str(d.get("cible") or "")[:40],
+                            "texte": str(d["texte"])[:600], "cree_le": str(d.get("cree_le") or "")[:19],
+                            "statut": str(d.get("statut") or "nouvelle")[:20], "via": str(d.get("via") or "")[:10]})
         return out
 
     def attentes(self):
@@ -295,6 +340,14 @@ class Studio:
         return {k: v for k, v in a.items() if isinstance(v, dict)} if isinstance(a, dict) else {}
 
     # ---------------- roadmap : avancement pondéré et tâches disponibles
+    @staticmethod
+    def exclue(t):
+        """Tâche sortie, écartée, abandonnée, reportée, remplacée ou retirée : jamais proposée ni comptée devant un poste.
+        Signes : drapeau (retiree, hors_v1, abandonnee) ou mot dans `note` / `etat` (état écrit à la main dans la roadmap)."""
+        if any(t.get(k) is True for k in ("retiree", "hors_v1", "abandonnee", "reportee", "remplacee")):
+            return True
+        return bool(EXCLUS.search(" ".join(str(t.get(k) or "") for k in ("note", "etat"))))
+
     @staticmethod
     def avance(taches):
         tot = av = reste = 0.0
@@ -326,7 +379,7 @@ class Studio:
         out = []
         for j in r["jalons"]:
             for t in j["taches"]:
-                if t.get("statut") not in ("a_faire", "en_cours"):
+                if t.get("statut") not in ("a_faire", "en_cours") or self.exclue(t):
                     continue
                 if any(statut.get(d) not in FAITS for d in t.get("depend_de") or [] if d in statut):
                     continue
@@ -364,7 +417,7 @@ class Studio:
         return cand[0][1] if cand else None
 
     # ---------------- postes
-    def postes(self, conf, r, progs, statuts, demandes, att, ouverts, session_age):
+    def postes(self, conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine=None):
         recr = self.recrues()
         liste = []
         for p in conf.get("postes") or []:
@@ -396,7 +449,7 @@ class Studio:
             fini_prog = pc is not None and pc >= 100
             # ce qui reste devant lui
             restantes = [court(x, 80) for x in (prog.get("restantes") if isinstance(prog, dict) and isinstance(prog.get("restantes"), list) else [])][:12]
-            rm_taches = [t for _, t in taches if t.get("poste") == pid and t.get("statut") not in FAITS]
+            rm_taches = [t for _, t in taches if t.get("poste") == pid and t.get("statut") not in FAITS and not self.exclue(t)]
             restantes += [f"{t['id']} · {court(t.get('titre'), 70)}" for t in rm_taches][:12]
             dem = [d for d in demandes if d["poste"] == pid and not d["statut"].startswith("fini") and d["statut"] != "pas lancé"]
             if fini_prog and dem:
@@ -467,8 +520,15 @@ class Studio:
                  "skills": p.get("skills") or [], "genre": p["genre"], "etat": etat, "occupe": etat == "travaille", "actif": etat == "travaille",
                  "progression": prog_aff, "progression_source": src, "restant_min": restant_de(prog) if etat in ("travaille", "bloque") else None,
                  "texte": texte_prog or court(st.get("texte"), 120), "tache": complet, "restantes": restantes[:12],
-                 "demandes": [{"fichier": d["fichier"], "titre": d["titre"], "statut": d["statut"]} for d in dem][:6],
+                 "demandes": [{"fichier": d["fichier"], "titre": d["titre"], "statut": d["statut"], "tache_id": d["tache_id"],
+                               "origine": d["origine"]} for d in dem][:6],
                  "ligne": {"picto": picto, "texte": court(complet, 40), "complet": court(complet, 200)}}
+            # fin de tâche : vrai calme (100 % immobile depuis 5 min, rien devant lui, pas de chaîne à son nom, pas de demande lancée)
+            q["calme_min"] = int(prog_age) if prog is not None and prog_age is not None else None
+            q["fin_de_tache"] = bool(etat == "disponible" and fini_prog and prog_age is not None and prog_age >= CALME_FIN_MIN
+                                     and not lancee and not (chaine and chaine.get("poste") == pid))
+            if q["fin_de_tache"]:
+                q["fini"] = court(texte_prog or st.get("texte") or "", 120)
             if p["genre"] == "recrue":
                 q.update(mission=p.get("mission", ""), cree_le=p.get("cree_le", ""), poste=p.get("poste", ""))
             ancien = self.depuis.get(pid)
@@ -520,12 +580,41 @@ class Studio:
             if dm["lancer"] and dm["statut"] in ("nouvelle", "en attente") and t and time.time() - t > 15 * 60:
                 ajoute(f"demande-{dm['fichier']}", "conseil", f"Demande en attente : {dm['poste']}", f"Déposée à {hm(t)} : {dm['titre']}",
                        "Lancer l'agent (voir SKILL.md, « Demandes ») ou répondre pourquoi elle attend.")
+        for a in list(self.anomalies.values())[:5]:
+            ajoute("illisible-" + re.sub(r"[^a-z0-9]+", "-", a["fichier"].lower()), "urgent", f"Fichier illisible ignoré : {a['fichier']}",
+                   a["raison"], "Le réécrire au bon format (JSON objet) ; le studio continue sans lui.")
         vocales = [lire_json(f, {}) for f in glob.glob(self.f("demandes_vocales", "*.json"))]
         vieilles = [v for v in vocales if isinstance(v, dict) and v.get("statut") == "nouvelle" and iso_vers_t(v.get("cree_le")) and time.time() - iso_vers_t(v.get("cree_le")) > 5 * 60]
         if vieilles:
             ajoute("demandes-vocales", "info", f"{len(vieilles)} demande(s) de la page sans réponse", court(vieilles[0].get("texte"), 120),
                    "Les traiter et répondre dans reponses_assistant.json.")
         return sug
+
+    # ---------------- propositions de renvoi (sous la cloche, jamais appliquées seules)
+    def decisions_studio(self, postes, dispo):
+        """Recrue libre depuis RENVOI_LIBRE_H heures et plus aucune tâche prête pour son poste : proposition « Renvoyer / Garder ».
+        L'identifiant porte le début de la période libre : une fois « Garder », rien n'est reproposé avant la prochaine."""
+        reponses = lire_json(self.f("reponses.json"), [])
+        repondues = {x.get("id") for x in (reponses if isinstance(reponses, list) else []) if isinstance(x, dict)}
+        out = []
+        for q in postes:
+            if q["genre"] != "recrue" or q["etat"] != "disponible" or time.time() - q["depuis"] < RENVOI_LIBRE_H * 3600:
+                continue
+            if any(q["id"] in (t.get("pour") or []) or t.get("poste") == q["id"] for t in dispo):
+                continue
+            ident = f"renvoi-{q['id']}-{q['depuis']}"
+            if ident in repondues:
+                continue
+            h = int((time.time() - q["depuis"]) // 3600)
+            out.append({"id": ident, "type": "renvoi", "nom": q["id"], "poste": q["id"], "titre": f"Renvoyer {q['nom']} ?",
+                        "explication": f"Libre depuis {h} h et plus aucune tâche prête pour son poste. Le renvoi archive sa fiche "
+                                       "(réembauche possible) ; rien n'est fait sans ta réponse.",
+                        "choix": [{"id": "renvoyer", "libelle": "Renvoyer"}, {"id": "garder", "libelle": "Garder"}],
+                        "recommande": "garder", "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(q["depuis"] + RENVOI_LIBRE_H * 3600))})
+        chemin = self.f("decisions_studio.json")
+        if lire_json(chemin, None) != out:
+            ecrire_json(chemin, out, indent=1)
+        return out
 
     # ---------------- mur d'images
     def images(self, conf):
@@ -629,7 +718,7 @@ class Studio:
         ouverts = [o for o in self.outils_lourds(conf) if procs and any(n in o["processus"] for n in procs)]
         session_age = self.memo("session", 30, lambda: self.session_active(conf))
         chaine = self.chaine_active(progs, demandes, ouverts)
-        postes = self.postes(conf, r, progs, statuts, demandes, att, ouverts, session_age)
+        postes = self.postes(conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine)
         dispo = self.memo("taches", 0 if tout else 60, lambda: self.taches_disponibles(r)) or []
         gitinfo = self.memo("git", 0 if tout else 60, self.git)
         sysinfo = self.memo("systeme", 0 if tout else 60, lambda: self.systeme(conf)) or {}
@@ -639,6 +728,7 @@ class Studio:
                 sug = self.analyser(conf, postes, chaine, ouverts, procs, dispo, gitinfo, sysinfo, demandes)
                 ecrire_json(self.f("suggestions.json"), {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "suggestions": sug}, indent=1)
                 self.ecrire_taches(dispo)
+                self.decisions_studio(postes, dispo)
                 self.memo.c["_sugg"] = (time.time(), sug)
             except Exception as e:
                 print("erreur analyse", repr(e), flush=True)
@@ -649,6 +739,7 @@ class Studio:
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
             "git": gitinfo, "systeme": sysinfo, "images": images, "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
+            "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }
         ecrire_json(self.f("etat.json"), etat)
         return etat
@@ -674,7 +765,7 @@ def main(argv=None):
     ap.add_argument("--projet", required=True, help="dossier du projet (lit et écrit dans <projet>/.studio)")
     ap.add_argument("--une-fois", action="store_true", help="un seul passage, puis s'arrête")
     ap.add_argument("--intervalle", type=float, default=10, help="secondes entre deux passages (défaut 10)")
-    ap.add_argument("--duree-h", type=float, default=12, help="s'arrête seul après ce nombre d'heures (défaut 12)")
+    ap.add_argument("--duree-h", type=float, default=12, help="s'arrête seul après ce nombre d'heures (défaut 12 ; 0 = sans limite)")
     ap.add_argument("--forcer", action="store_true", help="ignorer le verrou d'une autre boucle")
     ap.add_argument("--donnees", default=None, help="dossier de données hors du projet (motifs « {donnees}/… » du mur d'images)")
     a = ap.parse_args(argv)
@@ -697,7 +788,7 @@ def main(argv=None):
             print(f"  {q['id']:<22} {q['etat']:<10} {'assis ' if q['occupe'] else 'debout'} {q['ligne']['picto']} {q['ligne']['texte']}")
         return
     print(f"alimentation du studio : {s.dossier} (toutes les {a.intervalle:g} s)", flush=True)
-    fin = time.time() + a.duree_h * 3600
+    fin = time.time() + a.duree_h * 3600 if a.duree_h > 0 else float("inf")
     while time.time() < fin:
         try:
             verrou(s, a.forcer)

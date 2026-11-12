@@ -8,7 +8,13 @@ Usage (Python 3.10+, bibliothèque standard) :
   python -I -B essai_complet.py verser J0 [--dossier D]   passe toutes les tâches du jalon à « verse » (le succès se débloque)
   python -I -B essai_complet.py verifier  [--dossier D]   vérifie roadmap.json (schéma, identifiants, dépendances, boucles)
   python -I -B essai_complet.py serveur   [--dossier D] [--port 8810]   lance serveur_studio.py (premier port libre, jamais 8790)
-  python -I -B essai_complet.py tout      [--dossier D]   preparer + remplir + roadmap + verifier (sans serveur)
+  python -I -B essai_complet.py tout      [--dossier D] [--port N]   preparer + remplir + roadmap + verifier, puis « fonctions »
+  python -I -B essai_complet.py fonctions [--dossier D] [--port N]   mode travail sans navigateur, serveur sur un port libre :
+                                          bulles de décision (décision rattachée à un poste), fil (messages dans etat.json,
+                                          demandes au nom unique, doublon 60 s, une optimisation en attente), fin de tâche
+                                          (seulement après un vrai calme), attribution et embauche automatiques (refusées
+                                          tant que le réglage est coupé, puis garde-fous), renvoi / réembauche, renvoi
+                                          proposé sous la cloche, fichier fautif signalé, tâche sortie jamais proposée
   python -I -B essai_complet.py travail   [--dossier D]   passe le studio en mode travail, avec 3 images d'essai pour le mur
   python -I -B essai_complet.py etat      [--dossier D]   un passage de studio_etat.py (etat.json, suggestions.json, taches_disponibles.json)
   python -I -B essai_complet.py progresser <poste> <pct> [--texte T] [--restant N]   écrit progression/<poste>.json
@@ -417,6 +423,224 @@ def cmd_serveur(d, port, intervalle):
         alim.terminate()
 
 
+# ---------------------------------------------------------------------------- fonctions du mode travail (sans navigateur)
+def cmd_fonctions(d, port):
+    """Bulles de décision, fil de conversation, fin de tâche, renvoi et réembauche, embauche automatique, garde-fous :
+    serveur réel sur un port libre + passages de studio_etat.py ; vérifie les fichiers écrits. Projet : celui de « tout »."""
+    import re
+    import time
+    import urllib.error
+    import urllib.request
+    st = os.path.join(d, ".studio")
+    if not os.path.isfile(os.path.join(st, "roadmap.json")):
+        raise SystemExit("lance d'abord « tout » (projet, réponses, roadmap)")
+    cmd_travail(d)
+    etapes = []
+
+    def ok(msg):
+        etapes.append(msg)
+        print("  ✓", msg, flush=True)
+
+    def echec(msg):
+        raise SystemExit("ÉCHEC : " + msg)
+
+    def vieillir(chemin, minutes):
+        t = time.time() - minutes * 60
+        os.utime(chemin, (t, t))
+
+    def etat_une_fois():
+        subprocess.run([sys.executable, "-I", "-B", os.path.join(STUDIO, "studio_etat.py"), "--projet", d, "--une-fois", "--forcer"],
+                       check=True, capture_output=True)
+        return lire(os.path.join(st, "etat.json"), {})
+
+    def poste_de(e, pid):
+        return next((q for q in e.get("postes", []) if q.get("id") == pid), None)
+
+    # décisions : une pour un poste (bulle au-dessus de lui), une pour l'assistant ; une réponse finissant par une question
+    decs = lire(os.path.join(st, "decisions.json"), []) or []
+    decs = [x for x in decs if x.get("id") != "dec-002"] + [{"id": "dec-002", "poste": "art-da", "titre": "Palette d'automne ou d'hiver ?",
+            "explication": "Pour la bible de style.", "choix": [{"id": "automne", "libelle": "Automne"}, {"id": "hiver", "libelle": "Hiver"}],
+            "recommande": "automne", "cree_le": maintenant()}]
+    ecrire(os.path.join(st, "decisions.json"), decs)
+    ecrire(os.path.join(st, "reponses_assistant.json"), [{"id": "rep-essai-1", "a_propos": "", "texte": "La scène grise est prête. On garde la caméra fixe ?", "cree_le": maintenant()}])
+
+    port = choisir_port(port)
+    srv = subprocess.Popen([sys.executable, "-I", "-B", os.path.join(STUDIO, "serveur_studio.py"), "--projet", d, "--port", str(port)],
+                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+    base = f"http://127.0.0.1:{port}"
+
+    def api(route, corps, attendu=200):
+        req = urllib.request.Request(base + route, data=json.dumps(corps).encode("utf-8"), method="POST",
+                                     headers={"Content-Type": "application/json", "Origin": base, "Host": f"127.0.0.1:{port}"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+                code, rep = r.status, json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            code, rep = e.code, json.loads(e.read().decode("utf-8") or "{}")
+        if code != attendu:
+            echec(f"{route} {json.dumps(corps, ensure_ascii=False)[:120]} : code {code} au lieu de {attendu} ({rep.get('erreur')})")
+        return rep
+
+    try:
+        for _ in range(50):
+            try:
+                urllib.request.urlopen(base + "/studio.html", timeout=1).read()
+                break
+            except Exception:
+                time.sleep(0.2)
+        else:
+            echec("le serveur ne répond pas")
+        page = urllib.request.urlopen(base + "/studio.html", timeout=5).read().decode("utf-8")
+        for f in ("function bullesDecision", "const Conv =", "const FinTache =", "function apresRenvoi", "function decisionDe",
+                  "function ouvrirReglages", "function embaucheAuto", "function majBandeauEtat", "bt-conv"):
+            if f not in page:
+                echec(f"studio.html : « {f} » absent")
+        ok("page servie : bulles de décision, conversation, fin de tâche, renvoi, réglages, embauche auto, bandeau d'état")
+
+        # fil : demandes au nom unique, jamais écrasées ; même texte en moins de 60 s = une seule demande
+        r1 = api("/api/demande", {"cible": "assistant", "texte": "Ajoute un écran titre.", "via": "ecrit"})
+        r2 = api("/api/demande", {"cible": "assistant", "texte": "Ajoute un écran titre.", "via": "ecrit"})
+        r3 = api("/api/demande", {"cible": "assistant", "texte": "Et une musique de menu.", "via": "voix"})
+        if not r2.get("doublon") or r2["id"] != r1["id"] or r3["id"] == r1["id"] or not re.match(r"^\d{8}-\d{6}-\d{3}[0-9a-f]{4}_assistant$", r3["id"]):
+            echec(f"demandes : doublon ou nom unique incorrect ({r1['id']}, {r2.get('id')}, {r3['id']})")
+        if len([f for f in os.listdir(os.path.join(st, "demandes_vocales")) if f.endswith(".json")]) != 2:
+            echec("demandes_vocales : 2 fichiers attendus (le doublon n'est pas réécrit)")
+        api("/api/demande", {"cible": "assistant", "texte": "Optimise le projet.", "sujet": "optimisation"})
+        api("/api/demande", {"cible": "assistant", "texte": "Optimise encore.", "sujet": "optimisation"}, 429)
+        ok("demandes : nom unique (ms + code) en mode exclusif, doublon de moins de 60 s ignoré, une seule optimisation en attente")
+
+        # recrue, puis fin de tâche après un vrai calme
+        api("/api/recruter", {"nom": "renfort-essai", "nom_affiche": "Renfort", "role": "Aide polyvalente", "mission": "Tâches sans moteur.", "lancer": False})
+        statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
+        statuts["renfort-essai"] = {"statut": "pas lancé", "maj": maintenant()}   # ce que Claude note pour lancer: false (SKILL.md)
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        prog =os.path.join(st, "progression", "renfort-essai.json")
+        ecrire(prog, {"pct": 100, "texte": "Liste des sons écrite"})
+        vieillir(prog, 2)
+        q = poste_de(etat_une_fois(), "renfort-essai")
+        if not q or q["etat"] != "disponible" or q.get("fin_de_tache"):
+            echec(f"fin de tâche déclarée trop tôt (calme de 2 min) : {q}")
+        vieillir(prog, 10)
+        e = etat_une_fois()
+        q = poste_de(e, "renfort-essai")
+        if not q or not q.get("fin_de_tache") or "Liste des sons" not in q.get("fini", ""):
+            echec(f"fin de tâche absente après 10 min de calme : {q}")
+        msgs = [m["texte"] for m in e.get("messages", [])]
+        if "Ajoute un écran titre." not in msgs or "Et une musique de menu." not in msgs:
+            echec(f"etat.json : messages du fil absents ({msgs})")
+        ok("fin de tâche : rien à 2 min de calme, « fin_de_tache » après 10 min (100 %, rien devant lui) ; fil : messages dans etat.json")
+
+        # attribution : automatique refusée tant que le réglage est coupé (défaut), puis garde-fous
+        auto = {"agent": "renfort-essai", "mission": "Tâche J1-02 : contrôles.", "titre": "J1-02 · Contrôles", "tache_id": "J1-02", "origine": "auto:fin-de-tache"}
+        api("/api/confier", auto, 403)
+        if (lire(os.path.join(st, "reglages.json"), {}) or {}).get("attribution_auto") is not None:
+            echec("reglages.json : attribution_auto ne doit pas exister avant un choix")
+        api("/api/reglages", {"attribution_auto": True})
+        rc = api("/api/confier", auto)
+        api("/api/confier", dict(auto, mission="Une autre tâche.", tache_id="J1-03"), 429)
+        api("/api/confier", {"agent": "renfort-essai", "mission": "Tâche J1-04 à la main.", "tache_id": "J1-04", "origine": "tache:J1-04"})
+        api("/api/confier", {"agent": "inconnu-essai", "mission": "x"}, 404)
+        dem = lire(os.path.join(d, ".studio", rc["demande"]), {})
+        if dem.get("origine") != "auto:fin-de-tache" or dem.get("lancer") is not True or dem.get("tache_id") != "J1-02":
+            echec(f"demande confiée incorrecte : {dem}")
+        ok("attribution : refusée réglage coupé (403), permise une fois activée, une seule en attente par poste (429), tâche confiée à la main permise")
+
+        # renvoi : refusé tant qu'une demande n'est pas finie ; archivage ; réembauche
+        api("/api/renvoyer", {"nom": "renfort-essai"}, 409)
+        api("/api/renvoyer", {"nom": "direction"}, 403)
+        statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
+        for f in os.listdir(os.path.join(st, "demandes")):
+            if f.endswith("_renfort-essai.json"):
+                statuts[f] = {"statut": "fini", "maj": maintenant()}
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        api("/api/renvoyer", {"nom": "renfort-essai", "motif": "essai"})
+        agent = os.path.join(d, ".claude", "agents", "renfort-essai.md")
+        if os.path.exists(agent) or os.path.exists(os.path.join(st, "recrues", "renfort-essai.json")):
+            echec("renvoi : la fiche ou l'agent sont encore en place")
+        if not os.path.isfile(os.path.join(st, "recrues", "_anciens", "renfort-essai.json")) or not os.path.isfile(os.path.join(st, "anciens", "agents", "renfort-essai.md")):
+            echec("renvoi : archives absentes")
+        if "renfort-essai" in (lire(os.path.join(st, "recrues", "index.json"), []) or []) or "renfort-essai" not in (lire(os.path.join(st, "recrues", "_anciens", "index.json"), []) or []):
+            echec("renvoi : index non mis à jour")
+        api("/api/reembaucher", {"nom": "renfort-essai"})
+        if not os.path.isfile(agent) or (lire(os.path.join(st, "recrues", "renfort-essai.json"), {}) or {}).get("lancer") is not False:
+            echec("réembauche : agent ou fiche absents (lancer doit valoir false)")
+        ok("renvoi : refusé avec une tâche en cours (409) et pour un poste de base (403), archivage sans rien effacer, réembauche")
+
+        # embauche automatique : coupée par défaut, puis une par heure ; jamais un ancien renvoyé
+        emb = {"nom": "metier-essai", "nom_affiche": "Métier", "role": "Poste « métier »", "mission": "- J2-01 : essai", "auto": True}
+        api("/api/recruter", emb, 403)
+        api("/api/reglages", {"embauche_auto": True})
+        r = api("/api/recruter", emb)
+        if r["fiche"].get("origine") != "auto:embauche" or r["fiche"].get("lancer") is not False:
+            echec(f"embauche auto : fiche incorrecte {r['fiche']}")
+        api("/api/recruter", dict(emb, nom="metier-essai-2"), 429)
+        ok("embauche automatique : refusée réglage coupé (403), permise une fois activée (lancer: false), une par heure (429)")
+
+        # proposition de renvoi sous la cloche : recrue libre depuis 24 h, rien pour son poste
+        for f in os.listdir(os.path.join(st, "demandes")):
+            if f.endswith("_metier-essai.json") or f.endswith("_renfort-essai.json"):
+                statuts[f] = {"statut": "fini", "maj": maintenant()}
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        etat_une_fois()
+        e = lire(os.path.join(st, "etat.json"), {})
+        q = poste_de(e, "renfort-essai")
+        if not q or q["etat"] != "disponible":
+            echec(f"renfort-essai devrait être disponible : {q}")
+        q["depuis"] = int(time.time()) - 25 * 3600
+        ecrire(os.path.join(st, "etat.json"), e)
+        etat_une_fois()
+        dstu = lire(os.path.join(st, "decisions_studio.json"), []) or []
+        prop = next((x for x in dstu if x.get("nom") == "renfort-essai" and x.get("type") == "renvoi"), None)
+        if not prop or [c["id"] for c in prop["choix"]] != ["renvoyer", "garder"] or os.path.isfile(os.path.join(st, "recrues", "_anciens", "renfort-essai.json")):
+            echec(f"decisions_studio.json : proposition de renvoi absente ou appliquée seule ({dstu})")
+        ok("renvoi proposé sous la cloche (decisions_studio.json, Renvoyer / Garder), jamais appliqué seul")
+
+        # fichier fautif ignoré et signalé ; tâche sortie jamais proposée
+        casse = os.path.join(st, "progression", "casse.json")
+        ecrire(casse, "{pas du json")
+        vieillir(casse, 1)
+        rm_ch = os.path.join(st, "roadmap.json")
+        rm = lire(rm_ch)
+        prets = {t["id"] for t in (lire(os.path.join(st, "taches_disponibles.json"), {}) or {}).get("taches", [])}
+        cible = next((t for j in rm["jalons"] for t in j["taches"] if t["id"] in prets), None)
+        if not cible:
+            echec("aucune tâche prête dans taches_disponibles.json")
+        cible["note"] = "sortie de la version 1"
+        ecrire(rm_ch, rm)
+        e = etat_une_fois()
+        if not any(a.get("fichier") == "progression/casse.json" for a in e.get("anomalies", [])) or len(e.get("postes", [])) < 5:
+            echec(f"anomalie non signalée ou studio arrêté : {e.get('anomalies')}")
+        sug = lire(os.path.join(st, "suggestions.json"), {}) or {}
+        if not any(s["id"].startswith("illisible-") for s in sug.get("suggestions", [])):
+            echec("suggestions.json : alerte « fichier illisible » absente")
+        dispo = [t["id"] for t in (lire(os.path.join(st, "taches_disponibles.json"), {}) or {}).get("taches", [])]
+        if cible["id"] in dispo:
+            echec(f"tâche sortie {cible['id']} encore proposée")
+        os.remove(casse)
+        del cible["note"]
+        ecrire(rm_ch, rm)
+        ok(f"fichier fautif ignoré et signalé (anomalies + alerte), le reste continue ; tâche sortie ({cible['id']}) jamais proposée")
+
+        # réponse à une décision : rien n'est écrit si reponses.json est illisible
+        rep_ch = os.path.join(st, "reponses.json")
+        ecrire(rep_ch, "[ cassé")
+        api("/api/repondre", {"id": "dec-002", "choix": "automne"}, 503)
+        if open(rep_ch, encoding="utf-8").read() != "[ cassé":
+            echec("reponses.json illisible a été réécrit")
+        os.remove(rep_ch)
+        api("/api/repondre", {"id": "dec-002", "choix": "automne"})
+        ok("décision : réponse refusée (503) sans rien écrire si reponses.json est illisible, puis acceptée")
+    finally:
+        srv.terminate()
+        try:
+            srv.wait(timeout=10)
+        except Exception:
+            srv.kill()
+    # la page relit l'essai à l'état « travail » : réglages remis comme au départ (coupés)
+    ecrire(os.path.join(st, "reglages.json"), {"attribution_auto": False, "embauche_auto": False, "maj": maintenant()})
+    print(f"ESSAI DES FONCTIONS RÉUSSI ({len(etapes)} étapes) : {d}")
+
+
 # ---------------------------------------------------------------------------- adoption d'un projet existant
 TSCN = '[gd_scene load_steps=2 format=3]\n\n[ext_resource type="Script" path="res://scripts/{script}.gd" id="1"]\n\n[node name="{nom}" type="{type}"]\nscript = ExtResource("1")\n{enfants}'
 FICTIF = {
@@ -722,7 +946,7 @@ def cmd_adoption(d, port):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("commande", choices=["preparer", "deduire", "remplir", "roadmap", "verser", "verifier", "serveur", "tout",
-                                         "travail", "etat", "progresser", "rapport", "recrue", "adoption"])
+                                         "travail", "etat", "progresser", "rapport", "recrue", "adoption", "fonctions"])
     ap.add_argument("jalon", nargs="?", help="jalon (verser), poste (progresser) ou nom (recrue)")
     ap.add_argument("pct", nargs="?", type=int, help="progresser : pourcentage")
     ap.add_argument("--texte", default="")
@@ -769,11 +993,14 @@ def main():
         cmd_recrue(d, a.jalon)
     elif a.commande == "adoption":
         cmd_adoption(d, a.port)
+    elif a.commande == "fonctions":
+        cmd_fonctions(d, a.port)
     elif a.commande == "tout":
         preparer(d, a.port)
         deduire(d)
         remplir(d)
         cmd_roadmap(d)
+        cmd_fonctions(d, a.port)
 
 
 if __name__ == "__main__":
