@@ -96,6 +96,7 @@ Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te r
 
 ## Nouveautés de la 0.3.1
 
+- **0.3.3 : gros micro et bulles d'infos** : un gros micro en bas de l'écran (ou la barre d'espace) pour parler au studio ; au survol d'un personnage, une bulle montre sa tâche, son pourcentage et son temps restant. Si le navigateur bloque le micro, le studio dit comment l'autoriser.
 - **0.3.2 : zoom et caméra** : molette pour zoomer, cliquer-glisser pour te déplacer, double-clic, boutons +, − et « recentrer » ; un clic sur un personnage le recentre.
 
 - **Le même studio que l'original**, adapté à ton projet : barre du haut complète (Vue d'ensemble, Journal, Optimiser, Journal de l'assistant, Personnaliser, Plein écran, **Tout couper**…), ton équipe à gauche, la radio avec les musiques de ton jeu (coupée par défaut), un tutoriel de départ.

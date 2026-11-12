@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.3] - 2026-11-13
+
+### Ajouté
+- Gros micro en bas de l'écran, comme le studio d'origine : clic (ou barre d'espace maintenue) pour parler, carte « J'écoute… » puis texte modifiable, destinataire (l'assistant ou un poste) et « Envoyer » ; mode « appui » ou « maintien » dans Réglages.
+- Bulle d'infos au survol d'un personnage : rôle, état, tâche en cours, pourcentage, temps restant, « clic : sa fiche ».
+- Fraîcheur des données dans la barre du haut (« à jour · HH:MM » ou « figé depuis … »).
+- Réglages : ambiance du bureau (coupée, douce, vivante), babillage des bulles (petits sons), étiquettes des personnages (toujours, au survol, jamais), taille du texte, animations, notifications du système quand l'onglet est caché.
+
+### Corrigé
+- Dictée : message clair quand le navigateur bloque le micro (cadenas, adresse du studio) ; si la transcription locale (Whisper) est absente, la dictée repasse par la reconnaissance vocale du navigateur, avec un message clair si aucune des deux n'est disponible.
+
 ## [0.3.2] - 2026-11-13
 
 ### Ajouté

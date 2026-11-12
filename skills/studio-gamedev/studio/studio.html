@@ -47,6 +47,18 @@ button{cursor:pointer}
 /* ---------- bureau ---------- */
 #bureau{position:fixed;inset:0;display:block;width:100%;height:100%;cursor:default}
 #bureau.survol{cursor:pointer}#bureau.saisie{cursor:grabbing}
+#micro-zone{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:26;display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+#gros-micro{pointer-events:auto;width:64px;height:64px;border-radius:50%;border:2px solid #f1d9a4;background:radial-gradient(circle at 35% 30%,#e9c47f,#b98532);color:#231b12;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.5),0 0 0 6px rgba(233,196,127,.15);cursor:pointer;transition:transform .15s}
+#gros-micro:hover{transform:scale(1.06)}#gros-micro svg{width:30px;height:30px}#gros-micro.ecoute{background:radial-gradient(circle at 35% 30%,#e07a5f,#a8432e);color:#fff;animation:dec-pouls 1s infinite}
+#micro-carte{pointer-events:auto;width:min(460px,86vw);color:var(--encre,#2b241c);border-radius:12px;padding:14px 16px;background:linear-gradient(180deg,#fbf5e6,#efe3c7);box-shadow:0 18px 40px rgba(0,0,0,.5)}
+#micro-carte textarea{width:100%;min-height:70px;border:1px solid rgba(92,79,63,.3);border-radius:8px;padding:8px;background:#fffdf6;color:var(--encre,#2b241c);font:inherit}
+#micro-carte select{border:1px solid rgba(92,79,63,.3);border-radius:8px;padding:6px;background:#fffdf6;color:var(--encre,#2b241c)}
+#micro-carte .direct{font:italic 1.05em var(--serif);min-height:1.4em}
+#bulle-info{position:fixed;z-index:24;pointer-events:none;max-width:280px;background:rgba(30,25,20,.94);color:#f3e9d2;border:1px solid rgba(233,210,160,.3);border-radius:9px;padding:8px 11px;font-size:12.5px;line-height:1.4;opacity:0;transition:opacity .12s;box-shadow:0 8px 20px rgba(0,0,0,.45)}
+#bulle-info b{color:#f1d9a4;font-size:13.5px}#bulle-info .vie{height:5px;border-radius:3px;background:rgba(255,255,255,.12);overflow:hidden;margin:5px 0}#bulle-info .vie i{display:block;height:100%;background:#6fae5e}
+#fraicheur{font:12px var(--sans);padding:5px 11px;border-radius:999px;border:1px solid rgba(111,174,94,.45);color:#cfe6c4;background:rgba(111,174,94,.12)}#fraicheur.vieux{border-color:rgba(224,138,114,.5);color:#f3c2b2;background:rgba(168,67,46,.18)}
+body.t-petite #entete,body.t-petite #equipe,body.t-petite #panneau,body.t-petite #toasts,body.t-petite #notifs{zoom:.88}
+body.t-grande #entete,body.t-grande #equipe,body.t-grande #panneau,body.t-grande #toasts,body.t-grande #notifs,body.t-grande #micro-zone{zoom:1.15}
 #zoom{position:fixed;right:14px;bottom:14px;z-index:14;display:flex;flex-direction:column;gap:6px}
 #zoom button{width:42px;height:42px;border-radius:10px;border:1px solid rgba(233,210,160,.28);background:rgba(30,25,20,.82);color:#f1d9a4;font:600 18px var(--sans);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.35);cursor:pointer}
 #zoom button:hover{background:rgba(60,50,38,.92)}#zoom button svg{width:16px;height:16px}
@@ -281,6 +293,9 @@ body.questionnaire #indice{display:none}
 <section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="sc-corps"></div></section>
 <div id="succes" role="status" aria-live="polite"></div>
 <div id="toasts"></div>
+<div id="micro-zone"><div id="micro-carte" hidden></div><button type="button" id="gros-micro" title="Parler au studio (ou barre d'espace maintenue)" aria-label="Parler au studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button></div>
+<div id="bulle-info" aria-hidden="true"></div>
+<span id="fraicheur" hidden></span>
 <div id="zoom"><button type="button" id="z-plus" title="Zoomer (molette)" aria-label="Zoomer">+</button><button type="button" id="z-moins" title="Dézoomer" aria-label="Dézoomer">−</button><button type="button" id="z-cadre" title="Recentrer" aria-label="Recentrer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><circle cx="8" cy="8" r="1.6"/></svg></button></div>
 <div id="msg-attente" hidden role="status"></div>
 <div id="radio-titre" hidden aria-live="off"></div>
@@ -307,7 +322,7 @@ const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message |
 
 // ====================================================================== textes de l'interface
 const TXT = {
-  fr: { repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+  fr: { gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
     travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
@@ -336,7 +351,7 @@ const TXT = {
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Alimentation arrêtée depuis {m} min : la page calcule l’état elle-même (relance studio_etat.py ou veille_studio.py).', illisible: 'Fichier illisible ignoré' },
-  en: { repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+  en: { gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
@@ -470,6 +485,7 @@ const Son = (() => {
     clic() { bip(880, .05, { gain: .02, type: 'triangle' }); },
     cloche() { try { Radio.sourdine(3000); } catch (e) {} [1318, 1760].forEach((f, i) => bip(f, 1.2, { gain: .035, at: i * .18 })); },
     touche() { bip(1800 + Math.random() * 900, .018, { type: 'square', gain: .005 }); },
+    bip,
     porte() { bip(140, .25, { type: 'triangle', gain: .03 }); bip(95, .35, { type: 'sine', gain: .025, at: .18 }); },
     gobelet() { bip(1250, .08, { type: 'triangle', gain: .012 }); bip(980, .1, { type: 'triangle', gain: .01, at: .09 }); },
     contexte() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); return coupe ? null : ctx; } catch (e) { return null; } },
@@ -910,7 +926,13 @@ function ouvrirReglages() {
       ${coche('attribution_auto')}${coche('embauche_auto')}${coche('enchainement_auto')}${coche('point_auto')}${coche('optimisation_auto')}<p class="discret">${esc(t('auto_eco'))}</p>
       <label class="reglage">${esc(t('volume'))} <input type="range" id="rg-vol" min="0" max="1" step="0.05" value="${esc(LS.get('son_vol', 1))}"></label>
       <label class="reglage">${esc(t('notif_duree'))} <select id="rg-nd">${[5, 20, 60].map(x => `<option value="${x}"${x === +LS.get('notif_duree', 5) ? ' selected' : ''}>${x} s</option>`).join('')}</select></label>
-      <label class="reglage"><input type="checkbox" id="rg-amb"${LS.get('ambiance', true) ? ' checked' : ''}> ${esc(t('ambiance'))}</label>
+      <label class="reglage">${esc(t('ambiance_niv'))} <select id="rg-amb">${['coupee', 'douce', 'vivante'].map(v => `<option value="${v}"${(LS.get('ambiance', 'douce') === false ? 'coupee' : LS.get('ambiance', 'douce')) === v ? ' selected' : ''}>${esc(t('amb_' + v))}</option>`).join('')}</select></label>
+      <label class="reglage">${esc(t('micro_mode'))} <select id="rg-micro">${['appui', 'maintien'].map(v => `<option value="${v}"${LS.get('micro_mode', 'appui') === v ? ' selected' : ''}>${esc(t('mode_' + v))}</option>`).join('')}</select></label>
+      <label class="reglage"><input type="checkbox" id="rg-bson"${LS.get('babil_son', true) ? ' checked' : ''}> ${esc(t('babil_son'))}</label>
+      <label class="reglage">${esc(t('etiquettes'))} <select id="rg-etiq">${['toujours', 'survol', 'jamais'].map(v => `<option value="${v}"${LS.get('etiquettes', 'toujours') === v ? ' selected' : ''}>${esc(t('etiq_' + v))}</option>`).join('')}</select></label>
+      <label class="reglage">${esc(t('taille_texte'))} <select id="rg-taille">${['petite', 'normale', 'grande'].map(v => `<option value="${v}"${LS.get('taille_texte', 'normale') === v ? ' selected' : ''}>${esc(t('t_' + v))}</option>`).join('')}</select></label>
+      <label class="reglage"><input type="checkbox" id="rg-anim"${LS.get('anim', true) !== false ? ' checked' : ''}> ${esc(t('animations'))}</label>
+      <label class="reglage"><input type="checkbox" id="rg-nsys"${LS.get('notif_sys', false) ? ' checked' : ''}> ${esc(t('notif_sys'))}</label>
       <label class="reglage"><input type="checkbox" id="rg-babil"${LS.get('babil', true) ? ' checked' : ''}> ${esc(t('babil'))}</label>
       <label class="reglage"><input type="checkbox" id="rg-radio"${LS.get('radio', false) ? ' checked' : ''}${Radio.liste().length ? '' : ' disabled'}> ${esc(t('radio'))}${Radio.liste().length ? ' (' + Radio.liste().length + ')' : ' : ' + esc(t('radio_aucune'))}</label>
       <label class="reglage">${esc(t('radio_vol'))} <input type="range" id="rg-rvol" min="0" max="1" step="0.05" value="${esc(LS.get('radio_vol', .25))}"></label>
@@ -919,7 +941,15 @@ function ouvrirReglages() {
       <div class="rangee"><button type="button" class="btp" id="rg-ok">${esc(t('valider'))}</button><span class="discret" data-res></span></div>`;
     el.querySelector('#rg-vol').oninput = e => LS.set('son_vol', +e.target.value);
     el.querySelector('#rg-nd').onchange = e => LS.set('notif_duree', +e.target.value);
-    el.querySelector('#rg-amb').onchange = e => LS.set('ambiance', e.target.checked);
+    el.querySelector('#rg-amb').onchange = e => LS.set('ambiance', e.target.value);
+    el.querySelector('#rg-micro').onchange = e => LS.set('micro_mode', e.target.value);
+    el.querySelector('#rg-bson').onchange = e => LS.set('babil_son', e.target.checked);
+    el.querySelector('#rg-etiq').onchange = e => LS.set('etiquettes', e.target.value);
+    el.querySelector('#rg-taille').onchange = e => { LS.set('taille_texte', e.target.value); appliquerTaille(); };
+    el.querySelector('#rg-anim').onchange = e => { LS.set('anim', e.target.checked); Bureau.animations(e.target.checked); };
+    el.querySelector('#rg-nsys').onchange = async e => { if (!e.target.checked) { LS.set('notif_sys', false); return; }
+      const ok = 'Notification' in window && (Notification.permission === 'granted' || await Notification.requestPermission() === 'granted');
+      LS.set('notif_sys', ok); e.target.checked = ok; toast(esc(t(ok ? 'notif_sys_ok' : 'notif_sys_non'))); };
     el.querySelector('#rg-babil').onchange = e => LS.set('babil', e.target.checked);
     el.querySelector('#rg-radio').onchange = e => Radio.basculer(e.target.checked);
     el.querySelector('#rg-rvol').oninput = e => Radio.volume(+e.target.value);
@@ -1160,7 +1190,8 @@ const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
 const Voix = (() => {
   let r = null, mr = null, flux = null, morceaux = [], cb = null, actif = false, acquis = '';
   const langueReco = () => (PROFIL.voix && PROFIL.voix.langue_reconnaissance) || (LANGUE === 'fr' ? 'fr-FR' : 'en-US');
-  const parEnregistrement = () => !Reco || !!navigator.brave || LS.get('voix_enreg', false);
+  const parEnregistrement = () => !Reco || ((!!navigator.brave || LS.get('voix_enreg', false)) && !LS.get('whisper_absent', false));
+  const bloque = e => e && /NotAllowed|Security|not-allowed|service-not-allowed/i.test(String(e.name || e.message || e));
   const disponible = () => !(PROFIL.voix && PROFIL.voix.micro_actif === false) && !!(Reco || (navigator.mediaDevices && window.MediaRecorder));
   function lancer(o) {
     if (!LS.get('voix_prevenu', false)) { LS.set('voix_prevenu', true); toast(esc(t('micro_prive')), { duree: 9000 }); }
@@ -1172,7 +1203,8 @@ const Voix = (() => {
     r.onerror = ev => { if (['network', 'not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'].includes(ev.error)) r.__bascule = ev.error; };
     r.onend = () => {
       const b = r && r.__bascule; r = null;
-      if (b && actif) { LS.set('voix_enreg', true); enregistrer(); return; }   // le service du navigateur ne marche pas (Brave…) : enregistrement local
+      if (b && actif && b === 'not-allowed') return echec(t('micro_bloque').replace('{o}', location.origin));
+      if (b && actif) { if (LS.get('whisper_absent', false)) return echec(t('micro_aucun')); LS.set('voix_enreg', true); enregistrer(); return; }   // le service du navigateur ne marche pas (Brave…) : enregistrement local
       if (actif) { try { reconnaitre(); return; } catch (e) { /* on termine */ } }
       fin(acquis);
     };
@@ -1180,7 +1212,7 @@ const Voix = (() => {
   }
   async function enregistrer() {
     if (!navigator.mediaDevices || !window.MediaRecorder) return echec(t('micro_absent'));
-    try { flux = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return echec(t('micro_absent')); }
+    try { flux = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return echec(bloque(e) ? t('micro_bloque').replace('{o}', location.origin) : t('micro_absent')); }
     if (!actif) { couper(); return; }
     morceaux = []; const type = MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
     mr = new MediaRecorder(flux, type ? { mimeType: type } : {});
@@ -1192,6 +1224,10 @@ const Voix = (() => {
       try {
         const rep = await fetch('/api/transcrire', { method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: blob });
         const j = await rep.json().catch(() => null);
+        if (rep.status === 501) {                       // pas de Whisper local : la prochaine dictée passe par la reconnaissance du navigateur
+          LS.set('whisper_absent', true); LS.set('voix_enreg', false);
+          return echec(Reco ? t('whisper_absent') : t('micro_aucun'));
+        }
         if (!rep.ok || !j || j.ok === false) throw new Error((j && j.erreur) || ('HTTP ' + rep.status));
         fin(j.texte || '');
       } catch (e) { echec(e.message); }
@@ -1252,7 +1288,8 @@ const Bureau = (() => {
   }
   function recadrer() { CAM.z = 1; CAM.tx = 0; CAM.ty = 0; }
   function centrerSur(wx, wy) { CAM.z = Math.max(CAM.z, 2); CAM.tx = L.w / 2 - wx * CAM.z; CAM.ty = L.h / 2 - wy * CAM.z; bornerCam(); }
-  const ANIM = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let ANIM = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) && LS.get('anim', true) !== false;
+  let SURVOL_ID = null;
   // 12 bureaux : postes de la config d'abord, recrues ensuite (les 3 derniers le long du mur du fond)
   const SLOTS = [[2.2, 3.4], [6.2, 3.4], [10.2, 3.4], [2.2, 6.6], [6.2, 6.6], [10.2, 6.6], [2.2, 9.6], [6.2, 9.6], [10.2, 9.6], [4.4, .9], [7.6, .9], [10.6, .9]];
   const ARRIVEES = {};  // recrues qui entrent par la porte : id -> début (ms)
@@ -1476,7 +1513,8 @@ const Bureau = (() => {
     // étiquettes et bulles au premier plan
     const ancres = postes().map((p, i) => { const [sx, sy] = SLOTS[i]; const [x, y] = iso(sx + .55, sy + .47); return { p, ax: x, ay: y - TW * 1.3 }; });
     const coins = {};   // coin haut droit de l'étiquette de chaque poste : là où se pose la bulle de décision
-    for (const b of placerEtiquettes(ancres)) { try { etiquette(b, b.an.p, etatPoste(b.an.p)); } catch (e) { erreur('étiquette', e); } coins[b.an.p.id] = [b.x + tailleEtiquette().w - 4, b.y - 2]; const pb = PERSOS[b.an.p.id]; if (pb && pb.bulle && pb.bulle.fin > Date.now()) bulle(b.x + tailleEtiquette().w / 2, b.y - 4, pb.bulle.texte); }
+    const modeEtiq = LS.get('etiquettes', 'toujours');
+    for (const b of placerEtiquettes(ancres)) { try { if (modeEtiq === 'toujours' || (modeEtiq === 'survol' && b.an.p.id === SURVOL_ID)) etiquette(b, b.an.p, etatPoste(b.an.p)); } catch (e) { erreur('étiquette', e); } coins[b.an.p.id] = [b.x + tailleEtiquette().w - 4, b.y - 2]; const pb = PERSOS[b.an.p.id]; if (pb && pb.bulle && pb.bulle.fin > Date.now()) bulle(b.x + tailleEtiquette().w / 2, b.y - 4, pb.bulle.texte); }
     if (a.bulle && a.bulle.fin > Date.now()) bulle(a.sx, a.sy, a.bulle.texte);
     try { bullesDecision(coins, a); } catch (e) { erreur('bulles de décision', e); }
     // confettis
@@ -1528,7 +1566,7 @@ const Bureau = (() => {
       const gx = lerp(PORTE[0], fx, k), gy = lerp(PORTE[1], fy, k), [px, py] = iso(gx, gy);
       bureauSeul();
       personnageXY(px, py, look, { anim: 'marche', ang: Math.atan2(fy - PORTE[1], fx - PORTE[0]), dist: k * Math.hypot(fx - PORTE[0], fy - PORTE[1]) / S_PERSO, seed }, { marche: true, cligne: true });
-      ZONES.push({ x: px - TW * .4, y: py - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1 });
+      ZONES.push({ x: px - TW * .4, y: py - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1, p });
       return;
     }
     // Occupé : assis à son poste, dos à nous, face à son écran (le bureau dessine chaise, personnage puis dossier).
@@ -1550,12 +1588,12 @@ const Bureau = (() => {
       const rx = RDV[0] - .75 * (1 + i % 4), ry = RDV[1] + .5 + .7 * Math.floor(i / 4);
       const gx = lerp(fx, rx, k2), gy = lerp(fy, ry, k2), [lx, ly] = iso(gx, gy), marche = k2 < 1 && ANIM;
       personnageXY(lx, ly, look, { anim: marche ? 'marche' : 'repos', ang: marche ? Math.atan2(ry - fy, rx - fx) : Math.atan2(RDV[1] - ry, RDV[0] - rx), dist: k2 * Math.hypot(rx - fx, ry - fy) / S_PERSO, seed }, { cligne: true, marche });
-      ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1 });
+      ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1, p });
     } else if (e.etat === 'disponible') {   // libre : debout à côté du bureau, une tasse à la main
       const [lx, ly] = iso(fx, fy); personnageXY(lx, ly, look, { anim: 'cafe_debout', ang: Math.PI / 4, seed }, { cligne: true, tasse: true });
-      ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1 });
+      ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1, p });
     }
-    ZONES.push({ x: x - TW * .7, y: y - TW * 1.3, w: TW * 1.6, h: TW * 1.6, f: () => ficheposte(p), perso: 1 });
+    ZONES.push({ x: x - TW * .7, y: y - TW * 1.3, w: TW * 1.6, h: TW * 1.6, f: () => ficheposte(p), perso: 1, p });
   }
   // ---------- mur d'images : les 3 dernières images encadrées sur le mur du fond (sous l'enseigne)
   function image(src) { let im = IMGS[src]; if (!im) { im = IMGS[src] = new Image(); im.src = src; } return im.complete && im.naturalWidth ? im : null; }
@@ -1644,8 +1682,19 @@ const Bureau = (() => {
     if (DOIGTS.has(e.pointerId)) DOIGTS.set(e.pointerId, [e.clientX, e.clientY]);
     if (PINCE && DOIGTS.size === 2) { const [a, b] = [...DOIGTS.values()]; zoomer(PINCE.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / PINCE.d / CAM.z, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); return; }
     if (GLISSE) { const dx = e.clientX - GLISSE.x, dy = e.clientY - GLISSE.y; if (BOUGE || Math.hypot(dx, dy) > 5) { BOUGE = true; cv.classList.add('saisie'); CAM.tx = GLISSE.tx + dx; CAM.ty = GLISSE.ty + dy; bornerCam(); return; } }
-    cv.classList.toggle('survol', !!zoneSous(e.clientX, e.clientY));
+    const z = zoneSous(e.clientX, e.clientY); cv.classList.toggle('survol', !!z); infoSurvol(z, e.clientX, e.clientY);
   });
+  cv.addEventListener('pointerleave', () => infoSurvol(null));
+  function infoSurvol(z, x, y) {
+    const info = $('#bulle-info'); if (!info) return;
+    SURVOL_ID = z && z.p ? z.p.id : null;
+    if (!z || !z.p) { info.style.opacity = 0; return; }
+    const p = z.p, e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct);
+    info.innerHTML = `<b>${esc(nomPoste(p))}</b>${p.role ? `<br><span style="opacity:.75">${esc(String(p.role).slice(0, 90))}</span>` : ''}<br>${esc(e.ligne.picto + ' ' + e.ligne.texte)}`
+      + (pc !== null ? `<div class="vie"><i style="width:${pc}%"></i></div>${pc} %${e.reste != null && pc < 100 ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}` : '')
+      + (e.texte && e.texte !== e.ligne.texte ? `<br><span style="opacity:.8">${esc(String(e.texte).slice(0, 120))}</span>` : '') + `<br><small style="opacity:.6">${esc(t('clic_fiche'))}</small>`;
+    info.style.left = Math.min(innerWidth - 290, x + 16) + 'px'; info.style.top = Math.max(8, y - 10) + 'px'; info.style.opacity = 1;
+  }
   cv.addEventListener('wheel', e => { e.preventDefault(); const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY; zoomer(Math.exp(-d * (e.ctrlKey ? .01 : .0015)), e.clientX, e.clientY); }, { passive: false });
   cv.addEventListener('dblclick', e => { if (!zoneSous(e.clientX, e.clientY)) zoomer(1.6, e.clientX, e.clientY); });
   cv.addEventListener('click', e => {
@@ -1656,7 +1705,7 @@ const Bureau = (() => {
   });
   addEventListener('resize', () => { taille(); bornerCam(); });
   return {
-    demarrer() { taille(); requestAnimationFrame(boucle); }, taille, zoomer, recadrer, cam: () => Object.assign({}, CAM),
+    demarrer() { taille(); requestAnimationFrame(boucle); }, taille, zoomer, recadrer, cam: () => Object.assign({}, CAM), animations(v) { ANIM = !!v; },
     construire(ids, anime) { for (const id of ids) { if (!construit.has(id)) { construit.add(id); if (anime) { POP[id] = performance.now(); Son.construit(); } else POP[id] = performance.now() - 1000; } } },
     depart(p) { const i = postes().findIndex(x => x.id === p.id); if (i < 0) return; DEPARTS[p.id] = { t0: performance.now(), look: lookPoste(p), sx: SLOTS[i][0], sy: SLOTS[i][1] }; Son.construit(); },
     partir(id) { const b = BULLES[id]; if (b) PARTIES.push({ x: b[0], y: b[1], t0: performance.now() }); delete BULLES[id]; },
@@ -1977,6 +2026,66 @@ $('#niveau').onclick = () => window.Roadmap && Roadmap.ouvrir();
 $('#bt-son').onclick = () => { const on = Son.basculer(); $('#son-onde').style.display = on ? '' : 'none'; toast(esc(on ? t('son_on') : t('son_off')), { duree: 1500 }); };
 if (Son.coupe()) $('#son-onde').style.display = 'none';
 
+
+// ====================================================================== gros micro (bas de l'écran) : dicter une demande, comme le studio d'origine
+// Mode « appui » : clic pour commencer, clic pour finir ; « maintien » : on parle tant que le bouton est appuyé.
+// Barre d'espace maintenue (hors d'un champ) : parler. Puis la carte montre le texte (modifiable), le destinataire et « Envoyer ».
+const GrosMicro = (() => {
+  let texte = '', ecoute = false;
+  const carte = () => $('#micro-carte'), bouton = () => $('#gros-micro');
+  const dests = () => [['assistant', nomAssistant()]].concat(postes().map(p => [p.id, nomPoste(p)]));
+  function montrerEcoute() { const c = carte(); c.hidden = false; c.innerHTML = `<div class="surtitre">${esc(t('jecoute'))}</div><p class="direct" id="micro-direct">${esc(texte) || '…'}</p>`; }
+  function fermer() { const c = carte(); c.hidden = true; c.innerHTML = ''; texte = ''; }
+  function montrerEdition() {
+    const c = carte(); c.hidden = false;
+    c.innerHTML = `<div class="surtitre">${esc(t('ta_demande'))}</div><textarea id="micro-texte" maxlength="2000" placeholder="${esc(t('ecrire_ici'))}">${esc(texte)}</textarea>
+      <div class="rangee"><button type="button" class="bts micro" data-micro="#micro-texte">🎙 ${esc(t('dicter'))}</button></div>
+      <div class="rangee"><label class="discret">${esc(t('pour'))}</label><select id="micro-dest">${dests().map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select><button type="button" class="btp" id="micro-envoyer">${esc(t('envoyer'))}</button><button type="button" class="bts" id="micro-annuler">${esc(t('annuler'))}</button><span class="discret" id="micro-res"></span></div>`;
+    lierMicros(c); const ta = c.querySelector('#micro-texte'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+    c.querySelector('#micro-annuler').onclick = fermer;
+    c.querySelector('#micro-envoyer').onclick = async () => {
+      const x = ta.value.trim(), cible = c.querySelector('#micro-dest').value; if (!x) { ta.focus(); return; }
+      if (document.documentElement.dataset.essai === 'sans-envoi') { document.documentElement.dataset.dernierEnvoi = JSON.stringify({ cible, texte: x }); fermer(); return; }
+      try { const r = await poster('/api/demande', { cible, texte: x, via: 'voix' }); try { Conv.envoye(r.id, cible, x); } catch (e) {} Son.clic(); toast(esc(t('envoye_ok'))); fermer(); try { Bureau.dire('assistant', t('envoye_ok'), 3); } catch (e) {} }
+      catch (e) { c.querySelector('#micro-res').textContent = e.message; }
+    };
+  }
+  function commencer() {
+    if (ecoute) return; if (!Voix.disponible()) { texte = ''; montrerEdition(); return; }
+    ecoute = true; texte = ''; bouton().classList.add('ecoute'); montrerEcoute(); Son.clic();
+    Voix.lancer({
+      interim: x => { texte = x; const d = $('#micro-direct'); if (d) d.textContent = x || '…'; },
+      fin: x => { ecoute = false; bouton().classList.remove('ecoute'); texte = String(x || texte || '').trim(); montrerEdition(); },
+      erreur: () => { ecoute = false; bouton().classList.remove('ecoute'); montrerEdition(); }
+    });
+  }
+  function finir() { if (ecoute) Voix.arreter(); }
+  return { commencer, finir, basculer() { if (ecoute) finir(); else commencer(); }, ecoute: () => ecoute };
+})();
+{ const b = $('#gros-micro'), mode = () => LS.get('micro_mode', 'appui');
+  b.title = t('gros_micro');
+  b.addEventListener('click', () => { if (mode() === 'appui') GrosMicro.basculer(); });
+  b.addEventListener('pointerdown', () => { if (mode() === 'maintien') GrosMicro.commencer(); });
+  ['pointerup', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => { if (mode() === 'maintien') GrosMicro.finir(); }));
+  let espace = false;
+  document.addEventListener('keydown', e => { if (e.code !== 'Space' || e.repeat || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName)) return; e.preventDefault(); espace = true; GrosMicro.commencer(); });
+  document.addEventListener('keyup', e => { if (e.code === 'Space' && espace) { espace = false; GrosMicro.finir(); } }); }
+
+// ====================================================================== fraîcheur des données, taille du texte, notifications du système, babillage
+function majFraicheur() {
+  const f = $('#fraicheur'); if (!f) return; if (!ETAT || !Number.isFinite(+ETAT.horodatage)) { f.hidden = true; return; }
+  if (f.parentElement !== $('#entete')) { const h = $('#horloge'); $('#entete').insertBefore(f, h ? h.nextSibling : null); }
+  const age = Date.now() / 1000 - ETAT.horodatage; f.hidden = false; f.className = age < 60 ? '' : 'vieux';
+  f.textContent = age < 60 ? '● ' + t('a_jour') + ' · ' + new Date(ETAT.horodatage * 1000).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }) : '● ' + t('fige_depuis') + ' ' + duree(age / 60);
+}
+setInterval(majFraicheur, 2000);
+function appliquerTaille() { document.body.classList.remove('t-petite', 't-grande'); const v = LS.get('taille_texte', 'normale'); if (v !== 'normale') document.body.classList.add('t-' + v); }
+appliquerTaille();
+{ const ajout = Notifs.ajouter; Notifs.ajouter = (n, silencieux) => { ajout(n, silencieux);
+    if (!silencieux && LS.get('notif_sys', false) && document.hidden && 'Notification' in window && Notification.permission === 'granted') try { new Notification((CONF.nom || 'Studio') + ' · ' + n.titre, { body: n.ligne || '', tag: n.id }); } catch (e) {} }; }
+{ const dire = Bureau.dire; Bureau.dire = (qui, texte, sec) => { dire(qui, texte, sec); if (LS.get('babil_son', true) && !document.hidden) { const n = Math.min(7, 2 + String(texte).length / 25 | 0), base = qui === 'assistant' ? 520 : 380 + (String(qui).length * 37) % 160;
+    for (let i = 0; i < n; i++) setTimeout(() => Son.bip ? Son.bip(base + Math.random() * 90, .06, { type: 'triangle', gain: .012 }) : null, i * 85); } }; }
+
 // ====================================================================== parité avec le studio d'origine (0.3.1)
 // Radio : les musiques du jeu de l'utilisateur (etat.json « musiques »), lecture continue en playlist mélangée,
 // fondu enchaîné de 7 s à puissance égale, fin réelle détectée (silence final), sourdine pendant la cloche. Coupée par défaut.
@@ -2032,9 +2141,9 @@ document.addEventListener('pointerdown', () => Radio.lancer(), { capture: true }
 
 // Ambiance de bureau (clavier selon le nombre de personnages au travail) et petites conversations entre persos libres.
 setInterval(() => {
-  if (!LS.get('ambiance', true) || CONF.mode !== 'travail' || document.hidden) return;
-  const n = postes().filter(p => { try { return etatPoste(p).etat === 'travaille'; } catch (e) { return false; } }).length;
-  if (n && Math.random() < Math.min(.55, n * .09)) Son.touche();
+  const niv = LS.get('ambiance', 'douce'); if (niv === false || niv === 'coupee' || CONF.mode !== 'travail' || document.hidden) return;
+  const n = postes().filter(p => { try { return etatPoste(p).etat === 'travaille'; } catch (e) { return false; } }).length, k = niv === 'vivante' ? .16 : .09;
+  if (n && Math.random() < Math.min(.7, n * k)) Son.touche();
 }, 220);
 const BABIL = {
   fr: [['Tu as vu la roadmap ? On avance !', 'Oui, et sans casser le build.'], ['Un café ?', 'Avec plaisir, je relis juste ma tâche.'], ['Tu bloques sur quoi ?', 'Rien, je range mes notes.'], ['Belle journée au studio.', 'Et le jeu prend forme.']],

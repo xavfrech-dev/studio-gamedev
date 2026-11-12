@@ -96,6 +96,7 @@ Claude only creates files in `.studio/` (ignored by git). Before handing back, i
 
 ## What's new in 0.3.1
 
+- **0.3.3: big microphone and info bubbles**: a big microphone at the bottom of the screen (or the space bar) to talk to the studio; hovering a character shows its task, percentage and time left. If the browser blocks the microphone, the studio explains how to allow it.
 - **0.3.2: zoom and camera**: mouse wheel to zoom, click-and-drag to move, double-click, +, − and “recenter” buttons; clicking a character recenters on it.
 
 - **The same studio as the original**, adapted to your project: full top bar (Overview, Log, Optimize, Assistant log, Customize, Full screen, **Stop all**…), your team on the left, a radio playing your game's music (off by default), a first-run tutorial.
