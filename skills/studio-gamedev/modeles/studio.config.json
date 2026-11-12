@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "mode": "accueil",
+  "nom_projet": "{{nom_projet}}",
+  "langue": "fr",
+  "dossier_projet": ".",
+  "dossier_studio": ".studio",
+  "dossier_donnees": "",
+  "dossier_agents": ".claude/agents",
+  "dossier_session": "auto",
+  "port": 8790,
+  "moteur": {},
+  "profil": "profil.json",
+  "postes": [],
+  "sources_images": [],
+  "libelles_etapes": {},
+  "economie": {
+    "agents_max": 2,
+    "modele_agents": "sonnet",
+    "point_min": 120,
+    "point_si_changement": true,
+    "enchainer": false,
+    "pause_si_absent_min": 60,
+    "optimisation_auto": false,
+    "attente_max_s": 1800
+  },
+  "regles_agent": [
+    "Écris dans la langue du projet, en phrases courtes.",
+    "Ne lance le moteur que si tu es la chaîne moteur ; en cas de doute, demande à la Direction.",
+    "Travaille dans ton worktree ; ne touche pas aux chantiers des autres.",
+    "Tests au minimum : compile, tests ciblés, un lancement court.",
+    "Pas de push ni de publication ; jamais de clé d'API dans un fichier.",
+    "Données lourdes hors dépôt."
+  ]
+}

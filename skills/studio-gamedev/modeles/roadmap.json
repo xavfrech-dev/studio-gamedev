@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "langue": "fr",
+  "projet": "{{nom_projet}}",
+  "cree_le": "2026-11-12T17:00:00",
+  "maj": "2026-11-12T17:00:00",
+  "sources": {"questionnaire": ".studio/reponses_questionnaire.json", "document": "docs/ROADMAP.md"},
+  "rythme": {"heures_par_semaine": 12, "debut": "2026-11-12"},
+  "niveau": {
+    "xp_par_tache": 100,
+    "xp_par_jalon": 500,
+    "rangs": [
+      {"niveau": 1, "nom": "Garage"},
+      {"niveau": 5, "nom": "Atelier de quartier"},
+      {"niveau": 10, "nom": "Studio indé"},
+      {"niveau": 16, "nom": "Studio AA"},
+      {"niveau": 24, "nom": "Studio AAA"}
+    ]
+  },
+  "jalons": [
+    {
+      "id": "J0",
+      "titre": "Cadrage",
+      "but": "Le projet est décrit et le studio tourne.",
+      "critere_fin": "GDD, roadmap et décisions écrits ; studio ouvert en mode travail.",
+      "depend_de": [],
+      "fin_visee": "2026-11-12",
+      "succes": {"id": "jalon-J0", "titre": "Les plans sont sur la table", "description": "Questionnaire fini, roadmap écrite.", "icone": "cartes/carnet.svg", "son": "moyen"},
+      "taches": [
+        {"id": "J0-01", "titre": "Questionnaire et documents", "critere": "GDD, ROADMAP et DECISIONS écrits", "poste": "direction", "moteur": false, "estimation_h": 1, "depend_de": [], "statut": "verse", "preuve": "a1b2c3d", "fait_le": "2026-11-12T17:00:00"},
+        {"id": "J0-02", "titre": "Studio en mode travail", "critere": "page ouverte, postes visibles", "poste": "direction", "moteur": false, "estimation_h": 0.5, "depend_de": ["J0-01"], "statut": "en_cours"}
+      ]
+    },
+    {
+      "id": "J1",
+      "titre": "Prototype jouable",
+      "but": "Le verbe principal est jouable dans une scène grise.",
+      "critere_fin": "On peut {{verbe}} pendant 1 minute sans bug bloquant.",
+      "depend_de": ["J0"],
+      "fin_visee": "2026-11-26",
+      "succes": {"id": "jalon-J1", "titre": "Ça bouge !", "description": "Premier prototype jouable.", "icone": "cartes/manette.svg", "son": "grand"},
+      "taches": [
+        {"id": "J1-01", "titre": "Projet moteur et scène grise", "critere": "le projet s'ouvre et se lance sans erreur", "poste": "integration-moteur", "moteur": true, "estimation_h": 3, "depend_de": ["J0-01"], "statut": "a_faire"},
+        {"id": "J1-02", "titre": "Contrôles et caméra", "critere": "déplacement et caméra au clavier et à la manette, test court", "poste": "code-gameplay", "moteur": true, "estimation_h": 6, "depend_de": ["J1-01"], "statut": "a_faire"}
+      ]
+    }
+  ],
+  "succes_final": {"id": "roadmap-finie", "titre": "Le jeu est sorti", "description": "Tous les jalons sont terminés.", "icone": "cartes/trophee.svg", "son": "grand"}
+}

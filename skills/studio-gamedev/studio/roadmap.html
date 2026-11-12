@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadmap du studio</title>
+<!-- Page seule du panneau Roadmap (aperçu et repli tant que studio.html n'est pas là).
+     studio.html charge les mêmes roadmap.css et roadmap.js : voir references/studio.md.
+     ?voici : écran de fin du questionnaire (« Voici ta roadmap »). ?lang=en : textes anglais. -->
+<link rel="stylesheet" href="roadmap.css">
+<style>
+:root{--bord:rgba(233,210,160,.16)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:radial-gradient(1400px 800px at 50% 25%,#2d261e 0%,#1a1713 65%) fixed;color:#efe6d2;font:14px "Jeu Interface","Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+#entete{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px}
+#entete h1{margin:0 auto 0 0;font:400 23px/1.1 "Jeu Texte",Georgia,serif;letter-spacing:.08em;color:#f1d9a4}
+.outils{display:flex;gap:8px;flex-wrap:wrap}
+.bt{display:inline-flex;align-items:center;gap:7px;min-height:40px;background:linear-gradient(180deg,rgba(255,250,235,.07),rgba(255,250,235,.02));border:1px solid var(--bord);border-radius:999px;padding:7px 15px;font:inherit;font-size:14px;color:#eadfc8;cursor:pointer;white-space:nowrap}
+.bt:hover{background:rgba(233,196,127,.10);border-color:rgba(233,196,127,.45)}
+.bt svg{width:18px;height:18px;flex:none;color:#e2b866}
+.bt .pastille{background:#a8432e;color:#fff;border-radius:9px;padding:0 6px;font-size:11px;line-height:17px;font-weight:600}
+.bt .pastille:empty{display:none}
+#niveau{font:400 14px "Jeu Texte",Georgia,serif;color:#e8dcc2;padding:6px 14px;border:1px solid var(--bord);border-radius:999px;background:rgba(255,250,235,.05)}
+#niveau b{color:#f1d9a4;font-size:17px}
+:focus-visible{outline:2px solid #e2b866;outline-offset:2px}
+</style>
+</head>
+<body>
+<header id="entete"><h1 id="nom">Studio</h1><span id="niveau" hidden></span><nav class="outils" aria-label="Outils"></nav></header>
+<script src="roadmap.js"></script>
+<script>
+(async function () {
+  const q = new URLSearchParams(location.search);
+  const langue = (q.get('lang') || document.documentElement.lang || navigator.language || 'fr').slice(0, 2);
+  document.documentElement.lang = langue;
+  window.addEventListener('studio:roadmap', function (e) {
+    const c = e.detail, n = document.getElementById('niveau');
+    n.hidden = false;
+    n.innerHTML = '<b>' + c.niveau + '</b> · ' + c.pct + ' %';
+  });
+  await Roadmap.installer({ langue: langue, barre: document.querySelector('.outils') });
+  const rm = await fetch('roadmap.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  if (rm && rm.projet) { document.getElementById('nom').textContent = rm.projet; document.title = rm.projet + ' · Roadmap'; }
+  if (q.has('voici')) Roadmap.voici(); else if (q.has('ouvrir')) Roadmap.ouvrir();
+})();
+</script>
+</body>
+</html>

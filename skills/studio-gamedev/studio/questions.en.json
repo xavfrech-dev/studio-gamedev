@@ -1,0 +1,5151 @@
+{
+ "version": 1,
+ "langue": "en",
+ "chapitres": [
+  {
+   "id": "accueil",
+   "titre": "Welcome",
+   "construit": []
+  },
+  {
+   "id": "vision",
+   "titre": "Vision",
+   "construit": [
+    "bureau_direction",
+    "tableau_piliers",
+    "enseigne"
+   ]
+  },
+  {
+   "id": "gameplay",
+   "titre": "Gameplay",
+   "construit": [
+    "bureau_code",
+    "tableau_boucle"
+   ]
+  },
+  {
+   "id": "monde",
+   "titre": "World",
+   "construit": [
+    "table_level_design",
+    "etagere_livres"
+   ]
+  },
+  {
+   "id": "da",
+   "titre": "Art direction",
+   "construit": [
+    "atelier_art"
+   ]
+  },
+  {
+   "id": "son",
+   "titre": "Sound",
+   "construit": [
+    "cabine_son"
+   ]
+  },
+  {
+   "id": "technique",
+   "titre": "Tech",
+   "construit": [
+    "salle_moteur",
+    "baie_reseau"
+   ]
+  },
+  {
+   "id": "ambition",
+   "titre": "Scope",
+   "construit": [
+    "mur_roadmap",
+    "cloche_decisions"
+   ]
+  },
+  {
+   "id": "personnages",
+   "titre": "Characters",
+   "construit": [
+    "personnages",
+    "porte_equipe"
+   ]
+  },
+  {
+   "id": "fin",
+   "titre": "Summary",
+   "construit": []
+  }
+ ],
+ "questions": [
+  {
+   "id": "accueil.nom",
+   "chapitre": "accueil",
+   "type": "nom",
+   "rapide": true,
+   "titre": "Hi! I'm your assistant. What should I call you?",
+   "aide": "A first name or a nickname: that's how I'll talk to you.",
+   "libre": true,
+   "micro": true,
+   "passer": false,
+   "si": null
+  },
+  {
+   "id": "accueil.mode",
+   "chapitre": "accueil",
+   "type": "choix",
+   "rapide": true,
+   "titre": "How do we set up this game?",
+   "aide": "Quick mode infers the rest and marks it \"to confirm\"; we can come back to it.",
+   "choix": [
+    {
+     "id": "rapide",
+     "libelle": "Quick",
+     "detail": "About twenty questions, 5 to 8 min.",
+     "illustration": "cartes/eclair.svg",
+     "mots_voix": [
+      "quick",
+      "fast"
+     ]
+    },
+    {
+     "id": "complet",
+     "libelle": "Full",
+     "detail": "Every step, about 25 min.",
+     "illustration": "cartes/carnet.svg",
+     "mots_voix": [
+      "full",
+      "complete",
+      "everything"
+     ]
+    },
+    {
+     "id": "reprise",
+     "libelle": "Resume",
+     "detail": "Pick up where I left off.",
+     "illustration": "cartes/marque_page.svg",
+     "mots_voix": [
+      "resume",
+      "continue"
+     ]
+    }
+   ],
+   "recommande": "rapide",
+   "libre": false,
+   "micro": true,
+   "passer": false,
+   "si": null
+  },
+  {
+   "id": "accueil.experience",
+   "chapitre": "accueil",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Have you made games before?",
+   "aide": "I'll pitch my explanations and advice to your experience.",
+   "choix": [
+    {
+     "id": "quelques",
+     "libelle": "A few small projects",
+     "detail": "Tests, tutorials, a jam.",
+     "illustration": "cartes/pousse.svg",
+     "mots_voix": [
+      "a few",
+      "some",
+      "small projects"
+     ]
+    },
+    {
+     "id": "jamais",
+     "libelle": "Never",
+     "detail": "I'm new: explain everything.",
+     "illustration": "cartes/graine.svg",
+     "mots_voix": [
+      "never",
+      "beginner",
+      "no"
+     ]
+    },
+    {
+     "id": "plusieurs",
+     "libelle": "Yes, I've shipped several",
+     "detail": "I've released games before.",
+     "illustration": "cartes/boites.svg",
+     "mots_voix": [
+      "several",
+      "shipped",
+      "released"
+     ]
+    },
+    {
+     "id": "pro",
+     "libelle": "I'm a professional",
+     "detail": "It's my job: keep it short.",
+     "illustration": "cartes/medaille.svg",
+     "mots_voix": [
+      "pro",
+      "professional"
+     ]
+    }
+   ],
+   "recommande": "quelques",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "accueil.personnages_quand",
+   "chapitre": "accueil",
+   "type": "choix",
+   "titre": "Do we design our looks now or at the end?",
+   "aide": "Your avatar and mine. By default we do it at the end, as a treat.",
+   "choix": [
+    {
+     "id": "fin",
+     "libelle": "At the end",
+     "detail": "Game first.",
+     "illustration": "cartes/drapeau.svg",
+     "mots_voix": [
+      "end",
+      "later"
+     ]
+    },
+    {
+     "id": "maintenant",
+     "libelle": "Now",
+     "detail": "Characters first.",
+     "illustration": "cartes/miroir.svg",
+     "mots_voix": [
+      "now",
+      "first"
+     ]
+    }
+   ],
+   "recommande": "fin",
+   "libre": false,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "vision.pitch",
+   "chapitre": "vision",
+   "type": "texte",
+   "rapide": true,
+   "titre": "Tell me about your game in 2 or 3 sentences.",
+   "aide": "What you do, where, and what makes it different. No idea yet? Say so and I'll suggest some.",
+   "attend_deductions": true,
+   "libre": true,
+   "micro": true,
+   "passer": false,
+   "si": null
+  },
+  {
+   "id": "vision.emotion",
+   "chapitre": "vision",
+   "type": "multi",
+   "titre": "What should the player feel?",
+   "aide": "The core emotion drives art, sound and pacing.",
+   "choix": [
+    {
+     "id": "tension",
+     "libelle": "Tension / fear",
+     "detail": "Heart pounding.",
+     "illustration": "cartes/bougie.svg",
+     "mots_voix": [
+      "tension",
+      "fear",
+      "dread"
+     ]
+    },
+    {
+     "id": "maitrise",
+     "libelle": "Mastery / challenge",
+     "detail": "Get better through practice.",
+     "illustration": "cartes/cible.svg",
+     "mots_voix": [
+      "mastery",
+      "challenge",
+      "skill"
+     ]
+    },
+    {
+     "id": "detente",
+     "libelle": "Calm / contemplation",
+     "detail": "Breathe, take it in.",
+     "illustration": "cartes/tasse.svg",
+     "mots_voix": [
+      "calm",
+      "relax",
+      "cozy",
+      "chill"
+     ]
+    },
+    {
+     "id": "decouverte",
+     "libelle": "Discovery",
+     "detail": "See what's over the hill.",
+     "illustration": "cartes/boussole.svg",
+     "mots_voix": [
+      "discovery",
+      "exploration",
+      "wonder"
+     ]
+    },
+    {
+     "id": "puissance",
+     "libelle": "Power",
+     "detail": "Feel strong, sweep everything.",
+     "illustration": "cartes/foudre.svg",
+     "mots_voix": [
+      "power",
+      "strong",
+      "mighty"
+     ]
+    },
+    {
+     "id": "rire",
+     "libelle": "Laughter",
+     "detail": "Funny situations, chaos.",
+     "illustration": "cartes/rire.svg",
+     "mots_voix": [
+      "laughter",
+      "fun",
+      "funny"
+     ]
+    },
+    {
+     "id": "emotion_histoire",
+     "libelle": "Emotion / attachment",
+     "detail": "Care, be moved.",
+     "illustration": "cartes/coeur.svg",
+     "mots_voix": [
+      "emotion",
+      "attachment",
+      "moving"
+     ]
+    }
+   ],
+   "recommande": null,
+   "max": 3,
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "vision.piliers",
+   "chapitre": "vision",
+   "type": "texte",
+   "titre": "The game's 3 pillars?",
+   "aide": "Three ideas every feature must serve. I'll suggest three from your pitch.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "vision.references",
+   "chapitre": "vision",
+   "type": "texte",
+   "titre": "Any reference games?",
+   "aide": "\"Like X but Y\": it helps me aim right.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "vision.motivation",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "Why this game?",
+   "aide": "It changes how we measure success.",
+   "choix": [
+    {
+     "id": "plaisir",
+     "libelle": "For fun / to learn",
+     "detail": "The journey matters as much as the game.",
+     "illustration": "cartes/coeur.svg",
+     "mots_voix": [
+      "fun",
+      "learn",
+      "hobby"
+     ]
+    },
+    {
+     "id": "vendre",
+     "libelle": "To sell it",
+     "detail": "We'll think audience and market.",
+     "illustration": "cartes/pieces.svg",
+     "mots_voix": [
+      "sell",
+      "money",
+      "commercial"
+     ]
+    },
+    {
+     "id": "jam",
+     "libelle": "For a jam / contest",
+     "detail": "Short deadline, set theme.",
+     "illustration": "cartes/chrono.svg",
+     "mots_voix": [
+      "jam",
+      "contest",
+      "competition"
+     ]
+    },
+    {
+     "id": "public_precis",
+     "libelle": "For a specific audience",
+     "detail": "A class, a club, loved ones…",
+     "illustration": "cartes/public.svg",
+     "mots_voix": [
+      "audience",
+      "school",
+      "club"
+     ]
+    }
+   ],
+   "recommande": "plaisir",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "genre.principal",
+   "chapitre": "vision",
+   "type": "choix",
+   "rapide": true,
+   "titre": "What is your game's main genre?",
+   "aide": "Genre decides which systems we build first.",
+   "choix": [
+    {
+     "id": "action_aventure",
+     "libelle": "Action / adventure",
+     "detail": "Explore, fight, push through an adventure.",
+     "illustration": "cartes/epee.svg",
+     "mots_voix": [
+      "action",
+      "adventure"
+     ]
+    },
+    {
+     "id": "survie",
+     "libelle": "Survival / crafting",
+     "detail": "Gather, craft, hold out against the world.",
+     "illustration": "cartes/feu_camp.svg",
+     "mots_voix": [
+      "survival",
+      "crafting"
+     ]
+    },
+    {
+     "id": "rpg",
+     "libelle": "RPG",
+     "detail": "A hero who grows: stats, quests, choices.",
+     "illustration": "cartes/bouclier.svg",
+     "mots_voix": [
+      "rpg",
+      "role playing"
+     ]
+    },
+    {
+     "id": "plateforme",
+     "libelle": "Platformer",
+     "detail": "Run, jump, precision first.",
+     "illustration": "cartes/plateforme.svg",
+     "mots_voix": [
+      "platformer",
+      "platform",
+      "jump"
+     ]
+    },
+    {
+     "id": "roguelike",
+     "libelle": "Roguelike / roguelite",
+     "detail": "Short generated runs, start over stronger.",
+     "illustration": "cartes/donjon.svg",
+     "mots_voix": [
+      "roguelike",
+      "roguelite",
+      "rogue"
+     ]
+    },
+    {
+     "id": "fps",
+     "libelle": "Shooter (FPS / TPS)",
+     "detail": "Aim, shoot, move fast.",
+     "illustration": "cartes/viseur.svg",
+     "mots_voix": [
+      "shooter",
+      "fps",
+      "tps",
+      "shooting"
+     ]
+    },
+    {
+     "id": "strategie",
+     "libelle": "Strategy",
+     "detail": "Think before acting: turn-based or real time.",
+     "illustration": "cartes/echecs.svg",
+     "mots_voix": [
+      "strategy",
+      "tactics",
+      "turn based"
+     ]
+    },
+    {
+     "id": "tower_defense",
+     "libelle": "Tower defense",
+     "detail": "Place defenses, survive the waves.",
+     "illustration": "cartes/tour.svg",
+     "mots_voix": [
+      "tower defense",
+      "defense",
+      "towers"
+     ]
+    },
+    {
+     "id": "gestion",
+     "libelle": "Management / city building",
+     "detail": "Build, organise, keep a system running.",
+     "illustration": "cartes/ville.svg",
+     "mots_voix": [
+      "management",
+      "city builder",
+      "tycoon"
+     ]
+    },
+    {
+     "id": "simulation",
+     "libelle": "Simulation",
+     "detail": "Recreate an activity: driving, farming, flying…",
+     "illustration": "cartes/avion.svg",
+     "mots_voix": [
+      "simulation",
+      "sim",
+      "simulator"
+     ]
+    },
+    {
+     "id": "course",
+     "libelle": "Racing",
+     "detail": "Speed, racing lines, the clock.",
+     "illustration": "cartes/course.svg",
+     "mots_voix": [
+      "racing",
+      "race",
+      "cars"
+     ]
+    },
+    {
+     "id": "sport",
+     "libelle": "Sports",
+     "detail": "A real or invented sport.",
+     "illustration": "cartes/ballon.svg",
+     "mots_voix": [
+      "sports",
+      "football",
+      "ball"
+     ]
+    },
+    {
+     "id": "cartes",
+     "libelle": "Card game / deckbuilder",
+     "detail": "Build a deck, play your cards.",
+     "illustration": "cartes/cartes.svg",
+     "mots_voix": [
+      "cards",
+      "deck",
+      "deckbuilder"
+     ]
+    },
+    {
+     "id": "puzzle",
+     "libelle": "Puzzle",
+     "detail": "Puzzles and that satisfying click.",
+     "illustration": "cartes/puzzle.svg",
+     "mots_voix": [
+      "puzzle",
+      "logic",
+      "brain"
+     ]
+    },
+    {
+     "id": "visual_novel",
+     "libelle": "Visual novel / narrative",
+     "detail": "Read, choose, live a story.",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "visual novel",
+      "narrative",
+      "story"
+     ]
+    },
+    {
+     "id": "horreur",
+     "libelle": "Horror",
+     "detail": "Fear, darkness, scarce resources.",
+     "illustration": "cartes/horreur.svg",
+     "mots_voix": [
+      "horror",
+      "scary",
+      "fear"
+     ]
+    },
+    {
+     "id": "rythme",
+     "libelle": "Rhythm / music",
+     "detail": "Play on the beat, the music leads.",
+     "illustration": "cartes/note.svg",
+     "mots_voix": [
+      "rhythm",
+      "music"
+     ]
+    },
+    {
+     "id": "bac_a_sable",
+     "libelle": "Sandbox",
+     "detail": "A toy world, players set their own goals.",
+     "illustration": "cartes/cubes.svg",
+     "mots_voix": [
+      "sandbox",
+      "creative"
+     ]
+    }
+   ],
+   "recommande": "action_aventure",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "genre.secondaire",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "A secondary genre?",
+   "aide": "A blend can add character; none is fine too.",
+   "choix": [
+    {
+     "id": "aucun",
+     "libelle": "None",
+     "detail": "Stay focused.",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none",
+      "no"
+     ]
+    },
+    {
+     "id": "action_aventure",
+     "libelle": "Action / adventure",
+     "detail": "Explore, fight, push through an adventure.",
+     "illustration": "cartes/epee.svg",
+     "mots_voix": [
+      "action",
+      "adventure"
+     ]
+    },
+    {
+     "id": "survie",
+     "libelle": "Survival / crafting",
+     "detail": "Gather, craft, hold out against the world.",
+     "illustration": "cartes/feu_camp.svg",
+     "mots_voix": [
+      "survival",
+      "crafting"
+     ]
+    },
+    {
+     "id": "rpg",
+     "libelle": "RPG",
+     "detail": "A hero who grows: stats, quests, choices.",
+     "illustration": "cartes/bouclier.svg",
+     "mots_voix": [
+      "rpg",
+      "role playing"
+     ]
+    },
+    {
+     "id": "plateforme",
+     "libelle": "Platformer",
+     "detail": "Run, jump, precision first.",
+     "illustration": "cartes/plateforme.svg",
+     "mots_voix": [
+      "platformer",
+      "platform",
+      "jump"
+     ]
+    },
+    {
+     "id": "roguelike",
+     "libelle": "Roguelike / roguelite",
+     "detail": "Short generated runs, start over stronger.",
+     "illustration": "cartes/donjon.svg",
+     "mots_voix": [
+      "roguelike",
+      "roguelite",
+      "rogue"
+     ]
+    },
+    {
+     "id": "fps",
+     "libelle": "Shooter (FPS / TPS)",
+     "detail": "Aim, shoot, move fast.",
+     "illustration": "cartes/viseur.svg",
+     "mots_voix": [
+      "shooter",
+      "fps",
+      "tps",
+      "shooting"
+     ]
+    },
+    {
+     "id": "strategie",
+     "libelle": "Strategy",
+     "detail": "Think before acting: turn-based or real time.",
+     "illustration": "cartes/echecs.svg",
+     "mots_voix": [
+      "strategy",
+      "tactics",
+      "turn based"
+     ]
+    },
+    {
+     "id": "tower_defense",
+     "libelle": "Tower defense",
+     "detail": "Place defenses, survive the waves.",
+     "illustration": "cartes/tour.svg",
+     "mots_voix": [
+      "tower defense",
+      "defense",
+      "towers"
+     ]
+    },
+    {
+     "id": "gestion",
+     "libelle": "Management / city building",
+     "detail": "Build, organise, keep a system running.",
+     "illustration": "cartes/ville.svg",
+     "mots_voix": [
+      "management",
+      "city builder",
+      "tycoon"
+     ]
+    },
+    {
+     "id": "simulation",
+     "libelle": "Simulation",
+     "detail": "Recreate an activity: driving, farming, flying…",
+     "illustration": "cartes/avion.svg",
+     "mots_voix": [
+      "simulation",
+      "sim",
+      "simulator"
+     ]
+    },
+    {
+     "id": "course",
+     "libelle": "Racing",
+     "detail": "Speed, racing lines, the clock.",
+     "illustration": "cartes/course.svg",
+     "mots_voix": [
+      "racing",
+      "race",
+      "cars"
+     ]
+    },
+    {
+     "id": "sport",
+     "libelle": "Sports",
+     "detail": "A real or invented sport.",
+     "illustration": "cartes/ballon.svg",
+     "mots_voix": [
+      "sports",
+      "football",
+      "ball"
+     ]
+    },
+    {
+     "id": "cartes",
+     "libelle": "Card game / deckbuilder",
+     "detail": "Build a deck, play your cards.",
+     "illustration": "cartes/cartes.svg",
+     "mots_voix": [
+      "cards",
+      "deck",
+      "deckbuilder"
+     ]
+    },
+    {
+     "id": "puzzle",
+     "libelle": "Puzzle",
+     "detail": "Puzzles and that satisfying click.",
+     "illustration": "cartes/puzzle.svg",
+     "mots_voix": [
+      "puzzle",
+      "logic",
+      "brain"
+     ]
+    },
+    {
+     "id": "visual_novel",
+     "libelle": "Visual novel / narrative",
+     "detail": "Read, choose, live a story.",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "visual novel",
+      "narrative",
+      "story"
+     ]
+    },
+    {
+     "id": "horreur",
+     "libelle": "Horror",
+     "detail": "Fear, darkness, scarce resources.",
+     "illustration": "cartes/horreur.svg",
+     "mots_voix": [
+      "horror",
+      "scary",
+      "fear"
+     ]
+    },
+    {
+     "id": "rythme",
+     "libelle": "Rhythm / music",
+     "detail": "Play on the beat, the music leads.",
+     "illustration": "cartes/note.svg",
+     "mots_voix": [
+      "rhythm",
+      "music"
+     ]
+    },
+    {
+     "id": "bac_a_sable",
+     "libelle": "Sandbox",
+     "detail": "A toy world, players set their own goals.",
+     "illustration": "cartes/cubes.svg",
+     "mots_voix": [
+      "sandbox",
+      "creative"
+     ]
+    }
+   ],
+   "recommande": "aucun",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "genre.session",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "How long is a typical play session?",
+   "aide": "Session length sets pacing and saving.",
+   "choix": [
+    {
+     "id": "moyenne",
+     "libelle": "20 to 60 min",
+     "detail": "A relaxed evening.",
+     "illustration": "cartes/horloge.svg",
+     "mots_voix": [
+      "medium",
+      "an hour"
+     ]
+    },
+    {
+     "id": "courte",
+     "libelle": "Short (< 10 min)",
+     "detail": "A break, a commute.",
+     "illustration": "cartes/sablier.svg",
+     "mots_voix": [
+      "short",
+      "quick"
+     ]
+    },
+    {
+     "id": "longue",
+     "libelle": "Long (> 1 h)",
+     "detail": "Deep dives.",
+     "illustration": "cartes/nuit.svg",
+     "mots_voix": [
+      "long",
+      "hours"
+     ]
+    }
+   ],
+   "recommande": "moyenne",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "public.cible",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "Who is it for?",
+   "aide": "The audience shapes difficulty and tone.",
+   "choix": [
+    {
+     "id": "reguliers",
+     "libelle": "Regular players",
+     "detail": "They know the conventions.",
+     "illustration": "cartes/manette.svg",
+     "mots_voix": [
+      "regular",
+      "gamers"
+     ]
+    },
+    {
+     "id": "famille",
+     "libelle": "Everyone / families",
+     "detail": "Easy to pick up.",
+     "illustration": "cartes/famille.svg",
+     "mots_voix": [
+      "family",
+      "casual",
+      "kids"
+     ]
+    },
+    {
+     "id": "hardcore",
+     "libelle": "Hardcore players",
+     "detail": "They want a challenge.",
+     "illustration": "cartes/flamme.svg",
+     "mots_voix": [
+      "hardcore",
+      "core"
+     ]
+    },
+    {
+     "id": "potes",
+     "libelle": "My friends and me",
+     "detail": "A game for the crew.",
+     "illustration": "cartes/potes.svg",
+     "mots_voix": [
+      "friends",
+      "mates",
+      "crew"
+     ]
+    }
+   ],
+   "recommande": "reguliers",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "public.age",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "Target age rating?",
+   "aide": "An indicative rating: it frames violence and language.",
+   "choix": [
+    {
+     "id": "12",
+     "libelle": "12 +",
+     "illustration": "cartes/age_12.svg",
+     "mots_voix": [
+      "twelve"
+     ]
+    },
+    {
+     "id": "tous",
+     "libelle": "Everyone",
+     "illustration": "cartes/age_tous.svg",
+     "mots_voix": [
+      "everyone",
+      "all ages"
+     ]
+    },
+    {
+     "id": "16",
+     "libelle": "16 +",
+     "illustration": "cartes/age_16.svg",
+     "mots_voix": [
+      "sixteen"
+     ]
+    },
+    {
+     "id": "18",
+     "libelle": "18 +",
+     "illustration": "cartes/age_18.svg",
+     "mots_voix": [
+      "eighteen",
+      "adult",
+      "mature"
+     ]
+    }
+   ],
+   "recommande": "12",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "public.accessibilite",
+   "chapitre": "vision",
+   "type": "multi",
+   "titre": "Which accessibility features first?",
+   "aide": "The earlier it's planned, the cheaper it is.",
+   "choix": [
+    {
+     "id": "sous_titres",
+     "libelle": "Subtitles and text size",
+     "illustration": "cartes/sous_titres.svg",
+     "mots_voix": [
+      "subtitles",
+      "text size"
+     ]
+    },
+    {
+     "id": "touches",
+     "libelle": "Remappable controls",
+     "illustration": "cartes/touches.svg",
+     "mots_voix": [
+      "remap",
+      "controls",
+      "keys"
+     ]
+    },
+    {
+     "id": "daltonisme",
+     "libelle": "Colour blindness",
+     "illustration": "cartes/daltonisme.svg",
+     "mots_voix": [
+      "colour blind",
+      "color blind"
+     ]
+    },
+    {
+     "id": "difficulte",
+     "libelle": "Adjustable difficulty",
+     "illustration": "cartes/curseurs.svg",
+     "mots_voix": [
+      "difficulty",
+      "assist"
+     ]
+    }
+   ],
+   "recommande": [
+    "sous_titres",
+    "touches"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "public.langues",
+   "chapitre": "vision",
+   "type": "choix",
+   "titre": "Which languages will the game ship in?",
+   "aide": "We set up translation from day one, even for one language.",
+   "choix": [
+    {
+     "id": "deux",
+     "libelle": "My language and English",
+     "illustration": "cartes/langues.svg",
+     "mots_voix": [
+      "two",
+      "bilingual"
+     ]
+    },
+    {
+     "id": "anglais",
+     "libelle": "English only",
+     "illustration": "cartes/langue_une.svg",
+     "mots_voix": [
+      "english"
+     ]
+    },
+    {
+     "id": "une",
+     "libelle": "My language only",
+     "illustration": "cartes/langue_une.svg",
+     "mots_voix": [
+      "one",
+      "my language"
+     ]
+    },
+    {
+     "id": "plus",
+     "libelle": "Several languages",
+     "illustration": "cartes/globe.svg",
+     "mots_voix": [
+      "several",
+      "many"
+     ]
+    }
+   ],
+   "recommande": "deux",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "camera.dimension",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "rapide": true,
+   "titre": "2D or 3D?",
+   "aide": "This choice weighs most on production time.",
+   "choix": [
+    {
+     "id": "2d",
+     "libelle": "2D",
+     "detail": "Sprites, tiles, readable and fast.",
+     "illustration": "cartes/plan_2d.svg",
+     "mots_voix": [
+      "two d",
+      "2d"
+     ]
+    },
+    {
+     "id": "3d",
+     "libelle": "3D",
+     "detail": "Models, lighting, free camera.",
+     "illustration": "cartes/cube_3d.svg",
+     "mots_voix": [
+      "three d",
+      "3d"
+     ]
+    },
+    {
+     "id": "2_5d",
+     "libelle": "2.5D",
+     "detail": "3D scenery, played on a plane.",
+     "illustration": "cartes/iso_25d.svg",
+     "mots_voix": [
+      "two and a half",
+      "2.5"
+     ]
+    }
+   ],
+   "recommande": "3d",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "camera.vue",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Where is the camera?",
+   "aide": "The camera decides what players see and how they aim.",
+   "choix": [
+    {
+     "id": "premiere_personne",
+     "libelle": "First person",
+     "detail": "Through their eyes.",
+     "illustration": "cartes/cam_fps.svg",
+     "mots_voix": [
+      "first person",
+      "fps"
+     ],
+     "si": {
+      "camera.dimension": {
+       "dans": [
+        "3d",
+        "2_5d"
+       ]
+      }
+     }
+    },
+    {
+     "id": "troisieme_personne",
+     "libelle": "Third person",
+     "detail": "Over the shoulder.",
+     "illustration": "cartes/cam_tps.svg",
+     "mots_voix": [
+      "third person",
+      "shoulder"
+     ],
+     "si": {
+      "camera.dimension": {
+       "dans": [
+        "3d",
+        "2_5d"
+       ]
+      }
+     }
+    },
+    {
+     "id": "cote",
+     "libelle": "Side view",
+     "detail": "Like a platformer.",
+     "illustration": "cartes/cam_cote.svg",
+     "mots_voix": [
+      "side",
+      "side scroller"
+     ]
+    },
+    {
+     "id": "dessus",
+     "libelle": "Top-down",
+     "detail": "The world from above.",
+     "illustration": "cartes/cam_dessus.svg",
+     "mots_voix": [
+      "top down",
+      "overhead"
+     ]
+    },
+    {
+     "id": "isometrique",
+     "libelle": "Isometric",
+     "detail": "Angled, like a diorama.",
+     "illustration": "cartes/cam_iso.svg",
+     "mots_voix": [
+      "isometric",
+      "iso"
+     ]
+    },
+    {
+     "id": "ecran_fixe",
+     "libelle": "Fixed screen",
+     "detail": "One screen at a time.",
+     "illustration": "cartes/cam_fixe.svg",
+     "mots_voix": [
+      "fixed",
+      "single screen"
+     ],
+     "si": {
+      "camera.dimension": {
+       "egal": "2d"
+      }
+     }
+    }
+   ],
+   "recommande": "troisieme_personne",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "camera.controle",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "titre": "Free or guided camera?",
+   "aide": "A guided camera tells stories better; a free one lets you explore.",
+   "choix": [
+    {
+     "id": "libre",
+     "libelle": "Free",
+     "detail": "Mouse or stick.",
+     "illustration": "cartes/cam_libre.svg",
+     "mots_voix": [
+      "free"
+     ]
+    },
+    {
+     "id": "guidee",
+     "libelle": "Guided / scripted",
+     "detail": "It follows rails.",
+     "illustration": "cartes/rail.svg",
+     "mots_voix": [
+      "guided",
+      "scripted",
+      "rails"
+     ]
+    },
+    {
+     "id": "mixte",
+     "libelle": "Mixed",
+     "detail": "Free, with framed moments.",
+     "illustration": "cartes/cam_mixte.svg",
+     "mots_voix": [
+      "mixed",
+      "both"
+     ]
+    }
+   ],
+   "recommande": "libre",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "gameplay.verbe",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "rapide": true,
+   "titre": "What does the player do 80% of the time?",
+   "aide": "The core verb: everything else is built around it.",
+   "choix": [
+    {
+     "id": "explorer",
+     "libelle": "Explore",
+     "illustration": "cartes/boussole.svg",
+     "mots_voix": [
+      "explore",
+      "exploration"
+     ]
+    },
+    {
+     "id": "combattre",
+     "libelle": "Fight",
+     "illustration": "cartes/epee.svg",
+     "mots_voix": [
+      "fight",
+      "combat"
+     ]
+    },
+    {
+     "id": "construire",
+     "libelle": "Build",
+     "illustration": "cartes/marteau.svg",
+     "mots_voix": [
+      "build",
+      "construct"
+     ]
+    },
+    {
+     "id": "survivre",
+     "libelle": "Survive",
+     "illustration": "cartes/feu_camp.svg",
+     "mots_voix": [
+      "survive",
+      "survival"
+     ]
+    },
+    {
+     "id": "resoudre",
+     "libelle": "Solve",
+     "illustration": "cartes/puzzle.svg",
+     "mots_voix": [
+      "solve",
+      "puzzles"
+     ]
+    },
+    {
+     "id": "conduire",
+     "libelle": "Drive / pilot",
+     "illustration": "cartes/volant.svg",
+     "mots_voix": [
+      "drive",
+      "pilot"
+     ]
+    },
+    {
+     "id": "gerer",
+     "libelle": "Manage",
+     "illustration": "cartes/ville.svg",
+     "mots_voix": [
+      "manage",
+      "organise"
+     ]
+    },
+    {
+     "id": "discuter",
+     "libelle": "Talk / choose",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "talk",
+      "choose",
+      "dialogue"
+     ]
+    },
+    {
+     "id": "collectionner",
+     "libelle": "Collect",
+     "illustration": "cartes/coffre.svg",
+     "mots_voix": [
+      "collect",
+      "gather"
+     ]
+    },
+    {
+     "id": "infiltrer",
+     "libelle": "Sneak",
+     "illustration": "cartes/ombre.svg",
+     "mots_voix": [
+      "sneak",
+      "stealth"
+     ]
+    }
+   ],
+   "recommande": "explorer",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "gameplay.systemes",
+   "chapitre": "gameplay",
+   "type": "multi",
+   "titre": "Which systems does the game need?",
+   "aide": "I pre-select what your genre usually needs.",
+   "choix": [
+    {
+     "id": "combat",
+     "libelle": "Combat",
+     "illustration": "cartes/epee.svg",
+     "mots_voix": [
+      "combat"
+     ]
+    },
+    {
+     "id": "inventaire",
+     "libelle": "Inventory",
+     "illustration": "cartes/sac.svg",
+     "mots_voix": [
+      "inventory",
+      "bag"
+     ]
+    },
+    {
+     "id": "fabrication",
+     "libelle": "Crafting",
+     "illustration": "cartes/enclume.svg",
+     "mots_voix": [
+      "crafting",
+      "craft"
+     ]
+    },
+    {
+     "id": "dialogues",
+     "libelle": "Dialogue",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "dialogue"
+     ]
+    },
+    {
+     "id": "sauvegarde",
+     "libelle": "Save system",
+     "illustration": "cartes/disquette.svg",
+     "mots_voix": [
+      "save",
+      "saving"
+     ]
+    },
+    {
+     "id": "ia_ennemie",
+     "libelle": "Enemy AI",
+     "illustration": "cartes/ia.svg",
+     "mots_voix": [
+      "ai",
+      "enemies"
+     ]
+    },
+    {
+     "id": "procedural",
+     "libelle": "Procedural generation",
+     "illustration": "cartes/de.svg",
+     "mots_voix": [
+      "procedural",
+      "generation"
+     ]
+    },
+    {
+     "id": "physique",
+     "libelle": "Physics",
+     "illustration": "cartes/physique.svg",
+     "mots_voix": [
+      "physics"
+     ]
+    },
+    {
+     "id": "meteo",
+     "libelle": "Weather / day-night",
+     "illustration": "cartes/meteo.svg",
+     "mots_voix": [
+      "weather",
+      "day night"
+     ]
+    },
+    {
+     "id": "economie",
+     "libelle": "Economy / trading",
+     "illustration": "cartes/pieces.svg",
+     "mots_voix": [
+      "economy",
+      "trading"
+     ]
+    }
+   ],
+   "recommande": [
+    "sauvegarde"
+   ],
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "gameplay.difficulte",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "titre": "How hard?",
+   "choix": [
+    {
+     "id": "reglable",
+     "libelle": "Adjustable",
+     "detail": "Everyone picks.",
+     "illustration": "cartes/curseurs.svg",
+     "mots_voix": [
+      "adjustable",
+      "settings"
+     ]
+    },
+    {
+     "id": "dure",
+     "libelle": "Hard but fair",
+     "detail": "Learn by dying.",
+     "illustration": "cartes/crane.svg",
+     "mots_voix": [
+      "hard",
+      "tough"
+     ]
+    },
+    {
+     "id": "facile",
+     "libelle": "Easy / relaxed",
+     "detail": "Just enjoy.",
+     "illustration": "cartes/plume.svg",
+     "mots_voix": [
+      "easy",
+      "relaxed"
+     ]
+    },
+    {
+     "id": "adaptative",
+     "libelle": "Adaptive",
+     "detail": "The game adapts to the player.",
+     "illustration": "cartes/balance.svg",
+     "mots_voix": [
+      "adaptive",
+      "dynamic"
+     ]
+    }
+   ],
+   "recommande": "reglable",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "gameplay.echec",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "titre": "What happens when you fail?",
+   "choix": [
+    {
+     "id": "checkpoint",
+     "libelle": "Back to the last checkpoint",
+     "illustration": "cartes/drapeau.svg",
+     "mots_voix": [
+      "checkpoint",
+      "save point"
+     ]
+    },
+    {
+     "id": "permadeath",
+     "libelle": "Permadeath",
+     "detail": "Start over.",
+     "illustration": "cartes/tombe.svg",
+     "mots_voix": [
+      "permadeath",
+      "permanent"
+     ]
+    },
+    {
+     "id": "aucun",
+     "libelle": "No failure",
+     "detail": "You can't lose.",
+     "illustration": "cartes/infini.svg",
+     "mots_voix": [
+      "no failure",
+      "none"
+     ]
+    },
+    {
+     "id": "partielle",
+     "libelle": "Partial loss",
+     "detail": "Lose part of what you carry.",
+     "illustration": "cartes/sac_perce.svg",
+     "mots_voix": [
+      "partial",
+      "drop"
+     ]
+    }
+   ],
+   "recommande": "checkpoint",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "boucle.courte",
+   "chapitre": "gameplay",
+   "type": "texte",
+   "titre": "The 30-second loop?",
+   "aide": "What the player repeats again and again. I'll suggest one from your verb.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "boucle.session",
+   "chapitre": "gameplay",
+   "type": "texte",
+   "titre": "The session loop?",
+   "aide": "For example: head out, gather, return, upgrade.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "boucle.retour",
+   "chapitre": "gameplay",
+   "type": "multi",
+   "titre": "What brings players back?",
+   "choix": [
+    {
+     "id": "progression",
+     "libelle": "Character progression",
+     "illustration": "cartes/niveau.svg",
+     "mots_voix": [
+      "progression",
+      "level"
+     ]
+    },
+    {
+     "id": "histoire",
+     "libelle": "The story",
+     "illustration": "cartes/livre.svg",
+     "mots_voix": [
+      "story",
+      "what's next"
+     ]
+    },
+    {
+     "id": "contenus",
+     "libelle": "New content / procedural",
+     "illustration": "cartes/de.svg",
+     "mots_voix": [
+      "content",
+      "procedural"
+     ]
+    },
+    {
+     "id": "score",
+     "libelle": "Challenge / score",
+     "illustration": "cartes/trophee.svg",
+     "mots_voix": [
+      "score",
+      "challenge",
+      "leaderboard"
+     ]
+    },
+    {
+     "id": "base",
+     "libelle": "Base building",
+     "illustration": "cartes/maison.svg",
+     "mots_voix": [
+      "base",
+      "building"
+     ]
+    }
+   ],
+   "recommande": [
+    "progression"
+   ],
+   "max": 3,
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "progression.type",
+   "chapitre": "gameplay",
+   "type": "multi",
+   "titre": "How does the player progress?",
+   "choix": [
+    {
+     "id": "competences",
+     "libelle": "Skills / levels",
+     "illustration": "cartes/arbre.svg",
+     "mots_voix": [
+      "skills",
+      "levels",
+      "xp"
+     ]
+    },
+    {
+     "id": "equipement",
+     "libelle": "Gear",
+     "illustration": "cartes/bouclier.svg",
+     "mots_voix": [
+      "gear",
+      "equipment",
+      "items"
+     ]
+    },
+    {
+     "id": "zones",
+     "libelle": "Unlocking areas",
+     "illustration": "cartes/cle.svg",
+     "mots_voix": [
+      "areas",
+      "unlock"
+     ]
+    },
+    {
+     "id": "connaissance",
+     "libelle": "Only player knowledge",
+     "illustration": "cartes/ampoule.svg",
+     "mots_voix": [
+      "knowledge",
+      "player skill"
+     ]
+    }
+   ],
+   "recommande": [
+    "competences"
+   ],
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "progression.meta",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "titre": "Progression between runs?",
+   "choix": [
+    {
+     "id": "aucune",
+     "libelle": "None",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none",
+      "no"
+     ]
+    },
+    {
+     "id": "legere",
+     "libelle": "Light (unlocks)",
+     "illustration": "cartes/cle.svg",
+     "mots_voix": [
+      "light",
+      "unlocks"
+     ]
+    },
+    {
+     "id": "forte",
+     "libelle": "Strong (roguelite)",
+     "illustration": "cartes/boucle.svg",
+     "mots_voix": [
+      "strong",
+      "roguelite"
+     ]
+    }
+   ],
+   "recommande": "aucune",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "progression.duree",
+   "chapitre": "gameplay",
+   "type": "choix",
+   "titre": "Target playtime?",
+   "choix": [
+    {
+     "id": "5_10h",
+     "libelle": "5 to 10 h",
+     "illustration": "cartes/horloge.svg",
+     "mots_voix": [
+      "five to ten"
+     ]
+    },
+    {
+     "id": "moins_2h",
+     "libelle": "Under 2 h",
+     "illustration": "cartes/sablier.svg",
+     "mots_voix": [
+      "under two",
+      "short"
+     ]
+    },
+    {
+     "id": "20h",
+     "libelle": "20 h or more",
+     "illustration": "cartes/calendrier.svg",
+     "mots_voix": [
+      "twenty",
+      "long"
+     ]
+    },
+    {
+     "id": "infinie",
+     "libelle": "Endless / replayable",
+     "illustration": "cartes/infini.svg",
+     "mots_voix": [
+      "endless",
+      "replayable"
+     ]
+    }
+   ],
+   "recommande": "5_10h",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.structure",
+   "chapitre": "monde",
+   "type": "choix",
+   "rapide": true,
+   "titre": "How is the world structured?",
+   "aide": "Structure decides the level-design workload.",
+   "choix": [
+    {
+     "id": "niveaux",
+     "libelle": "Level by level",
+     "detail": "One level after another.",
+     "illustration": "cartes/niveaux.svg",
+     "mots_voix": [
+      "levels"
+     ]
+    },
+    {
+     "id": "ouvert",
+     "libelle": "Open world",
+     "detail": "All connected, go anywhere.",
+     "illustration": "cartes/monde_ouvert.svg",
+     "mots_voix": [
+      "open world"
+     ]
+    },
+    {
+     "id": "hub",
+     "libelle": "Hub and zones",
+     "detail": "A home base and outings.",
+     "illustration": "cartes/hub.svg",
+     "mots_voix": [
+      "hub",
+      "zones"
+     ]
+    },
+    {
+     "id": "arene",
+     "libelle": "A single map / arena",
+     "detail": "Everything in one place.",
+     "illustration": "cartes/arene.svg",
+     "mots_voix": [
+      "arena",
+      "one map"
+     ]
+    }
+   ],
+   "recommande": "niveaux",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.taille",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "How big?",
+   "aide": "Bigger = much more work. Small and dense is often better.",
+   "choix": [
+    {
+     "id": "petite",
+     "libelle": "Small and dense",
+     "illustration": "cartes/taille_petite.svg",
+     "mots_voix": [
+      "small",
+      "dense"
+     ]
+    },
+    {
+     "id": "moyenne",
+     "libelle": "Medium",
+     "illustration": "cartes/taille_moyenne.svg",
+     "mots_voix": [
+      "medium"
+     ]
+    },
+    {
+     "id": "grande",
+     "libelle": "Large",
+     "detail": "Mind the cost.",
+     "illustration": "cartes/taille_grande.svg",
+     "mots_voix": [
+      "large",
+      "huge"
+     ]
+    },
+    {
+     "id": "procedurale",
+     "libelle": "Procedural",
+     "detail": "Generated, no fixed limit.",
+     "illustration": "cartes/de.svg",
+     "mots_voix": [
+      "procedural"
+     ]
+    }
+   ],
+   "recommande": "petite",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.lieu",
+   "chapitre": "monde",
+   "type": "texte",
+   "titre": "Where and when is the game set?",
+   "aide": "A place, an era, a mood.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.climat",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "Which landscape dominates?",
+   "aide": "The main setting: it steers assets and lighting.",
+   "choix": [
+    {
+     "id": "foret",
+     "libelle": "Forests and countryside",
+     "illustration": "cartes/foret.svg",
+     "mots_voix": [
+      "forest",
+      "countryside"
+     ]
+    },
+    {
+     "id": "montagne",
+     "libelle": "Mountains / snow",
+     "illustration": "cartes/montagne.svg",
+     "mots_voix": [
+      "mountain",
+      "snow"
+     ]
+    },
+    {
+     "id": "desert",
+     "libelle": "Desert",
+     "illustration": "cartes/desert.svg",
+     "mots_voix": [
+      "desert",
+      "sand"
+     ]
+    },
+    {
+     "id": "tropical",
+     "libelle": "Island / tropics",
+     "illustration": "cartes/palmier.svg",
+     "mots_voix": [
+      "island",
+      "tropical",
+      "beach"
+     ]
+    },
+    {
+     "id": "ville",
+     "libelle": "City",
+     "illustration": "cartes/immeubles.svg",
+     "mots_voix": [
+      "city",
+      "urban"
+     ]
+    },
+    {
+     "id": "mer",
+     "libelle": "Sea / ocean",
+     "illustration": "cartes/vagues.svg",
+     "mots_voix": [
+      "sea",
+      "ocean"
+     ]
+    },
+    {
+     "id": "souterrain",
+     "libelle": "Underground / dungeon",
+     "illustration": "cartes/grotte.svg",
+     "mots_voix": [
+      "underground",
+      "cave",
+      "dungeon"
+     ]
+    },
+    {
+     "id": "espace",
+     "libelle": "Space / alien world",
+     "illustration": "cartes/planete.svg",
+     "mots_voix": [
+      "space",
+      "planet"
+     ]
+    },
+    {
+     "id": "imaginaire",
+     "libelle": "Fantasy realm",
+     "illustration": "cartes/chateau.svg",
+     "mots_voix": [
+      "fantasy",
+      "imaginary"
+     ]
+    }
+   ],
+   "recommande": "foret",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.saisons",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "Seasons?",
+   "aide": "Passing time changes the scenery, sometimes the gameplay.",
+   "choix": [
+    {
+     "id": "aucune",
+     "libelle": "No seasons",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none",
+      "no seasons"
+     ]
+    },
+    {
+     "id": "cycle",
+     "libelle": "All 4 seasons",
+     "illustration": "cartes/saisons.svg",
+     "mots_voix": [
+      "cycle",
+      "four seasons"
+     ]
+    },
+    {
+     "id": "printemps",
+     "libelle": "Spring",
+     "illustration": "cartes/printemps.svg",
+     "mots_voix": [
+      "spring"
+     ]
+    },
+    {
+     "id": "ete",
+     "libelle": "Summer",
+     "illustration": "cartes/ete.svg",
+     "mots_voix": [
+      "summer"
+     ]
+    },
+    {
+     "id": "automne",
+     "libelle": "Autumn",
+     "illustration": "cartes/automne.svg",
+     "mots_voix": [
+      "autumn",
+      "fall"
+     ]
+    },
+    {
+     "id": "hiver",
+     "libelle": "Winter",
+     "illustration": "cartes/hiver.svg",
+     "mots_voix": [
+      "winter"
+     ]
+    }
+   ],
+   "recommande": "aucune",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monde.generation",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "Handmade or generated world?",
+   "choix": [
+    {
+     "id": "main",
+     "libelle": "Handmade",
+     "detail": "Every place designed.",
+     "illustration": "cartes/main.svg",
+     "mots_voix": [
+      "handmade",
+      "hand crafted"
+     ]
+    },
+    {
+     "id": "procedural",
+     "libelle": "Procedural",
+     "detail": "Generated from rules.",
+     "illustration": "cartes/de.svg",
+     "mots_voix": [
+      "procedural",
+      "generated"
+     ]
+    },
+    {
+     "id": "mixte",
+     "libelle": "Mixed",
+     "detail": "Generated base, key places by hand.",
+     "illustration": "cartes/mixte.svg",
+     "mots_voix": [
+      "mixed",
+      "hybrid"
+     ]
+    }
+   ],
+   "recommande": "main",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "histoire.place",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "How much story?",
+   "choix": [
+    {
+     "id": "legere",
+     "libelle": "Light",
+     "detail": "Some context, a few moments.",
+     "illustration": "cartes/parchemin.svg",
+     "mots_voix": [
+      "light",
+      "a little"
+     ]
+    },
+    {
+     "id": "aucune",
+     "libelle": "None",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none",
+      "no story"
+     ]
+    },
+    {
+     "id": "importante",
+     "libelle": "Important",
+     "illustration": "cartes/livre.svg",
+     "mots_voix": [
+      "important",
+      "big"
+     ]
+    },
+    {
+     "id": "centre",
+     "libelle": "Central (narrative)",
+     "illustration": "cartes/plume_encre.svg",
+     "mots_voix": [
+      "central",
+      "narrative"
+     ]
+    }
+   ],
+   "recommande": "legere",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "histoire.narration",
+   "chapitre": "monde",
+   "type": "multi",
+   "titre": "How is it told?",
+   "choix": [
+    {
+     "id": "environnement",
+     "libelle": "Environment and objects",
+     "illustration": "cartes/ruines.svg",
+     "mots_voix": [
+      "environment",
+      "objects"
+     ]
+    },
+    {
+     "id": "dialogues",
+     "libelle": "Dialogue",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "dialogue"
+     ]
+    },
+    {
+     "id": "cinematiques",
+     "libelle": "Cutscenes",
+     "illustration": "cartes/clap.svg",
+     "mots_voix": [
+      "cutscenes",
+      "cinematics"
+     ]
+    },
+    {
+     "id": "journal",
+     "libelle": "Journal / notes",
+     "illustration": "cartes/journal.svg",
+     "mots_voix": [
+      "journal",
+      "notes",
+      "texts"
+     ]
+    }
+   ],
+   "recommande": [
+    "environnement"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "histoire.place": {
+     "different_de": "aucune"
+    }
+   }
+  },
+  {
+   "id": "histoire.choix",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "Do player choices change the story?",
+   "choix": [
+    {
+     "id": "aucun",
+     "libelle": "No, or only cosmetic",
+     "illustration": "cartes/ligne.svg",
+     "mots_voix": [
+      "no",
+      "none",
+      "cosmetic"
+     ]
+    },
+    {
+     "id": "embranchements",
+     "libelle": "Some branches",
+     "illustration": "cartes/fourche.svg",
+     "mots_voix": [
+      "branches",
+      "some"
+     ]
+    },
+    {
+     "id": "ramifiee",
+     "libelle": "Heavily branching",
+     "illustration": "cartes/arbre_branches.svg",
+     "mots_voix": [
+      "branching",
+      "a lot"
+     ]
+    }
+   ],
+   "recommande": "aucun",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "histoire.place": {
+     "different_de": "aucune"
+    }
+   }
+  },
+  {
+   "id": "histoire.fin",
+   "chapitre": "monde",
+   "type": "choix",
+   "titre": "An ending?",
+   "choix": [
+    {
+     "id": "une",
+     "libelle": "One ending",
+     "illustration": "cartes/fin_une.svg",
+     "mots_voix": [
+      "one ending"
+     ]
+    },
+    {
+     "id": "plusieurs",
+     "libelle": "Several endings",
+     "illustration": "cartes/fins.svg",
+     "mots_voix": [
+      "several",
+      "multiple"
+     ]
+    },
+    {
+     "id": "aucune",
+     "libelle": "No ending (sandbox)",
+     "illustration": "cartes/infini.svg",
+     "mots_voix": [
+      "no ending"
+     ]
+    }
+   ],
+   "recommande": "une",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "histoire.place": {
+     "different_de": "aucune"
+    }
+   }
+  },
+  {
+   "id": "da.style",
+   "chapitre": "da",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Which visual style?",
+   "aide": "Style sets the cost of every asset: pick what you can produce.",
+   "choix": [
+    {
+     "id": "stylise",
+     "libelle": "Stylised / painterly",
+     "detail": "Readable shapes, chosen colours.",
+     "illustration": "cartes/stylise.svg",
+     "mots_voix": [
+      "stylised",
+      "stylized",
+      "painterly",
+      "cartoon"
+     ]
+    },
+    {
+     "id": "realiste",
+     "libelle": "Realistic",
+     "detail": "The costliest to produce.",
+     "illustration": "cartes/realiste.svg",
+     "mots_voix": [
+      "realistic",
+      "photoreal"
+     ]
+    },
+    {
+     "id": "pixel",
+     "libelle": "Pixel art",
+     "illustration": "cartes/pixel.svg",
+     "mots_voix": [
+      "pixel",
+      "retro"
+     ]
+    },
+    {
+     "id": "low_poly",
+     "libelle": "Low poly",
+     "detail": "Few polygons, flat colours.",
+     "illustration": "cartes/low_poly.svg",
+     "mots_voix": [
+      "low poly"
+     ]
+    },
+    {
+     "id": "cel",
+     "libelle": "Cel shading / comic",
+     "illustration": "cartes/cel.svg",
+     "mots_voix": [
+      "cel",
+      "comic",
+      "toon"
+     ]
+    },
+    {
+     "id": "voxel",
+     "libelle": "Voxel",
+     "illustration": "cartes/voxel.svg",
+     "mots_voix": [
+      "voxel",
+      "blocks"
+     ]
+    },
+    {
+     "id": "dessin_main",
+     "libelle": "Hand-drawn",
+     "illustration": "cartes/dessin_main.svg",
+     "mots_voix": [
+      "hand drawn",
+      "sketch",
+      "watercolour"
+     ]
+    }
+   ],
+   "recommande": "stylise",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "da.palette",
+   "chapitre": "da",
+   "type": "choix",
+   "titre": "Which palette, which mood?",
+   "aide": "I suggest one from the emotion you picked.",
+   "choix": [
+    {
+     "id": "chaude",
+     "libelle": "Warm",
+     "detail": "Ochres, oranges, golden light.",
+     "illustration": "cartes/soleil.svg",
+     "mots_voix": [
+      "warm",
+      "golden"
+     ]
+    },
+    {
+     "id": "froide",
+     "libelle": "Cool",
+     "detail": "Blues, greys, night.",
+     "illustration": "cartes/lune.svg",
+     "mots_voix": [
+      "cool",
+      "cold",
+      "blue"
+     ]
+    },
+    {
+     "id": "contrastee",
+     "libelle": "High contrast",
+     "detail": "Hard shadows, vivid accents.",
+     "illustration": "cartes/contraste.svg",
+     "mots_voix": [
+      "contrast",
+      "high contrast"
+     ]
+    },
+    {
+     "id": "sourde",
+     "libelle": "Muted / misty",
+     "detail": "Desaturated, wistful.",
+     "illustration": "cartes/brume.svg",
+     "mots_voix": [
+      "muted",
+      "misty",
+      "desaturated"
+     ]
+    },
+    {
+     "id": "vive",
+     "libelle": "Bright and colourful",
+     "detail": "Cheerful, saturated.",
+     "illustration": "cartes/arc_en_ciel.svg",
+     "mots_voix": [
+      "bright",
+      "colourful",
+      "colorful"
+     ]
+    }
+   ],
+   "recommande": "chaude",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "da.sources",
+   "chapitre": "da",
+   "type": "multi",
+   "titre": "Where will assets come from?",
+   "aide": "Golden rule: approve one target image before making a series.",
+   "choix": [
+    {
+     "id": "melange",
+     "libelle": "A mix",
+     "detail": "Free packs, generation, touch-ups.",
+     "illustration": "cartes/melange.svg",
+     "mots_voix": [
+      "mix",
+      "mixed"
+     ]
+    },
+    {
+     "id": "main",
+     "libelle": "Made by hand",
+     "illustration": "cartes/pinceau.svg",
+     "mots_voix": [
+      "by hand",
+      "myself"
+     ]
+    },
+    {
+     "id": "achetes",
+     "libelle": "Bought",
+     "detail": "Store packs.",
+     "illustration": "cartes/panier.svg",
+     "mots_voix": [
+      "bought",
+      "store",
+      "packs"
+     ]
+    },
+    {
+     "id": "ia",
+     "libelle": "AI-generated",
+     "detail": "Always with an approved image first.",
+     "illustration": "cartes/etincelles.svg",
+     "mots_voix": [
+      "ai",
+      "generated"
+     ]
+    }
+   ],
+   "recommande": [
+    "melange"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "da.references",
+   "chapitre": "da",
+   "type": "choix",
+   "titre": "Do you have reference images?",
+   "choix": [
+    {
+     "id": "oui",
+     "libelle": "I have some",
+     "detail": "A folder or links.",
+     "illustration": "cartes/dossier.svg",
+     "mots_voix": [
+      "yes",
+      "i have"
+     ]
+    },
+    {
+     "id": "planches",
+     "libelle": "Suggest mood boards",
+     "illustration": "cartes/planches.svg",
+     "mots_voix": [
+      "mood board",
+      "suggest"
+     ]
+    },
+    {
+     "id": "pas_encore",
+     "libelle": "Not yet",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "not yet",
+      "no"
+     ]
+    }
+   ],
+   "recommande": "oui",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "interface.hud",
+   "chapitre": "da",
+   "type": "choix",
+   "titre": "What on-screen display (HUD)?",
+   "choix": [
+    {
+     "id": "minimal",
+     "libelle": "Minimal / diegetic",
+     "detail": "Almost nothing on screen.",
+     "illustration": "cartes/hud_minimal.svg",
+     "mots_voix": [
+      "minimal",
+      "diegetic"
+     ]
+    },
+    {
+     "id": "classique",
+     "libelle": "Classic",
+     "detail": "Health, map, items.",
+     "illustration": "cartes/hud_classique.svg",
+     "mots_voix": [
+      "classic"
+     ]
+    },
+    {
+     "id": "riche",
+     "libelle": "Rich",
+     "detail": "Panels everywhere (management).",
+     "illustration": "cartes/hud_riche.svg",
+     "mots_voix": [
+      "rich",
+      "detailed"
+     ]
+    }
+   ],
+   "recommande": "minimal",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "interface.menus",
+   "chapitre": "da",
+   "type": "choix",
+   "titre": "Which menu style?",
+   "choix": [
+    {
+     "id": "univers",
+     "libelle": "In the game's world",
+     "detail": "A notebook, a terminal…",
+     "illustration": "cartes/carnet.svg",
+     "mots_voix": [
+      "in world",
+      "notebook",
+      "terminal"
+     ]
+    },
+    {
+     "id": "moderne",
+     "libelle": "Clean and modern",
+     "illustration": "cartes/menu_moderne.svg",
+     "mots_voix": [
+      "clean",
+      "modern"
+     ]
+    },
+    {
+     "id": "retro",
+     "libelle": "Retro",
+     "illustration": "cartes/menu_retro.svg",
+     "mots_voix": [
+      "retro",
+      "arcade"
+     ]
+    }
+   ],
+   "recommande": "univers",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "interface.ecrans",
+   "chapitre": "da",
+   "type": "multi",
+   "titre": "Which screens are must-haves?",
+   "choix": [
+    {
+     "id": "menu",
+     "libelle": "Menu, options, pause",
+     "illustration": "cartes/menu_moderne.svg",
+     "mots_voix": [
+      "menu",
+      "options",
+      "pause"
+     ]
+    },
+    {
+     "id": "inventaire",
+     "libelle": "Inventory",
+     "illustration": "cartes/sac.svg",
+     "mots_voix": [
+      "inventory"
+     ]
+    },
+    {
+     "id": "carte",
+     "libelle": "Map",
+     "illustration": "cartes/carte.svg",
+     "mots_voix": [
+      "map"
+     ]
+    },
+    {
+     "id": "journal",
+     "libelle": "Journal / quests",
+     "illustration": "cartes/journal.svg",
+     "mots_voix": [
+      "journal",
+      "quests"
+     ]
+    }
+   ],
+   "recommande": [
+    "menu"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "son.musique",
+   "chapitre": "son",
+   "type": "choix",
+   "rapide": true,
+   "titre": "How much music?",
+   "choix": [
+    {
+     "id": "adaptative",
+     "libelle": "Adaptive",
+     "detail": "It follows the action.",
+     "illustration": "cartes/musique_adaptative.svg",
+     "mots_voix": [
+      "adaptive",
+      "dynamic"
+     ]
+    },
+    {
+     "id": "ambiante",
+     "libelle": "Ambient and subtle",
+     "illustration": "cartes/musique_douce.svg",
+     "mots_voix": [
+      "ambient",
+      "subtle"
+     ]
+    },
+    {
+     "id": "forte",
+     "libelle": "Front and centre",
+     "illustration": "cartes/orchestre.svg",
+     "mots_voix": [
+      "strong",
+      "front"
+     ]
+    },
+    {
+     "id": "aucune",
+     "libelle": "None",
+     "illustration": "cartes/silence.svg",
+     "mots_voix": [
+      "none",
+      "no music"
+     ]
+    }
+   ],
+   "recommande": "adaptative",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "son.sources",
+   "chapitre": "son",
+   "type": "multi",
+   "titre": "Where will sounds come from?",
+   "choix": [
+    {
+     "id": "libres",
+     "libelle": "Royalty-free libraries",
+     "illustration": "cartes/bibliotheque.svg",
+     "mots_voix": [
+      "free",
+      "libraries"
+     ]
+    },
+    {
+     "id": "composee",
+     "libelle": "Composed",
+     "detail": "By me or a musician.",
+     "illustration": "cartes/partition.svg",
+     "mots_voix": [
+      "composed",
+      "musician"
+     ]
+    },
+    {
+     "id": "ia",
+     "libelle": "AI-generated",
+     "illustration": "cartes/etincelles.svg",
+     "mots_voix": [
+      "ai",
+      "generated"
+     ]
+    },
+    {
+     "id": "achetes",
+     "libelle": "Bought packs",
+     "illustration": "cartes/panier.svg",
+     "mots_voix": [
+      "bought",
+      "packs"
+     ]
+    }
+   ],
+   "recommande": [
+    "libres"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "son.voix",
+   "chapitre": "son",
+   "type": "choix",
+   "titre": "Voices?",
+   "choix": [
+    {
+     "id": "aucune",
+     "libelle": "None",
+     "illustration": "cartes/silence.svg",
+     "mots_voix": [
+      "none",
+      "no voice"
+     ]
+    },
+    {
+     "id": "onomatopees",
+     "libelle": "Grunts and barks",
+     "illustration": "cartes/onomatopee.svg",
+     "mots_voix": [
+      "grunts",
+      "barks"
+     ]
+    },
+    {
+     "id": "partiel",
+     "libelle": "Partial voice-over",
+     "illustration": "cartes/micro.svg",
+     "mots_voix": [
+      "partial"
+     ]
+    },
+    {
+     "id": "complet",
+     "libelle": "Full voice-over",
+     "illustration": "cartes/micros.svg",
+     "mots_voix": [
+      "full"
+     ]
+    }
+   ],
+   "recommande": "aucune",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "son.ambiance",
+   "chapitre": "son",
+   "type": "choix",
+   "titre": "And the soundscape?",
+   "choix": [
+    {
+     "id": "importante",
+     "libelle": "Rich",
+     "detail": "3D sound, weather, wildlife.",
+     "illustration": "cartes/ambiance_3d.svg",
+     "mots_voix": [
+      "rich",
+      "important"
+     ]
+    },
+    {
+     "id": "sobre",
+     "libelle": "Simple",
+     "illustration": "cartes/haut_parleur.svg",
+     "mots_voix": [
+      "simple",
+      "sober"
+     ]
+    },
+    {
+     "id": "minimale",
+     "libelle": "Minimal",
+     "illustration": "cartes/silence.svg",
+     "mots_voix": [
+      "minimal"
+     ]
+    }
+   ],
+   "recommande": "importante",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "plateforme.cibles",
+   "chapitre": "technique",
+   "type": "multi",
+   "rapide": true,
+   "titre": "What will people play on?",
+   "aide": "Each extra platform = extra testing.",
+   "choix": [
+    {
+     "id": "pc",
+     "libelle": "PC (Windows)",
+     "illustration": "cartes/pc.svg",
+     "mots_voix": [
+      "pc",
+      "windows",
+      "computer"
+     ]
+    },
+    {
+     "id": "web",
+     "libelle": "Web browser",
+     "illustration": "cartes/navigateur.svg",
+     "mots_voix": [
+      "browser",
+      "web"
+     ]
+    },
+    {
+     "id": "mobile",
+     "libelle": "Mobile",
+     "illustration": "cartes/mobile.svg",
+     "mots_voix": [
+      "mobile",
+      "phone",
+      "tablet"
+     ]
+    },
+    {
+     "id": "consoles",
+     "libelle": "Home consoles",
+     "illustration": "cartes/console.svg",
+     "mots_voix": [
+      "console",
+      "consoles"
+     ]
+    },
+    {
+     "id": "portable",
+     "libelle": "Handheld",
+     "illustration": "cartes/console_portable.svg",
+     "mots_voix": [
+      "handheld"
+     ]
+    },
+    {
+     "id": "mac_linux",
+     "libelle": "Mac / Linux",
+     "illustration": "cartes/portable.svg",
+     "mots_voix": [
+      "mac",
+      "linux"
+     ]
+    },
+    {
+     "id": "vr",
+     "libelle": "Virtual reality",
+     "illustration": "cartes/vr.svg",
+     "mots_voix": [
+      "vr",
+      "virtual reality",
+      "headset"
+     ]
+    },
+    {
+     "id": "roblox",
+     "libelle": "Roblox",
+     "detail": "Platform and engine in one.",
+     "illustration": "cartes/briques.svg",
+     "mots_voix": [
+      "roblox"
+     ]
+    }
+   ],
+   "recommande": [
+    "pc"
+   ],
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "plateforme.controles",
+   "chapitre": "technique",
+   "type": "multi",
+   "titre": "Which controls?",
+   "choix": [
+    {
+     "id": "clavier_souris",
+     "libelle": "Keyboard and mouse",
+     "illustration": "cartes/clavier.svg",
+     "mots_voix": [
+      "keyboard",
+      "mouse"
+     ]
+    },
+    {
+     "id": "manette",
+     "libelle": "Gamepad",
+     "illustration": "cartes/manette.svg",
+     "mots_voix": [
+      "gamepad",
+      "controller"
+     ]
+    },
+    {
+     "id": "tactile",
+     "libelle": "Touch",
+     "illustration": "cartes/tactile.svg",
+     "mots_voix": [
+      "touch",
+      "finger"
+     ]
+    },
+    {
+     "id": "les_deux",
+     "libelle": "Keyboard, mouse and gamepad",
+     "illustration": "cartes/clavier_manette.svg",
+     "mots_voix": [
+      "both"
+     ]
+    }
+   ],
+   "recommande": [
+    "les_deux"
+   ],
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "plateforme.machine",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "Which machine should run it?",
+   "choix": [
+    {
+     "id": "milieu",
+     "libelle": "Mid-range PC",
+     "illustration": "cartes/pc.svg",
+     "mots_voix": [
+      "mid range",
+      "average"
+     ]
+    },
+    {
+     "id": "haut",
+     "libelle": "High-end PC",
+     "illustration": "cartes/pc_puissant.svg",
+     "mots_voix": [
+      "high end",
+      "powerful"
+     ]
+    },
+    {
+     "id": "petite",
+     "libelle": "Low-end / laptop",
+     "illustration": "cartes/portable.svg",
+     "mots_voix": [
+      "low end",
+      "laptop"
+     ]
+    },
+    {
+     "id": "mobile",
+     "libelle": "Phone",
+     "illustration": "cartes/mobile.svg",
+     "mots_voix": [
+      "phone",
+      "mobile"
+     ]
+    }
+   ],
+   "recommande": "milieu",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "moteur.nom",
+   "chapitre": "technique",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Which engine?",
+   "aide": "I recommend the best fit for your answers; you can pick another.",
+   "choix": [
+    {
+     "id": "godot",
+     "libelle": "Godot",
+     "detail": "Open source, light, great for 2D and light 3D.",
+     "illustration": "cartes/moteur_libre.svg",
+     "mots_voix": [
+      "godot"
+     ]
+    },
+    {
+     "id": "unity",
+     "libelle": "Unity",
+     "detail": "Versatile, C#, mobile and consoles.",
+     "illustration": "cartes/moteur_polyvalent.svg",
+     "mots_voix": [
+      "unity"
+     ]
+    },
+    {
+     "id": "unreal",
+     "libelle": "Unreal Engine",
+     "detail": "High-end 3D; heavy, long builds.",
+     "illustration": "cartes/moteur_lourd.svg",
+     "mots_voix": [
+      "unreal"
+     ]
+    },
+    {
+     "id": "phaser",
+     "libelle": "Phaser",
+     "detail": "2D in the browser.",
+     "illustration": "cartes/moteur_web.svg",
+     "mots_voix": [
+      "phaser"
+     ]
+    },
+    {
+     "id": "threejs",
+     "libelle": "three.js",
+     "detail": "3D in the browser.",
+     "illustration": "cartes/moteur_web3d.svg",
+     "mots_voix": [
+      "three",
+      "threejs"
+     ]
+    },
+    {
+     "id": "pixijs",
+     "libelle": "PixiJS",
+     "detail": "Fast 2D web rendering.",
+     "illustration": "cartes/moteur_web.svg",
+     "mots_voix": [
+      "pixi"
+     ]
+    },
+    {
+     "id": "bevy",
+     "libelle": "Bevy",
+     "detail": "Rust, code-first.",
+     "illustration": "cartes/moteur_code.svg",
+     "mots_voix": [
+      "bevy"
+     ]
+    },
+    {
+     "id": "ebitengine",
+     "libelle": "Ebitengine",
+     "detail": "Go, simple 2D.",
+     "illustration": "cartes/moteur_code.svg",
+     "mots_voix": [
+      "ebiten",
+      "ebitengine"
+     ]
+    },
+    {
+     "id": "love",
+     "libelle": "LÖVE",
+     "detail": "Lua, small 2D games.",
+     "illustration": "cartes/moteur_code.svg",
+     "mots_voix": [
+      "love"
+     ]
+    },
+    {
+     "id": "pygame",
+     "libelle": "pygame",
+     "detail": "Python, great to learn.",
+     "illustration": "cartes/moteur_code.svg",
+     "mots_voix": [
+      "pygame",
+      "python"
+     ]
+    },
+    {
+     "id": "defold",
+     "libelle": "Defold",
+     "detail": "Lua, light, mobile and web.",
+     "illustration": "cartes/moteur_code.svg",
+     "mots_voix": [
+      "defold"
+     ]
+    },
+    {
+     "id": "roblox",
+     "libelle": "Roblox Studio",
+     "detail": "Luau, published on Roblox.",
+     "illustration": "cartes/briques.svg",
+     "mots_voix": [
+      "roblox"
+     ]
+    },
+    {
+     "id": "maison",
+     "libelle": "Custom engine",
+     "detail": "Build it all yourself.",
+     "illustration": "cartes/moteur_maison.svg",
+     "mots_voix": [
+      "custom",
+      "homemade",
+      "own engine"
+     ]
+    }
+   ],
+   "recommande": "godot",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "moteur.langage",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "Which language?",
+   "choix": [
+    {
+     "id": "gdscript",
+     "libelle": "GDScript",
+     "detail": "Simple, made for Godot.",
+     "illustration": "cartes/script.svg",
+     "mots_voix": [
+      "gdscript"
+     ],
+     "si": {
+      "moteur.nom": {
+       "egal": "godot"
+      }
+     }
+    },
+    {
+     "id": "csharp",
+     "libelle": "C#",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "c sharp",
+      "c#"
+     ],
+     "si": {
+      "moteur.nom": {
+       "dans": [
+        "godot",
+        "unity"
+       ]
+      }
+     }
+    },
+    {
+     "id": "blueprints_cpp",
+     "libelle": "Blueprints + C++",
+     "illustration": "cartes/noeuds_code.svg",
+     "mots_voix": [
+      "blueprints and c++"
+     ],
+     "si": {
+      "moteur.nom": {
+       "egal": "unreal"
+      }
+     }
+    },
+    {
+     "id": "blueprints",
+     "libelle": "Blueprints only",
+     "detail": "Visual, no text code.",
+     "illustration": "cartes/noeuds.svg",
+     "mots_voix": [
+      "blueprints"
+     ],
+     "si": {
+      "moteur.nom": {
+       "egal": "unreal"
+      }
+     }
+    },
+    {
+     "id": "cpp",
+     "libelle": "C++",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "c plus plus",
+      "c++"
+     ],
+     "si": {
+      "moteur.nom": {
+       "dans": [
+        "unreal",
+        "maison"
+       ]
+      }
+     }
+    },
+    {
+     "id": "typescript",
+     "libelle": "TypeScript",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "typescript"
+     ],
+     "si": {
+      "moteur.nom": {
+       "dans": [
+        "phaser",
+        "threejs",
+        "pixijs"
+       ]
+      }
+     }
+    },
+    {
+     "id": "javascript",
+     "libelle": "JavaScript",
+     "illustration": "cartes/script.svg",
+     "mots_voix": [
+      "javascript"
+     ],
+     "si": {
+      "moteur.nom": {
+       "dans": [
+        "phaser",
+        "threejs",
+        "pixijs"
+       ]
+      }
+     }
+    },
+    {
+     "id": "luau",
+     "libelle": "Luau",
+     "illustration": "cartes/script.svg",
+     "mots_voix": [
+      "luau"
+     ],
+     "si": {
+      "moteur.nom": {
+       "egal": "roblox"
+      }
+     }
+    },
+    {
+     "id": "impose",
+     "libelle": "The engine's own",
+     "detail": "Rust, Go, Lua or Python, per engine.",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "engine default"
+     ],
+     "si": {
+      "moteur.nom": {
+       "dans": [
+        "bevy",
+        "ebitengine",
+        "love",
+        "pygame",
+        "defold"
+       ]
+      }
+     }
+    }
+   ],
+   "recommande": null,
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "moteur.version",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "Which engine version?",
+   "choix": [
+    {
+     "id": "derniere",
+     "libelle": "Latest stable",
+     "illustration": "cartes/etiquette_neuve.svg",
+     "mots_voix": [
+      "latest",
+      "stable"
+     ]
+    },
+    {
+     "id": "precise",
+     "libelle": "A specific version",
+     "detail": "Type it in the free field.",
+     "illustration": "cartes/etiquette.svg",
+     "mots_voix": [
+      "specific"
+     ]
+    }
+   ],
+   "recommande": "derniere",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "moteur.versionnage",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "Version control?",
+   "aide": "Essential to roll back when things break.",
+   "choix": [
+    {
+     "id": "git_lfs",
+     "libelle": "Git + LFS",
+     "detail": "With large-file support.",
+     "illustration": "cartes/branches_lfs.svg",
+     "mots_voix": [
+      "git lfs",
+      "lfs"
+     ]
+    },
+    {
+     "id": "git",
+     "libelle": "Git",
+     "illustration": "cartes/branches.svg",
+     "mots_voix": [
+      "git"
+     ]
+    },
+    {
+     "id": "pas_encore",
+     "libelle": "Not yet",
+     "detail": "I'll set it up with you.",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "not yet",
+      "no"
+     ]
+    }
+   ],
+   "recommande": "git_lfs",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "multijoueur.mode",
+   "chapitre": "technique",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Multiplayer?",
+   "aide": "Networking must be planned in the architecture, even if it ships later.",
+   "choix": [
+    {
+     "id": "solo",
+     "libelle": "No, single-player",
+     "illustration": "cartes/solo.svg",
+     "mots_voix": [
+      "single player",
+      "solo",
+      "no"
+     ]
+    },
+    {
+     "id": "coop_ligne",
+     "libelle": "Online co-op",
+     "illustration": "cartes/coop_ligne.svg",
+     "mots_voix": [
+      "online co-op",
+      "coop"
+     ]
+    },
+    {
+     "id": "coop_locale",
+     "libelle": "Local co-op / split screen",
+     "illustration": "cartes/ecran_partage.svg",
+     "mots_voix": [
+      "local",
+      "split screen",
+      "couch"
+     ]
+    },
+    {
+     "id": "competitif",
+     "libelle": "Online competitive",
+     "illustration": "cartes/versus.svg",
+     "mots_voix": [
+      "competitive",
+      "pvp",
+      "versus"
+     ]
+    }
+   ],
+   "recommande": "solo",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "multijoueur.joueurs",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "How many players together?",
+   "choix": [
+    {
+     "id": "2_4",
+     "libelle": "2 to 4",
+     "illustration": "cartes/joueurs_4.svg",
+     "mots_voix": [
+      "two to four"
+     ]
+    },
+    {
+     "id": "2",
+     "libelle": "2",
+     "illustration": "cartes/joueurs_2.svg",
+     "mots_voix": [
+      "two",
+      "duo"
+     ]
+    },
+    {
+     "id": "5_16",
+     "libelle": "5 to 16",
+     "illustration": "cartes/joueurs_16.svg",
+     "mots_voix": [
+      "five to sixteen"
+     ]
+    },
+    {
+     "id": "massif",
+     "libelle": "Massive",
+     "detail": "Warning: a huge undertaking.",
+     "illustration": "cartes/foule.svg",
+     "mots_voix": [
+      "massive",
+      "mmo"
+     ]
+    }
+   ],
+   "recommande": "2_4",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "multijoueur.mode": {
+     "different_de": "solo"
+    }
+   }
+  },
+  {
+   "id": "multijoueur.architecture",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "Who hosts the game?",
+   "choix": [
+    {
+     "id": "hote",
+     "libelle": "A player hosts",
+     "illustration": "cartes/hote.svg",
+     "mots_voix": [
+      "host",
+      "player hosts"
+     ]
+    },
+    {
+     "id": "dedie",
+     "libelle": "Dedicated server",
+     "illustration": "cartes/serveur.svg",
+     "mots_voix": [
+      "server",
+      "dedicated"
+     ]
+    },
+    {
+     "id": "services",
+     "libelle": "Engine / platform services",
+     "illustration": "cartes/nuage.svg",
+     "mots_voix": [
+      "services",
+      "cloud"
+     ]
+    }
+   ],
+   "recommande": "hote",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "multijoueur.mode": {
+     "dans": [
+      "coop_ligne",
+      "competitif"
+     ]
+    }
+   }
+  },
+  {
+   "id": "multijoueur.quand",
+   "chapitre": "technique",
+   "type": "choix",
+   "titre": "When does multiplayer arrive?",
+   "choix": [
+    {
+     "id": "apres_solo",
+     "libelle": "Planned now, shipped after solo",
+     "illustration": "cartes/plan.svg",
+     "mots_voix": [
+      "after",
+      "later"
+     ]
+    },
+    {
+     "id": "prototype",
+     "libelle": "From the prototype",
+     "illustration": "cartes/eclair.svg",
+     "mots_voix": [
+      "prototype",
+      "right away"
+     ]
+    }
+   ],
+   "recommande": "apres_solo",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "multijoueur.mode": {
+     "dans": [
+      "coop_ligne",
+      "competitif"
+     ]
+    }
+   }
+  },
+  {
+   "id": "monetisation.modele",
+   "chapitre": "ambition",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Which business model?",
+   "choix": [
+    {
+     "id": "gratuit",
+     "libelle": "Free / personal project",
+     "illustration": "cartes/cadeau.svg",
+     "mots_voix": [
+      "free",
+      "personal"
+     ]
+    },
+    {
+     "id": "achat",
+     "libelle": "One-time purchase",
+     "illustration": "cartes/etiquette_prix.svg",
+     "mots_voix": [
+      "purchase",
+      "paid",
+      "premium"
+     ]
+    },
+    {
+     "id": "f2p",
+     "libelle": "Free-to-play",
+     "detail": "No pay-to-win by default.",
+     "illustration": "cartes/gemme.svg",
+     "mots_voix": [
+      "free to play",
+      "f2p"
+     ]
+    },
+    {
+     "id": "dons",
+     "libelle": "Donations / pay what you want",
+     "illustration": "cartes/chapeau_dons.svg",
+     "mots_voix": [
+      "donations",
+      "pay what you want"
+     ]
+    }
+   ],
+   "recommande": "gratuit",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monetisation.publication",
+   "chapitre": "ambition",
+   "type": "multi",
+   "titre": "Where to release it?",
+   "choix": [
+    {
+     "id": "itch",
+     "libelle": "itch.io",
+     "detail": "Easy, great to start.",
+     "illustration": "cartes/stand.svg",
+     "mots_voix": [
+      "itch"
+     ]
+    },
+    {
+     "id": "steam",
+     "libelle": "Steam",
+     "illustration": "cartes/vitrine.svg",
+     "mots_voix": [
+      "steam"
+     ]
+    },
+    {
+     "id": "stores_mobiles",
+     "libelle": "Mobile stores",
+     "illustration": "cartes/mobile.svg",
+     "mots_voix": [
+      "app store",
+      "mobile store"
+     ]
+    },
+    {
+     "id": "consoles",
+     "libelle": "Console stores",
+     "illustration": "cartes/console.svg",
+     "mots_voix": [
+      "consoles"
+     ]
+    },
+    {
+     "id": "nulle_part",
+     "libelle": "Nowhere for now",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "nowhere",
+      "not yet"
+     ]
+    }
+   ],
+   "recommande": [
+    "itch"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "monetisation.prix",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "Target price?",
+   "choix": [
+    {
+     "id": "5_15",
+     "libelle": "5 to 15",
+     "detail": "In your currency.",
+     "illustration": "cartes/prix_2.svg",
+     "mots_voix": [
+      "five to fifteen"
+     ]
+    },
+    {
+     "id": "moins_5",
+     "libelle": "Under 5",
+     "illustration": "cartes/prix_1.svg",
+     "mots_voix": [
+      "under five"
+     ]
+    },
+    {
+     "id": "15_30",
+     "libelle": "15 to 30",
+     "illustration": "cartes/prix_3.svg",
+     "mots_voix": [
+      "fifteen to thirty"
+     ]
+    },
+    {
+     "id": "plus_30",
+     "libelle": "Over 30",
+     "illustration": "cartes/prix_4.svg",
+     "mots_voix": [
+      "over thirty"
+     ]
+    }
+   ],
+   "recommande": "5_15",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "monetisation.modele": {
+     "egal": "achat"
+    }
+   }
+  },
+  {
+   "id": "monetisation.f2p",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "What do you sell?",
+   "choix": [
+    {
+     "id": "cosmetiques",
+     "libelle": "Cosmetics only",
+     "illustration": "cartes/chapeau.svg",
+     "mots_voix": [
+      "cosmetics",
+      "skins"
+     ]
+    },
+    {
+     "id": "contenus",
+     "libelle": "Content",
+     "illustration": "cartes/coffre.svg",
+     "mots_voix": [
+      "content",
+      "expansions"
+     ]
+    },
+    {
+     "id": "confort",
+     "libelle": "Convenience",
+     "detail": "Time savers, no decisive edge.",
+     "illustration": "cartes/fauteuil.svg",
+     "mots_voix": [
+      "convenience"
+     ]
+    }
+   ],
+   "recommande": "cosmetiques",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "monetisation.modele": {
+     "egal": "f2p"
+    }
+   }
+  },
+  {
+   "id": "ambition.taille",
+   "chapitre": "ambition",
+   "type": "choix",
+   "rapide": true,
+   "titre": "How big is the project?",
+   "aide": "I recommend it from your time and experience: better to finish small than drop something big.",
+   "choix": [
+    {
+     "id": "prototype",
+     "libelle": "Prototype",
+     "detail": "1 to 2 weeks.",
+     "illustration": "cartes/prototype.svg",
+     "mots_voix": [
+      "prototype"
+     ]
+    },
+    {
+     "id": "petit",
+     "libelle": "Small complete game",
+     "detail": "1 to 3 months.",
+     "illustration": "cartes/boite_petite.svg",
+     "mots_voix": [
+      "small"
+     ]
+    },
+    {
+     "id": "moyen",
+     "libelle": "Medium game",
+     "detail": "6 to 12 months.",
+     "illustration": "cartes/boite_moyenne.svg",
+     "mots_voix": [
+      "medium"
+     ]
+    },
+    {
+     "id": "grand",
+     "libelle": "Large game",
+     "detail": "Over a year; split into milestones.",
+     "illustration": "cartes/boite_grande.svg",
+     "mots_voix": [
+      "large",
+      "big"
+     ]
+    }
+   ],
+   "recommande": "petit",
+   "recommande_depuis": "deductions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ambition.temps",
+   "chapitre": "ambition",
+   "type": "choix",
+   "rapide": true,
+   "titre": "How much time can you give it?",
+   "choix": [
+    {
+     "id": "quelques_heures",
+     "libelle": "A few hours a week",
+     "illustration": "cartes/horloge.svg",
+     "mots_voix": [
+      "a few hours"
+     ]
+    },
+    {
+     "id": "soirs",
+     "libelle": "Evenings and weekends",
+     "illustration": "cartes/lune_soir.svg",
+     "mots_voix": [
+      "evenings",
+      "weekends"
+     ]
+    },
+    {
+     "id": "plein",
+     "libelle": "Full time",
+     "illustration": "cartes/calendrier.svg",
+     "mots_voix": [
+      "full time"
+     ]
+    },
+    {
+     "id": "jam",
+     "libelle": "A jam (48 to 72 h)",
+     "illustration": "cartes/chrono.svg",
+     "mots_voix": [
+      "jam"
+     ]
+    }
+   ],
+   "recommande": "quelques_heures",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ambition.equipe",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "Who else is on the team?",
+   "choix": [
+    {
+     "id": "seul",
+     "libelle": "Just me (+ the agents)",
+     "illustration": "cartes/solo.svg",
+     "mots_voix": [
+      "just me",
+      "solo"
+     ]
+    },
+    {
+     "id": "2_3",
+     "libelle": "2 to 3 people",
+     "illustration": "cartes/potes.svg",
+     "mots_voix": [
+      "two three"
+     ]
+    },
+    {
+     "id": "plus",
+     "libelle": "More",
+     "illustration": "cartes/equipe.svg",
+     "mots_voix": [
+      "more",
+      "team"
+     ]
+    }
+   ],
+   "recommande": "seul",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ambition.cible",
+   "chapitre": "ambition",
+   "type": "texte",
+   "titre": "A date or milestone to aim for?",
+   "aide": "By default: a playable build in 2 weeks.",
+   "defaut": "A playable build in 2 weeks",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ia.autorises",
+   "chapitre": "ambition",
+   "type": "multi",
+   "rapide": true,
+   "seulement_rapide": true,
+   "titre": "What may AI produce?",
+   "aide": "You stay in control: nothing is generated without your go-ahead on a target image.",
+   "choix": [
+    {
+     "id": "code",
+     "libelle": "Code",
+     "detail": "Written by agents, reviewed.",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "code"
+     ]
+    },
+    {
+     "id": "images",
+     "libelle": "Images / textures",
+     "illustration": "cartes/image.svg",
+     "mots_voix": [
+      "images",
+      "textures"
+     ]
+    },
+    {
+     "id": "modeles_3d",
+     "libelle": "3D models",
+     "illustration": "cartes/modele_3d.svg",
+     "mots_voix": [
+      "3d",
+      "models"
+     ]
+    },
+    {
+     "id": "son",
+     "libelle": "Sound / music",
+     "illustration": "cartes/onde.svg",
+     "mots_voix": [
+      "sound",
+      "music"
+     ]
+    },
+    {
+     "id": "rien",
+     "libelle": "Nothing",
+     "illustration": "cartes/interdit.svg",
+     "mots_voix": [
+      "nothing",
+      "none"
+     ]
+    }
+   ],
+   "recommande": [
+    "code",
+    "images"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ia.code",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "Does AI write the code?",
+   "choix": [
+    {
+     "id": "relecture",
+     "libelle": "Yes, with review",
+     "illustration": "cartes/loupe.svg",
+     "mots_voix": [
+      "review",
+      "yes"
+     ]
+    },
+    {
+     "id": "libre",
+     "libelle": "Yes, no review",
+     "illustration": "cartes/code.svg",
+     "mots_voix": [
+      "no review"
+     ]
+    },
+    {
+     "id": "suggestions",
+     "libelle": "Suggestions only",
+     "illustration": "cartes/ampoule.svg",
+     "mots_voix": [
+      "suggestions"
+     ]
+    }
+   ],
+   "recommande": "relecture",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ia.images",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "AI images, textures, concept art?",
+   "choix": [
+    {
+     "id": "valide",
+     "libelle": "Yes, approved image first",
+     "illustration": "cartes/valide.svg",
+     "mots_voix": [
+      "yes",
+      "approved"
+     ]
+    },
+    {
+     "id": "non",
+     "libelle": "No",
+     "illustration": "cartes/interdit.svg",
+     "mots_voix": [
+      "no"
+     ]
+    },
+    {
+     "id": "maquettes",
+     "libelle": "Mock-ups only",
+     "illustration": "cartes/croquis.svg",
+     "mots_voix": [
+      "mock ups",
+      "mockups"
+     ]
+    }
+   ],
+   "recommande": "valide",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ia.modeles_3d",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "AI 3D models (image to 3D)?",
+   "choix": [
+    {
+     "id": "oui",
+     "libelle": "Yes, one model per approved object",
+     "illustration": "cartes/modele_3d.svg",
+     "mots_voix": [
+      "yes"
+     ]
+    },
+    {
+     "id": "non",
+     "libelle": "No",
+     "illustration": "cartes/interdit.svg",
+     "mots_voix": [
+      "no"
+     ]
+    },
+    {
+     "id": "maquettes",
+     "libelle": "Mock-ups only",
+     "illustration": "cartes/croquis.svg",
+     "mots_voix": [
+      "mock ups",
+      "mockups"
+     ]
+    }
+   ],
+   "recommande": "oui",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "camera.dimension": {
+     "dans": [
+      "3d",
+      "2_5d"
+     ]
+    }
+   }
+  },
+  {
+   "id": "ia.son",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "AI sound, music, voices?",
+   "choix": [
+    {
+     "id": "maquettes",
+     "libelle": "Mock-ups only",
+     "illustration": "cartes/croquis.svg",
+     "mots_voix": [
+      "mock ups",
+      "mockups"
+     ]
+    },
+    {
+     "id": "oui",
+     "libelle": "Yes",
+     "illustration": "cartes/onde.svg",
+     "mots_voix": [
+      "yes"
+     ]
+    },
+    {
+     "id": "non",
+     "libelle": "No",
+     "illustration": "cartes/interdit.svg",
+     "mots_voix": [
+      "no"
+     ]
+    }
+   ],
+   "recommande": "maquettes",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "ia.outils",
+   "chapitre": "ambition",
+   "type": "multi",
+   "titre": "Which tools do you already have?",
+   "aide": "Name them in the free field if you like.",
+   "choix": [
+    {
+     "id": "images",
+     "libelle": "Image generation",
+     "illustration": "cartes/image.svg",
+     "mots_voix": [
+      "images"
+     ]
+    },
+    {
+     "id": "3d",
+     "libelle": "3D generation",
+     "illustration": "cartes/modele_3d.svg",
+     "mots_voix": [
+      "3d"
+     ]
+    },
+    {
+     "id": "modelage",
+     "libelle": "3D software",
+     "illustration": "cartes/modelage.svg",
+     "mots_voix": [
+      "3d software",
+      "modelling"
+     ]
+    },
+    {
+     "id": "musique",
+     "libelle": "Music",
+     "illustration": "cartes/partition.svg",
+     "mots_voix": [
+      "music"
+     ]
+    },
+    {
+     "id": "aucun",
+     "libelle": "None",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none"
+     ]
+    }
+   ],
+   "recommande": [
+    "aucun"
+   ],
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "budget.claude",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "How much Claude usage?",
+   "choix": [
+    {
+     "id": "normal",
+     "libelle": "Normal",
+     "detail": "A few agents in parallel.",
+     "illustration": "cartes/jauge_moyenne.svg",
+     "mots_voix": [
+      "normal"
+     ]
+    },
+    {
+     "id": "econome",
+     "libelle": "Thrifty",
+     "detail": "1 to 2 agents.",
+     "illustration": "cartes/jauge_basse.svg",
+     "mots_voix": [
+      "thrifty",
+      "low"
+     ]
+    },
+    {
+     "id": "large",
+     "libelle": "Generous",
+     "detail": "Several agents non-stop.",
+     "illustration": "cartes/jauge_haute.svg",
+     "mots_voix": [
+      "generous",
+      "high"
+     ]
+    }
+   ],
+   "recommande": "normal",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "budget.generation_par_jalon",
+   "chapitre": "ambition",
+   "type": "choix",
+   "rapide": true,
+   "titre": "Paid generation budget per milestone?",
+   "aide": "Images, 3D, sound: credits are checked with you before a big batch.",
+   "choix": [
+    {
+     "id": "plafond",
+     "libelle": "I set a cap",
+     "illustration": "cartes/plafond.svg",
+     "mots_voix": [
+      "cap",
+      "limit"
+     ]
+    },
+    {
+     "id": "aucun",
+     "libelle": "None (nothing paid)",
+     "illustration": "cartes/interdit.svg",
+     "mots_voix": [
+      "none",
+      "nothing"
+     ]
+    },
+    {
+     "id": "sans_plafond",
+     "libelle": "No cap, ask first",
+     "illustration": "cartes/demander.svg",
+     "mots_voix": [
+      "no cap"
+     ]
+    }
+   ],
+   "recommande": "plafond",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "budget.plafond",
+   "chapitre": "ambition",
+   "type": "curseur",
+   "titre": "How many credits at most per milestone?",
+   "aide": "A number in your tool's unit.",
+   "min": 0,
+   "max": 5000,
+   "pas": 50,
+   "defaut": 500,
+   "libre": false,
+   "micro": false,
+   "passer": true,
+   "si": {
+    "budget.generation_par_jalon": {
+     "egal": "plafond"
+    }
+   }
+  },
+  {
+   "id": "budget.regle",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "How many attempts per object?",
+   "choix": [
+    {
+     "id": "un",
+     "libelle": "One, ask before redoing",
+     "illustration": "cartes/essai_un.svg",
+     "mots_voix": [
+      "one",
+      "single"
+     ]
+    },
+    {
+     "id": "deux",
+     "libelle": "Up to 2",
+     "illustration": "cartes/essai_deux.svg",
+     "mots_voix": [
+      "two"
+     ]
+    },
+    {
+     "id": "libre",
+     "libelle": "Free within the cap",
+     "illustration": "cartes/jauge_haute.svg",
+     "mots_voix": [
+      "free"
+     ]
+    }
+   ],
+   "recommande": "un",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": {
+    "budget.generation_par_jalon": {
+     "different_de": "aucun"
+    }
+   }
+  },
+  {
+   "id": "jalons.decoupage",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "How do we split the project?",
+   "choix": [
+    {
+     "id": "propose",
+     "libelle": "The suggested plan",
+     "detail": "Setup, prototype, core loop, content, polish, release.",
+     "illustration": "cartes/jalons.svg",
+     "mots_voix": [
+      "suggested",
+      "standard"
+     ]
+    },
+    {
+     "id": "court",
+     "libelle": "Shorter",
+     "detail": "Prototype, then game.",
+     "illustration": "cartes/jalons_courts.svg",
+     "mots_voix": [
+      "shorter",
+      "short"
+     ]
+    },
+    {
+     "id": "je_decris",
+     "libelle": "I'll describe it",
+     "illustration": "cartes/plume_encre.svg",
+     "mots_voix": [
+      "describe",
+      "my own"
+     ]
+    }
+   ],
+   "recommande": "propose",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "jalons.rythme",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "How often a build to try?",
+   "choix": [
+    {
+     "id": "heures",
+     "libelle": "Every few hours of work",
+     "illustration": "cartes/sablier.svg",
+     "mots_voix": [
+      "hours"
+     ]
+    },
+    {
+     "id": "jour",
+     "libelle": "Once a day",
+     "illustration": "cartes/soleil.svg",
+     "mots_voix": [
+      "day",
+      "daily"
+     ]
+    },
+    {
+     "id": "jalon",
+     "libelle": "Once per milestone",
+     "illustration": "cartes/drapeau.svg",
+     "mots_voix": [
+      "milestone"
+     ]
+    }
+   ],
+   "recommande": "heures",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "jalons.autonomie",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "Do agents keep going without you?",
+   "choix": [
+    {
+     "id": "oui",
+     "libelle": "Yes, they keep going",
+     "detail": "They stop for what you must see.",
+     "illustration": "cartes/engrenages.svg",
+     "mots_voix": [
+      "yes",
+      "keep going"
+     ]
+    },
+    {
+     "id": "non",
+     "libelle": "No, green light each task",
+     "illustration": "cartes/feu_vert.svg",
+     "mots_voix": [
+      "no",
+      "green light"
+     ]
+    }
+   ],
+   "recommande": "oui",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "jalons.verifications",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "How much checking?",
+   "choix": [
+    {
+     "id": "minimum",
+     "libelle": "The minimum",
+     "detail": "It builds, a few tests, a short run; I look in game.",
+     "illustration": "cartes/coche.svg",
+     "mots_voix": [
+      "minimum"
+     ]
+    },
+    {
+     "id": "poussees",
+     "libelle": "Thorough",
+     "detail": "Test suites, screenshots.",
+     "illustration": "cartes/loupe.svg",
+     "mots_voix": [
+      "thorough"
+     ]
+    }
+   ],
+   "recommande": "minimum",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "jalons.donnees_lourdes",
+   "chapitre": "ambition",
+   "type": "choix",
+   "titre": "Where do heavy files live?",
+   "aide": "Asset sources, renders, exports: outside the repo.",
+   "choix": [
+    {
+     "id": "a_cote",
+     "libelle": "A folder next to the project",
+     "illustration": "cartes/dossier.svg",
+     "mots_voix": [
+      "next to"
+     ]
+    },
+    {
+     "id": "dans_projet",
+     "libelle": "In the project (git-ignored)",
+     "illustration": "cartes/dossier_ignore.svg",
+     "mots_voix": [
+      "in the project"
+     ]
+    },
+    {
+     "id": "autre_disque",
+     "libelle": "Another drive",
+     "detail": "Give the path.",
+     "illustration": "cartes/disque.svg",
+     "mots_voix": [
+      "another drive"
+     ]
+    }
+   ],
+   "recommande": "a_cote",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "personnages.maitre",
+   "chapitre": "personnages",
+   "type": "personnage",
+   "rapide": true,
+   "titre": "Now you: what do you look like?",
+   "aide": "Your avatar in the studio. \"Random\" or \"Default\" to go fast.",
+   "cible": "maitre",
+   "boutons": [
+    "hasard",
+    "defaut"
+   ],
+   "libre": false,
+   "micro": false,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.nom",
+   "chapitre": "personnages",
+   "type": "nom",
+   "rapide": true,
+   "titre": "And what do you call me?",
+   "aide": "I'll suggest three names to match my personality.",
+   "recommande_depuis": "deductions",
+   "propositions_depuis": "deductions.propositions",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.titre",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "My title?",
+   "choix": [
+    {
+     "id": "assistant",
+     "libelle": "Assistant",
+     "illustration": "cartes/badge.svg",
+     "mots_voix": [
+      "assistant"
+     ]
+    },
+    {
+     "id": "intendant",
+     "libelle": "Steward",
+     "illustration": "cartes/trousseau.svg",
+     "mots_voix": [
+      "steward"
+     ]
+    },
+    {
+     "id": "sidekick",
+     "libelle": "Sidekick",
+     "illustration": "cartes/acolyte.svg",
+     "mots_voix": [
+      "sidekick"
+     ]
+    },
+    {
+     "id": "majordome",
+     "libelle": "Butler",
+     "illustration": "cartes/noeud_papillon.svg",
+     "mots_voix": [
+      "butler"
+     ]
+    }
+   ],
+   "recommande": "assistant",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.espece",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "What am I?",
+   "aide": "Be specific in the free field: cat, raven, ghost…",
+   "choix": [
+    {
+     "id": "humain",
+     "libelle": "A human",
+     "illustration": "cartes/humain.svg",
+     "mots_voix": [
+      "human"
+     ]
+    },
+    {
+     "id": "robot",
+     "libelle": "A robot",
+     "illustration": "cartes/robot.svg",
+     "mots_voix": [
+      "robot"
+     ]
+    },
+    {
+     "id": "animal",
+     "libelle": "An animal",
+     "illustration": "cartes/animal.svg",
+     "mots_voix": [
+      "animal",
+      "cat",
+      "fox",
+      "raven"
+     ]
+    },
+    {
+     "id": "creature",
+     "libelle": "A creature",
+     "illustration": "cartes/fantome.svg",
+     "mots_voix": [
+      "creature",
+      "ghost",
+      "slime"
+     ]
+    }
+   ],
+   "recommande": "humain",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.personnalite",
+   "chapitre": "personnages",
+   "type": "choix",
+   "rapide": true,
+   "titre": "My personality?",
+   "choix": [
+    {
+     "id": "espiegle",
+     "libelle": "Playful",
+     "illustration": "cartes/espiegle.svg",
+     "mots_voix": [
+      "playful",
+      "cheeky"
+     ]
+    },
+    {
+     "id": "serieux",
+     "libelle": "Serious and tidy",
+     "illustration": "cartes/serieux.svg",
+     "mots_voix": [
+      "serious",
+      "tidy"
+     ]
+    },
+    {
+     "id": "sarcastique",
+     "libelle": "Sarcastic",
+     "illustration": "cartes/sarcastique.svg",
+     "mots_voix": [
+      "sarcastic"
+     ]
+    },
+    {
+     "id": "zen",
+     "libelle": "Zen",
+     "illustration": "cartes/zen.svg",
+     "mots_voix": [
+      "zen",
+      "calm"
+     ]
+    }
+   ],
+   "recommande": "espiegle",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.humour",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "My sense of humour?",
+   "aide": "Always about the situation, the code, bad luck; never about a group of people.",
+   "choix": [
+    {
+     "id": "leger",
+     "libelle": "Light",
+     "illustration": "cartes/sourire.svg",
+     "mots_voix": [
+      "light"
+     ]
+    },
+    {
+     "id": "absurde",
+     "libelle": "Absurd",
+     "illustration": "cartes/absurde.svg",
+     "mots_voix": [
+      "absurd",
+      "silly"
+     ]
+    },
+    {
+     "id": "geek",
+     "libelle": "Geeky",
+     "illustration": "cartes/geek.svg",
+     "mots_voix": [
+      "geek",
+      "geeky"
+     ]
+    },
+    {
+     "id": "noir",
+     "libelle": "Dark",
+     "illustration": "cartes/crane.svg",
+     "mots_voix": [
+      "dark",
+      "gallows"
+     ]
+    },
+    {
+     "id": "aucun",
+     "libelle": "None",
+     "illustration": "cartes/vide.svg",
+     "mots_voix": [
+      "none",
+      "no humour"
+     ]
+    }
+   ],
+   "recommande": "leger",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.frequence",
+   "chapitre": "personnages",
+   "type": "choix",
+   "rapide": true,
+   "titre": "I report to you every…?",
+   "aide": "Only if something changed, and always at the end of a milestone. More often = more tokens.",
+   "choix": [
+    {
+     "id": "120",
+     "libelle": "2 h",
+     "illustration": "cartes/freq_120.svg",
+     "mots_voix": [
+      "two hours"
+     ]
+    },
+    {
+     "id": "60",
+     "libelle": "1 h",
+     "illustration": "cartes/freq_60.svg",
+     "mots_voix": [
+      "one hour",
+      "sixty"
+     ]
+    },
+    {
+     "id": "30",
+     "libelle": "30 min",
+     "illustration": "cartes/freq_30.svg",
+     "mots_voix": [
+      "thirty"
+     ]
+    },
+    {
+     "id": "15",
+     "libelle": "15 min",
+     "illustration": "cartes/freq_15.svg",
+     "mots_voix": [
+      "fifteen"
+     ]
+    }
+   ],
+   "recommande": "120",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.langue",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "Which language do I speak?",
+   "choix": [
+    {
+     "id": "projet",
+     "libelle": "The project's",
+     "illustration": "cartes/langues.svg",
+     "mots_voix": [
+      "project"
+     ]
+    },
+    {
+     "id": "fr",
+     "libelle": "French",
+     "illustration": "cartes/langue_une.svg",
+     "mots_voix": [
+      "french"
+     ]
+    },
+    {
+     "id": "en",
+     "libelle": "English",
+     "illustration": "cartes/langue_une.svg",
+     "mots_voix": [
+      "english"
+     ]
+    }
+   ],
+   "recommande": "projet",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.voix",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "Do I speak out loud?",
+   "choix": [
+    {
+     "id": "non",
+     "libelle": "No, speech bubbles only",
+     "illustration": "cartes/bulle.svg",
+     "mots_voix": [
+      "no",
+      "bubbles"
+     ]
+    },
+    {
+     "id": "oui",
+     "libelle": "Yes",
+     "detail": "Browser voice.",
+     "illustration": "cartes/haut_parleur.svg",
+     "mots_voix": [
+      "yes"
+     ]
+    },
+    {
+     "id": "cloche",
+     "libelle": "Only for the bell",
+     "illustration": "cartes/cloche.svg",
+     "mots_voix": [
+      "bell"
+     ]
+    }
+   ],
+   "recommande": "non",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "assistant.apparence",
+   "chapitre": "personnages",
+   "type": "choix",
+   "titre": "And my look?",
+   "choix": [
+    {
+     "id": "choisir",
+     "libelle": "I'll design it",
+     "detail": "Same editor as yours.",
+     "illustration": "cartes/miroir.svg",
+     "mots_voix": [
+      "design",
+      "choose"
+     ]
+    },
+    {
+     "id": "hasard",
+     "libelle": "Random",
+     "illustration": "cartes/de.svg",
+     "mots_voix": [
+      "random"
+     ]
+    },
+    {
+     "id": "assortie",
+     "libelle": "Matching mine",
+     "illustration": "cartes/jumeaux.svg",
+     "mots_voix": [
+      "matching",
+      "like mine"
+     ]
+    },
+    {
+     "id": "da",
+     "libelle": "Matching the game's art",
+     "illustration": "cartes/palette.svg",
+     "mots_voix": [
+      "art",
+      "game"
+     ]
+    }
+   ],
+   "recommande": "choisir",
+   "libre": true,
+   "micro": true,
+   "passer": true,
+   "si": null
+  },
+  {
+   "id": "personnages.assistant",
+   "chapitre": "personnages",
+   "type": "personnage",
+   "titre": "Draw me!",
+   "cible": "assistant",
+   "boutons": [
+    "hasard",
+    "defaut"
+   ],
+   "libre": false,
+   "micro": false,
+   "passer": true,
+   "si": {
+    "assistant.apparence": {
+     "egal": "choisir"
+    }
+   }
+  },
+  {
+   "id": "fin.valider",
+   "chapitre": "fin",
+   "type": "choix",
+   "titre": "Shall I write the project?",
+   "aide": "Every summary line can be fixed with one click. Then I write your roadmap.",
+   "choix": [
+    {
+     "id": "oui",
+     "libelle": "Yes, open the studio!",
+     "detail": "I write the project and your roadmap.",
+     "illustration": "cartes/valide.svg",
+     "mots_voix": [
+      "yes",
+      "go",
+      "start"
+     ]
+    },
+    {
+     "id": "corriger",
+     "libelle": "I'll fix an answer",
+     "illustration": "cartes/gomme.svg",
+     "mots_voix": [
+      "fix",
+      "change"
+     ]
+    },
+    {
+     "id": "complet",
+     "libelle": "Switch to full mode",
+     "detail": "For the \"to confirm\" answers.",
+     "illustration": "cartes/carnet.svg",
+     "mots_voix": [
+      "full"
+     ]
+    }
+   ],
+   "recommande": "oui",
+   "libre": false,
+   "micro": true,
+   "passer": false,
+   "si": null
+  }
+ ],
+ "roadmap": {
+  "bouton": "Roadmap",
+  "surtitre": "Studio",
+  "titre": "Roadmap",
+  "voici": "Here is your roadmap!",
+  "voici_aide": "I built it from your answers: milestones, tasks, estimates. Each finished milestone unlocks an achievement and levels up the studio.",
+  "attente": "I'm writing your roadmap from your answers…",
+  "attente_longue": "Still writing: a full roadmap deserves some care.",
+  "continuer": "Let's go!",
+  "jalon": "Milestone",
+  "taches": "tasks",
+  "fin_visee": "target",
+  "estimation": "estimate",
+  "heures": "h",
+  "depend_de": "after",
+  "critere_fin": "Done when",
+  "succes": "Achievement",
+  "grand_succes": "Major achievement",
+  "succes_verrouille": "Locked",
+  "succes_gagne": "Earned on",
+  "succes_titre": "Roadmap achievements",
+  "niveau": "Studio level",
+  "xp_vers": "XP to level",
+  "avancement": "Progress",
+  "en_cours": "Current milestone",
+  "aucune": "No roadmap yet.",
+  "statut_a_faire": "to do",
+  "statut_en_cours": "in progress",
+  "statut_pret": "ready",
+  "statut_verse": "merged",
+  "statut_ecart": "deviation noted",
+  "jalon_termine": "Milestone complete",
+  "attend": "roadmap.json",
+  "sautable": false
+ }
+}

@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio</title>
+<!-- Studio gamedev : page générique (aucune dépendance externe).
+     Servie par serveur_studio.py --projet <dossier> : lit <projet>/.studio/ (studio.config.json, profil.json,
+     roadmap.json, progression/, decisions.json…) et écrit par l'API locale. Contrat : references/studio.md. -->
+<link rel="stylesheet" href="roadmap.css">
+<style>
+:root{
+  --nuit:#1a1713;--nuit2:#241f19;--bord:rgba(233,210,160,.16);
+  --papier:#f4ecd9;--encre:#2b241c;--encre2:#5c4f3f;--encre3:#8a7b66;
+  --ocre:#b98532;--ocre2:#e2b866;--sapin:#3f7a52;--rouge:#a8432e;--bleu:#4d6f9c;
+  --sans:"Jeu Interface","Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --serif:"Jeu Texte",Georgia,"Times New Roman",serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;overflow:hidden;background:#1a1713}
+body{color:#efe6d2;font:14px var(--sans);-webkit-font-smoothing:antialiased;background:radial-gradient(1400px 800px at 50% 25%,#2d261e 0%,#1a1713 65%) fixed}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ocre2);outline-offset:2px}
+
+/* ---------- en-tête ---------- */
+#entete{position:fixed;inset:0 0 auto 0;z-index:20;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;background:linear-gradient(180deg,rgba(26,23,19,.95),rgba(26,23,19,.6) 80%,transparent)}
+#entete h1{margin:0 auto 0 0;font:400 22px/1.1 var(--serif);letter-spacing:.08em;color:#f1d9a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+#entete h1 i{font:italic 13px var(--serif);letter-spacing:.02em;color:#cdbb98;margin-left:8px}
+.outils{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bt{display:inline-flex;align-items:center;gap:7px;min-height:38px;background:linear-gradient(180deg,rgba(255,250,235,.07),rgba(255,250,235,.02));border:1px solid var(--bord);border-radius:999px;padding:6px 14px;color:#eadfc8;white-space:nowrap;position:relative}
+.bt:hover{background:rgba(233,196,127,.10);border-color:rgba(233,196,127,.45)}
+.bt svg{width:17px;height:17px;flex:none;color:#e2b866}
+.bt.fort{background:linear-gradient(180deg,#d8a650,#b98532);border-color:#d8a650;color:#231b12;font-weight:600}
+.bt.fort svg{color:inherit}
+.bt .pastille{background:var(--rouge);color:#fff;border-radius:9px;padding:0 6px;font-size:11px;line-height:17px;font-weight:600}
+.bt .pastille:empty{display:none}
+.bt.sonne svg{animation:sonne 1s ease-in-out infinite}
+@keyframes sonne{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}}
+#niveau{display:flex;flex-direction:column;gap:3px;min-width:150px;padding:6px 14px;border:1px solid var(--bord);border-radius:14px;background:rgba(255,250,235,.05);color:#e8dcc2;font:13px var(--serif);cursor:pointer;text-align:left}
+#niveau b{color:#f1d9a4;font-size:17px}
+#niveau .rang{font-style:italic;color:#e2b866}
+#niveau .xpm{height:7px;border-radius:3px;background:#3a3128;overflow:hidden}
+#niveau .xpm i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c9953e,#f1d9a4);transition:width .8s}
+
+/* ---------- bureau ---------- */
+#bureau{position:fixed;inset:0;display:block;width:100%;height:100%;cursor:default}
+#bureau.survol{cursor:pointer}
+body.questionnaire #indice{display:none}
+#indice{position:fixed;left:16px;bottom:12px;z-index:5;font:12px var(--sans);color:#bfb196;pointer-events:none}
+
+/* ---------- notifications ---------- */
+#notifs{position:fixed;right:16px;top:64px;z-index:36;width:min(380px,92vw);max-height:70vh;overflow:auto;color:var(--encre);border-radius:6px 12px 12px 12px;padding:12px 14px;background:linear-gradient(180deg,#fbf5e6,#efe3c7);box-shadow:0 18px 40px rgba(0,0,0,.5);border:1px solid rgba(185,133,50,.35)}
+#notifs h2{font:italic 400 19px var(--serif);margin:0 0 6px;display:flex;justify-content:space-between;align-items:center}
+#notifs h2 button{font:12px var(--sans);background:none;border:0;color:var(--ocre);text-decoration:underline}
+.notif{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:none;border:0;border-bottom:1px dotted rgba(92,79,63,.3);padding:8px 4px;color:var(--encre)}
+.notif:hover{background:rgba(185,133,50,.1)}
+.notif .ni{width:24px;height:24px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e9dcc0;font-size:12px}
+.notif.t-succes .ni,.notif.t-fait .ni{background:#d9ead9;color:#2f6b3f}.notif.t-decision .ni{background:#f6e2b8;color:#8a5b12}.notif.t-alerte .ni{background:#f2d4cb;color:#93351f}
+.notif .nt{flex:1;min-width:0}.notif .nt b{display:block;font:400 14px var(--serif)}.notif .nt small{display:block;color:var(--encre2);font-size:12px}
+.notif time{font:11px Consolas,monospace;color:var(--ocre)}
+.notif.nonlue .nt b{font-weight:700}
+.vide{color:var(--encre3);font-style:italic;padding:8px 0}
+#toasts{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{pointer-events:auto;max-width:min(380px,90vw);background:linear-gradient(180deg,#3a3128,#2a241d);border:1px solid rgba(226,184,102,.45);border-radius:10px;padding:9px 14px;color:#f4ecd9;box-shadow:0 10px 26px rgba(0,0,0,.45);transition:opacity .4s,transform .4s}
+.toast.erreur{border-color:#c2533c}
+.toast.part{opacity:0;transform:translateY(8px)}
+.toast button{background:none;border:0;color:#e2b866;text-decoration:underline;padding:0 0 0 8px}
+
+/* ---------- panneau central (file unique) ---------- */
+#panneau{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;background:rgba(15,12,9,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+#panneau.vu{opacity:1;pointer-events:auto}
+#panneau .feuille{position:relative;width:min(640px,94vw);max-height:86vh;overflow:auto;color:var(--encre);border-radius:8px 16px 16px 8px;padding:22px 26px 24px;background:radial-gradient(120% 90% at 30% 0%,#fbf6e8 0%,#f2e8cf 55%,#e8d9b6 100%);box-shadow:0 24px 60px rgba(0,0,0,.55);transform:translateY(10px);transition:transform .25s}
+#panneau.vu .feuille{transform:none}
+#panneau .x{position:sticky;top:0;float:right;width:34px;height:34px;border-radius:50%;border:1px solid rgba(43,36,28,.2);background:rgba(255,250,238,.9);font-size:20px;line-height:1;margin:-8px -10px 0 8px}
+#panneau .file{font:12px var(--sans);color:var(--encre3);margin:0 0 4px}
+.surtitre{font:600 10.5px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ocre)}
+.feuille h2{font:400 26px/1.15 var(--serif);margin:3px 0 8px}
+.feuille h3{font:italic 400 17px var(--serif);color:#7a5a2a;margin:18px 0 6px}
+.feuille p{line-height:1.5}
+.discret{color:var(--encre3);font-size:12.5px}
+.rangee{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.bts{border:1px solid rgba(92,79,63,.3);background:#fffdf6;border-radius:999px;padding:7px 14px;color:var(--encre)}
+.bts:hover{border-color:var(--ocre)}
+.btp{border:1px solid #c9953e;background:linear-gradient(180deg,#e2b866,#c9953e);border-radius:999px;padding:7px 16px;color:#231b12;font-weight:600}
+.btp:disabled{opacity:.5;cursor:default}
+.feuille textarea,.feuille input[type=text]{width:100%;border:1px solid rgba(92,79,63,.3);border-radius:8px;padding:8px 10px;background:#fffdf6;color:var(--encre)}
+.feuille textarea{min-height:76px;resize:vertical}
+.barre{position:relative;height:20px;border-radius:7px;background:#e3d4b2;box-shadow:inset 0 1px 3px rgba(80,60,30,.3);overflow:hidden;margin:6px 0}
+.barre i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#c9953e,#6fa75c)}
+.barre span{position:relative;display:block;text-align:center;font:600 12px/20px var(--sans)}
+.etapes{margin:6px 0 0;padding-left:22px}.etapes li{margin:3px 0}
+.choix-dec{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.choix-dec button{text-align:left}
+.choix-dec button.rec{border-color:#c9953e;box-shadow:0 0 0 2px rgba(226,184,102,.4)}
+.micro.actif{background:#c2533c;color:#fff;border-color:#c2533c}
+/* panneau plein cadre (rapport, mur d'images) */
+#panneau.large .feuille{width:min(1180px,96vw);max-height:92vh;padding:24px 30px 26px}
+/* recrutement */
+.form-rec{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:10px}
+.form-rec .champ{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--encre2)}
+.form-rec .plein{grid-column:1/-1}
+.form-rec select,.form-rec input[type=color]{border:1px solid rgba(92,79,63,.3);border-radius:6px;background:#fffdf6;padding:4px 6px;color:var(--encre);min-height:34px}
+.form-rec .coche{flex-direction:row;align-items:center;gap:8px}
+.form-rec .ligne-champ{display:flex;gap:8px;align-items:flex-start}.form-rec .ligne-champ>:first-child{flex:1}
+#rc-res.erreur{color:var(--rouge);font-weight:600}
+/* mur d'images */
+.mur{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.mur button{display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid rgba(92,79,63,.25);border-radius:8px;background:#fffdf6;text-align:left;color:var(--encre)}
+.mur button:hover{border-color:var(--ocre);transform:translateY(-1px)}
+.mur img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:5px;background:#e9dcbc}
+.mur b{font:400 14px/1.2 var(--serif)}.mur small{font-size:11.5px;color:var(--encre3)}
+.cadre{display:flex;flex-direction:column;gap:8px;align-items:center}
+.cadre img{max-width:100%;max-height:72vh;object-fit:contain;border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.3);background:#2b241c}
+/* rapport de l'assistant */
+.rapport-tete{display:flex;gap:16px;align-items:center}
+.rapport-tete canvas{width:92px;height:92px;flex:none;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc);box-shadow:0 0 0 3px #e2b866}
+.rapport-tete .bulle{font:italic 16px/1.45 var(--serif);color:var(--encre)}
+.tab-rapport{width:100%;border-collapse:collapse;margin:8px 0;font-size:14px}
+.tab-rapport th{text-align:left;font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--encre3);padding:6px 6px;border-bottom:1px solid rgba(92,79,63,.3)}
+.tab-rapport td{padding:7px 6px;border-bottom:1px dotted rgba(92,79,63,.25);vertical-align:middle}
+.tab-rapport .barre{margin:0;height:16px}.tab-rapport .barre span{line-height:16px;font-size:11px}
+.liste-ok{list-style:none;padding:0;margin:4px 0}.liste-ok li{padding:3px 0}.liste-ok li::before{content:"✓ ";color:var(--sapin);font-weight:700}
+.liste-dec{display:flex;flex-direction:column;gap:6px;margin:6px 0}.liste-dec button{text-align:left}
+@media (max-width:640px){.form-rec{grid-template-columns:1fr}.mur{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
+
+/* ---------- bandeau des succès (file) ---------- */
+#succes{position:fixed;left:50%;top:14px;transform:translate(-50%,-150%);z-index:70;min-width:min(520px,92vw);display:flex;align-items:center;gap:16px;padding:12px 26px 12px 14px;border-radius:14px;cursor:pointer;background:linear-gradient(180deg,#3a3128,#241f19);border:2px solid #e2b866;color:#f4ecd9;box-shadow:0 16px 40px rgba(0,0,0,.55);transition:transform .55s cubic-bezier(.2,1.4,.3,1)}
+#succes.vu{transform:translate(-50%,0)}
+#succes .si{width:54px;height:54px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;background:radial-gradient(circle at 35% 30%,#fff7dc,#e2b866);box-shadow:inset 0 -3px 0 rgba(0,0,0,.15),0 0 0 3px #8a5b12;color:#2b241c}
+#succes .si img{width:46px;height:46px;object-fit:contain}
+#succes b{display:block;font:700 19px var(--serif);letter-spacing:.03em;color:#f1d9a4}
+#succes small{display:block;font:14.5px var(--serif)}
+#succes .sur{font:600 11px var(--sans);letter-spacing:.18em;text-transform:uppercase;opacity:.75}
+
+/* ---------- scène du questionnaire (mode accueil) ---------- */
+#scene{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:30;width:min(980px,100vw);max-height:56vh;display:flex;flex-direction:column;color:var(--encre);border-radius:16px 16px 0 0;background:radial-gradient(120% 90% at 30% 0%,#fbf6e8 0%,#f2e8cf 55%,#e8d9b6 100%);box-shadow:0 -14px 50px rgba(0,0,0,.55);transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+#scene.parti{transform:translate(-50%,110%)}
+#chapitres{display:flex;gap:4px;padding:10px 18px 0;flex-wrap:wrap}
+#chapitres span{flex:1;min-width:56px;height:24px;border-radius:5px;background:rgba(92,79,63,.12);font:600 10.5px/24px var(--sans);text-align:center;color:var(--encre3);letter-spacing:.04em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 4px}
+#chapitres span.fini{background:#d9ead9;color:#2f6b3f}
+#chapitres span.cours{background:#f6e2b8;color:#8a5b12;box-shadow:0 0 0 2px var(--ocre)}
+#sc-corps{overflow:auto;padding:12px 22px 18px}
+.sc-tete{display:flex;gap:14px;align-items:flex-start}
+#sc-avatar{width:84px;height:84px;flex:none;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc);box-shadow:0 0 0 3px #e2b866,0 6px 14px rgba(80,60,30,.25)}
+.bulle{position:relative;flex:1;background:#fffdf6;border:1px solid rgba(92,79,63,.22);border-radius:4px 16px 16px 16px;padding:10px 14px;box-shadow:0 3px 10px rgba(80,60,30,.12)}
+.bulle .qui{font:600 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ocre)}
+.bulle h2{font:400 22px/1.25 var(--serif);margin:2px 0 4px}
+.bulle p{margin:0;color:var(--encre2);font-size:13.5px}
+.bulle .msg{margin:0 0 6px;font:italic 15px var(--serif);color:var(--sapin)}
+.cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:14px 0 6px}
+.carte{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:8px 8px 10px;border-radius:8px;border:1px solid rgba(92,79,63,.25);background:#fffdf6;color:var(--encre);transition:transform .12s,box-shadow .12s}
+.carte:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(80,60,30,.18)}
+.carte img{width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:5px;background:#f6efdc}
+.carte b{font:400 15.5px/1.2 var(--serif);margin-top:6px}
+.carte small{font-size:12px;color:var(--encre2);margin-top:2px}
+.carte.rec{border:2px solid #c9953e;box-shadow:0 0 0 3px rgba(226,184,102,.35),0 6px 16px rgba(185,133,50,.25);background:linear-gradient(180deg,#fffaf0,#fbefd2)}
+.carte.rec::after{content:"★ " attr(data-rec);position:absolute;top:-9px;right:8px;background:#c9953e;color:#231b12;font:700 10.5px/18px var(--sans);letter-spacing:.06em;border-radius:9px;padding:0 8px;text-transform:uppercase}
+.carte.choisie{outline:3px solid var(--sapin);outline-offset:1px;background:#eef6ea}
+.carte.choisie::before{content:"✓";position:absolute;top:6px;left:8px;width:24px;height:24px;border-radius:50%;background:var(--sapin);color:#fff;font:700 14px/24px var(--sans);text-align:center}
+.sc-libre{display:flex;gap:8px;align-items:stretch;margin-top:10px}
+.sc-libre input,.sc-libre textarea{flex:1;border:1px solid rgba(92,79,63,.3);border-radius:8px;padding:9px 11px;background:#fffdf6;color:var(--encre);font-size:15px}
+.sc-libre textarea{min-height:84px;resize:vertical}
+.sc-bas{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.sc-bas .espace{flex:1}
+.puces{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.puces button{border:1px dashed rgba(92,79,63,.45);background:#fffaf0;border-radius:999px;padding:4px 12px;color:var(--encre)}
+.attente{display:flex;gap:10px;align-items:center;font:italic 16px var(--serif);color:var(--encre2);margin:16px 0}
+.plume{width:14px;height:14px;border-radius:50%;background:var(--ocre);animation:pulse 1.2s ease-in-out infinite;flex:none}
+@keyframes pulse{0%,100%{transform:scale(.6);opacity:.4}50%{transform:scale(1);opacity:1}}
+.recap{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.recap th{text-align:left;font:italic 15px var(--serif);color:#7a5a2a;padding:10px 4px 4px;border-bottom:1px solid rgba(92,79,63,.25)}
+.recap td{padding:4px;border-bottom:1px dotted rgba(92,79,63,.22);vertical-align:top}
+.recap tr.ligne{cursor:pointer}.recap tr.ligne:hover td{background:rgba(185,133,50,.1)}
+.recap .src{width:22px;text-align:center;font-weight:700}
+.src-utilisateur{color:var(--sapin)}.src-deduit{color:var(--bleu)}.src-a_confirmer,.src-voix_a_interpreter{color:var(--rouge)}
+.perso-ed{display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:start;margin-top:10px}
+.perso-ed>div{display:grid;grid-template-columns:1fr 1fr;column-gap:18px}.perso-ed>div>.rangee{grid-column:1/-1}
+.perso-ed canvas{width:130px;height:130px;border-radius:12px;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc)}
+.perso-ed label{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:3px 0;font-size:13px}
+.perso-ed select{border:1px solid rgba(92,79,63,.3);border-radius:6px;background:#fffdf6;padding:3px 6px;color:var(--encre)}
+.annule{margin-top:10px;padding:8px 12px;border-radius:8px;background:#eef6ea;border:1px solid rgba(63,122,82,.4);font-size:13.5px}
+.curseur{display:flex;gap:12px;align-items:center;margin:14px 0}.curseur input{flex:1;accent-color:#b98532}.curseur output{font:600 20px var(--serif);min-width:70px;text-align:right}
+@media (max-width:640px){.perso-ed>div{grid-template-columns:1fr}#entete h1{max-width:60vw;font-size:18px}#niveau{min-width:0}.cartes{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}#sc-avatar{width:56px;height:56px}.bulle h2{font-size:18px}.perso-ed{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){#scene,#succes,#panneau,.carte{transition:none}.plume{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="bureau" aria-label="Le bureau du studio"></canvas>
+<header id="entete">
+  <h1 id="nom">Studio</h1>
+  <button type="button" id="niveau" title="Niveau du studio" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b> · <span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
+  <nav class="outils" aria-label="Outils">
+    <button type="button" class="bt" id="bt-decisions" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14a1.5 1.5 0 0 0 3 0"/></svg><span data-t="decisions">Décisions</span> <span class="pastille" id="nb-decisions"></span></button>
+    <button type="button" class="bt" id="bt-notifs" aria-haspopup="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="9" rx="1.5"/><path d="M2.5 4l5.5 4 5.5-4"/></svg><span data-t="notifs">Notifications</span> <span class="pastille" id="nb-notifs"></span></button>
+    <button type="button" class="bt" id="bt-rapport" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="1.5"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg><span data-t="rapport">Rapport</span></button>
+    <button type="button" class="bt" id="bt-images" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.3"/><path d="M2 12l4-4 3 3 2-2 3.5 3.5"/></svg><span data-t="images">Images</span> <span class="pastille" id="nb-images"></span></button>
+    <button type="button" class="bt" id="bt-recruter" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.5" cy="5" r="2.6"/><path d="M1.8 14c.4-3 2.3-4.6 4.7-4.6s4.3 1.6 4.7 4.6M12.5 4.5v5M10 7h5"/></svg><span data-t="recruter">Recruter</span></button>
+    <button type="button" class="bt fort" id="bt-assistant"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5"/><path d="M3 8a5 5 0 0 0 10 0M8 13v2"/></svg><span data-t="appeler">Appeler l'assistant</span></button>
+    <button type="button" class="bt" id="bt-son" title="Son"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="son-onde" d="M11 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
+  </nav>
+</header>
+<aside id="notifs" hidden aria-label="Notifications"></aside>
+<div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer">×</button><div id="pn-corps"></div></div></div>
+<section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="sc-corps"></div></section>
+<div id="succes" role="status" aria-live="polite"></div>
+<div id="toasts"></div>
+<div id="indice"></div>
+<script src="roadmap.js"></script>
+<script>
+'use strict';
+// ====================================================================== outils
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('studio.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('studio.' + k, JSON.stringify(v)); } catch (e) { /* stockage indisponible */ } }
+};
+const cheminSur = (p, ext) => typeof p === 'string' && p.length < 200 && !p.includes('..') && !/^[a-z]+:|^\/\//i.test(p) && ext.test(p);
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+window.__erreurs = [];
+const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message || e)); if (window.__erreurs.length > 50) window.__erreurs.shift(); };
+
+// ====================================================================== textes de l'interface
+const TXT = {
+  fr: { decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+    travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
+    demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
+    assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
+    reflechit: 'Je réfléchis à ton pitch…', sans_attendre: 'Continuer sans attendre', compris: "J'ai compris", annuler: 'annuler', recap: 'Récapitulatif',
+    hasard: 'Au hasard', defaut: 'Par défaut', chapitre_fini: 'Chapitre terminé', questionnaire_fini: 'Le jeu est cadré !', bienvenue: 'On reprend où on en était.',
+    micro_prive: "Dans plusieurs navigateurs, la dictée passe par un service en ligne du navigateur. Aucun son n'est gardé par le studio : seul le texte part vers le serveur local.",
+    micro_absent: 'Micro indisponible ici : écris ta réponse.', transcription: 'Transcription…', enregistre: "J'enregistre… (clic pour arrêter)", decision: 'Décision',
+    repondre: 'Répondre', reponse_envoyee: 'Réponse envoyée', nouvelle_decision: 'Une décision t’attend', reponse_assistant: "Réponse de l'assistant", file: 'encore', a_suivre: 'à suivre',
+    pas_envoye: 'Pas enregistré', son_on: 'Son activé', son_off: 'Son coupé', indice: 'Clique sur un poste pour sa fiche · A : appeler l’assistant', personne: 'Aucun poste pour l’instant : ils arrivent quand le questionnaire est fini.',
+    role: 'Rôle', skills: 'Skills', aucune_etape: 'Aucune étape devant lui.', est_dispo: 'est disponible', a_fini: 'a fini', est_bloque: 'est bloqué', succes: 'Succès', grand_succes: 'Grand succès',
+    libre: 'libre', au_travail: 'au travail', en_attente: 'en attente', suite: 'suite', mission: 'Mission',
+    recruter: 'Recruter', recrutement: 'Recrutement', recruter_titre: 'Un nouveau poste dans le studio', rec_nom_affiche: 'Son nom', rec_nom: 'Identifiant (fichier de l’agent)',
+    rec_role: 'Rôle (une ligne)', rec_mission: 'Mission (écris ou dicte ce que tu attends de lui)', rec_bureau: 'Rattaché à (facultatif)', rec_skills: 'Skills à appeler (facultatif, séparés par des virgules)',
+    rec_couleur: 'Couleur de sa tenue', rec_apparence: 'Accessoire', rec_lancer: 'Le lancer tout de suite (Claude lit la demande et démarre l’agent)', rec_remplacer: 'Remplacer une recrue du studio du même nom (jamais un agent écrit à la main)',
+    rec_ok: 'Recruté', rec_arrive: 'arrive au studio', rec_bonjour: 'Bonjour ! Je m’installe.', rec_plein: 'Le bureau est plein (12 postes) : la recrue travaille, mais sans bureau visible.', rec_manque: 'Il faut un nom, un rôle et une mission.',
+    images: 'Images', mur: 'Mur d’images', aucune_image: 'Pas encore d’image : elles arrivent des dossiers listés dans sources_images.', retour_mur: '← Toutes les images', precedente: '‹ Précédente', suivante: 'Suivante ›',
+    rapport: 'Rapport', rapport_de: 'Point de', chantier: 'Chantier', etape: 'Étape', reste_col: 'Reste', fini_titre: 'Fini depuis le dernier point', a_decider: 'À décider', rien_a_decider: 'Rien à décider pour l’instant.', nouveau_rapport: 'Nouveau rapport !', v1: 'Version 1' },
+  en: { decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+    travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
+    demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
+    assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
+    reflechit: 'Thinking about your pitch…', sans_attendre: 'Go on without waiting', compris: 'I understood', annuler: 'undo', recap: 'Summary',
+    hasard: 'Random', defaut: 'Default', chapitre_fini: 'Chapter complete', questionnaire_fini: 'Your game is framed!', bienvenue: 'Picking up where we left off.',
+    micro_prive: 'In several browsers, dictation goes through an online service of the browser vendor. The studio keeps no audio: only the text goes to the local server.',
+    micro_absent: 'Microphone unavailable here: type your answer.', transcription: 'Transcribing…', enregistre: 'Recording… (click to stop)', decision: 'Decision',
+    repondre: 'Answer', reponse_envoyee: 'Answer sent', nouvelle_decision: 'A decision needs you', reponse_assistant: 'Answer from the assistant', file: 'more', a_suivre: 'queued',
+    pas_envoye: 'Not saved', son_on: 'Sound on', son_off: 'Sound off', indice: 'Click a desk for details · A: call the assistant', personne: 'No desks yet: they arrive when the questionnaire is done.',
+    role: 'Role', skills: 'Skills', aucune_etape: 'No steps ahead.', est_dispo: 'is available', a_fini: 'is done', est_bloque: 'is blocked', succes: 'Achievement', grand_succes: 'Big achievement',
+    libre: 'free', au_travail: 'working', en_attente: 'waiting', suite: 'next', mission: 'Mission',
+    recruter: 'Hire', recrutement: 'Hiring', recruter_titre: 'A new desk in the studio', rec_nom_affiche: 'Name', rec_nom: 'Identifier (agent file)',
+    rec_role: 'Role (one line)', rec_mission: 'Mission (type or dictate what you expect)', rec_bureau: 'Attached to (optional)', rec_skills: 'Skills to call (optional, comma-separated)',
+    rec_couleur: 'Outfit colour', rec_apparence: 'Accessory', rec_lancer: 'Start right away (Claude reads the request and launches the agent)', rec_remplacer: 'Replace a studio recruit with the same name (never a hand-written agent)',
+    rec_ok: 'Hired', rec_arrive: 'joins the studio', rec_bonjour: 'Hello! Settling in.', rec_plein: 'The office is full (12 desks): the new hire works, but without a visible desk.', rec_manque: 'A name, a role and a mission are needed.',
+    images: 'Images', mur: 'Image wall', aucune_image: 'No image yet: they come from the folders listed in sources_images.', retour_mur: '← All images', precedente: '‹ Previous', suivante: 'Next ›',
+    rapport: 'Report', rapport_de: 'Report at', chantier: 'Work', etape: 'Step', reste_col: 'Left', fini_titre: 'Done since the last report', a_decider: 'To decide', rien_a_decider: 'Nothing to decide right now.', nouveau_rapport: 'New report!', v1: 'Version 1' }
+};
+let LANGUE = 'fr';
+const t = k => (TXT[LANGUE] && TXT[LANGUE][k]) || TXT.fr[k] || k;
+function traduirePage() { document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); }); $('#indice').textContent = t('indice'); $('#niv-t').textContent = t('niv'); }
+
+// ====================================================================== données lues dans .studio/
+let CONF = {}, PROFIL = {}, QF = null, REP = { reponses: {} }, DED = null, SUIVI = null, ETAT = null, RM_C = null;
+let PROG = {}, STATUTS = {}, DECISIONS = [], REPONSES_DEC = [], REP_ASSIST = [];
+async function lire(nom) {
+  try { const r = await fetch(nom + (nom.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return null; return await r.json(); }
+  catch (e) { return null; }
+}
+async function poster(route, corps) {
+  const r = await fetch(route, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+  const j = await r.json().catch(() => null);
+  if (!r.ok || !j || j.ok === false) throw new Error((j && j.erreur) || ('HTTP ' + r.status));
+  return j;
+}
+function posterFond(route, corps) { return poster(route, corps).catch(e => { toast('<b>' + esc(t('pas_envoye')) + '</b><br>' + esc(e.message), { erreur: true }); throw e; }); }
+
+let RECRUES = [], IMAGES = [], RAPPORT = null;
+const FICHES_RECRUES = {};
+const NB_BUREAUX = 12;
+// Postes de la config (9 au plus), puis recrues (recrues/<nom>.json) : 12 bureaux en tout.
+const postes = () => {
+  const base = (Array.isArray(CONF.postes) ? CONF.postes : []).filter(p => p && typeof p.id === 'string').slice(0, 9), ids = new Set(base.map(p => p.id));
+  const rec = RECRUES.filter(r => r && typeof r.nom === 'string' && !ids.has(r.nom)).map(r => ({ id: r.nom, nom: r.nom_affiche || r.nom, role: r.role || '', mission: r.mission || '', couleur: r.couleur, apparence: r.apparence, skills: Array.isArray(r.skills) ? r.skills : [], genre: 'recrue' }));
+  return base.concat(rec).slice(0, NB_BUREAUX);
+};
+const nomPoste = p => String(p.nom || p.id);
+const nomAssistant = () => (PROFIL.assistant && PROFIL.assistant.nom) || t('assistant');
+
+async function chargerTout() {
+  const conf = await lire('studio.config.json'); if (conf) CONF = conf;
+  const lg = String(CONF.langue || (PROFIL.maitre && PROFIL.maitre.langue) || document.documentElement.lang || 'fr').slice(0, 2);
+  if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
+  const [prof, etat, st, dec, rdec, rass, ded, sui, idx, rap] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json'].map(lire));
+  if (prof) PROFIL = prof; ETAT = etat; STATUTS = st || {}; DECISIONS = Array.isArray(dec) ? dec : []; REPONSES_DEC = Array.isArray(rdec) ? rdec : [];
+  if (ded) DED = ded; if (sui) SUIVI = sui;
+  // recrues : index tenu par le serveur, fiches lues une fois (puis à chaque changement de l'index)
+  const noms = (Array.isArray(idx) ? idx : []).filter(n => typeof n === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(n)).slice(-NB_BUREAUX);
+  await Promise.all(noms.filter(n => !FICHES_RECRUES[n]).map(async n => { const f = await lire('recrues/' + n + '.json'); if (f && f.nom === n) FICHES_RECRUES[n] = f; }));
+  const avant = new Set(RECRUES.map(r => r.nom)); RECRUES = noms.map(n => FICHES_RECRUES[n]).filter(Boolean);
+  if (CHARGE_UNE_FOIS) RECRUES.filter(r => !avant.has(r.nom)).forEach(r => Bureau.arrivee(r.nom));
+  IMAGES = ETAT && Array.isArray(ETAT.images) ? ETAT.images.filter(i => i && cheminSur(i.src, /^mur\/[0-9a-f]{16}\.(png|jpe?g|webp|gif)$/i)).slice(0, 36) : IMAGES;
+  if (rap && typeof rap === 'object') RAPPORT = rap;
+  CHARGE_UNE_FOIS = true;
+  const prog = await Promise.all(postes().map(p => lire('progression/' + encodeURIComponent(p.id) + '.json')));
+  const neu = {}; postes().forEach((p, i) => { if (prog[i]) neu[p.id] = prog[i]; }); PROG = neu;
+  if (Array.isArray(rass)) lireReponsesAssistant(rass);
+  majEntete(); verifierDecisions(); verifierPostes(); Quest.suivis(); majOutils(); verifierRapport();
+}
+let CHARGE_UNE_FOIS = false;
+function majOutils() {
+  const travail = CONF.mode === 'travail';
+  $('#bt-recruter').hidden = !travail;
+  $('#bt-images').hidden = !IMAGES.length; $('#nb-images').textContent = IMAGES.length ? String(IMAGES.length) : '';
+  $('#bt-rapport').hidden = !(RAPPORT && RAPPORT.heure);
+}
+
+// ====================================================================== son (synthétisé, coupé sur demande)
+const Son = (() => {
+  let ctx = null, coupe = LS.get('son_coupe', false);
+  function bip(f, d, o = {}) {
+    if (coupe) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      const at = ctx.currentTime + (o.at || 0), osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.type = o.type || 'sine'; osc.frequency.value = f;
+      g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(o.gain || .04, at + .01); g.gain.exponentialRampToValueAtTime(.0001, at + d);
+      osc.connect(g).connect(ctx.destination); osc.start(at); osc.stop(at + d + .05);
+    } catch (e) { /* audio indisponible */ }
+  }
+  return {
+    clic() { bip(880, .05, { gain: .02, type: 'triangle' }); },
+    cloche() { [1318, 1760].forEach((f, i) => bip(f, 1.2, { gain: .035, at: i * .18 })); },
+    construit() { [392, 523, 659].forEach((f, i) => bip(f, .25, { type: 'triangle', gain: .03, at: i * .07 })); },
+    succes(taille) {
+      const notes = taille === 'grand' ? [523, 659, 784, 1046, 1318, 1568] : taille === 'moyen' ? [587, 740, 880, 1175] : [659, 880, 1175];
+      notes.forEach((f, i) => { bip(f, .22 + (i === notes.length - 1 ? .35 : 0), { type: 'triangle', gain: .05, at: i * .075 }); bip(f * 2, .12, { gain: .012, at: i * .075 + .01 }); });
+      if (taille !== 'petit') bip(notes[notes.length - 1] * 1.5, .6, { gain: .02, at: notes.length * .075 });
+    },
+    fichier(son) { if (coupe || !cheminSur(son, /\.(ogg|mp3|wav)$/i)) return; try { const a = new Audio(son); a.volume = .6; a.play().catch(() => {}); } catch (e) { /* rien */ } },
+    basculer() { coupe = !coupe; LS.set('son_coupe', coupe); return !coupe; },
+    coupe: () => coupe
+  };
+})();
+
+// ====================================================================== toasts et notifications
+function toast(html, o = {}) {
+  const el = document.createElement('div'); el.className = 'toast' + (o.erreur ? ' erreur' : ''); el.innerHTML = html;
+  if (o.action) { const b = document.createElement('button'); b.textContent = o.action.libelle; b.onclick = () => { o.action.f(); fin(); }; el.appendChild(b); }
+  $('#toasts').appendChild(el);
+  const fin = () => { el.classList.add('part'); setTimeout(() => el.remove(), 450); };
+  setTimeout(fin, o.duree || 5000); return { fermer: fin, el };
+}
+const Notifs = (() => {
+  let liste = LS.get('notifs', []);
+  const ICONES = { succes: '★', fait: '✓', decision: '?', alerte: '!', info: 'i' };
+  function sauver() { liste = liste.slice(-80); LS.set('notifs', liste); majPastille(); }
+  function majPastille() { const n = liste.filter(x => !x.lu).length; $('#nb-notifs').textContent = n ? String(n) : ''; }
+  function ajouter(n, silencieux) {
+    if (liste.some(x => x.id === n.id)) return;
+    liste.push(Object.assign({ t: Date.now(), lu: false, type: 'info' }, n)); sauver();
+    if (!$('#notifs').hidden) rendre();
+    if (!silencieux && n.type !== 'succes') toast('<b>' + esc(n.titre) + '</b>' + (n.ligne ? '<br>' + esc(n.ligne) : ''));
+  }
+  function rendre() {
+    const el = $('#notifs'), l = liste.slice().reverse();
+    el.innerHTML = `<h2>${esc(t('notifs'))}<button type="button" id="nt-lu">${esc(t('tout_lu'))}</button></h2>` +
+      (l.length ? l.map(n => `<button type="button" class="notif t-${esc(n.type)}${n.lu ? '' : ' nonlue'}" data-id="${esc(n.id)}"><span class="ni">${esc(ICONES[n.type] || 'i')}</span><span class="nt"><b>${esc(n.titre)}</b>${n.ligne ? `<small>${esc(n.ligne)}</small>` : ''}</span><time>${esc(new Date(n.t).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }))}</time></button>`).join('') : `<p class="vide">${esc(t('aucune_notif'))}</p>`);
+    el.querySelector('#nt-lu').onclick = () => { liste.forEach(x => x.lu = true); sauver(); rendre(); };
+    el.querySelectorAll('.notif').forEach(b => b.onclick = () => { const n = liste.find(x => x.id === b.dataset.id); if (!n) return; n.lu = true; sauver(); el.hidden = true; agir(n.cible); });
+  }
+  function agir(c) {
+    if (!c) return;
+    if (c.poste) { const p = postes().find(x => x.id === c.poste); if (p) ficheposte(p); }
+    else if (c.decision) { const d = DECISIONS.find(x => x.id === c.decision); if (d) ouvrirDecision(d); }
+    else if (c.roadmap && window.Roadmap) Roadmap.ouvrir();
+  }
+  majPastille();
+  return { ajouter, rendre, basculer() { const el = $('#notifs'); el.hidden = !el.hidden; if (!el.hidden) rendre(); } };
+})();
+
+// ====================================================================== panneau central : un seul document à la fois, le reste en file
+const Panneau = (() => {
+  const FILE = []; let ouvert = null;
+  const el = $('#panneau'), corps = $('#pn-corps');
+  // o.large : plein cadre (rapport de l'assistant, mur d'images)
+  function montrer(cle, rendu, o = {}) {
+    if (ouvert) { if (ouvert !== cle && !FILE.some(x => x.cle === cle)) FILE.push({ cle, rendu, o }); majFile(); return; }
+    ouvert = cle; corps.innerHTML = ''; el.classList.toggle('large', !!o.large); try { rendu(corps); } catch (e) { erreur('panneau', e); }
+    majFile(); el.classList.add('vu'); const f = corps.querySelector('textarea,input,button'); if (f) setTimeout(() => f.focus(), 60);
+  }
+  function majFile() { let f = corps.querySelector('.file'); if (FILE.length) { if (!f) { f = document.createElement('p'); f.className = 'file'; corps.prepend(f); } f.textContent = `${FILE.length} ${t('a_suivre')}`; } else if (f) f.remove(); }
+  function fermer() { if (!ouvert) return; ouvert = null; el.classList.remove('vu'); Voix.arreter(); setTimeout(() => { const n = FILE.shift(); if (n) montrer(n.cle, n.rendu, n.o); }, 420); }
+  el.querySelector('.x').onclick = fermer;
+  el.addEventListener('click', e => { if (e.target === el) fermer(); });
+  return { montrer, fermer, ouvert: () => ouvert };
+})();
+
+// ====================================================================== bandeau des succès : file, une fois chacun, reprise au retour sur l'onglet
+const Succes = (() => {
+  const FILE = [], VUS = new Set(LS.get('succes_vus', [])); let enCours = false, minuteur = null;
+  const el = $('#succes');
+  function icone(ic) { return cheminSur(ic, /\.(svg|png)$/i) ? `<img src="${esc(ic)}" alt="">` : esc(String(ic || '★').slice(0, 4)); }
+  function ajouter(o) {
+    const id = o.id || ('t:' + o.titre);
+    if (VUS.has(id) || FILE.some(x => x.id === id)) return;
+    FILE.push(Object.assign({}, o, { id }));
+    Notifs.ajouter({ id: 'succes-' + id, type: 'succes', titre: o.titre, ligne: o.sous || '', cible: o.cible || null }, true);
+    if (!enCours) suivant();
+  }
+  function suivant() {
+    if (document.hidden) { enCours = false; return; }
+    const o = FILE.shift(); if (!o) { enCours = false; return; }
+    enCours = true; VUS.add(o.id); LS.set('succes_vus', [...VUS].slice(-400));
+    const grand = o.taille === 'grand';
+    el.innerHTML = `<span class="si">${icone(o.icone)}</span><span><span class="sur">${esc(grand ? t('grand_succes') : t('succes'))}${FILE.length ? ` · ${esc(t('file'))} ${FILE.length}` : ''}</span><b>${esc(o.titre)}</b>${o.sous ? `<small>${esc(o.sous)}</small>` : ''}</span>`;
+    el.onclick = () => { try { if (o.clic) o.clic(); } catch (e) { /* rien */ } finir(); };
+    el.classList.remove('vu'); void el.offsetWidth; el.classList.add('vu');
+    if (cheminSur(o.son, /\.(ogg|mp3|wav)$/i)) Son.fichier(o.son); else Son.succes(o.taille || 'petit');
+    Bureau.confettis(grand ? 70 : o.taille === 'moyen' ? 45 : 25);
+    clearTimeout(minuteur); minuteur = setTimeout(finir, grand ? 4200 : 3400);
+  }
+  function finir() { clearTimeout(minuteur); el.classList.remove('vu'); minuteur = setTimeout(suivant, 550); }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && !enCours && FILE.length) suivant(); });
+  return { ajouter, enFile: () => FILE.length + (enCours ? 1 : 0) };
+})();
+window.essaiBandeau = () => { const n = Date.now(); ['petit', 'moyen', 'grand'].forEach((x, i) => Succes.ajouter({ id: 'essai-' + n + '-' + i, icone: ['★', '✎', '⚑'][i], titre: 'Essai ' + (i + 1) + ' / 3', sous: x, taille: x })); return Succes.enFile() + ' en file'; };
+
+// ====================================================================== niveau du studio (roadmap + XP de etat.json s'il y en a)
+function majNiveau() {
+  if (!RM_C) return;
+  const xp = (RM_C.xp || 0) + (ETAT && Number.isFinite(+ETAT.xp) ? +ETAT.xp : 0);
+  const n = Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1, seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
+  const b = $('#niveau'); b.hidden = false;
+  $('#niv-n').textContent = n; $('#niv-rang').textContent = RM_C.rang || '';
+  $('#niv-xp').style.width = clamp(100 * (xp - seuil(n)) / Math.max(1, seuil(n + 1) - seuil(n)), 0, 100).toFixed(1) + '%';
+  b.title = `${xp} XP · ${RM_C.pct} %`;
+}
+window.addEventListener('studio:roadmap', e => { RM_C = e.detail; majNiveau(); });
+
+// ====================================================================== en-tête, décisions, réponses de l'assistant
+function majEntete() {
+  const nom = (QF && REP.reponses['vision.nom_jeu'] && REP.reponses['vision.nom_jeu'].valeur) || CONF.nom_projet || 'Studio';
+  $('#nom').innerHTML = esc(nom) + (CONF.mode === 'travail' ? '' : ' <i>studio</i>');
+  document.title = nom + ' · Studio';
+  majNiveau();
+}
+const decisionsOuvertes = () => DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(r => r && r.id === d.id));
+function verifierDecisions() {
+  const l = decisionsOuvertes(), b = $('#bt-decisions');
+  b.hidden = !l.length; $('#nb-decisions').textContent = l.length ? String(l.length) : ''; b.classList.toggle('sonne', !!l.length);
+  const vues = new Set(LS.get('decisions_vues', []));
+  for (const d of l) if (!vues.has(d.id)) { vues.add(d.id); Son.cloche(); Notifs.ajouter({ id: 'dec-' + d.id, type: 'decision', titre: t('nouvelle_decision'), ligne: d.titre, cible: { decision: d.id } }); Bureau.dire('assistant', d.titre, 7); }
+  LS.set('decisions_vues', [...vues].slice(-300));
+}
+function ouvrirDecision(d) {
+  Panneau.montrer('dec:' + d.id, el => {
+    el.innerHTML = `<div class="surtitre">${esc(t('decision'))}</div><h2>${esc(d.titre)}</h2>${d.explication ? `<p>${esc(d.explication)}</p>` : ''}
+      <div class="choix-dec">${(Array.isArray(d.choix) ? d.choix : []).map(c => { const id = typeof c === 'string' ? c : c.id, lib = typeof c === 'string' ? c : (c.libelle || c.id); return `<button type="button" class="bts${id === d.recommande ? ' rec' : ''}" data-c="${esc(id)}">${id === d.recommande ? '★ ' : ''}${esc(lib)}</button>`; }).join('')}</div>
+      ${blocTexte('dec-libre')}<p class="discret" id="dec-res"></p>`;
+    lierMicros(el);
+    const envoyer = async choix => { const libre = el.querySelector('#dec-libre').value.trim(); if (!choix && !libre) return;
+      try { await posterFond('/api/repondre', { id: d.id, choix: choix || '', texte_libre: libre }); REPONSES_DEC.push({ id: d.id }); verifierDecisions(); toast(esc(t('reponse_envoyee'))); Panneau.fermer(); } catch (e) { /* toast déjà montré */ } };
+    el.querySelectorAll('[data-c]').forEach(b => b.onclick = () => envoyer(b.dataset.c));
+    el.querySelector('[data-envoyer]').onclick = () => envoyer('');
+  });
+}
+function blocTexte(id) {
+  return `<textarea id="${id}" maxlength="2000" placeholder="${esc(t('ecrire_demande'))}"></textarea>
+    <div class="rangee">${boutonMicro('#' + id)}<button type="button" class="btp" data-envoyer>${esc(t('envoyer'))}</button><span class="discret" data-res></span></div>`;
+}
+function demander(cible, titre) {
+  Panneau.montrer('dem:' + cible, el => {
+    el.innerHTML = `<div class="surtitre">${esc(cible === 'assistant' ? nomAssistant() : titre)}</div><h2>${esc(cible === 'assistant' ? t('appeler') : t('demander'))}</h2>${blocTexte('dem-texte')}`;
+    lierMicros(el); lierEnvoi(el, cible);
+  });
+}
+function lierEnvoi(el, cible) {
+  const b = el.querySelector('[data-envoyer]'), ta = el.querySelector('textarea');
+  b.onclick = async () => {
+    const txt = ta.value.trim(); if (!txt) { ta.focus(); return; }
+    b.disabled = true;
+    try { await posterFond('/api/demande', { cible, texte: txt, via: ta.dataset.via || 'ecrit' }); ta.value = ''; el.querySelector('[data-res]').textContent = t('transmis'); Son.clic(); Bureau.dire(cible === 'assistant' ? 'assistant' : cible, LANGUE === 'fr' ? 'C’est noté !' : 'Got it!', 4); }
+    catch (e) { /* toast */ } finally { b.disabled = false; }
+  };
+}
+function lireReponsesAssistant(l) {
+  const vus = new Set(LS.get('rep_assist_vues', [])); let neuf = false;
+  for (const m of l) {
+    if (!m || !m.texte) continue; const id = String(m.id || m.cree_le + m.texte).slice(0, 120); if (vus.has(id)) continue; vus.add(id);
+    if (!REP_ASSIST.length && !LS.get('rep_assist_init', false)) continue; // premier passage : on ne rejoue pas l'historique
+    neuf = true; Bureau.dire('assistant', m.texte, 9);
+    Notifs.ajouter({ id: 'rep-' + id, type: 'info', titre: t('reponse_assistant'), ligne: String(m.texte).slice(0, 140) });
+    const vh = PROFIL.assistant && PROFIL.assistant.voix_haute;
+    if (vh === 'oui' && window.speechSynthesis) { try { const u = new SpeechSynthesisUtterance(String(m.texte).slice(0, 600)); u.lang = LANGUE === 'fr' ? 'fr-FR' : 'en-US'; speechSynthesis.speak(u); } catch (e) { /* rien */ } }
+  }
+  REP_ASSIST = l; LS.set('rep_assist_init', true); LS.set('rep_assist_vues', [...vus].slice(-300)); return neuf;
+}
+
+// ====================================================================== état des postes : barres, temps restant, « disponible » seulement sans étape restante
+const HIST = {};
+function minutesRestantes(p, pr, pct) {
+  if (pr && Number.isFinite(+pr.restant_min) && pr.restant_min !== null && pr.restant_min !== '') return Math.max(0, +pr.restant_min);
+  if (pr && typeof pr.fin === 'string') {
+    let d = null; const hm = pr.fin.match(/^(\d{1,2})[:h](\d{2})$/);
+    if (hm) { d = new Date(); d.setHours(+hm[1], +hm[2], 0, 0); if (d < Date.now() - 6 * 3600e3) d.setDate(d.getDate() + 1); } else { d = new Date(pr.fin); }
+    if (d && !isNaN(d)) return Math.max(0, (d - Date.now()) / 60000);
+  }
+  if (pct >= 100) return 0;
+  const h = HIST[p.id] || []; if (h.length < 3) return null;
+  const a = h[0], b = h[h.length - 1], dp = b[1] - a[1], dt = b[0] - a[0];
+  return (dt >= 120000 && dp > 0) ? (100 - pct) / (dp / dt) / 60000 : null;
+}
+function etapesRestantes(p) {
+  const pr = PROG[p.id], l = Array.isArray(pr && pr.restantes) ? pr.restantes.map(String).slice(0, 12) : [];
+  const rm = window.Roadmap && Roadmap.etat && Roadmap.etat();
+  if (rm) for (const j of rm.jalons) for (const tc of j.taches) if (tc.poste === p.id && !['verse', 'ecart'].includes(tc.statut)) l.push(`${tc.id} · ${tc.titre}`);
+  return l;
+}
+// Source de vérité : etat.json écrit par studio_etat.py (s'il a moins d'une minute) ; sinon calcul local, mêmes règles :
+// « disponible » seulement sans rien devant lui ; « travaille » = assis à son poste ; la ligne (pictogramme + tâche) n'est jamais vide.
+const ETATS_OK = ['travaille', 'attend', 'bloque', 'fini', 'disponible'];
+const etatFrais = () => !!(ETAT && Array.isArray(ETAT.postes) && Number.isFinite(+ETAT.horodatage) && Date.now() / 1000 - ETAT.horodatage < 60);
+const nombre = v => (v === null || v === undefined || v === '' || !Number.isFinite(+v)) ? null : +v;
+function etatPoste(p) {
+  const pr = PROG[p.id], st = STATUTS[p.id] || {}, statut = String(st.statut || '').toLowerCase();
+  const ep = etatFrais() ? ETAT.postes.find(x => x && x.id === p.id) : null;
+  let pct, etat, restantes, texte, ligne = null;
+  if (ep && ETATS_OK.includes(ep.etat)) {
+    etat = ep.etat; pct = nombre(ep.progression); pct = pct === null ? null : clamp(pct, 0, 100);
+    restantes = Array.isArray(ep.restantes) ? ep.restantes.map(String).slice(0, 12) : [];
+    texte = String(ep.texte || ep.tache || '').slice(0, 120);
+    if (ep.ligne && ep.ligne.texte) ligne = { picto: String(ep.ligne.picto || '').slice(0, 2), texte: String(ep.ligne.texte).slice(0, 60) };
+  } else {
+    pct = pr && nombre(pr.pct) !== null ? clamp(+pr.pct, 0, 100) : statut.startsWith('fini') ? 100 : statut.startsWith('lanc') ? 50 : null;
+    restantes = etapesRestantes(p);
+    if ((pr && pr.bloque) || statut.startsWith('bloq')) etat = 'bloque';
+    else if (pct !== null && pct < 100 && (pr || statut.startsWith('lanc'))) etat = 'travaille';
+    else if (restantes.length) etat = pct >= 100 ? 'fini' : 'attend';
+    else etat = 'disponible';
+    texte = String((pr && (pr.etape || pr.texte)) || st.texte || '').slice(0, 120);
+  }
+  if (!ligne) ligne = etat === 'travaille' ? { picto: '▶', texte: texte || t('au_travail') } : etat === 'bloque' ? { picto: '⛔', texte: t('bloque') + ' : ' + (texte || '?') }
+    : etat === 'disponible' ? { picto: '☕', texte: t('libre') } : restantes.length ? { picto: '↔', texte: t('suite') + ' : ' + restantes[0] } : { picto: '⏸', texte: texte || t('en_attente') };
+  const n = Date.now(), h = HIST[p.id] = HIST[p.id] || [];
+  if (pct !== null && (!h.length || h[h.length - 1][1] !== pct || n - h[h.length - 1][0] > 60000)) h.push([n, pct]);
+  HIST[p.id] = h.filter(x => n - x[0] < 20 * 60000).slice(-40);
+  let reste = null;
+  if (etat === 'travaille' || etat === 'bloque') { reste = ep ? nombre(ep.restant_min) : null; if (reste === null) reste = minutesRestantes(p, pr, pct || 0); }
+  return { pct, etat, restantes, texte, reste, ligne, occupe: etat === 'travaille' };
+}
+function duree(min) { if (min == null) return '?'; min = Math.round(min); if (min < 1) return '<1 min'; if (min < 60) return min + ' min'; const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : ''); }
+let ETATS_PREC = LS.get('etats_postes', {});
+function verifierPostes() {
+  const neu = {};
+  for (const p of postes()) {
+    const e = etatPoste(p); neu[p.id] = e.etat; const a = ETATS_PREC[p.id];
+    if (a && a !== e.etat) {
+      if (e.etat === 'bloque') Notifs.ajouter({ id: 'bloque-' + p.id + '-' + Date.now(), type: 'alerte', titre: nomPoste(p) + ' ' + t('est_bloque'), ligne: e.texte, cible: { poste: p.id } });
+      else if (e.etat === 'disponible' && a === 'travaille') Notifs.ajouter({ id: 'dispo-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('est_dispo'), ligne: e.texte, cible: { poste: p.id } });
+      else if (e.etat === 'fini' && a === 'travaille') Notifs.ajouter({ id: 'fini-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('a_fini'), ligne: e.texte, cible: { poste: p.id } });
+    }
+  }
+  ETATS_PREC = neu; LS.set('etats_postes', neu);
+}
+function ficheposte(p) {
+  Panneau.montrer('poste:' + p.id, el => {
+    const e = etatPoste(p);
+    el.innerHTML = `<div class="surtitre">${esc(t(e.etat))}</div><h2>${esc(nomPoste(p))}</h2>
+      <div style="display:flex;gap:14px;align-items:center"><canvas width="160" height="160" style="width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc)"></canvas>
+      <div style="flex:1">${p.role ? `<p style="margin:0"><b>${esc(t('role'))} :</b> ${esc(p.role)}</p>` : ''}
+      ${e.pct !== null ? `<div class="barre"><i style="width:${e.pct}%"></i><span>${Math.round(e.pct)} %${e.reste !== null || e.etat === 'travaille' ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}</span></div>` : ''}
+      <p style="margin:0">${esc(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
+      ${e.texte && e.texte !== e.ligne.texte ? `<p class="discret" style="margin:0">${esc(e.texte)}</p>` : ''}</div></div>
+      ${p.mission ? `<h3>${esc(t('mission'))}</h3><p style="white-space:pre-wrap">${esc(p.mission)}</p>` : ''}
+      <h3>${esc(t('etapes'))}</h3>${e.restantes.length ? `<ol class="etapes">${e.restantes.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('aucune_etape'))}</p>`}
+      ${Array.isArray(p.skills) && p.skills.length ? `<p class="discret">${esc(t('skills'))} : ${p.skills.map(esc).join(', ')}</p>` : ''}
+      <h3>${esc(t('demander'))}</h3>${blocTexte('poste-texte')}`;
+    Bureau.portrait(el.querySelector('canvas'), lookPoste(p));
+    lierMicros(el); lierEnvoi(el, p.id);
+  });
+}
+
+// ====================================================================== recrutement : fiche rôle et mission (avec dictée) -> /api/recruter
+// Le serveur écrit la définition d'agent (<projet>/.claude/agents/<nom>.md), la fiche (recrues/<nom>.json) et une demande
+// (demandes/<horodatage>_<nom>.json) que Claude lit avant de lancer l'agent. Le personnage entre par la porte et s'installe.
+const APPARENCES = ['aucune', 'casque', 'casquette', 'beret', 'lunettes', 'chapeau', 'casque_audio', 'barbe'];
+const slug = s => norm(s).replace(/ /g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+function recruter() {
+  Panneau.montrer('recruter', el => {
+    const champ = (id, lib, html, plein) => `<div class="champ${plein ? ' plein' : ''}"><label for="${id}">${esc(t(lib))}</label>${html}</div>`;
+    el.innerHTML = `<div class="surtitre">${esc(t('recrutement'))}</div><h2>${esc(t('recruter_titre'))}</h2>
+      <div class="form-rec">
+        ${champ('rc-affiche', 'rec_nom_affiche', '<input type="text" id="rc-affiche" maxlength="40" autocomplete="off">')}
+        ${champ('rc-nom', 'rec_nom', '<input type="text" id="rc-nom" maxlength="40" autocomplete="off" spellcheck="false">')}
+        ${champ('rc-role', 'rec_role', `<div class="ligne-champ"><input type="text" id="rc-role" maxlength="200">${boutonMicro('#rc-role')}</div>`, true)}
+        ${champ('rc-mission', 'rec_mission', `<div class="ligne-champ"><textarea id="rc-mission" maxlength="4000"></textarea>${boutonMicro('#rc-mission')}</div>`, true)}
+        ${champ('rc-poste', 'rec_bureau', '<input type="text" id="rc-poste" maxlength="80" list="rc-postes"><datalist id="rc-postes">' + postes().map(p => `<option value="${esc(p.id)}">${esc(nomPoste(p))}</option>`).join('') + '</datalist>')}
+        ${champ('rc-skills', 'rec_skills', '<input type="text" id="rc-skills" maxlength="400" placeholder="gamedev:router" spellcheck="false">')}
+        ${champ('rc-couleur', 'rec_couleur', '<input type="color" id="rc-couleur" value="#6b8f71">')}
+        ${champ('rc-app', 'rec_apparence', '<select id="rc-app">' + APPARENCES.map(a => `<option value="${a}">${esc(a.replace('_', ' '))}</option>`).join('') + '</select>')}
+        <label class="champ coche plein"><input type="checkbox" id="rc-lancer" checked> ${esc(t('rec_lancer'))}</label>
+        <label class="champ coche plein"><input type="checkbox" id="rc-remplacer"> ${esc(t('rec_remplacer'))}</label>
+      </div>
+      <div class="rangee"><button type="button" class="btp" id="rc-ok">${esc(t('recruter'))}</button><span class="discret" id="rc-res"></span></div>`;
+    lierMicros(el);
+    const $$ = s => el.querySelector(s), nomCh = $$('#rc-nom'); let nomManuel = false;
+    $$('#rc-affiche').addEventListener('input', () => { if (!nomManuel) nomCh.value = slug($$('#rc-affiche').value); });
+    nomCh.addEventListener('input', () => { nomManuel = !!nomCh.value; });
+    $$('#rc-ok').onclick = async () => {
+      const res = $$('#rc-res'), b = $$('#rc-ok'); res.className = 'discret'; res.textContent = '';
+      const corps = { nom: slug(nomCh.value || $$('#rc-affiche').value), nom_affiche: $$('#rc-affiche').value.trim(), role: $$('#rc-role').value.trim(), mission: $$('#rc-mission').value.trim(),
+        poste: $$('#rc-poste').value.trim(), skills: $$('#rc-skills').value.trim(), couleur: $$('#rc-couleur').value, apparence: $$('#rc-app').value,
+        lancer: $$('#rc-lancer').checked, remplacer: $$('#rc-remplacer').checked, via: ($$('#rc-role').dataset.via === 'voix' || $$('#rc-mission').dataset.via === 'voix') ? 'voix' : 'ecrit' };
+      if (!corps.nom || !corps.role || !corps.mission) { res.className = 'erreur'; res.textContent = t('rec_manque'); return; }
+      b.disabled = true;
+      try {
+        const r = await poster('/api/recruter', corps);
+        FICHES_RECRUES[r.fiche.nom] = r.fiche;
+        if (!RECRUES.some(x => x.nom === r.fiche.nom)) RECRUES.push(r.fiche); else RECRUES = RECRUES.map(x => x.nom === r.fiche.nom ? r.fiche : x);
+        const plein = postes().every(p => p.id !== r.fiche.nom);
+        Panneau.fermer(); Son.succes('petit');
+        if (!plein) Bureau.arrivee(r.fiche.nom);
+        Notifs.ajouter({ id: 'rec-' + r.fiche.nom + '-' + Date.now(), type: 'fait', titre: `${r.fiche.nom_affiche} ${t('rec_arrive')}`, ligne: plein ? t('rec_plein') : r.fiche.role, cible: { poste: r.fiche.nom } });
+      } catch (e) { res.className = 'erreur'; res.textContent = e.message; }
+      finally { b.disabled = false; }
+    };
+  });
+}
+
+// ====================================================================== mur d'images (etat.json -> images[], copies dans .studio/mur/) : grille, puis plein cadre
+function ouvrirMur(i) {
+  Panneau.montrer('mur', el => {
+    const grille = () => {
+      el.innerHTML = `<div class="surtitre">${esc(t('images'))}</div><h2>${esc(t('mur'))}</h2>` + (IMAGES.length
+        ? `<div class="mur">${IMAGES.map((im, k) => `<button type="button" data-k="${k}"><img src="${esc(im.src)}" alt="" loading="lazy"><b>${esc(im.titre)}</b><small>${esc(im.libelle)}${im.poste ? ' · ' + esc(im.poste) : ''} · ${esc(im.h)}</small></button>`).join('')}</div>`
+        : `<p class="discret">${esc(t('aucune_image'))}</p>`);
+      el.querySelectorAll('[data-k]').forEach(b => b.onclick = () => cadre(+b.dataset.k));
+    };
+    const cadre = k => {
+      const im = IMAGES[k]; if (!im) return grille();
+      el.innerHTML = `<div class="rangee"><button type="button" class="bts" data-a="mur">${esc(t('retour_mur'))}</button><span style="flex:1"></span><button type="button" class="bts" data-a="p">${esc(t('precedente'))}</button><button type="button" class="bts" data-a="s">${esc(t('suivante'))}</button></div>
+        <div class="cadre"><img src="${esc(im.src)}" alt="${esc(im.titre)}"><div><b>${esc(im.titre)}</b> <span class="discret">${esc(im.libelle)}${im.poste ? ' · ' + esc(im.poste) : ''} · ${esc(im.h)}</span></div></div>`;
+      el.querySelector('[data-a=mur]').onclick = grille;
+      el.querySelector('[data-a=p]').onclick = () => cadre((k - 1 + IMAGES.length) % IMAGES.length);
+      el.querySelector('[data-a=s]').onclick = () => cadre((k + 1) % IMAGES.length);
+    };
+    if (Number.isInteger(i)) cadre(i); else grille();
+  }, { large: true });
+}
+
+// ====================================================================== rapport de l'assistant (rapport_assistant.json) : plein cadre au centre, par la file unique
+// {heure, blague, tableau: [{chantier, etape, pct, reste}], fini: [texte], a_decider: [texte | {id, titre}]}
+const cleRapport = r => String(r.heure || '') + ':' + hashStr(JSON.stringify(r).slice(0, 4000));
+function verifierRapport() {
+  if (!RAPPORT || !RAPPORT.heure || CONF.mode !== 'travail') return;
+  const cle = cleRapport(RAPPORT), vus = LS.get('rapports_vus', []);
+  if (vus.includes(cle)) return;
+  const t0 = Date.parse(String(RAPPORT.heure)), vieux = Number.isFinite(t0) && Date.now() - t0 > 30 * 60000;
+  if (!LS.get('rapports_init', false)) { LS.set('rapports_init', true); if (vieux) { LS.set('rapports_vus', [cle]); return; } }  // premier passage : on ne rejoue pas un vieux rapport
+  LS.set('rapports_vus', vus.concat(cle).slice(-60));
+  Bureau.dire('assistant', t('nouveau_rapport'), 4); Son.cloche();
+  ouvrirRapport();
+}
+function ouvrirRapport() {
+  const r = RAPPORT; if (!r) return;
+  Panneau.montrer('rapport:' + cleRapport(r), el => {
+    const l = (v, n) => (Array.isArray(v) ? v : []).slice(0, n);
+    const tab = l(r.tableau, 20).filter(x => x && typeof x === 'object');
+    const dec = l(r.a_decider, 12).map(x => typeof x === 'string' ? { titre: x } : (x && typeof x === 'object' ? x : null)).filter(Boolean);
+    const v1 = ETAT && ETAT.version1 && nombre(ETAT.version1.pct) !== null ? `<p class="discret">${esc(t('v1'))} : ${Math.round(ETAT.version1.pct)} % · ${esc(ETAT.version1.texte || '')}</p>` : '';
+    const heure = String(r.heure).replace(/^\d{4}-\d{2}-\d{2}T/, '').slice(0, 5);
+    el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('rapport_de'))} ${esc(heure)}</h2>
+      <div class="rapport-tete"><canvas width="160" height="160"></canvas>${r.blague ? `<div class="bulle">${esc(String(r.blague).slice(0, 600))}</div>` : ''}</div>${v1}
+      ${tab.length ? `<table class="tab-rapport"><thead><tr><th>${esc(t('chantier'))}</th><th>${esc(t('etape'))}</th><th style="width:26%">%</th><th>${esc(t('reste_col'))}</th></tr></thead><tbody>${tab.map(x => { const p = nombre(x.pct); return `<tr><td>${esc(String(x.chantier || '').slice(0, 120))}</td><td>${esc(String(x.etape || '').slice(0, 200))}</td><td>${p === null ? '' : `<div class="barre"><i style="width:${clamp(p, 0, 100)}%"></i><span>${Math.round(clamp(p, 0, 100))} %</span></div>`}</td><td>${esc(String(x.reste || '').slice(0, 60))}</td></tr>`; }).join('')}</tbody></table>` : ''}
+      ${l(r.fini, 20).length ? `<h3>${esc(t('fini_titre'))}</h3><ul class="liste-ok">${l(r.fini, 20).map(x => `<li>${esc(String(x).slice(0, 300))}</li>`).join('')}</ul>` : ''}
+      <h3>${esc(t('a_decider'))}</h3>${dec.length ? `<div class="liste-dec">${dec.map((d, k) => { const ok = d.id && DECISIONS.some(x => x && x.id === d.id); return ok ? `<button type="button" class="bts" data-dec="${esc(d.id)}">? ${esc(String(d.titre || d.id).slice(0, 200))}</button>` : `<p style="margin:0">• ${esc(String(d.titre || '').slice(0, 300))}</p>`; }).join('')}</div>` : `<p class="discret">${esc(t('rien_a_decider'))}</p>`}`;
+    Bureau.portrait(el.querySelector('canvas'), lookDe('assistant'));
+    el.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) { Panneau.fermer(); ouvrirDecision(d); } });
+  }, { large: true });
+}
+
+// ====================================================================== voix : reconnaissance du navigateur, sinon enregistrement transcrit par le serveur local
+const Reco = window.SpeechRecognition || window.webkitSpeechRecognition;
+const Voix = (() => {
+  let r = null, mr = null, flux = null, morceaux = [], cb = null, actif = false, acquis = '';
+  const langueReco = () => (PROFIL.voix && PROFIL.voix.langue_reconnaissance) || (LANGUE === 'fr' ? 'fr-FR' : 'en-US');
+  const parEnregistrement = () => !Reco || !!navigator.brave || LS.get('voix_enreg', false);
+  const disponible = () => !(PROFIL.voix && PROFIL.voix.micro_actif === false) && !!(Reco || (navigator.mediaDevices && window.MediaRecorder));
+  function lancer(o) {
+    if (!LS.get('voix_prevenu', false)) { LS.set('voix_prevenu', true); toast(esc(t('micro_prive')), { duree: 9000 }); }
+    cb = o; actif = true; acquis = ''; if (parEnregistrement()) enregistrer(); else reconnaitre();
+  }
+  function reconnaitre() {
+    r = new Reco(); r.lang = langueReco(); r.interimResults = true; r.continuous = true;
+    r.onresult = e => { let fin = '', inter = ''; for (let i = e.resultIndex; i < e.results.length; i++) { const x = e.results[i]; if (x.isFinal) fin += x[0].transcript; else inter += x[0].transcript; } if (fin) acquis = (acquis + ' ' + fin).trim(); if (cb && cb.interim) cb.interim((acquis + ' ' + inter).trim()); };
+    r.onerror = ev => { if (['network', 'not-allowed', 'service-not-allowed', 'audio-capture', 'language-not-supported'].includes(ev.error)) r.__bascule = ev.error; };
+    r.onend = () => {
+      const b = r && r.__bascule; r = null;
+      if (b && actif) { LS.set('voix_enreg', true); enregistrer(); return; }   // le service du navigateur ne marche pas (Brave…) : enregistrement local
+      if (actif) { try { reconnaitre(); return; } catch (e) { /* on termine */ } }
+      fin(acquis);
+    };
+    try { r.start(); } catch (e) { r = null; enregistrer(); }
+  }
+  async function enregistrer() {
+    if (!navigator.mediaDevices || !window.MediaRecorder) return echec(t('micro_absent'));
+    try { flux = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return echec(t('micro_absent')); }
+    if (!actif) { couper(); return; }
+    morceaux = []; const type = MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+    mr = new MediaRecorder(flux, type ? { mimeType: type } : {});
+    mr.ondataavailable = e => { if (e.data && e.data.size) morceaux.push(e.data); };
+    mr.onstop = async () => {
+      couper(); const blob = new Blob(morceaux, { type: 'audio/webm' }); mr = null;
+      if (!blob.size) return fin('');
+      if (cb && cb.interim) cb.interim(t('transcription'));
+      try {
+        const rep = await fetch('/api/transcrire', { method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: blob });
+        const j = await rep.json().catch(() => null);
+        if (!rep.ok || !j || j.ok === false) throw new Error((j && j.erreur) || ('HTTP ' + rep.status));
+        fin(j.texte || '');
+      } catch (e) { echec(e.message); }
+    };
+    mr.start(); if (cb && cb.interim) cb.interim(t('enregistre'));
+  }
+  function couper() { if (flux) { flux.getTracks().forEach(x => x.stop()); flux = null; } }
+  function fin(x) { actif = false; const c = cb; cb = null; if (c && c.fin) c.fin(x); }
+  function echec(m) { actif = false; couper(); toast('<b>Micro</b><br>' + esc(m), { erreur: true, duree: 8000 }); const c = cb; cb = null; if (c && c.erreur) c.erreur(m); }
+  function arreter() { if (!actif && !mr) return; actif = false; if (r) r.stop(); else if (mr && mr.state !== 'inactive') mr.stop(); }
+  return { lancer, arreter, disponible, actif: () => actif || !!mr };
+})();
+function boutonMicro(cible) {
+  return Voix.disponible() ? `<button type="button" class="bts micro" data-micro="${esc(cible)}">🎙 ${esc(t('dicter'))}</button>` : `<span class="discret" title="${esc(t('micro_absent'))}">🎙✕</span>`;
+}
+// Dicte dans un champ ; fin(texte) appelé avec le texte final (modifiable ensuite dans le champ).
+function dicter(champ, bouton, finExtra) {
+  if (Voix.actif()) { Voix.arreter(); return; }
+  const base = champ.value ? champ.value.replace(/\s*$/, ' ') : '';
+  const remettre = () => { bouton.classList.remove('actif'); bouton.textContent = '🎙 ' + t('dicter'); };
+  bouton.classList.add('actif'); bouton.textContent = '■ ' + t('arreter'); Son.clic();
+  Voix.lancer({
+    interim: x => { if (x === t('transcription') || x === t('enregistre')) bouton.textContent = '■ ' + x; else champ.value = base + x; },
+    fin: x => { champ.value = (base + x).trim(); champ.dataset.via = 'voix'; champ.dispatchEvent(new Event('input')); remettre(); if (finExtra) finExtra(x.trim()); },
+    erreur: remettre
+  });
+}
+function lierMicros(el) { el.querySelectorAll('[data-micro]').forEach(b => b.onclick = () => { const c = el.querySelector(b.dataset.micro); if (c) dicter(c, b); }); }
+
+// ====================================================================== bureau isométrique (canvas)
+const PEAUX = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a8735a'];
+const CHEVEUX = ['#2b1d14', '#5a3a22', '#b55239', '#d9b56b', '#1c1c1c', '#8a8a8a'];
+function hashStr(s) { let h = 2166136261; for (const c of String(s)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function lookPoste(p) {
+  const h = hashStr(p.id), acc = { casque: 'casque', casquette: 'casquette', beret: 'beret', lunettes: 'lunettes', chapeau: 'chapeau', casque_audio: 'casque_audio', barbe: 'barbe' }[p.apparence] || 'aucun';
+  return { morphologie: 'moyenne', peau: PEAUX[h % PEAUX.length], cheveux: { coupe: ['courts', 'longs', 'boucles', 'en_bataille', 'queue'][(h >> 3) % 5], couleur: CHEVEUX[(h >> 6) % CHEVEUX.length] }, tenue: { style: 'sweat', couleur1: /^#[0-9a-f]{6}$/i.test(p.couleur || '') ? p.couleur : '#6b8f71', couleur2: '#f4ecd9' }, accessoire: acc };
+}
+const lookDe = qui => { const a = PROFIL[qui] && PROFIL[qui].apparence; return a && typeof a === 'object' ? a : (qui === 'maitre' ? { peau: '#c68642', cheveux: { coupe: 'courts', couleur: '#2b1d14' }, tenue: { couleur1: '#3f7a52', couleur2: '#e9c47f' }, accessoire: 'casque_audio' } : { morphologie: 'petite', peau: '#f1c27d', cheveux: { coupe: 'en_bataille', couleur: '#b55239' }, tenue: { couleur1: '#4d6f9c', couleur2: '#f4ecd9' }, accessoire: 'chapeau' }); };
+
+const Bureau = (() => {
+  const cv = $('#bureau'); let cx = cv.getContext('2d');
+  const POLICE = '"Jeu Interface","Segoe UI",system-ui,sans-serif';
+  const W = 16, H = 12; let TW = 64, TH = 32, OX = 0, OY = 0, DPR = 1, L = { w: 0, h: 0 };
+  const ANIM = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  // 12 bureaux : postes de la config d'abord, recrues ensuite (les 3 derniers le long du mur du fond)
+  const SLOTS = [[2.2, 3.4], [6.2, 3.4], [10.2, 3.4], [2.2, 6.6], [6.2, 6.6], [10.2, 6.6], [2.2, 9.6], [6.2, 9.6], [10.2, 9.6], [4.4, .9], [7.6, .9], [10.6, .9]];
+  const ARRIVEES = {};  // recrues qui entrent par la porte : id -> début (ms)
+  const PORTE = [.6, 9.85];
+  const IMGS = {};      // images du mur déjà chargées
+  const ZONES = [];   // zones cliquables
+  const PERSOS = { assistant: { x: 8, y: 9.5, bx: 8, by: 9.5, bulle: null, prochain: 0 } };
+  const POP = {};     // apparition animée des éléments construits
+  const CONF_P = [];  // confettis
+  let construit = new Set();
+
+  function taille() {
+    DPR = Math.min(2, window.devicePixelRatio || 1); L.w = innerWidth; L.h = innerHeight;
+    cv.width = L.w * DPR; cv.height = L.h * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // hauteur de la pièce = murs (5,8 demi-cases) + sol ((W + H) / 4 cases) ; en mode accueil, l'avant peut passer sous la scène
+    const haut = ($('#entete').offsetHeight || 60) + 2, bas = SCENE_VISIBLE() ? $('#scene').offsetHeight * .85 : 16, dispoH = Math.max(240, L.h - haut - bas);
+    TW = Math.max(26, Math.min(110, (L.w * .96) / ((W + H) / 2), dispoH / ((W + H) / 4 + 3.3)));
+    TH = TW / 2; OX = L.w / 2 - (W - H) * TW / 4; OY = haut + TW * 3.3;
+  }
+  const iso = (gx, gy, z = 0) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2 - z * TH];
+  function poly(pts, fill, stroke) { cx.beginPath(); pts.forEach((p, i) => i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1])); cx.closePath(); if (fill) { cx.fillStyle = fill; cx.fill(); } if (stroke) { cx.strokeStyle = stroke; cx.lineWidth = 1; cx.stroke(); } }
+  function mix(a, b, k) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16); const c = i => Math.round(lerp((pa >> i) & 255, (pb >> i) & 255, k)); return '#' + ((c(16) << 16) | (c(8) << 8) | c(0)).toString(16).padStart(6, '0'); }
+  function boite(gx, gy, w, d, h, couleur, z0 = 0) {
+    const s = 'rgba(0,0,0,.25)';
+    poly([iso(gx, gy + d, z0), iso(gx + w, gy + d, z0), iso(gx + w, gy + d, z0 + h), iso(gx, gy + d, z0 + h)], mix(couleur, '#000000', .28), s);
+    poly([iso(gx + w, gy, z0), iso(gx + w, gy + d, z0), iso(gx + w, gy + d, z0 + h), iso(gx + w, gy, z0 + h)], mix(couleur, '#000000', .14), s);
+    poly([iso(gx, gy, z0 + h), iso(gx + w, gy, z0 + h), iso(gx + w, gy + d, z0 + h), iso(gx, gy + d, z0 + h)], couleur, s);
+  }
+  function murD(a, b, z0, z1, fill, stroke) { poly([iso(a, 0, z0), iso(b, 0, z0), iso(b, 0, z1), iso(a, 0, z1)], fill, stroke); }  // mur du fond à droite (gy = 0)
+  function murG(a, b, z0, z1, fill, stroke) { poly([iso(0, a, z0), iso(0, b, z0), iso(0, b, z1), iso(0, a, z1)], fill, stroke); }  // mur du fond à gauche (gx = 0)
+  function theme() { const th = CONF.theme || {}; const c = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null; return { sol: c(th.sol) || '#8a6a48', sol2: c(th.sol2) || '#7d5f40', mur: c(th.mur) || '#d9c9a6', accent: c(th.accent) || '#b98532', bois: c(th.bois) || '#a0744a' }; }
+  function ciel() { const h = new Date().getHours() + new Date().getMinutes() / 60; return h < 6 || h > 21 ? ['#1d2440', '#2e3a63'] : h < 8 || h > 19 ? ['#f0a46a', '#7c8fc0'] : ['#9cc7ea', '#dcecf7']; }
+
+  // ---------- personnages
+  function perso(x, y, s, look, o = {}) {
+    look = look || {}; const tenue = look.tenue || {}, chev = look.cheveux || {}, now = performance.now() / 1000;
+    const morph = { mince: .85, moyenne: 1, costaude: 1.2, petite: .95, grande: 1 }[look.morphologie] || 1, haut = { petite: .88, grande: 1.1 }[look.morphologie] || 1;
+    const bob = o.tape ? Math.sin(now * 9 + x) * .6 : o.marche ? Math.abs(Math.sin(now * 8)) * 1.5 : Math.sin(now * 1.6 + x) * .5;
+    cx.save(); cx.translate(x, y); cx.scale(s, s * haut);
+    cx.fillStyle = 'rgba(0,0,0,.22)'; cx.beginPath(); cx.ellipse(0, 0, 11, 4, 0, 0, 7); cx.fill();
+    if (o.assis) { cx.translate(0, 9); cx.fillStyle = '#2b2620'; cx.fillRect(-6, -12, 12, 4); }   // assis : plus bas, cuisses sur la chaise
+    else if (o.marche) { const a = Math.sin(now * 8) * 3; cx.fillStyle = '#2b2620'; cx.fillRect(-5 + a, -10, 4, 10); cx.fillRect(1 - a, -10, 4, 10); }
+    else { cx.fillStyle = '#2b2620'; cx.fillRect(-5, -10, 4, 10); cx.fillRect(1, -10, 4, 10); }
+    cx.translate(0, -bob);
+    const c1 = /^#/.test(tenue.couleur1 || '') ? tenue.couleur1 : '#6b8f71', c2 = /^#/.test(tenue.couleur2 || '') ? tenue.couleur2 : '#f4ecd9';
+    cx.fillStyle = c1; cx.beginPath(); cx.roundRect ? cx.roundRect(-9 * morph, -30, 18 * morph, 22, 6) : cx.rect(-9 * morph, -30, 18 * morph, 22); cx.fill();
+    cx.fillStyle = c2; cx.fillRect(-2, -29, 4, 8);
+    if (tenue.style === 'tablier') { cx.fillStyle = c2; cx.fillRect(-6 * morph, -22, 12 * morph, 14); }
+    const peau = /^#/.test(look.peau || '') ? look.peau : '#f1c27d';
+    cx.fillStyle = peau; const bras = o.tape ? Math.sin(now * 14) * 1.5 : 0;
+    cx.fillRect(-12 * morph, -27 + bras, 4, 13); cx.fillRect(8 * morph, -27 - bras, 4, 13);
+    cx.beginPath(); cx.arc(0, -39, 9, 0, 7); cx.fill();
+    cx.fillStyle = '#2b241c'; if (o.cligne && Math.sin(now * 1.3 + x) > .985) { cx.fillRect(-4, -39, 3, 1); cx.fillRect(2, -39, 3, 1); } else { cx.fillRect(-4, -40, 2, 2.4); cx.fillRect(2.5, -40, 2, 2.4); }
+    const cc = /^#/.test(chev.couleur || '') ? chev.couleur : '#2b1d14'; cx.fillStyle = cc;
+    switch (chev.coupe) {
+      case 'aucune': case 'rase': if (chev.coupe === 'rase') { cx.globalAlpha = .5; cx.beginPath(); cx.arc(0, -41, 9, Math.PI, 0); cx.fill(); cx.globalAlpha = 1; } break;
+      case 'longs': cx.beginPath(); cx.arc(0, -41, 10, Math.PI, 0); cx.fill(); cx.fillRect(-10, -41, 4, 14); cx.fillRect(6, -41, 4, 14); break;
+      case 'boucles': for (let i = -2; i <= 2; i++) { cx.beginPath(); cx.arc(i * 4, -47 + Math.abs(i), 4.2, 0, 7); cx.fill(); } break;
+      case 'en_bataille': cx.beginPath(); cx.moveTo(-10, -40); for (let i = 0; i <= 6; i++) cx.lineTo(-10 + i * 3.4, i % 2 ? -53 : -46); cx.lineTo(10, -40); cx.fill(); break;
+      case 'queue': cx.beginPath(); cx.arc(0, -41, 10, Math.PI, 0); cx.fill(); cx.beginPath(); cx.arc(9, -36, 3.5, 0, 7); cx.fill(); break;
+      default: cx.beginPath(); cx.arc(0, -41, 10, Math.PI, 0); cx.fill();
+    }
+    cx.fillStyle = '#3a3128';
+    switch (look.accessoire) {
+      case 'casque': cx.fillStyle = '#e2b866'; cx.beginPath(); cx.arc(0, -42, 11, Math.PI, 0); cx.fill(); cx.fillRect(-12, -43, 24, 3); break;
+      case 'casquette': cx.fillStyle = c1; cx.beginPath(); cx.arc(0, -43, 9.5, Math.PI, 0); cx.fill(); cx.fillRect(0, -45, 14, 3); break;
+      case 'beret': cx.fillStyle = '#a8432e'; cx.beginPath(); cx.ellipse(2, -48, 11, 4.5, -.15, 0, 7); cx.fill(); break;
+      case 'chapeau': cx.fillStyle = '#5c4f3f'; cx.fillRect(-13, -48, 26, 3); cx.fillRect(-7, -58, 14, 11); break;
+      case 'couronne': cx.fillStyle = '#e2b866'; cx.beginPath(); cx.moveTo(-8, -48); cx.lineTo(-8, -56); cx.lineTo(-4, -51); cx.lineTo(0, -57); cx.lineTo(4, -51); cx.lineTo(8, -56); cx.lineTo(8, -48); cx.fill(); break;
+      case 'bandeau': cx.fillStyle = '#a8432e'; cx.fillRect(-10, -45, 20, 3); break;
+      case 'capuche': cx.fillStyle = c1; cx.beginPath(); cx.arc(0, -40, 12, Math.PI * .95, Math.PI * .05); cx.lineWidth = 4; cx.strokeStyle = c1; cx.stroke(); break;
+      case 'cornes': cx.fillStyle = '#efe6d2'; cx.beginPath(); cx.moveTo(-7, -46); cx.lineTo(-11, -55); cx.lineTo(-4, -48); cx.fill(); cx.beginPath(); cx.moveTo(7, -46); cx.lineTo(11, -55); cx.lineTo(4, -48); cx.fill(); break;
+      case 'lunettes': cx.strokeStyle = '#2b241c'; cx.lineWidth = 1.2; cx.strokeRect(-6, -41.5, 5, 4); cx.strokeRect(1.5, -41.5, 5, 4); break;
+      case 'barbe': cx.fillStyle = cc; cx.beginPath(); cx.arc(0, -35, 7, 0, Math.PI); cx.fill(); break;
+      case 'casque_audio': cx.strokeStyle = '#2b241c'; cx.lineWidth = 2; cx.beginPath(); cx.arc(0, -40, 11, Math.PI, 0); cx.stroke(); cx.fillStyle = '#2b241c'; cx.fillRect(-13, -41, 4, 7); cx.fillRect(9, -41, 4, 7); break;
+      default: break;
+    }
+    if (o.tasse) { cx.fillStyle = '#f4ecd9'; cx.fillRect(10 * morph, -18, 6, 6); cx.strokeStyle = '#f4ecd9'; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(17 * morph, -15, 2, -1.4, 1.4); cx.stroke(); }
+    cx.restore();
+  }
+
+  function bulle(x, y, texte) {
+    texte = String(texte).slice(0, 160); cx.font = '13px ' + POLICE;
+    const mots = texte.split(/\s+/), lignes = []; let l = '';
+    for (const m of mots) { const e = l ? l + ' ' + m : m; if (cx.measureText(e).width > 220 && l) { lignes.push(l); l = m; } else l = e; } if (l) lignes.push(l);
+    const w = Math.max(...lignes.map(s => cx.measureText(s).width)) + 18, hh = lignes.length * 16 + 10, bx = clamp(x - w / 2, 6, L.w - w - 6), by = y - hh - 10;
+    cx.fillStyle = 'rgba(255,253,246,.96)'; cx.strokeStyle = 'rgba(92,79,63,.4)'; cx.beginPath(); cx.roundRect ? cx.roundRect(bx, by, w, hh, 8) : cx.rect(bx, by, w, hh); cx.fill(); cx.stroke();
+    cx.beginPath(); cx.moveTo(x - 6, by + hh); cx.lineTo(x, by + hh + 8); cx.lineTo(x + 6, by + hh); cx.fill();
+    cx.fillStyle = '#2b241c'; lignes.forEach((s, i) => cx.fillText(s, bx + 9, by + 19 + i * 16));
+  }
+  // Étiquette d'un poste (nom, barre façon barre de vie, pourcentage et temps restant) ; compacte au zoom arrière.
+  function tailleEtiquette() { const compact = TW < 52; return { w: clamp(TW * 1.55, 70, 150) + 12, h: compact ? 40 : 60, compact, fs: compact ? 10 : clamp(TW * .19, 10.5, 13) }; }
+  // dernière ligne de l'étiquette : pictogramme + tâche en cours (jamais vide)
+  function ligneTache(e, x, y, w, fs) {
+    const l = e.ligne || { picto: '?', texte: '' };
+    cx.font = `${fs}px ` + POLICE; cx.fillStyle = { travaille: '#bfe3b0', bloque: '#f2b7a6', attend: '#f3d9a0', fini: '#bfe3b0', disponible: '#c9dcf2' }[e.etat] || '#e8dcc2';
+    cx.fillText(couperTexte(`${l.picto} ${l.texte}`.trim(), w), x, y);
+  }
+  function etiquette(b, p, e) {
+    const { w: wb, h, compact, fs } = tailleEtiquette(), w = wb - 12, x = b.x + wb / 2, y0 = b.y;
+    const coul = { travaille: '#6fa75c', bloque: '#c2533c', attend: '#d8a650', fini: '#6fa75c', disponible: '#8fb0d6' }[e.etat];
+    if (b.decale) { cx.strokeStyle = 'rgba(241,217,164,.55)'; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(x, y0 + h); cx.lineTo(b.ax, b.ay); cx.stroke(); cx.fillStyle = 'rgba(241,217,164,.8)'; cx.beginPath(); cx.arc(b.ax, b.ay, 2, 0, 7); cx.fill(); }
+    cx.fillStyle = 'rgba(26,23,19,.86)'; cx.beginPath(); cx.roundRect ? cx.roundRect(b.x, y0, wb, h, 7) : cx.rect(b.x, y0, wb, h); cx.fill();
+    cx.textAlign = 'center'; cx.font = `600 ${fs}px ` + POLICE; cx.fillStyle = '#f1d9a4';
+    const pc = e.pct == null ? 0 : e.pct, a = (HIST['aff:' + p.id] = lerp(HIST['aff:' + p.id] ?? pc, pc, .08));
+    const detail = e.etat === 'travaille' || e.etat === 'bloque' ? `${Math.round(pc)} % · ${duree(e.reste)}` : `${t(e.etat)}${e.restantes.length ? ' · ' + e.restantes.length : ''}`;
+    if (compact) {
+      cx.fillText(couperTexte(nomPoste(p), w), x, y0 + 12);
+      const by = y0 + 17; cx.fillStyle = '#3a3128'; cx.fillRect(x - w / 2, by, w, 8);
+      const g = cx.createLinearGradient(x - w / 2, 0, x + w / 2, 0); g.addColorStop(0, '#c9953e'); g.addColorStop(1, coul); cx.fillStyle = g; cx.fillRect(x - w / 2 + 1, by + 1, (w - 2) * a / 100, 6);
+      cx.font = `600 8.5px ` + POLICE; cx.fillStyle = '#fff'; cx.fillText(couperTexte(detail, w), x, by + 7);
+      ligneTache(e, x, y0 + h - 5, w, 9);
+    } else {
+      cx.fillText(couperTexte(nomPoste(p), w), x, y0 + 15);
+      const by = y0 + 21; cx.fillStyle = '#3a3128'; cx.fillRect(x - w / 2, by, w, 9); cx.strokeStyle = 'rgba(0,0,0,.6)'; cx.strokeRect(x - w / 2 + .5, by + .5, w - 1, 8);
+      const g = cx.createLinearGradient(x - w / 2, 0, x + w / 2, 0); g.addColorStop(0, '#c9953e'); g.addColorStop(1, coul); cx.fillStyle = g; cx.fillRect(x - w / 2 + 1, by + 1, (w - 2) * a / 100, 7);
+      cx.font = `${fs - 1}px ` + POLICE; cx.fillStyle = '#e8dcc2';
+      cx.fillText(couperTexte(e.etat === 'travaille' || e.etat === 'bloque' ? `${Math.round(pc)} % · ${t('restant')} ${duree(e.reste)}` : detail, w), x, y0 + 43);
+      ligneTache(e, x, y0 + h - 5, w, fs - 1);
+    }
+    cx.textAlign = 'left';
+  }
+  function couperTexte(s, w) { s = String(s); if (cx.measureText(s).width <= w) return s; while (s.length > 1 && cx.measureText(s + '…').width > w) s = s.slice(0, -1); return s + '…'; }
+  // Placement sans chevauchement : de l'avant vers le fond, chaque étiquette qui touche une autre monte au-dessus
+  // (ou descend si elle sortirait sous l'en-tête), reliée à son personnage par un trait.
+  function placerEtiquettes(ancres) {
+    const { w, h } = tailleEtiquette(), places = [], haut = ($('#entete').offsetHeight || 60) + 2, marge = 3;
+    const touche = (r, q) => r.x < q.x + w + marge && q.x < r.x + w + marge && r.y < q.y + h + marge && q.y < r.y + h + marge;
+    for (const an of ancres.slice().sort((u, v) => v.ay - u.ay)) {
+      const r = { x: clamp(an.ax - w / 2, 4, L.w - w - 4), y: an.ay - h - 4, ax: an.ax, ay: an.ay, an };
+      for (let essai = 0; essai < 12; essai++) { const q = places.find(q => touche(r, q)); if (!q) break; r.y = q.y - h - marge; }
+      if (r.y < haut) { r.y = an.ay - h - 4; for (let essai = 0; essai < 12; essai++) { const q = places.find(q => touche(r, q)); if (!q) break; r.y = q.y + h + marge; } }
+      r.decale = Math.abs(r.y - (an.ay - h - 4)) > 2; places.push(r);
+    }
+    return places;
+  }
+
+  // ---------- éléments construits par les chapitres
+  const DECOR = {
+    tableau_piliers(th) { murG(1.6, 4.6, 2.2, 4.4, '#f6efdc', '#5c4f3f'); const p = (REP.reponses['vision.piliers'] || {}).valeur; const l = Array.isArray(p) ? p : (DED && DED.propositions && DED.propositions['vision.piliers']) || []; ['#f3d27a', '#a8d0a0', '#f2b7a6'].forEach((c, i) => poly([iso(0, 2 + i, 2.6), iso(0, 2.8 + i, 2.6), iso(0, 2.8 + i, 3.9), iso(0, 2 + i, 3.9)], c, 'rgba(0,0,0,.2)')); void l; },
+    enseigne(th) { murD(5.2, 10.8, 4.6, 5.6, '#2b241c', th.accent); const [x, y] = iso(8, 0, 5.1); cx.save(); cx.translate(x, y); cx.transform(1, .5, 0, 1, 0, 0); cx.fillStyle = '#f1d9a4'; cx.font = `600 ${Math.max(9, TW * .2)}px Georgia,serif`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(String(CONF.nom_projet || 'Studio').slice(0, 26).toUpperCase(), 0, 0); cx.restore(); },
+    tableau_boucle() { murD(1.2, 4.2, 2, 4.2, '#fbfbf6', '#5c4f3f'); const [x, y] = iso(2.7, 0, 3.1); cx.strokeStyle = '#4d6f9c'; cx.lineWidth = 2; cx.beginPath(); cx.ellipse(x, y, TW * .35, TW * .22, .45, .3, 5.8); cx.stroke(); },
+    mur_roadmap() { murD(11.4, 15.4, 2, 4.2, '#e9dcbc', '#5c4f3f'); const rm = window.Roadmap && Roadmap.etat && Roadmap.etat(); const n = rm ? rm.jalons.length : 4; for (let i = 0; i < n; i++) { const a = 11.6 + i * (3.6 / n), ok = rm && rm.jalons[i] && rm.jalons[i].ferme; murD(a, a + 3.6 / n - .15, 2.6 + (i % 2) * .5, 3.4 + (i % 2) * .5, ok ? '#a8d0a0' : '#f3d27a', 'rgba(0,0,0,.25)'); } },
+    porte_equipe() { murG(9, 10.7, 0, 3.6, '#5c3d24', '#2b241c'); murG(9.2, 10.5, 0, 3.4, '#2b1d14'); },
+    etagere_livres(th) { boite(.15, 5.6, .55, 1.8, 3.2, th.bois); ['#a8432e', '#4d6f9c', '#3f7a52', '#e2b866'].forEach((c, i) => boite(.2, 5.7 + i * .42, .45, .3, .55, c, 1.2 + (i % 2) * .9)); },
+    table_level_design(th) { boite(13, 6.2, 1.8, 1.3, 1.2, th.bois); boite(13.3, 6.4, .5, .5, .45, '#6fa75c', 1.2); boite(14, 6.6, .4, .4, .7, '#8a8174', 1.2); },
+    atelier_art() { boite(13.6, 9.4, .7, .15, 2.8, '#7a5a3a'); poly([iso(13.55, 9.55, 1.4), iso(14.35, 9.55, 1.4), iso(14.35, 9.55, 2.9), iso(13.55, 9.55, 2.9)], '#f6efdc', '#5c4f3f'); poly([iso(13.7, 9.55, 1.7), iso(14.2, 9.55, 1.7), iso(14.2, 9.55, 2.5), iso(13.7, 9.55, 2.5)], '#d77b62'); },
+    cabine_son() { boite(14.4, .5, .6, .6, 1.6, '#3a3128'); boite(14.4, 1.5, .6, .6, 1.6, '#3a3128'); const [x, y] = iso(14.7, .8, 1.1); cx.fillStyle = '#8a8174'; cx.beginPath(); cx.arc(x, y, TW * .1, 0, 7); cx.fill(); },
+    salle_moteur() { boite(.4, .5, .9, .8, 2, '#4a4f58'); const [x, y] = iso(.85, 1.3, 1.4); cx.fillStyle = `rgba(111,191,127,${.5 + .5 * Math.sin(performance.now() / 300)})`; cx.fillRect(x - 3, y - 2, 6, 3); },
+    baie_reseau() { if ((REP.reponses['multijoueur.mode'] || {}).valeur === 'solo') return; boite(1.6, .4, .7, .7, 2.4, '#2b2f36'); },
+    cloche_decisions(th) { const [x, y] = iso(15.2, 4.4, 3); const ouv = decisionsOuvertes().length, a = ouv ? Math.sin(performance.now() / 120) * .35 : 0; cx.save(); cx.translate(x, y); cx.rotate(a); cx.fillStyle = '#e2b866'; cx.beginPath(); cx.moveTo(-8, 8); cx.quadraticCurveTo(-8, -8, 0, -9); cx.quadraticCurveTo(8, -8, 8, 8); cx.closePath(); cx.fill(); cx.fillStyle = '#8a5b12'; cx.beginPath(); cx.arc(0, 9, 2.5, 0, 7); cx.fill(); cx.restore(); },
+    bureau_code(th) { if (postes().length) return; boite(2.2, 10.2, 1.5, .7, 1.4, th.bois); boite(2.6, 10.25, .7, .1, .9, '#2b2f36', 1.4); }
+  };
+
+  function dessiner() {
+    const th = theme(); cx.clearRect(0, 0, L.w, L.h); ZONES.length = 0;
+    // sol
+    for (let gx = 0; gx < W; gx++) for (let gy = 0; gy < H; gy++) poly([iso(gx, gy), iso(gx + 1, gy), iso(gx + 1, gy + 1), iso(gx, gy + 1)], (gx + gy) % 2 ? th.sol : th.sol2, 'rgba(0,0,0,.08)');
+    // murs
+    murD(0, W, 0, 5.8, mix(th.mur, '#000000', .06), 'rgba(0,0,0,.2)'); murG(0, H, 0, 5.8, mix(th.mur, '#000000', .2), 'rgba(0,0,0,.2)');
+    murD(0, W, 0, .35, mix(th.bois, '#000000', .2)); murG(0, H, 0, .35, mix(th.bois, '#000000', .35));
+    const [c1, c2] = ciel(); [[5.5, 7.5]].forEach(([a, b]) => { murG(a, b, 2, 4.4, c1, '#5c4f3f'); murG(a + .1, b - .1, 3.2, 4.3, c2); });
+    // éléments du décor (murs d'abord, puis objets au sol), avec apparition animée
+    const tout = CONF.mode === 'travail' || REP.etat === 'termine';
+    for (const id of Object.keys(DECOR)) {
+      if (!tout && !construit.has(id)) continue;
+      if (!POP[id]) POP[id] = performance.now() - 1000;  // déjà construit au chargement : pas de fondu
+      const k = clamp((performance.now() - POP[id]) / 600, 0, 1);
+      cx.save(); cx.globalAlpha = k; try { DECOR[id](th); } catch (e) { erreur('décor ' + id, e); } cx.restore();
+    }
+    try { cadresImages(); } catch (e) { erreur('mur d’images', e); }
+    // plantes
+    [[15.3, 11.2], [.6, 11.3]].forEach(([gx, gy]) => { boite(gx - .25, gy - .25, .5, .5, .7, '#a8432e'); const [x, y] = iso(gx, gy, .7); cx.fillStyle = '#3f7a52'; for (let i = 0; i < 5; i++) { cx.beginPath(); cx.ellipse(x + Math.cos(i * 1.3) * TW * .12, y - TW * .18 - (i % 2) * TW * .08, TW * .1, TW * .05, i, 0, 7); cx.fill(); } });
+    // objets triés en profondeur : bureaux, personnages
+    const objets = [];
+    postes().forEach((p, i) => { const [sx, sy] = SLOTS[i]; const e = etatPoste(p); objets.push({ k: sx + sy, f: () => posteDessin(p, sx, sy, e, th) }); });
+    const directionVisible = tout || construit.has('bureau_direction');
+    if (directionVisible) objets.push({ k: 12.8 + 2.4, f: () => direction(th) });
+    const a = PERSOS.assistant; objets.push({ k: a.x + a.y + .5, f: () => { const [x, y] = iso(a.x, a.y); perso(x, y, TW / 44, lookDe('assistant'), { marche: a.marche, cligne: true }); a.sx = x; a.sy = y - TW * 1.1; ZONES.push({ x: x - TW * .3, y: y - TW * 1.1, w: TW * .6, h: TW * 1.1, f: () => demander('assistant') }); } });
+    objets.sort((u, v) => u.k - v.k).forEach(o => { try { o.f(); } catch (e) { erreur('dessin', e); } });
+    // étiquettes et bulles au premier plan
+    const ancres = postes().map((p, i) => { const [sx, sy] = SLOTS[i]; const [x, y] = iso(sx + .55, sy + .1); return { p, ax: x, ay: y - TW * 1.05 }; });
+    for (const b of placerEtiquettes(ancres)) { try { etiquette(b, b.an.p, etatPoste(b.an.p)); } catch (e) { erreur('étiquette', e); } const pb = PERSOS[b.an.p.id]; if (pb && pb.bulle && pb.bulle.fin > Date.now()) bulle(b.x + tailleEtiquette().w / 2, b.y - 4, pb.bulle.texte); }
+    if (a.bulle && a.bulle.fin > Date.now()) bulle(a.sx, a.sy, a.bulle.texte);
+    // confettis
+    for (let i = CONF_P.length - 1; i >= 0; i--) { const c = CONF_P[i]; c.x += c.vx / 60; c.y += c.vy / 60; c.vy += 2.2; c.r += .1; cx.save(); cx.translate(c.x, c.y); cx.rotate(c.r); cx.fillStyle = c.c; cx.fillRect(-3, -1.5, 6, 3); cx.restore(); if (c.y > L.h + 10) CONF_P.splice(i, 1); }
+  }
+  // Occupé = assis à son poste (chaise, tape au clavier) ; libre = debout à côté du bureau, une tasse à la main ;
+  // en attente, fini ou bloqué = debout derrière son bureau. Une recrue entre d'abord par la porte.
+  function posteDessin(p, sx, sy, e, th) {
+    const [x, y] = iso(sx + .55, sy + .1), look = lookPoste(p), s = TW / 44;
+    const arr = ARRIVEES[p.id], k = arr ? clamp((performance.now() - arr) / 3200, 0, 1) : 1;
+    if (arr && k >= 1) delete ARRIVEES[p.id];
+    if (k < 1) {   // arrivée : marche de la porte vers le bureau
+      const gx = lerp(PORTE[0], sx + 1.75, k), gy = lerp(PORTE[1], sy + .9, k), [px, py] = iso(gx, gy);
+      boite(sx - .1, sy + .45, 1.5, .7, 1.45, th.bois); boite(sx + .25, sy + .5, .7, .1, .95, '#2b2f36', 1.45);
+      perso(px, py, s, look, { marche: true, cligne: true });
+      ZONES.push({ x: px - TW * .4, y: py - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p) });
+      return;
+    }
+    if (e.occupe) {
+      boite(sx + .3, sy - .3, .55, .08, 1.15, '#3a3128');            // dossier de la chaise
+      boite(sx + .3, sy - .25, .55, .5, .55, '#4a4038');              // assise
+      perso(x, y, s, look, { tape: true, assis: true, cligne: true });
+    } else if (e.etat !== 'disponible') {
+      perso(x, y, s, look, { cligne: true });
+    } else {
+      boite(sx + .3, sy - .25, .55, .5, .55, '#4a4038');              // chaise vide
+    }
+    boite(sx - .1, sy + .45, 1.5, .7, 1.45, th.bois);
+    boite(sx + .25, sy + .5, .7, .1, .95, '#2b2f36', 1.45);
+    if (e.occupe) { const [mx, my] = iso(sx + .6, sy + .5, 1.9); cx.fillStyle = 'rgba(160,210,255,.25)'; cx.beginPath(); cx.arc(mx, my, TW * .35, 0, 7); cx.fill(); }
+    if (e.etat === 'disponible') {
+      const [lx, ly] = iso(sx + 1.75, sy + .9); perso(lx, ly, s, look, { cligne: true, tasse: true });
+      ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p) });
+    }
+    ZONES.push({ x: x - TW * .7, y: y - TW * 1.2, w: TW * 1.5, h: TW * 1.6, f: () => ficheposte(p) });
+  }
+  // ---------- mur d'images : les 3 dernières images encadrées sur le mur du fond (sous l'enseigne)
+  function image(src) { let im = IMGS[src]; if (!im) { im = IMGS[src] = new Image(); im.src = src; } return im.complete && im.naturalWidth ? im : null; }
+  function cadresImages() {
+    if (!IMAGES.length || CONF.mode !== 'travail') return;
+    const places = [[5.5, 6.9], [7.3, 8.7], [9.1, 10.5]], z0 = 2.1, z1 = 3.9;
+    IMAGES.slice(0, 3).forEach((im, i) => {
+      const [a, b] = places[i];
+      murD(a - .08, b + .08, z0 - .15, z1 + .15, '#5c3d24', '#2b1d14');
+      const img = image(im.src); const [x0, y0] = iso(a, 0, z1), ux = (b - a) * TW / 2, uy = (b - a) * TH / 2, vy = (z1 - z0) * TH;
+      if (img) {
+        const lu = Math.hypot(ux, uy), ratio = lu / vy, iw = img.naturalWidth, ih = img.naturalHeight;
+        let sw = iw, sh = ih; if (iw / ih > ratio) sw = ih * ratio; else sh = iw / ratio;
+        cx.save(); cx.transform(ux / sw, uy / sw, 0, vy / sh, x0, y0); cx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, 0, 0, sw, sh); cx.restore();
+      } else murD(a, b, z0, z1, '#e9dcbc');
+      ZONES.push({ x: x0, y: y0 - 2, w: ux, h: vy + uy + 4, f: () => ouvrirMur(i) });
+    });
+  }
+  function direction(th) {
+    const [x, y] = iso(13.4, 2.1);
+    const visible = CONF.mode === 'travail' || REP.etat === 'termine' || construit.has('personnages') || (PROFIL.maitre && PROFIL.maitre.apparence);
+    if (visible) perso(x, y, TW / 40, lookDe('maitre'), { cligne: true });
+    boite(12.6, 2.55, 1.9, .9, 1.5, mix(th.bois, '#000000', .15));
+    boite(13.1, 2.6, .8, .1, 1, '#2b2f36', 1.5);
+    const nom = PROFIL.maitre && PROFIL.maitre.nom; if (nom) { cx.font = '600 11px ' + POLICE; cx.textAlign = 'center'; cx.fillStyle = 'rgba(26,23,19,.8)'; const w = cx.measureText(nom).width + 14; cx.fillRect(x - w / 2, y - TW * 1.25 - 16, w, 18); cx.fillStyle = '#f1d9a4'; cx.fillText(nom, x, y - TW * 1.25 - 3); cx.textAlign = 'left'; }
+  }
+  // ---------- l'assistant circule
+  function bouger(dt) {
+    const a = PERSOS.assistant, now = Date.now();
+    if (now > a.prochain) { const cibles = postes().map((p, i) => [SLOTS[i][0] + .5, SLOTS[i][1] + 1.6]).concat([[12.6, 4.2], [8, 9.8], [4.5, 10.5]]); const c = cibles[(Math.random() * cibles.length) | 0]; a.bx = c[0]; a.by = c[1]; a.prochain = now + 7000 + Math.random() * 7000; }
+    const dx = a.bx - a.x, dy = a.by - a.y, d = Math.hypot(dx, dy), v = 1.4 * dt;
+    if (d > .02 && ANIM) { a.x += dx / d * Math.min(v, d); a.y += dy / d * Math.min(v, d); a.marche = true; } else { a.marche = false; if (!ANIM) { a.x = a.bx; a.y = a.by; } }
+  }
+  let dernier = performance.now();
+  function boucle(n) { const dt = Math.min(.1, (n - dernier) / 1000); dernier = n; try { bouger(dt); dessiner(); } catch (e) { erreur('boucle', e); } requestAnimationFrame(boucle); }
+  cv.addEventListener('click', e => { const z = ZONES.slice().reverse().find(z => e.clientX >= z.x && e.clientX <= z.x + z.w && e.clientY >= z.y && e.clientY <= z.y + z.h); if (z) { Son.clic(); z.f(); } });
+  cv.addEventListener('mousemove', e => { cv.classList.toggle('survol', ZONES.some(z => e.clientX >= z.x && e.clientX <= z.x + z.w && e.clientY >= z.y && e.clientY <= z.y + z.h)); });
+  addEventListener('resize', taille);
+  return {
+    demarrer() { taille(); requestAnimationFrame(boucle); }, taille,
+    construire(ids, anime) { for (const id of ids) { if (!construit.has(id)) { construit.add(id); if (anime) { POP[id] = performance.now(); Son.construit(); } else POP[id] = performance.now() - 1000; } } },
+    arrivee(id) { ARRIVEES[id] = performance.now(); setTimeout(() => { Bureau.dire(id, t('rec_bonjour'), 5); Son.construit(); }, 3300); },
+    dire(qui, texte, sec = 6) { const p = qui === 'assistant' ? PERSOS.assistant : (PERSOS[qui] = PERSOS[qui] || {}); p.bulle = { texte: String(texte), fin: Date.now() + Math.max(sec, 2.5 + String(texte).length / 13) * 1000 }; },
+    confettis(n) { for (let i = 0; i < n && CONF_P.length < 300; i++) CONF_P.push({ x: L.w / 2 + (Math.random() - .5) * L.w * .5, y: 10, vx: (Math.random() - .5) * 240, vy: 60 + Math.random() * 120, r: Math.random() * 6, c: ['#e2b866', '#7fae5e', '#d77b62', '#8fb0d6', '#f4ecd9'][i % 5] }); },
+    portrait(canvas, look) { const c2 = canvas.getContext('2d'); const garde = cx; cx = c2; try { c2.clearRect(0, 0, canvas.width, canvas.height); perso(canvas.width / 2, canvas.height * .97, canvas.width / 62, look, {}); } catch (e) { erreur('portrait', e); } finally { cx = garde; } }
+  };
+})();
+
+// ====================================================================== questionnaire joué dans la page (mode accueil)
+const SCENE_VISIBLE = () => !$('#scene').hidden && !$('#scene').classList.contains('parti');
+const Quest = (() => {
+  let courant = null, dernierQF = null, pile = [], suivisFile = [], retourRecap = false, attente = null, annulation = null, choixMulti = new Set();
+  const scene = $('#scene'), corps = $('#sc-corps');
+  const R = () => REP.reponses;
+  const val = id => R()[id] ? R()[id].valeur : undefined;
+  const mode = () => REP.mode || (val('accueil.mode') === 'complet' ? 'complet' : 'rapide');
+  function cond(si) {
+    if (!si) return true;
+    return Object.entries(si).every(([cle, c]) => {
+      const v = val(cle), a = v === undefined || v === null;
+      if ('egal' in c) return !a && (Array.isArray(v) ? v.includes(c.egal) : v === c.egal);
+      if ('different_de' in c) return a || (Array.isArray(v) ? !v.includes(c.different_de) : v !== c.different_de);
+      if ('dans' in c) return !a && (Array.isArray(v) ? v.some(x => c.dans.includes(x)) : c.dans.includes(v));
+      if ('existe' in c) return c.existe ? !a : a;
+      return true;
+    });
+  }
+  const fixe = q => DED && DED.fixes && DED.fixes[q.id];
+  function incluse(q) {
+    if (q.chapitre !== 'fin' && (mode() === 'rapide' ? !q.rapide : q.seulement_rapide)) return false;
+    if (!cond(q.si)) return false;
+    if (fixe(q)) return false;
+    return true;
+  }
+  const liste = () => QF.questions.filter(incluse);
+  const qDe = id => QF.questions.find(q => q.id === id) || (SUIVI && (SUIVI.questions || []).find(q => q.id === id));
+  const rec = q => { const r = DED && DED.recommandes && DED.recommandes[q.id]; return r !== undefined && r !== null ? r : q.recommande; };
+  const chapTitre = id => ((QF.chapitres || []).find(c => c.id === id) || {}).titre || id;
+  function chapitresFinis() { return Array.isArray(REP.chapitres_finis) ? REP.chapitres_finis : []; }
+
+  // ---- enregistrement d'une réponse
+  async function noter(q, valeur, o = {}) {
+    const r = { valeur, source: o.source || 'utilisateur', via: o.via || 'clic', t: new Date().toISOString() };
+    if (o.texte_brut) r.texte_brut = o.texte_brut;
+    R()[q.id] = r;
+    const envoi = { cle: q.id, valeur, source: r.source, via: r.via, chapitre_courant: q.chapitre || (courant && courant.chapitre) || '', langue: LANGUE };
+    if (o.texte_brut) envoi.texte_brut = o.texte_brut.slice(0, 4000);
+    if (q.id === 'accueil.mode' && (valeur === 'rapide' || valeur === 'complet')) { REP.mode = valeur; envoi.mode = valeur; }
+    try { await posterFond('/api/questionnaire', envoi); } catch (e) { /* toast */ }
+    if (q.a_propos) { R()[q.a_propos] = Object.assign({}, r); posterFond('/api/questionnaire', { cle: q.a_propos, valeur, source: r.source, via: r.via, texte_brut: o.texte_brut || '' }).catch(() => {}); }
+    effetsProfil(q, valeur);
+  }
+  function effetsProfil(q, v) {
+    const m = {
+      'accueil.nom': () => ({ maitre: { nom: String(v || '').slice(0, 40) } }),
+      'assistant.nom': () => ({ assistant: { nom: String(v || '').slice(0, 40) } }),
+      'assistant.personnalite': () => ({ assistant: { personnalite: String(v || '').slice(0, 120) } }),
+      'assistant.humour': () => ['aucun', 'leger', 'absurde', 'geek', 'noir'].includes(v) ? { assistant: { humour: v } } : null,
+      'assistant.frequence': () => [15, 30, 60, 120].includes(+v) ? { assistant: { frequence_rapport_min: +v } } : null,
+      'assistant.voix': () => ['non', 'oui', 'cloche'].includes(v) ? { assistant: { voix_haute: v } } : null,
+      'assistant.espece': () => ['humain', 'robot', 'animal', 'creature'].includes(v) ? { assistant: { espece: v } } : null,
+      'assistant.titre': () => typeof v === 'string' ? { assistant: { appellation: v.slice(0, 30) } } : null
+    }[q.id];
+    const corps = m && m(); if (!corps) return;
+    for (const k of Object.keys(corps)) PROFIL[k] = Object.assign({}, PROFIL[k], corps[k]);
+    posterFond('/api/profil', corps).catch(() => {});
+  }
+
+  // ---- navigation
+  function suivante(depuis) {
+    if (suivisFile.length) return suivisFile.shift();
+    const l = liste(); if (!depuis) return l.find(q => !(q.id in R())) || l[l.length - 1];
+    const tous = QF.questions, i = tous.findIndex(q => q.id === depuis.id);
+    for (let k = i + 1; k < tous.length; k++) if (incluse(tous[k])) return tous[k];
+    return null;
+  }
+  function avancer() {
+    const prec = courant;
+    if (retourRecap) { retourRecap = false; return montrer(qDe('fin.valider')); }
+    const base = prec && QF.questions.includes(prec) ? prec : dernierQF;
+    const q = suivante(base);
+    if (base && q && QF.questions.includes(q) && q.chapitre !== base.chapitre && base.chapitre !== 'accueil') finirChapitre(base.chapitre);
+    if (!q) return;
+    if (prec) pile.push(prec.id);
+    montrer(q);
+  }
+  function reculer() { const id = pile.pop(); if (id) montrer(qDe(id)); }
+  function finirChapitre(ch) {
+    const finis = chapitresFinis(); if (finis.includes(ch)) return;
+    REP.chapitres_finis = finis.concat(ch);
+    posterFond('/api/questionnaire', { chapitres_finis: REP.chapitres_finis }).catch(() => {});
+    const c = (QF.chapitres || []).find(x => x.id === ch); if (!c) return;
+    Bureau.construire(c.construit || [], true);
+    Succes.ajouter({ id: 'chapitre-' + (CONF.nom_projet || '') + '-' + ch, icone: '✎', titre: `${t('chapitre_fini')} : ${c.titre}`, sous: '', taille: 'petit' });
+  }
+
+  // ---- affichage
+  function montrer(q) {
+    courant = q; if (QF.questions.includes(q)) dernierQF = q; choixMulti = new Set(Array.isArray(val(q.id)) ? val(q.id) : (Array.isArray(rec(q)) && q.type === 'multi' && !(q.id in R()) ? rec(q) : []));
+    if (annulation) { clearTimeout(annulation.minuteur); annulation = null; }
+    Voix.arreter();
+    majChapitres(q);
+    if (q.chapitre && QF.questions.includes(q)) posterFond('/api/questionnaire', { chapitre_courant: q.chapitre }).catch(() => {});
+    const msg = DED && DED.message_assistant && !LS.get('ded_msg_' + (DED.maj || ''), false) ? DED.message_assistant : '';
+    if (msg) LS.set('ded_msg_' + (DED.maj || ''), true);
+    const r = rec(q), cartes = (q.choix || []).filter(c => cond(c.si));
+    let milieu = '';
+    if (q.type === 'choix' || q.type === 'multi') {
+      milieu = `<div class="cartes" role="group">${cartes.map(c => { const estRec = Array.isArray(r) ? r.includes(c.id) : r === c.id; const choisie = q.type === 'multi' ? choixMulti.has(c.id) : val(q.id) === c.id;
+        return `<button type="button" class="carte${estRec ? ' rec' : ''}${choisie ? ' choisie' : ''}" data-rec="${esc(t('recommande'))}" data-c="${esc(c.id)}">${cheminSur(c.illustration, /\.svg$/i) ? `<img src="${esc(c.illustration)}" alt="" loading="lazy">` : ''}<b>${esc(c.libelle)}</b>${c.detail ? `<small>${esc(c.detail)}</small>` : ''}</button>`; }).join('')}</div>`;
+      if (q.libre) milieu += `<div class="sc-libre"><input type="text" id="sc-libre" maxlength="400" placeholder="${esc(t('autre'))}">${boutonMicro('#sc-libre')}<button type="button" class="bts" id="sc-libre-ok">${esc(t('valider'))}</button></div>`;
+      else if (q.micro !== false) milieu += `<div class="sc-libre"><input type="text" id="sc-libre" maxlength="400" placeholder="🎙" readonly hidden>${boutonMicro('#sc-libre')}</div>`;
+    } else if (q.type === 'texte' || q.type === 'nom' || q.type === 'couleur') {
+      const v = val(q.id), defaut = typeof v === 'string' ? v : (q.defaut || '');
+      const props = q.propositions_depuis && DED && DED.propositions && DED.propositions[q.id] || [];
+      milieu = `<div class="sc-libre">${q.type === 'texte' ? `<textarea id="sc-libre" maxlength="2000">${esc(defaut)}</textarea>` : `<input type="${q.type === 'couleur' ? 'color' : 'text'}" id="sc-libre" maxlength="60" value="${esc(defaut)}">`}${q.micro !== false && q.type !== 'couleur' ? boutonMicro('#sc-libre') : ''}</div>
+        ${props.length ? `<div class="puces">${props.slice(0, 8).map(p => `<button type="button" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>` : ''}`;
+    } else if (q.type === 'curseur') {
+      const v = Number.isFinite(+val(q.id)) && val(q.id) !== null ? +val(q.id) : (q.defaut ?? q.min ?? 0);
+      milieu = `<div class="curseur"><input type="range" id="sc-curseur" min="${+q.min || 0}" max="${+q.max || 100}" step="${+q.pas || 1}" value="${v}"><output id="sc-out">${v}</output></div>`;
+    } else if (q.type === 'personnage') {
+      milieu = editeurPerso(q);
+    }
+    if (q.id === 'fin.valider') milieu = recap() + milieu;
+    const passer = q.passer !== false && q.type !== 'personnage';
+    const valider = ['multi', 'texte', 'nom', 'couleur', 'curseur', 'personnage'].includes(q.type);
+    corps.innerHTML = `<div class="sc-tete"><canvas id="sc-avatar" width="168" height="168"></canvas><div class="bulle"><div class="qui">${esc(nomAssistant())}</div>${msg ? `<p class="msg">${esc(msg)}</p>` : ''}<h2>${esc(q.titre)}</h2>${q.aide ? `<p>${esc(q.aide)}</p>` : ''}</div></div>
+      ${milieu}<div id="sc-annule"></div>
+      <div class="sc-bas">${pile.length ? `<button type="button" class="bts" id="sc-retour">← ${esc(t('retour'))}</button>` : ''}<span class="espace"></span>
+      ${passer ? `<button type="button" class="bts" id="sc-passer">${esc(t('passer'))}</button>` : ''}${valider ? `<button type="button" class="btp" id="sc-valider">${esc(t('valider'))}</button>` : ''}</div>`;
+    Bureau.portrait($('#sc-avatar'), lookDe('assistant'));
+    lier(q, cartes);
+    const f = corps.querySelector('textarea,input[type=text]:not([readonly])'); if (f && (q.type === 'texte' || q.type === 'nom')) setTimeout(() => f.focus(), 50);
+    corps.scrollTop = 0; Bureau.taille();
+  }
+  function majChapitres(q) {
+    const ch = (QF.chapitres || []).filter(c => c.id !== 'accueil'), finis = chapitresFinis();
+    $('#chapitres').innerHTML = ch.map(c => `<span class="${finis.includes(c.id) ? 'fini' : c.id === q.chapitre ? 'cours' : ''}" title="${esc(c.titre)}">${esc(c.titre)}</span>`).join('');
+  }
+  function libelleValeur(q, v) {
+    if (v === null || v === undefined) return '—';
+    const lib = id => { const c = (q.choix || []).find(x => x.id === id); return c ? c.libelle : String(id); };
+    if (Array.isArray(v)) return v.map(lib).join(', ');
+    if (typeof v === 'object') return '✓';
+    return q.choix ? lib(v) : String(v);
+  }
+  function recap() {
+    const parCh = {}; for (const q of QF.questions) if (q.id in R() && q.chapitre !== 'fin') (parCh[q.chapitre] = parCh[q.chapitre] || []).push(q);
+    const marque = { utilisateur: '✔', deduit: '~', a_confirmer: '?', voix_a_interpreter: '?' };
+    return `<table class="recap"><tbody>${Object.entries(parCh).map(([ch, l]) => `<tr><th colspan="3">${esc(chapTitre(ch))}</th></tr>` + l.map(q => { const r = R()[q.id];
+      return `<tr class="ligne" data-q="${esc(q.id)}"><td>${esc(q.titre)}</td><td>${esc(r.texte_brut && r.valeur == null ? '« ' + r.texte_brut + ' »' : libelleValeur(q, r.valeur))}</td><td class="src src-${esc(r.source)}" title="${esc(r.source)}">${marque[r.source] || ''}</td></tr>`; }).join('')).join('')}</tbody></table>`;
+  }
+  function editeurPerso(q) {
+    const qui = q.cible === 'assistant' ? 'assistant' : 'maitre', a = JSON.parse(JSON.stringify(lookDe(qui)));
+    const sel = (nom, liste, v) => `<label>${esc(nom)}<select data-k="${esc(nom)}">${liste.map(x => `<option${x === v ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select></label>`;
+    const col = (nom, v) => `<label>${esc(nom)}<input type="color" data-k="${esc(nom)}" value="${esc(/^#[0-9a-f]{6}$/i.test(v || '') ? v : '#888888')}"></label>`;
+    return `<div class="perso-ed" data-qui="${qui}"><canvas width="300" height="300" id="pe-apercu"></canvas><div>
+      ${sel('morphologie', ['mince', 'moyenne', 'costaude', 'petite', 'grande'], a.morphologie || 'moyenne')}${col('peau', a.peau)}
+      ${sel('coupe', ['courts', 'longs', 'boucles', 'en_bataille', 'queue', 'rase', 'aucune'], (a.cheveux || {}).coupe)}${col('cheveux', (a.cheveux || {}).couleur)}
+      ${sel('tenue', ['sweat', 'chemise', 'bleu_de_travail', 'heros', 'tablier', 'costume', 'armure', 'robe'], (a.tenue || {}).style)}${col('couleur1', (a.tenue || {}).couleur1)}${col('couleur2', (a.tenue || {}).couleur2)}
+      ${sel('accessoire', ['aucun', 'casque', 'casque_audio', 'casquette', 'beret', 'chapeau', 'lunettes', 'barbe', 'couronne', 'bandeau', 'capuche', 'cornes'], a.accessoire || 'aucun')}
+      <div class="rangee"><button type="button" class="bts" data-pe="hasard">🎲 ${esc(t('hasard'))}</button><button type="button" class="bts" data-pe="defaut">${esc(t('defaut'))}</button></div></div></div>`;
+  }
+  function lirePerso(el) {
+    const g = k => el.querySelector(`[data-k="${k}"]`).value;
+    return { morphologie: g('morphologie'), peau: g('peau'), cheveux: { coupe: g('coupe'), couleur: g('cheveux') }, tenue: { style: g('tenue'), couleur1: g('couleur1'), couleur2: g('couleur2') }, accessoire: g('accessoire') };
+  }
+
+  // ---- interactions
+  function lier(q, cartes) {
+    const $c = s => corps.querySelector(s);
+    const ret = $c('#sc-retour'); if (ret) ret.onclick = () => { Son.clic(); reculer(); };
+    const pas = $c('#sc-passer'); if (pas) pas.onclick = async () => { Son.clic(); const r = rec(q); await noter(q, r === undefined ? null : r, { source: 'a_confirmer', via: 'passer' }); avancer(); };
+    corps.querySelectorAll('[data-q]').forEach(tr => tr.onclick = () => { retourRecap = true; montrer(qDe(tr.dataset.q)); });
+    if (q.type === 'choix') corps.querySelectorAll('.carte').forEach(b => b.onclick = () => choisir(q, b.dataset.c, 'clic'));
+    if (q.type === 'multi') corps.querySelectorAll('.carte').forEach(b => b.onclick = () => { Son.clic(); const id = b.dataset.c; if (choixMulti.has(id)) choixMulti.delete(id); else { if (q.max && choixMulti.size >= q.max) return; choixMulti.add(id); } b.classList.toggle('choisie', choixMulti.has(id)); });
+    const libre = $c('#sc-libre');
+    const ok = $c('#sc-libre-ok'); if (ok) { ok.onclick = () => libreEcrit(q, cartes, libre.value); libre.onkeydown = e => { if (e.key === 'Enter') libreEcrit(q, cartes, libre.value); }; }
+    corps.querySelectorAll('[data-micro]').forEach(b => b.onclick = () => dicter(libre, b, texte => { if (q.type === 'choix' || q.type === 'multi') dictee(q, cartes, texte); }));
+    corps.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { libre.value = b.dataset.p; libre.focus(); });
+    const cur = $c('#sc-curseur'); if (cur) cur.oninput = () => { $c('#sc-out').textContent = cur.value; };
+    const ed = $c('.perso-ed');
+    if (ed) {
+      const maj = () => Bureau.portrait($c('#pe-apercu'), lirePerso(ed));
+      ed.querySelectorAll('[data-k]').forEach(i => i.oninput = maj);
+      ed.querySelector('[data-pe="hasard"]').onclick = () => { ed.querySelectorAll('select').forEach(s => s.selectedIndex = (Math.random() * s.options.length) | 0); ed.querySelectorAll('input[type=color]').forEach(c => c.value = '#' + ((Math.random() * 0xffffff) | 0).toString(16).padStart(6, '0')); ed.querySelector('[data-k="peau"]').value = PEAUX[(Math.random() * PEAUX.length) | 0]; maj(); };
+      ed.querySelector('[data-pe="defaut"]').onclick = () => { const qui = ed.dataset.qui, sauve = PROFIL[qui]; PROFIL[qui] = Object.assign({}, sauve, { apparence: null }); corps.querySelector('.perso-ed').outerHTML = editeurPerso(q); PROFIL[qui] = sauve; lier(q, cartes); };
+      maj();
+    }
+    const val_ = $c('#sc-valider'); if (val_) val_.onclick = async () => {
+      Son.clic();
+      if (q.type === 'multi') { if (!choixMulti.size) return; await noter(q, [...choixMulti], { via: 'clic' }); }
+      else if (q.type === 'curseur') await noter(q, +cur.value, { via: 'clic' });
+      else if (q.type === 'personnage') { const qui = ed.dataset.qui, ap = lirePerso(ed); PROFIL[qui] = Object.assign({}, PROFIL[qui], { apparence: ap }); await posterFond('/api/profil', { [qui]: { apparence: ap } }).catch(() => {}); await noter(q, 'choisi', { via: 'clic' }); Bureau.construire(['personnages'], true); }
+      else { const v = libre.value.trim(); if (!v && q.passer === false) { libre.focus(); return; } await noter(q, v || null, { via: libre.dataset.via === 'voix' ? 'voix' : 'ecrit', source: v ? 'utilisateur' : 'a_confirmer' }); }
+      apres(q);
+    };
+  }
+  async function choisir(q, id, via) {
+    Son.clic(); corps.querySelectorAll('.carte').forEach(b => b.classList.toggle('choisie', b.dataset.c === id));
+    if (q.id === 'fin.valider') return finir(id);
+    if (q.id === 'accueil.mode' && id === 'reprise') { await noter(q, 'reprise', { via }); REP.mode = REP.mode || 'rapide'; pile = []; return montrer(suivante(null)); }
+    await noter(q, id, { via });
+    setTimeout(() => apres(q), 260);
+  }
+  function apres(q) {
+    if (q.attend_deductions) return attendreDeductions(q);
+    avancer();
+  }
+  function correspondances(cartes, texte) {
+    const n = ' ' + norm(texte) + ' ';
+    return cartes.filter(c => [c.libelle, ...(c.mots_voix || [])].some(m => { const x = norm(m); return x && n.includes(' ' + x + ' '); }));
+  }
+  function libreEcrit(q, cartes, texte) {
+    texte = String(texte || '').trim(); if (!texte) return;
+    const m = correspondances(cartes, texte);
+    if (q.type === 'choix' && m.length === 1) return choisir(q, m[0].id, 'ecrit');
+    noter(q, texte, { via: 'ecrit', source: 'utilisateur' }).then(() => apres(q));
+  }
+  // Dictée sur une question à cartes : une seule carte correspond → sélection, 3 s pour annuler ; sinon « à interpréter ».
+  function dictee(q, cartes, texte) {
+    if (!texte) return;
+    const m = correspondances(cartes, texte);
+    if (m.length === 1 || (q.type === 'multi' && m.length)) {
+      const ids = m.map(c => c.id), zone = corps.querySelector('#sc-annule');
+      corps.querySelectorAll('.carte').forEach(b => b.classList.toggle('choisie', ids.includes(b.dataset.c)));
+      let s = 3; zone.innerHTML = `<div class="annule">${esc(t('compris'))} : <b>${esc(m.map(c => c.libelle).join(', '))}</b> · <button type="button" class="bts">${esc(t('annuler'))} (<span>${s}</span>)</button></div>`;
+      const tic = () => { s--; const sp = zone.querySelector('span'); if (sp) sp.textContent = s; if (s <= 0) { annulation = null; noter(q, q.type === 'multi' ? ids : ids[0], { via: 'voix' }).then(() => apres(q)); } else annulation.minuteur = setTimeout(tic, 1000); };
+      annulation = { minuteur: setTimeout(tic, 1000) };
+      zone.querySelector('button').onclick = () => { clearTimeout(annulation.minuteur); annulation = null; zone.innerHTML = ''; corps.querySelectorAll('.carte').forEach(b => b.classList.remove('choisie')); };
+      return;
+    }
+    noter(q, null, { via: 'voix', source: 'voix_a_interpreter', texte_brut: texte }).then(() => apres(q));
+  }
+  function attendreDeductions(q) {
+    const depuis = Date.now(), sig0 = DED ? JSON.stringify(DED) : '';
+    corps.innerHTML = `<div class="sc-tete"><canvas id="sc-avatar" width="168" height="168"></canvas><div class="bulle"><div class="qui">${esc(nomAssistant())}</div><p class="attente"><span class="plume"></span>${esc(t('reflechit'))}</p></div></div>
+      <div class="sc-bas"><span class="espace"></span><button type="button" class="bts" id="sc-sans" hidden>${esc(t('sans_attendre'))}</button></div>`;
+    Bureau.portrait($('#sc-avatar'), lookDe('assistant'));
+    const fin = () => { clearInterval(attente); attente = null; avancer(); };
+    corps.querySelector('#sc-sans').onclick = fin;
+    attente = setInterval(async () => {
+      const d = await lire('deductions.json');
+      if (d && JSON.stringify(d) !== sig0) { DED = d; return fin(); }
+      if (Date.now() - depuis > 8000) { const b = corps.querySelector('#sc-sans'); if (b) b.hidden = false; }
+      if (Date.now() - depuis > 60000) fin();
+    }, 2000);
+  }
+  async function finir(choix) {
+    const q = qDe('fin.valider');
+    if (choix === 'corriger') { await noter(q, 'corriger'); const tr = corps.querySelector('.recap'); if (tr) tr.scrollIntoView({ behavior: 'smooth' }); return; }
+    if (choix === 'complet') { REP.mode = 'complet'; await posterFond('/api/questionnaire', { mode: 'complet' }).catch(() => {}); pile = []; const l = liste(); return montrer(l.find(x => !(x.id in R()) && x.id !== 'fin.valider') || q); }
+    await noter(q, 'oui');
+    REP.etat = 'termine';
+    finirChapitre('personnages');
+    try { await posterFond('/api/questionnaire', { etat: 'termine', chapitre_courant: 'fin' }); } catch (e) { return; }
+    scene.classList.add('parti'); setTimeout(() => { scene.hidden = true; document.body.classList.remove('questionnaire'); Bureau.taille(); }, 500);
+    Bureau.construire([].concat(...(QF.chapitres || []).map(c => c.construit || [])), true);
+    Succes.ajouter({ id: 'questionnaire-' + (CONF.nom_projet || ''), icone: '✓', titre: t('questionnaire_fini'), sous: '', taille: 'moyen' });
+    if (window.Roadmap) Roadmap.voici();
+  }
+  function suivis() {
+    if (!SUIVI || !Array.isArray(SUIVI.questions) || !QF) return;
+    for (const s of SUIVI.questions) {
+      if (!s || !s.id || s.repondue || s.id in R() || suivisFile.some(x => x.id === s.id) || (courant && courant.id === s.id)) continue;
+      suivisFile.push(Object.assign({ type: 'choix', libre: true, micro: true, passer: true, chapitre: courant ? courant.chapitre : '' }, s));
+    }
+  }
+  return {
+    async demarrer() {
+      QF = await lire(`questions.${LANGUE}.json`) || await lire('questions.fr.json');
+      if (!QF) return;
+      const r = await lire('reponses_questionnaire.json'); if (r && r.reponses) REP = r;
+      const finis = chapitresFinis(); Bureau.construire([].concat(...(QF.chapitres || []).filter(c => finis.includes(c.id)).map(c => c.construit || [])), false);
+      if (REP.etat === 'termine' || CONF.mode === 'travail') { scene.hidden = true; if (REP.etat === 'termine' && window.Roadmap && !Roadmap.etat()) Roadmap.voici(); return; }
+      scene.hidden = false; document.body.classList.add('questionnaire'); Bureau.taille();
+      const q = suivante(null);
+      if (Object.keys(R()).length) Bureau.dire('assistant', t('bienvenue'), 5);
+      montrer(q);
+    },
+    suivis
+  };
+})();
+
+// ====================================================================== démarrage
+$('#bt-notifs').onclick = () => Notifs.basculer();
+$('#bt-assistant').onclick = () => demander('assistant');
+$('#bt-recruter').onclick = () => recruter();
+$('#bt-images').onclick = () => ouvrirMur();
+$('#bt-rapport').onclick = () => ouvrirRapport();
+$('#bt-decisions').onclick = () => { const l = decisionsOuvertes(); l.forEach(ouvrirDecision); };
+$('#niveau').onclick = () => window.Roadmap && Roadmap.ouvrir();
+$('#bt-son').onclick = () => { const on = Son.basculer(); $('#son-onde').style.display = on ? '' : 'none'; toast(esc(on ? t('son_on') : t('son_off')), { duree: 1500 }); };
+if (Son.coupe()) $('#son-onde').style.display = 'none';
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (Panneau.ouvert()) Panneau.fermer(); else $('#notifs').hidden = true; }
+  if ((e.key === 'a' || e.key === 'A') && !e.ctrlKey && !e.metaKey && !e.altKey && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) { e.preventDefault(); demander('assistant'); }
+});
+document.addEventListener('click', e => { const n = $('#notifs'); if (!n.hidden && !n.contains(e.target) && !$('#bt-notifs').contains(e.target)) n.hidden = true; });
+(async function () {
+  await chargerTout().catch(e => erreur('chargement', e));
+  Bureau.demarrer();
+  if (window.Roadmap) {
+    await Roadmap.installer({ langue: LANGUE, barre: document.querySelector('.outils'),
+      succes: s => Succes.ajouter({ id: 'rm:' + (s.titre || ''), icone: s.icone, titre: s.titre, sous: s.sous, taille: s.taille, son: s.son, clic: s.clic, cible: { roadmap: true } }) });
+    const rb = $('#bt-roadmap'); if (rb) $('.outils').insertBefore(rb, $('#bt-decisions'));
+  }
+  await Quest.demarrer().catch(e => erreur('questionnaire', e));
+  setInterval(() => chargerTout().catch(e => erreur('chargement', e)), 10000);
+})();
+</script>
+</body>
+</html>
