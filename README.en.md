@@ -96,6 +96,8 @@ Claude only creates files in `.studio/` (ignored by git). Before handing back, i
 
 ## What's new in 0.3.1
 
+- **0.3.2: zoom and camera**: mouse wheel to zoom, click-and-drag to move, double-click, +, − and “recenter” buttons; clicking a character recenters on it.
+
 - **The same studio as the original**, adapted to your project: full top bar (Overview, Log, Optimize, Assistant log, Customize, Full screen, **Stop all**…), your team on the left, a radio playing your game's music (off by default), a first-run tutorial.
 - **Tutorial and automations**: on first run the assistant presents the studio in 6 bubbles, then offers the automations (assignment when a task ends, hiring, task chaining, regular report, optimization) with a tokens-per-hour estimate. Nothing turns on without your choice; “Stop all” stops everything. You can go to bed or to work and let it run; with Claude Code Remote Control you follow from your phone and can stop everything.
 - **Everything lands in the studio**:

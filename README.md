@@ -96,6 +96,8 @@ Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te r
 
 ## Nouveautés de la 0.3.1
 
+- **0.3.2 : zoom et caméra** : molette pour zoomer, cliquer-glisser pour te déplacer, double-clic, boutons +, − et « recentrer » ; un clic sur un personnage le recentre.
+
 - **Le même studio que l'original**, adapté à ton projet : barre du haut complète (Vue d'ensemble, Journal, Optimiser, Journal de l'assistant, Personnaliser, Plein écran, **Tout couper**…), ton équipe à gauche, la radio avec les musiques de ton jeu (coupée par défaut), un tutoriel de départ.
 - **Tutoriel et automatismes** : au premier passage, l'assistant présente le studio en 6 bulles, puis propose les automatismes (attribution en fin de tâche, embauches, enchaînement des tâches, point régulier, optimisation) avec une estimation des jetons par heure. Rien ne s'active sans ton choix ; « Tout couper » arrête tout. Tu peux aller te coucher ou au travail et laisser tourner ; avec Remote Control de Claude Code, tu suis depuis ton téléphone et tu peux tout couper.
 - **Tout arrive dans le studio** :
