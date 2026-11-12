@@ -16,6 +16,9 @@ Fonctionne avec **Python 3.10+ (bibliothèque standard seulement)** et un naviga
 | `questions.fr.json`, `questions.en.json` | Le questionnaire en données (format dans `questionnaire.md`) ; leur bloc `roadmap` donne les textes du panneau Roadmap |
 | `roadmap.js`, `roadmap.css` | Bouton et panneau **Roadmap** (jalons, barres d'avancement, tâches cochées, succès gagnés ou verrouillés, niveau) ; écran « Voici ta roadmap » en fin de questionnaire |
 | `roadmap.html` | Le panneau Roadmap seul (aperçu) ; `?voici` = écran de fin du questionnaire, `?lang=en` |
+| `paliers.js` | **Le studio grandit** : 5 paliers (sol, murs, fenêtre et vue, mobilier, éclairage, effets), chantier animé au passage d'un palier, palette déduite des réponses ; tout tracé par code (voir « Paliers du studio ») |
+| `sprites.js`, `sprites/` | **Personnages** rendus dans Blender : `atlas.json` + planches WebP (8 directions ; 128 px, et 256 px pour `tape`, `marche`, `repos`, `cafe_debout`), recoloration par masques (peau, cheveux, haut, bas, chaussures), couvre-chefs ; repli vectoriel tant qu'ils chargent. Contrat : `sprites/LISEZMOI.md`. Licence MIT du skill |
+| `outils/sprites/` | `perso_sprites.py` (Blender 4.5 : modèle, armature, animations, rendu), `assembler.py` (planches, atlas), `compresser.py` (WebP pour le dépôt) |
 | `cartes/` | Illustrations des cartes (SVG, sans logos de marques) |
 | `serveur_studio.py` | Sert la page et l'API JSON ci-dessous ; écoute **127.0.0.1 seulement** ; vérifie les en-têtes Host et Origin ; corps ≤ 64 Ko, champs bornés ; écrit seulement dans les fichiers listés ; **n'exécute aucune commande** ; JSON lus avec ou sans BOM ; transcription locale facultative |
 | `studio_etat.py` | **Alimentation** : toutes les 10 s, lit `.studio/` (progression, recrues, demandes, statuts, attentes, roadmap), l'état git du projet (lecture seule), les processus (outil lourd ouvert ?), le disque ; écrit `etat.json`, `suggestions.json`, `taches_disponibles.json`, `decisions_studio.json` et copie les dernières images dans `mur/` ; aucune dépendance au moteur : tout vient de la config ; un fichier d'agent illisible est ignoré et signalé, le reste continue |
@@ -37,7 +40,8 @@ Gabarit : `modeles/studio.config.json`.
 | `langue` | Langue de la page et du fichier de questions | langue de l'utilisateur |
 | `dossier_projet` | Racine du dépôt | — |
 | `dossier_studio` | Où tournent la page et ses fichiers | `<projet>/.studio` (le serveur sert ce dossier, puis les fichiers du skill) |
-| `theme` | Couleurs du bureau : `accent`, `sol`, `sol2`, `mur`, `bois` (`#rrggbb`) | tons bois et papier |
+| `theme` | Remplace, couleur par couleur, la palette déduite des réponses : `accent`, `accent2`, `sol`, `sol2`, `mur`, `bois`, `lumiere` (`#rrggbb`) | déduite du questionnaire (sinon tons bois et papier) |
+| `palier` | Fixe le palier du décor (1 à 5) ; aussi `studio.html?palier=N`, ou `essaiPalier(N)` dans la console (rejoue le chantier) | automatique |
 | `dossier_donnees` | Données lourdes hors dépôt (relatif au projet, sinon vide : un dossier hors du projet se passe à l'alimentation par `--donnees` et se note dans `CLAUDE.md`, jamais dans cette config versionnée) | réponse de l'étape 20 |
 | `dossier_agents` | Définitions d'agents des postes | `<projet>/.claude/agents` |
 | `dossier_session` | Journal de la session Claude Code à suivre | `auto` : `.jsonl` le plus récent sous `~/.claude/projects/<chemin du projet encodé>/` |
@@ -170,6 +174,26 @@ Règles lues par la page (`roadmap.js`, fonction `calculer`) :
 - Ce qui vient du fichier est affiché comme du texte (jamais comme du HTML) ; icônes et sons seulement en chemins relatifs du studio.
 
 **Dans la page** : `<link rel="stylesheet" href="roadmap.css"><script src="roadmap.js"></script>`, puis `Roadmap.installer({langue, barre: <barre des boutons>, succes: <fonction de succès du studio, facultative>})` ajoute le bouton **Roadmap** (avec le % d'avancement) ; quand le maître valide le récapitulatif (`fin.valider = oui`), la page appelle `Roadmap.voici()` : écran « J'écris ta roadmap… » sans bouton fermer, puis « Voici ta roadmap » avec fanfare dès que `roadmap.json` arrive, et bouton « C'est parti ! ».
+
+## Paliers du studio
+
+`paliers.js`, appelé par `studio.html`. Palier = le plus haut de :
+- **niveau du studio** (`roadmap.json` + XP de `etat.json`) : 1 → garage, 5 → petit bureau, 10 → studio, 16 → studio pro, 24 → studio AAA (les rangs du gabarit) ;
+- **avancement de la roadmap** (tâches versées) : 15 %, 35 %, 60 %, 90 % (ou roadmap finie).
+
+Mode accueil (questionnaire) : garage. Le palier vu est mémorisé dans le navigateur (`studio.palier.<nom du projet>`) : une montée depuis la dernière visite se joue une fois en **chantier** (7,5 s : échafaudage, plots, poussière, étincelles, perceuse et marteau synthétisés, bandeau « Travaux en cours », puis apparition pièce par pièce) et un succès « Ton studio s'agrandit ». Sans animation si `prefers-reduced-motion`.
+
+| Palier | Sol | Murs | Lumière et effets | Mobilier |
+|---|---|---|---|---|
+| 1 Garage | béton (dalles, joints, taches) | parpaings, gaine | ampoule qui se balance, guirlande qui scintille, poussière dans le faisceau de la fenêtre | tréteaux, vieil écran, étagère métal, cartons, ventilateur, chat endormi, cactus ou plante sur l'appui |
+| 2 Petit bureau | stratifié clair | peints, plinthe | deux suspensions, lumière du jour | plantes, tableau blanc, horloge à l'heure, tapis |
+| 3 Studio | dalles de moquette | mur d'accent à la couleur du jeu | suspensions industrielles, écrans | îlot, machine à café (vapeur), canapé, télé et console (l'assistant s'y assoit et joue), affiches |
+| 4 Studio pro | parquet chaud | lambris bas | éclairage chaud, appliques, écrans muraux animés | salle de réunion vitrée, panneaux acoustiques, grande plante |
+| 5 Studio AAA | bois sombre ciré | tasseaux, poutre | verrière et rais de lumière, rails lumineux mobiles, particules, néon | mezzanine, borne d'arcade, trophées |
+
+**DA déduite** (jamais d'asset du jeu) : `da.palette` (chaude, froide, contrastée, sourde, vive) donne accent, accent 2, mur, sol, bois, lumière ; `genre.principal` = horreur assombrit et refroidit ; `vision.emotion` (détente, tension) règle le voile ; `monde.climat` choisit la vue (forêt, montagne, désert, tropical, ville, mer, souterrain, espace, imaginaire) et les plantes (cactus, palmier, cristaux, champignons). Nuit (après 21 h) : ciel étoilé, voile plus dense.
+
+Personnages (`sprites.js`) : assis à leur poste, dos à nous, face à l'écran (qui affiche du code quand ils travaillent) ; debout « gratte la tête » s'ils sont bloqués, « joie » s'ils ont fini, tasse à la main s'ils sont libres ; l'assistant marche (8 directions, pieds sans glisse), boit un café ou joue sur le canapé à partir du palier 3.
 
 ## Voix
 

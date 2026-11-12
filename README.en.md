@@ -22,6 +22,24 @@ You don't need to know how to code to get started: you only need to know what yo
 
 Built-in rules: one milestone at a time, short tests, a roadmap that is always true, and **nothing is published or pushed without your approval**.
 
+## Your studio grows with your game
+
+It starts as a **garage**: one desk, breeze-block walls, a bare bulb, string lights, boxes, a sleeping cat. The further your game gets, the nicer the studio becomes, over five tiers tied to the **studio level** and to **roadmap progress** (whichever is higher):
+
+| Tier | Level | or roadmap | What arrives |
+|---|---|---|---|
+| 1. Garage | 1 | 0 % | concrete, breeze blocks, bulb, string lights, boxes, fan |
+| 2. Small office | 5 | 15 % | light laminate, painted walls, plants, whiteboard, clock, pendant lights |
+| 3. Studio | 10 | 35 % | desk island, coffee machine, sofa, TV and console, posters |
+| 4. Pro studio | 16 | 60 % | parquet, wood panelling, glass meeting room, animated wall screens, warm lighting |
+| 5. AAA studio | 24 | 90 % | mezzanine, glass roof and light shafts, arcade cabinet, trophies, neon, particles |
+
+Each new tier plays out as a **building site** (scaffolding, dust, drill), then the new decor appears piece by piece. Colours and mood come from **your answers** to the questionnaire (palette, genre, emotion, world setting); the studio never uses your game's assets. Characters are 3D-rendered (8 directions, sitting, walking, coffee, cheering…), recoloured to their outfit, with headwear. To preview a tier: `studio.html?palier=3`.
+
+![Tier 1: the garage](docs/studio-palier1.jpg)
+
+![Tier 5: the AAA studio](docs/studio-palier5.jpg)
+
 ## Installation
 
 You need:
@@ -117,7 +135,7 @@ These settings live in `.studio/studio.config.json`, `economie` block. The easie
 - The studio stores no API key.
 - If you open a project you did not create (a cloned repository), Claude shows you its configuration and waits for your approval before starting anything.
 
-## Limits of version 0.2
+## Limits of version 0.3
 
 - Developed and tested on Windows. macOS and Linux should work (standard-library Python only) but have not been tested yet.
 - Claude does not drive your engine for you: it writes the code and runs what can be run from the command line (builds, tests). What shows on screen is yours to judge.
@@ -154,7 +172,7 @@ Then open the address shown (`http://127.0.0.1:8810/studio.html`, or the next fr
 | `skills/studio-gamedev/SKILL.md` | The skill's flow (phases 0 to 6) |
 | `skills/studio-gamedev/references/` | Questionnaire, skill routing, working rules, deliverables, studio contract |
 | `skills/studio-gamedev/modeles/` | Templates: GDD, ROADMAP, DECISIONS, CLAUDE.md, agent, config, profile, roadmap |
-| `skills/studio-gamedev/studio/` | The studio page, its local server, the office feeder and its watchdog, the questionnaire, 264 code-drawn SVG illustrations |
+| `skills/studio-gamedev/studio/` | The studio page, its local server, the office feeder and its watchdog, the questionnaire, 264 code-drawn SVG illustrations, the decor tiers (`paliers.js`) and the rendered characters (`sprites/`, rendering tools in `outils/sprites/`) |
 | `commands/studio.md` | The `/studio-gamedev:studio` command |
 | `.claude-plugin/` | Plugin and marketplace manifests |
 

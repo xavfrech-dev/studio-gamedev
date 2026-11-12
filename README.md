@@ -22,6 +22,24 @@ Pas besoin de savoir programmer pour commencer : il suffit de savoir ce que tu a
 
 Règles intégrées : un jalon à la fois, des tests courts, une roadmap toujours vraie, et **rien n'est publié ni poussé sans ton accord**.
 
+## Ton studio grandit avec ton jeu
+
+Au début, c'est un **garage** : un bureau, des murs en parpaings, une ampoule, une guirlande, des cartons, un chat qui dort. Plus ton jeu avance, plus le studio embellit, en cinq paliers liés au **niveau du studio** et à l'**avancement de la roadmap** (le plus haut des deux) :
+
+| Palier | Niveau | ou roadmap | Ce qui arrive |
+|---|---|---|---|
+| 1. Garage | 1 | 0 % | béton, parpaings, ampoule, guirlande, cartons, ventilateur |
+| 2. Petit bureau | 5 | 15 % | stratifié clair, murs peints, plantes, tableau blanc, horloge, suspensions |
+| 3. Studio | 10 | 35 % | îlot, machine à café, canapé, télé et console, affiches |
+| 4. Studio pro | 16 | 60 % | parquet, lambris, salle de réunion vitrée, écrans muraux animés, éclairage chaud |
+| 5. Studio AAA | 24 | 90 % | mezzanine, verrière et rais de lumière, borne d'arcade, trophées, néon, particules |
+
+Chaque passage de palier se joue en **chantier** (échafaudage, poussière, perceuse), puis le nouveau décor apparaît pièce par pièce. Les couleurs et l'ambiance viennent de **tes réponses** au questionnaire (palette, genre, émotion, cadre du monde) ; le studio n'utilise jamais d'asset de ton jeu. Les personnages sont rendus en 3D (8 directions, assis, marche, café, joie…), recolorés à leur tenue, avec couvre-chefs. Pour revoir un palier : `studio.html?palier=3`.
+
+![Palier 1 : le garage](docs/studio-palier1.jpg)
+
+![Palier 5 : le studio AAA](docs/studio-palier5.jpg)
+
 ## Installation
 
 Il te faut :
@@ -117,7 +135,7 @@ Ces réglages sont dans `.studio/studio.config.json`, bloc `economie`. Le plus s
 - Aucune clé d'API n'est stockée par le studio.
 - Si tu ouvres un projet que tu n'as pas créé (un dépôt cloné), Claude te montre sa configuration et attend ton accord avant de lancer quoi que ce soit.
 
-## Limites de la version 0.2
+## Limites de la version 0.3
 
 - Développé et essayé sous Windows. macOS et Linux devraient marcher (Python standard seulement) mais n'ont pas encore été essayés.
 - Claude ne pilote pas ton moteur à ta place : il écrit le code et lance ce qui se lance en ligne de commande (builds, tests). Ce qui se voit à l'écran, c'est toi qui le juges.
@@ -154,7 +172,7 @@ Puis ouvre l'adresse affichée (`http://127.0.0.1:8810/studio.html`, ou le port 
 | `skills/studio-gamedev/SKILL.md` | Le déroulé du skill (phases 0 à 6) |
 | `skills/studio-gamedev/references/` | Questionnaire, routage vers les skills, règles de travail, livrables, contrat du studio |
 | `skills/studio-gamedev/modeles/` | Gabarits : GDD, ROADMAP, DECISIONS, CLAUDE.md, agent, config, profil, roadmap |
-| `skills/studio-gamedev/studio/` | La page du studio, son serveur local, l'alimentation du bureau et sa veille, le questionnaire, 264 illustrations SVG tracées par code |
+| `skills/studio-gamedev/studio/` | La page du studio, son serveur local, l'alimentation du bureau et sa veille, le questionnaire, 264 illustrations SVG tracées par code, les paliers du décor (`paliers.js`) et les personnages rendus (`sprites/`, outils de rendu dans `outils/sprites/`) |
 | `commands/studio.md` | La commande `/studio-gamedev:studio` |
 | `.claude-plugin/` | Manifeste du plugin et de la place de marché |
 

@@ -227,6 +227,8 @@ body.questionnaire #indice{display:none}
 <div id="toasts"></div>
 <div id="indice"></div>
 <script src="roadmap.js"></script>
+<script src="sprites.js"></script>
+<script src="paliers.js"></script>
 <script>
 'use strict';
 // ====================================================================== outils
@@ -402,6 +404,20 @@ const Son = (() => {
     clic() { bip(880, .05, { gain: .02, type: 'triangle' }); },
     cloche() { [1318, 1760].forEach((f, i) => bip(f, 1.2, { gain: .035, at: i * .18 })); },
     construit() { [392, 523, 659].forEach((f, i) => bip(f, .25, { type: 'triangle', gain: .03, at: i * .07 })); },
+    // chantier du studio (passage de palier) : perceuse en dents de scie modulées, puis coups de marteau
+    perceuse() {
+      if (coupe) return;
+      try {
+        ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+        const at = ctx.currentTime, osc = ctx.createOscillator(), lfo = ctx.createOscillator(), lg = ctx.createGain(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(90, at); osc.frequency.linearRampToValueAtTime(165, at + .25); osc.frequency.setValueAtTime(165, at + .9); osc.frequency.linearRampToValueAtTime(70, at + 1.15);
+        lfo.frequency.value = 38; lg.gain.value = 18; lfo.connect(lg).connect(osc.frequency);
+        f.type = 'lowpass'; f.frequency.value = 1400;
+        g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(.022, at + .05); g.gain.setValueAtTime(.022, at + .95); g.gain.exponentialRampToValueAtTime(.0001, at + 1.2);
+        osc.connect(f).connect(g).connect(ctx.destination); osc.start(at); lfo.start(at); osc.stop(at + 1.25); lfo.stop(at + 1.25);
+      } catch (e) { /* audio indisponible */ }
+    },
+    marteau() { [0, .32, .64].forEach(at => { bip(140, .09, { type: 'square', gain: .03, at }); bip(70, .12, { gain: .04, at }); }); },
     succes(taille) {
       const notes = taille === 'grand' ? [523, 659, 784, 1046, 1318, 1568] : taille === 'moyen' ? [587, 740, 880, 1175] : [659, 880, 1175];
       notes.forEach((f, i) => { bip(f, .22 + (i === notes.length - 1 ? .35 : 0), { type: 'triangle', gain: .05, at: i * .075 }); bip(f * 2, .12, { gain: .012, at: i * .075 + .01 }); });
@@ -498,12 +514,15 @@ const Succes = (() => {
 window.essaiBandeau = () => { const n = Date.now(); ['petit', 'moyen', 'grand'].forEach((x, i) => Succes.ajouter({ id: 'essai-' + n + '-' + i, icone: ['★', '✎', '⚑'][i], titre: 'Essai ' + (i + 1) + ' / 3', sous: x, taille: x })); return Succes.enFile() + ' en file'; };
 
 // ====================================================================== niveau du studio (roadmap + XP de etat.json s'il y en a)
+function niveauStudio() {
+  const xp = (RM_C && RM_C.xp || 0) + (ETAT && Number.isFinite(+ETAT.xp) ? +ETAT.xp : 0);
+  return { xp, n: Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1 };
+}
 function majNiveau() {
   if (!RM_C) return;
-  const xp = (RM_C.xp || 0) + (ETAT && Number.isFinite(+ETAT.xp) ? +ETAT.xp : 0);
-  const n = Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1, seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
+  const { xp, n } = niveauStudio(), seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
   const b = $('#niveau'); b.hidden = false;
-  $('#niv-n').textContent = n; $('#niv-rang').textContent = RM_C.rang || '';
+  $('#niv-n').textContent = n; $('#niv-rang').textContent = window.PALIER_NOM || RM_C.rang || '';   // nom du palier affiché (cohérent avec la pièce)
   $('#niv-xp').style.width = clamp(100 * (xp - seuil(n)) / Math.max(1, seuil(n + 1) - seuil(n)), 0, 100).toFixed(1) + '%';
   b.title = `${xp} XP · ${RM_C.pct} %`;
 }
@@ -1118,8 +1137,26 @@ const Bureau = (() => {
   }
   function murD(a, b, z0, z1, fill, stroke) { poly([iso(a, 0, z0), iso(b, 0, z0), iso(b, 0, z1), iso(a, 0, z1)], fill, stroke); }  // mur du fond à droite (gy = 0)
   function murG(a, b, z0, z1, fill, stroke) { poly([iso(0, a, z0), iso(0, b, z0), iso(0, b, z1), iso(0, a, z1)], fill, stroke); }  // mur du fond à gauche (gx = 0)
-  function theme() { const th = CONF.theme || {}; const c = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null; return { sol: c(th.sol) || '#8a6a48', sol2: c(th.sol2) || '#7d5f40', mur: c(th.mur) || '#d9c9a6', accent: c(th.accent) || '#b98532', bois: c(th.bois) || '#a0744a' }; }
+  function theme() {
+    const R = (REP && REP.reponses) || {}, cle = JSON.stringify([R['da.palette'], R['da.style'], R['genre.principal'], R['monde.climat'], R['vision.emotion'], CONF.theme]);
+    if (window.Paliers && cle !== theme.cle) { theme.cle = cle; theme.th = Paliers.theme(R, CONF.theme); }
+    return theme.th || themeBase();
+  }
+  function themeBase() { const th = CONF.theme || {}; const c = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null; return { sol: c(th.sol) || '#8a6a48', sol2: c(th.sol2) || '#7d5f40', mur: c(th.mur) || '#d9c9a6', accent: c(th.accent) || '#b98532', bois: c(th.bois) || '#a0744a' }; }
   function ciel() { const h = new Date().getHours() + new Date().getMinutes() / 60; return h < 6 || h > 21 ? ['#1d2440', '#2e3a63'] : h < 8 || h > 19 ? ['#f0a46a', '#7c8fc0'] : ['#9cc7ea', '#dcecf7']; }
+  const nuit = () => { const h = new Date().getHours(); return h < 6 || h > 21; };
+
+  // ---------- personnages rendus (sprites.js) avec repli vectoriel tant qu'ils chargent
+  // Échelle : 1,6 × le rendu de référence, pour des personnages lisibles et un clavier à hauteur de bureau (1,36).
+  const S_PERSO = 1.6;
+  function carton(x, y) { cx.fillStyle = '#b08850'; cx.strokeStyle = '#6e5130'; cx.lineWidth = 1; cx.fillRect(x - TW * .17, y - TW * .12, TW * .34, TW * .22); cx.strokeRect(x - TW * .17, y - TW * .12, TW * .34, TW * .22); cx.fillStyle = '#3f7a52'; cx.fillRect(x - TW * .04, y - TW * .22, TW * .07, TW * .1); }
+  // q : { anim, ang (0 = +x, π/2 = +y), dist (cases parcourues), seed, ombre } ; vect : options du dessin vectoriel de repli
+  function personnageXY(x, y, look, q, vect) {
+    const h = window.SpritesPerso ? SpritesPerso.dessine(cx, look, q, x, y, TW / 40, DPR) : null;
+    if (h != null) { if (vect && vect.carton) carton(x, y - h * .42); return h; }
+    perso(x, y, TW / 44, look, vect || {}); return TW * 1.15;
+  }
+  function personnage(gx, gy, look, q, vect) { const [x, y] = iso(gx, gy); return personnageXY(x, y, look, q, vect); }
 
   // ---------- personnages
   function perso(x, y, s, look, o = {}) {
@@ -1235,7 +1272,8 @@ const Bureau = (() => {
     porte_equipe() { murG(9, 10.7, 0, 3.6, '#5c3d24', '#2b241c'); murG(9.2, 10.5, 0, 3.4, '#2b1d14'); },
     etagere_livres(th) { boite(.15, 5.6, .55, 1.8, 3.2, th.bois); ['#a8432e', '#4d6f9c', '#3f7a52', '#e2b866'].forEach((c, i) => boite(.2, 5.7 + i * .42, .45, .3, .55, c, 1.2 + (i % 2) * .9)); },
     table_level_design(th) { boite(13, 6.2, 1.8, 1.3, 1.2, th.bois); boite(13.3, 6.4, .5, .5, .45, '#6fa75c', 1.2); boite(14, 6.6, .4, .4, .7, '#8a8174', 1.2); },
-    atelier_art() { boite(13.6, 9.4, .7, .15, 2.8, '#7a5a3a'); poly([iso(13.55, 9.55, 1.4), iso(14.35, 9.55, 1.4), iso(14.35, 9.55, 2.9), iso(13.55, 9.55, 2.9)], '#f6efdc', '#5c4f3f'); poly([iso(13.7, 9.55, 1.7), iso(14.2, 9.55, 1.7), iso(14.2, 9.55, 2.5), iso(13.7, 9.55, 2.5)], '#d77b62'); },
+    atelier_art() { const d = PAL && PAL.palier() >= 4 ? -1.5 : 0;   // studio pro : le chevalet recule derrière la salle de réunion vitrée
+      boite(13.6, 9.4 + d, .7, .15, 2.8, '#7a5a3a'); poly([iso(13.55, 9.55 + d, 1.4), iso(14.35, 9.55 + d, 1.4), iso(14.35, 9.55 + d, 2.9), iso(13.55, 9.55 + d, 2.9)], '#f6efdc', '#5c4f3f'); poly([iso(13.7, 9.55 + d, 1.7), iso(14.2, 9.55 + d, 1.7), iso(14.2, 9.55 + d, 2.5), iso(13.7, 9.55 + d, 2.5)], '#d77b62'); },
     cabine_son() { boite(14.4, .5, .6, .6, 1.6, '#3a3128'); boite(14.4, 1.5, .6, .6, 1.6, '#3a3128'); const [x, y] = iso(14.7, .8, 1.1); cx.fillStyle = '#8a8174'; cx.beginPath(); cx.arc(x, y, TW * .1, 0, 7); cx.fill(); },
     salle_moteur() { boite(.4, .5, .9, .8, 2, '#4a4f58'); const [x, y] = iso(.85, 1.3, 1.4); cx.fillStyle = `rgba(111,191,127,${.5 + .5 * Math.sin(performance.now() / 300)})`; cx.fillRect(x - 3, y - 2, 6, 3); },
     baie_reseau() { if ((REP.reponses['multijoueur.mode'] || {}).valeur === 'solo') return; boite(1.6, .4, .7, .7, 2.4, '#2b2f36'); },
@@ -1245,12 +1283,14 @@ const Bureau = (() => {
 
   function dessiner() {
     const th = theme(); cx.clearRect(0, 0, L.w, L.h); ZONES.length = 0;
-    // sol
+    if (PAL) { majPalier(); try { PAL.fond(cx, th); } catch (e) { erreur('fond du studio', e); } } else {
+    // sol (repli sans paliers.js)
     for (let gx = 0; gx < W; gx++) for (let gy = 0; gy < H; gy++) poly([iso(gx, gy), iso(gx + 1, gy), iso(gx + 1, gy + 1), iso(gx, gy + 1)], (gx + gy) % 2 ? th.sol : th.sol2, 'rgba(0,0,0,.08)');
     // murs
     murD(0, W, 0, 5.8, mix(th.mur, '#000000', .06), 'rgba(0,0,0,.2)'); murG(0, H, 0, 5.8, mix(th.mur, '#000000', .2), 'rgba(0,0,0,.2)');
     murD(0, W, 0, .35, mix(th.bois, '#000000', .2)); murG(0, H, 0, .35, mix(th.bois, '#000000', .35));
     const [c1, c2] = ciel(); [[5.5, 7.5]].forEach(([a, b]) => { murG(a, b, 2, 4.4, c1, '#5c4f3f'); murG(a + .1, b - .1, 3.2, 4.3, c2); });
+    }
     // éléments du décor (murs d'abord, puis objets au sol), avec apparition animée
     const tout = CONF.mode === 'travail' || REP.etat === 'termine';
     for (const id of Object.keys(DECOR)) {
@@ -1260,22 +1300,30 @@ const Bureau = (() => {
       cx.save(); cx.globalAlpha = k; try { DECOR[id](th); } catch (e) { erreur('décor ' + id, e); } cx.restore();
     }
     try { cadresImages(); } catch (e) { erreur('mur d’images', e); }
-    // plantes
-    [[15.3, 11.2], [.6, 11.3]].forEach(([gx, gy]) => { boite(gx - .25, gy - .25, .5, .5, .7, '#a8432e'); const [x, y] = iso(gx, gy, .7); cx.fillStyle = '#3f7a52'; for (let i = 0; i < 5; i++) { cx.beginPath(); cx.ellipse(x + Math.cos(i * 1.3) * TW * .12, y - TW * .18 - (i % 2) * TW * .08, TW * .1, TW * .05, i, 0, 7); cx.fill(); } });
+    // plantes (repli ; avec paliers.js elles arrivent au petit bureau)
+    if (!PAL) [[15.3, 11.2], [.6, 11.3]].forEach(([gx, gy]) => { boite(gx - .25, gy - .25, .5, .5, .7, '#a8432e'); const [x, y] = iso(gx, gy, .7); cx.fillStyle = '#3f7a52'; for (let i = 0; i < 5; i++) { cx.beginPath(); cx.ellipse(x + Math.cos(i * 1.3) * TW * .12, y - TW * .18 - (i % 2) * TW * .08, TW * .1, TW * .05, i, 0, 7); cx.fill(); } });
     // objets triés en profondeur : bureaux, personnages
     const objets = [];
+    if (PAL) PAL.objets(th, objets);
     postes().forEach((p, i) => { const [sx, sy] = SLOTS[i]; const e = etatPoste(p); objets.push({ k: sx + sy, f: () => posteDessin(p, sx, sy, e, th) }); });
     const directionVisible = tout || construit.has('bureau_direction');
     if (directionVisible) objets.push({ k: 12.8 + 2.4, f: () => direction(th) });
     for (const [id, dp] of Object.entries(DEPARTS)) {
       const k = clamp((performance.now() - dp.t0) / 3500, 0, 1); if (k >= 1) { delete DEPARTS[id]; continue; }
       const gx = lerp(dp.sx + 1.75, PORTE[0], k), gy = lerp(dp.sy + .9, PORTE[1], k);
-      objets.push({ k: gx + gy, f: () => { const [px, py] = iso(gx, gy); cx.save(); cx.globalAlpha = k > .85 ? (1 - k) / .15 : 1; perso(px, py, TW / 44, dp.look, { marche: true, carton: true }); cx.restore(); } });
+      const fx = dp.sx + 1.75, fy = dp.sy + .9, lg = Math.hypot(PORTE[0] - fx, PORTE[1] - fy);
+      objets.push({ k: gx + gy, f: () => { cx.save(); cx.globalAlpha = k > .85 ? (1 - k) / .15 : 1; personnage(gx, gy, dp.look, { anim: 'marche', ang: Math.atan2(PORTE[1] - fy, PORTE[0] - fx), dist: k * lg / S_PERSO, seed: 0 }, { marche: true, carton: true }); cx.restore(); } });
     }
-    const a = PERSOS.assistant; objets.push({ k: a.x + a.y + .5, f: () => { const [x, y] = iso(a.x, a.y); perso(x, y, TW / 44, lookDe('assistant'), { marche: a.marche, cligne: true }); a.sx = x; a.sy = y - TW * 1.1; ZONES.push({ x: x - TW * .3, y: y - TW * 1.1, w: TW * .6, h: TW * 1.1, f: () => demander('assistant') }); } });
+    const a = PERSOS.assistant;
+    if (!(a.pose && a.pose.canape && PAL)) objets.push({ k: a.x + a.y + .5, f: () => {
+      const [x, y] = iso(a.x, a.y), parle = a.bulle && a.bulle.fin > Date.now();
+      const h = personnageXY(x, y, lookDe('assistant'), { anim: a.marche ? 'marche' : (a.pose && a.pose.anim) || (parle ? 'parle' : 'repos'), ang: a.ang == null ? Math.PI / 4 : a.ang, dist: (a.dist || 0) / S_PERSO, seed: 1.3 }, { marche: a.marche, cligne: true });
+      a.sx = x; a.sy = y - h - 4; ZONES.push({ x: x - TW * .3, y: y - h, w: TW * .6, h, f: () => demander('assistant') });
+    } });
     objets.sort((u, v) => u.k - v.k).forEach(o => { try { o.f(); } catch (e) { erreur('dessin', e); } });
+    if (PAL) PAL.lumiere(cx, th);
     // étiquettes et bulles au premier plan
-    const ancres = postes().map((p, i) => { const [sx, sy] = SLOTS[i]; const [x, y] = iso(sx + .55, sy + .1); return { p, ax: x, ay: y - TW * 1.05 }; });
+    const ancres = postes().map((p, i) => { const [sx, sy] = SLOTS[i]; const [x, y] = iso(sx + .55, sy + .47); return { p, ax: x, ay: y - TW * 1.3 }; });
     const coins = {};   // coin haut droit de l'étiquette de chaque poste : là où se pose la bulle de décision
     for (const b of placerEtiquettes(ancres)) { try { etiquette(b, b.an.p, etatPoste(b.an.p)); } catch (e) { erreur('étiquette', e); } coins[b.an.p.id] = [b.x + tailleEtiquette().w - 4, b.y - 2]; const pb = PERSOS[b.an.p.id]; if (pb && pb.bulle && pb.bulle.fin > Date.now()) bulle(b.x + tailleEtiquette().w / 2, b.y - 4, pb.bulle.texte); }
     if (a.bulle && a.bulle.fin > Date.now()) bulle(a.sx, a.sy, a.bulle.texte);
@@ -1320,40 +1368,43 @@ const Bureau = (() => {
   // Occupé = assis à son poste (chaise, tape au clavier) ; libre = debout à côté du bureau, une tasse à la main ;
   // en attente, fini ou bloqué = debout derrière son bureau. Une recrue entre d'abord par la porte.
   function posteDessin(p, sx, sy, e, th) {
-    const [x, y] = iso(sx + .55, sy + .1), look = lookPoste(p), s = TW / 44;
+    const look = lookPoste(p), seed = (hashStr(p.id) % 97) / 9.7;
     const arr = ARRIVEES[p.id], k = arr ? clamp((performance.now() - arr) / 3200, 0, 1) : 1;
     if (arr && k >= 1) delete ARRIVEES[p.id];
+    const bureauSeul = () => { if (PAL) PAL.bureau(cx, sx, sy, th, false, () => {}); else { boite(sx - .15, sy - .6, 1.5, .75, 1.36, th.bois); boite(sx + .15, sy - .45, .8, .08, .8, '#2b2f36', 1.36); } };
+    const fx = sx + 1.75, fy = sy + .9;
     if (k < 1) {   // arrivée : marche de la porte vers le bureau
-      const gx = lerp(PORTE[0], sx + 1.75, k), gy = lerp(PORTE[1], sy + .9, k), [px, py] = iso(gx, gy);
-      boite(sx - .1, sy + .45, 1.5, .7, 1.45, th.bois); boite(sx + .25, sy + .5, .7, .1, .95, '#2b2f36', 1.45);
-      perso(px, py, s, look, { marche: true, cligne: true });
+      const gx = lerp(PORTE[0], fx, k), gy = lerp(PORTE[1], fy, k), [px, py] = iso(gx, gy);
+      bureauSeul();
+      personnageXY(px, py, look, { anim: 'marche', ang: Math.atan2(fy - PORTE[1], fx - PORTE[0]), dist: k * Math.hypot(fx - PORTE[0], fy - PORTE[1]) / S_PERSO, seed }, { marche: true, cligne: true });
       ZONES.push({ x: px - TW * .4, y: py - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p) });
       return;
     }
+    // Occupé : assis à son poste, dos à nous, face à son écran (le bureau dessine chaise, personnage puis dossier).
+    const [x, y] = iso(sx + .55, sy + .47);
     if (e.occupe) {
-      boite(sx + .3, sy - .3, .55, .08, 1.15, '#3a3128');            // dossier de la chaise
-      boite(sx + .3, sy - .25, .55, .5, .55, '#4a4038');              // assise
-      perso(x, y, s, look, { tape: true, assis: true, cligne: true });
-    } else if (e.etat !== 'disponible') {
-      perso(x, y, s, look, { cligne: true });
+      const anim = ((performance.now() / 1000 + seed * 7) % 23) < 2.6 ? 'assis_boit' : 'tape';
+      const assis = (gx, gy) => personnage(gx, gy, look, { anim, ang: -Math.PI / 2, seed, ombre: false }, { tape: true, assis: true, cligne: true });
+      if (PAL) PAL.bureau(cx, sx, sy, th, true, assis); else { assis(sx + .55, sy + .47); bureauSeul(); }
     } else {
-      boite(sx + .3, sy - .25, .55, .5, .55, '#4a4038');              // chaise vide
+      bureauSeul();
+      if (e.etat !== 'disponible') {   // en attente, fini ou bloqué : debout à côté de son poste, face à nous
+        const pb = PERSOS[p.id], anim = e.etat === 'bloque' ? 'gratte' : e.etat === 'fini' ? 'joie' : (pb && pb.bulle && pb.bulle.fin > Date.now()) ? 'parle' : 'repos';
+        personnage(sx + 1.25, sy + .85, look, { anim, ang: Math.PI / 4, seed }, { cligne: true });
+      }
     }
-    boite(sx - .1, sy + .45, 1.5, .7, 1.45, th.bois);
-    boite(sx + .25, sy + .5, .7, .1, .95, '#2b2f36', 1.45);
-    if (e.occupe) { const [mx, my] = iso(sx + .6, sy + .5, 1.9); cx.fillStyle = 'rgba(160,210,255,.25)'; cx.beginPath(); cx.arc(mx, my, TW * .35, 0, 7); cx.fill(); }
     const fin = e.etat === 'disponible' && FinTache.actif(p.id);
     if (fin) {   // fin de tâche : il va voir l'assistant et attend près de lui
       const i = Math.max(0, FinTache.liste().indexOf(p.id)), k2 = clamp((performance.now() - (fin.vu || (fin.vu = performance.now()))) / 3000, 0, 1);
       const rx = RDV[0] - .75 * (1 + i % 4), ry = RDV[1] + .5 + .7 * Math.floor(i / 4);
-      const [lx, ly] = iso(lerp(sx + 1.75, rx, k2), lerp(sy + .9, ry, k2));
-      perso(lx, ly, s, look, { cligne: true, marche: k2 < 1 && ANIM });
+      const gx = lerp(fx, rx, k2), gy = lerp(fy, ry, k2), [lx, ly] = iso(gx, gy), marche = k2 < 1 && ANIM;
+      personnageXY(lx, ly, look, { anim: marche ? 'marche' : 'repos', ang: marche ? Math.atan2(ry - fy, rx - fx) : Math.atan2(RDV[1] - ry, RDV[0] - rx), dist: k2 * Math.hypot(rx - fx, ry - fy) / S_PERSO, seed }, { cligne: true, marche });
       ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p) });
-    } else if (e.etat === 'disponible') {
-      const [lx, ly] = iso(sx + 1.75, sy + .9); perso(lx, ly, s, look, { cligne: true, tasse: true });
+    } else if (e.etat === 'disponible') {   // libre : debout à côté du bureau, une tasse à la main
+      const [lx, ly] = iso(fx, fy); personnageXY(lx, ly, look, { anim: 'cafe_debout', ang: Math.PI / 4, seed }, { cligne: true, tasse: true });
       ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p) });
     }
-    ZONES.push({ x: x - TW * .7, y: y - TW * 1.2, w: TW * 1.5, h: TW * 1.6, f: () => ficheposte(p) });
+    ZONES.push({ x: x - TW * .7, y: y - TW * 1.3, w: TW * 1.6, h: TW * 1.6, f: () => ficheposte(p) });
   }
   // ---------- mur d'images : les 3 dernières images encadrées sur le mur du fond (sous l'enseigne)
   function image(src) { let im = IMGS[src]; if (!im) { im = IMGS[src] = new Image(); im.src = src; } return im.complete && im.naturalWidth ? im : null; }
@@ -1375,19 +1426,57 @@ const Bureau = (() => {
   function direction(th) {
     const [x, y] = iso(13.4, 2.1);
     const visible = CONF.mode === 'travail' || REP.etat === 'termine' || construit.has('personnages') || (PROFIL.maitre && PROFIL.maitre.apparence);
-    if (visible) perso(x, y, TW / 40, lookDe('maitre'), { cligne: true });
+    if (visible) personnageXY(x, y, lookDe('maitre'), { anim: 'repos', ang: Math.PI / 4, seed: 2.1 }, { cligne: true });
     boite(12.6, 2.55, 1.9, .9, 1.5, mix(th.bois, '#000000', .15));
     boite(13.1, 2.6, .8, .1, 1, '#2b2f36', 1.5);
     const nom = PROFIL.maitre && PROFIL.maitre.nom; if (nom) { cx.font = '600 11px ' + POLICE; cx.textAlign = 'center'; cx.fillStyle = 'rgba(26,23,19,.8)'; const w = cx.measureText(nom).width + 14; cx.fillRect(x - w / 2, y - TW * 1.25 - 16, w, 18); cx.fillStyle = '#f1d9a4'; cx.fillText(nom, x, y - TW * 1.25 - 3); cx.textAlign = 'left'; }
   }
   // ---------- l'assistant circule
   function bouger(dt) {
-    const a = PERSOS.assistant, now = Date.now();
-    if (FinTache.liste().length) { a.bx = RDV[0]; a.by = RDV[1]; a.prochain = now + 2000; }   // il reçoit ceux qui ont fini
-    else if (now > a.prochain) { const cibles = postes().map((p, i) => [SLOTS[i][0] + .5, SLOTS[i][1] + 1.6]).concat([[12.6, 4.2], [8, 9.8], [4.5, 10.5]]); const c = cibles[(Math.random() * cibles.length) | 0]; a.bx = c[0]; a.by = c[1]; a.prochain = now + 7000 + Math.random() * 7000; }
+    const a = PERSOS.assistant, now = Date.now(), pal = PAL ? PAL.palier() : 1;
+    if (a.pose && (now > a.pose.fin || FinTache.liste().length)) { if (a.pose.canape) { a.x = 4.9; a.y = 11.9; } a.pose = null; }
+    if (FinTache.liste().length) { a.bx = RDV[0]; a.by = RDV[1]; a.prochain = now + 2000; a.but = null; }   // il reçoit ceux qui ont fini
+    else if (now > a.prochain && !a.pose) {
+      const cibles = postes().map((p, i) => [SLOTS[i][0] + .5, SLOTS[i][1] + 1.6]).concat([[12.6, 4.2], [8, 8.1], [9.5, 10.5]]);
+      if (pal >= 3) cibles.push([4.9, 11.9, 'canape'], [14.45, 5.2, 'cafe']);
+      const c = cibles[(Math.random() * cibles.length) | 0]; a.bx = c[0]; a.by = c[1]; a.but = c[2] || null; a.prochain = now + 7000 + Math.random() * 7000;
+    }
     const dx = a.bx - a.x, dy = a.by - a.y, d = Math.hypot(dx, dy), v = 1.4 * dt;
-    if (d > .02 && ANIM) { a.x += dx / d * Math.min(v, d); a.y += dy / d * Math.min(v, d); a.marche = true; } else { a.marche = false; if (!ANIM) { a.x = a.bx; a.y = a.by; } }
+    if (d > .02 && ANIM && !a.pose) { const pas = Math.min(v, d); a.x += dx / d * pas; a.y += dy / d * pas; a.marche = true; a.ang = Math.atan2(dy, dx); a.dist = (a.dist || 0) + pas; }
+    else {
+      a.marche = false; if (!ANIM) { a.x = a.bx; a.y = a.by; }
+      if (a.but && !a.pose && pal >= 3) { if (a.but === 'canape') a.pose = { canape: true, fin: now + 9000 + Math.random() * 7000 }; else { a.pose = { anim: 'cafe_debout', fin: now + 6000 }; a.ang = 0; } }
+      a.but = null;
+    }
   }
+  // ---------- paliers du studio (paliers.js) : garage → petit bureau → studio → studio pro → studio AAA
+  let forcePalier = 0;
+  const PAL = window.Paliers ? Paliers.creer({
+    W, H, iso, cx: () => cx, TW: () => TW, L: () => L, DPR: () => DPR, origine: () => OX.toFixed(1) + ',' + OY.toFixed(1),
+    ciel, nuit, haut: () => ($('#entete').offsetHeight || 60), langue: () => LANGUE, erreur,
+    son: s => { if (s === 'fini') Son.construit(); else if (Son[s]) Son[s](); },
+    surCanape: () => (PERSOS.assistant.pose && PERSOS.assistant.pose.canape) ? lookDe('assistant') : null,
+    dessinePerso: (gx, gy, look, q) => { const a = PERSOS.assistant, [x, y] = iso(gx, gy), h = personnageXY(x, y, look, Object.assign({ seed: 1.3 }, q), { assis: true, cligne: true }); a.sx = x; a.sy = y - h - 4; ZONES.push({ x: x - TW * .3, y: y - h, w: TW * .6, h, f: () => demander('assistant') }); return h; },
+    postesLumiere: () => postes().slice(0, SLOTS.length).map((p, i) => ({ gx: SLOTS[i][0] + .55, gy: SLOTS[i][1] - .2, occupe: !!etatPoste(p).occupe }))
+  }) : null;
+  // Palier : niveau du studio et avancement de la roadmap ; ?palier=N ou "palier" dans studio.config.json pour le fixer.
+  // Une montée de palier depuis la dernière visite se joue en chantier (une seule fois, mémorisée dans le navigateur).
+  function majPalier() {
+    const n = performance.now(); if (majPalier.t && n - majPalier.t < 1000) return; majPalier.t = n;
+    const tout = CONF.mode === 'travail' || REP.etat === 'termine', cle = 'palier.' + (CONF.nom_projet || 'studio');
+    const force = forcePalier || +(new URLSearchParams(location.search).get('palier')) || +CONF.palier || 0;
+    if (!force && tout && !RM_C) { if (!PAL.cible()) PAL.regler(LS.get(cle, 1), false); return; }   // roadmap pas encore lue
+    const p = Paliers.calculer({ force, mode: tout ? 'travail' : 'accueil', niveau: niveauStudio().n, pct: RM_C ? RM_C.pct : 0, finie: RM_C && RM_C.finie });
+    const vu = LS.get(cle, 0);
+    if (!PAL.cible()) PAL.regler(vu && vu < p && !force ? vu : p, false);
+    const nomP = Paliers.NOMS[LANGUE === 'en' ? 'en' : 'fr'][p - 1];
+    if (window.PALIER_NOM !== nomP) { window.PALIER_NOM = nomP; majNiveau(); }   // le badge suit la pièce, pas seulement le rang
+    if (PAL.cible() === p) { if (!force && vu !== p) LS.set(cle, p); return; }
+    const monte = PAL.regler(p, ANIM);
+    if (!force) LS.set(cle, p);
+    if (monte) Succes.ajouter({ id: 'palier-' + p + '-' + Date.now(), icone: '▲', titre: (LANGUE === 'en' ? 'Your studio grows: ' : 'Ton studio s’agrandit : ') + Paliers.NOMS[LANGUE === 'en' ? 'en' : 'fr'][p - 1], sous: LANGUE === 'en' ? 'New floor, walls, lights and furniture' : 'Nouveau sol, murs, lumières et mobilier', taille: 'moyen' });
+  }
+  window.essaiPalier = p => { forcePalier = clamp(+p || 0, 0, 5); majPalier.t = 0; return forcePalier ? 'palier ' + forcePalier : 'palier automatique'; };
   let dernier = performance.now();
   function boucle(n) { const dt = Math.min(.1, (n - dernier) / 1000); dernier = n; try { bouger(dt); dessiner(); } catch (e) { erreur('boucle', e); } requestAnimationFrame(boucle); }
   cv.addEventListener('click', e => { const z = ZONES.slice().reverse().find(z => e.clientX >= z.x && e.clientX <= z.x + z.w && e.clientY >= z.y && e.clientY <= z.y + z.h); if (z) { Son.clic(); z.f(); } });
@@ -1401,7 +1490,7 @@ const Bureau = (() => {
     arrivee(id) { ARRIVEES[id] = performance.now(); setTimeout(() => { Bureau.dire(id, t('rec_bonjour'), 5); Son.construit(); }, 3300); },
     dire(qui, texte, sec = 6) { const p = qui === 'assistant' ? PERSOS.assistant : (PERSOS[qui] = PERSOS[qui] || {}); p.bulle = { texte: String(texte), fin: Date.now() + Math.max(sec, 2.5 + String(texte).length / 13) * 1000 }; },
     confettis(n) { for (let i = 0; i < n && CONF_P.length < 300; i++) CONF_P.push({ x: L.w / 2 + (Math.random() - .5) * L.w * .5, y: 10, vx: (Math.random() - .5) * 240, vy: 60 + Math.random() * 120, r: Math.random() * 6, c: ['#e2b866', '#7fae5e', '#d77b62', '#8fb0d6', '#f4ecd9'][i % 5] }); },
-    portrait(canvas, look) { const c2 = canvas.getContext('2d'); const garde = cx; cx = c2; try { c2.clearRect(0, 0, canvas.width, canvas.height); perso(canvas.width / 2, canvas.height * .97, canvas.width / 62, look, {}); } catch (e) { erreur('portrait', e); } finally { cx = garde; } }
+    portrait(canvas, look) { if (window.SpritesPerso && SpritesPerso.portrait(canvas, look)) return; const c2 = canvas.getContext('2d'); const garde = cx; cx = c2; try { c2.clearRect(0, 0, canvas.width, canvas.height); perso(canvas.width / 2, canvas.height * .97, canvas.width / 62, look, {}); } catch (e) { erreur('portrait', e); } finally { cx = garde; } }
   };
 })();
 

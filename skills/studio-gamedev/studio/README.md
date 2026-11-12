@@ -12,6 +12,8 @@ Version **générique et paramétrable** du studio : tout vient de `<projet>/.st
 | `outils/planche_cartes.py` | Planche de contrôle (HTML + PNG via Edge ou Chrome sans tête) |
 | `roadmap.js`, `roadmap.css` | Bouton et panneau **Roadmap** (**prêts**) : jalons, barres d'avancement, tâches cochées, succès gagnés ou verrouillés avec son, niveau du studio ; écran « Voici ta roadmap » à la fin du questionnaire |
 | `roadmap.html` | Le panneau Roadmap seul (`?voici`, `?lang=en`), pour un aperçu |
+| `paliers.js` | Le studio grandit avec le jeu : 5 paliers (garage → studio AAA) liés au niveau et à la roadmap, chantier animé, palette déduite des réponses |
+| `sprites.js`, `sprites/` | Personnages rendus dans Blender (WebP, 8 directions, recoloration par masques) ; `outils/sprites/` pour les régénérer |
 | `serveur_studio.py` | Serveur local (**prêt**, 127.0.0.1, Host et Origin vérifiés) : sert `.studio/` puis ce dossier ; API : réponses au questionnaire, profil, demandes, décisions, réglages, **recrutement**, transcription locale facultative (501 sans faster-whisper) |
 | `outils/essai_complet.py` | Essai de bout en bout (projet jetable, réponses fictives, roadmap conforme, versement d'un jalon, serveur sur le premier port libre, jamais 8790) |
 | `outils/adoption.py` | Adoption d'un projet déjà commencé : analyse en lecture seule (`.studio/analyse_projet.json`), réponses déduites (`"mode": "adoption"`), ajout du bloc `.studio/` au `.gitignore` s'il manque, bloc délimité dans `CLAUDE.md` après accord, contrôle par empreintes qu'aucun fichier existant n'a changé |
