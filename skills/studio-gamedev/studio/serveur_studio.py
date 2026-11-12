@@ -62,9 +62,9 @@ APPARENCES = {"aucune", "casque", "casquette", "beret", "lunettes", "chapeau", "
 NOMS_RESERVES = {"assistant", "maitre", "index", "statuts"}
 COULEUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 SOURCES = {"utilisateur", "deduit", "a_confirmer", "voix_a_interpreter"}
-VIAS = {"clic", "ecrit", "voix", "passer"}
+VIAS = {"clic", "ecrit", "voix", "passer", "analyse"}
 ETATS = {"en_cours", "termine"}
-MODES = {"rapide", "complet"}
+MODES = {"rapide", "complet", "adoption"}
 
 # Valeurs permises de profil.json (references/questionnaire.md, « Format de profil.json »)
 PERMIS = {

@@ -47,7 +47,7 @@ Then quit Claude Code and start it again. Done.
 
 ## First run, step by step
 
-1. **Create an empty folder** for your game, for example `MyGame` (or use a game you already started: the engine is detected).
+1. **Create an empty folder** for your game, for example `MyGame` (game already started? see "[Already have a project in progress?](#already-have-a-project-in-progress)").
 2. **Open a terminal in that folder** and run `claude`.
 3. **Type** `new game project` (or `/studio-gamedev:studio`).
 4. Claude sets up the `.studio/` folder, starts a small server on your machine (reachable from your computer only) and opens `http://127.0.0.1:8790/studio.html`. If the browser does not open by itself, click the link Claude gives you. If port 8790 is taken, Claude picks another one and gives you the right address.
@@ -56,6 +56,25 @@ Then quit Claude Code and start it again. Done.
 7. **To resume later**, run `claude` again in the same folder and say `new game project` or `start a game studio`: everything is kept in `.studio/`.
 
 Useful phrases afterwards: "status", "roadmap", "change the roadmap", "hire a composer", "build", "stop reports".
+
+## Already have a project in progress?
+
+It works too, even with a few hours of work and a foundation already in place. The studio settles **next to** your project; it does not rewrite it.
+
+1. Open a terminal **in your game's folder** and run `claude`.
+2. Type `adopt my project` (or `resume my game`, `new game`, `/studio-gamedev:studio`: a game already started is detected automatically).
+3. Claude **reads** the project without changing anything: engine and version, scenes, what is already coded, assets, docs, code conventions, tests, TODOs, git history. It sums up what it understood in 5 lines and asks you to confirm before opening the studio.
+4. The questionnaire is **shortened**: whatever can be deduced from the project is pre-filled (badge "deduced from the project"); you only answer the rest (vision, ambition, wishes, characters).
+5. The roadmap starts from what exists: a first milestone "What already exists" (all checked, with the file or commit as proof), then "Taking it back in hand" and what comes next. No task redoes existing work; estimates are calibrated on your real pace (git history).
+
+**What the studio never touches during adoption:**
+- your code, scenes, assets and engine settings;
+- your existing documents (`README.md`, `docs/ROADMAP.md`, `docs/GDD.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`…): the studio's version is written **next to them** (`docs/ROADMAP.studio.md`…), or appended in a delimited `<!-- studio-gamedev -->` block **if you agree**;
+- your `CLAUDE.md`: at most one delimited block appended at the end, with your consent; without it, the proposal stays in `.studio/propositions/`;
+- your agents in `.claude/agents/`: kept as they are;
+- your `.gitignore`: only the `.studio/` line is added, if missing.
+
+Claude only creates files in `.studio/` (ignored by git). Before handing back, it compares every existing file with the snapshot taken at the start and tells you if one changed. No commit without your consent.
 
 ## Token cost
 

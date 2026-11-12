@@ -1,6 +1,6 @@
 {
   "name": "studio-gamedev",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lance ton jeu vidéo comme un jeu : un studio virtuel animé s'ouvre dans le navigateur, l'assistant te fait créer ton jeu question par question (cartes, écrit ou voix), puis écrit la roadmap, le GDD et les règles de travail et route chaque tâche vers les skills de game dev installés. / Start your video game like a game: an animated virtual studio, an in-browser questionnaire, then roadmap, GDD and task routing to game-dev skills.",
   "author": {
     "name": "xavfrech-dev",

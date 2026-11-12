@@ -36,6 +36,35 @@ Ordre : l'accueil demande seulement le **nom du maître** (l'assistant doit savo
 
 Mode **rapide** : les mêmes chapitres, avec seulement les questions marquées `rapide` dans `questions.json` ; chaque chapitre construit quand même son décor.
 
+Mode **adoption** (projet déjà commencé, voir « Mode adoption ») : les questions rapides, moins tout ce que l'analyse du projet a déduit.
+
+## Mode adoption (projet déjà commencé)
+
+Pour un jeu qui existe déjà. Tu ne poses pas le questionnaire d'un nouveau jeu : tu pars de l'analyse (`studio/outils/adoption.py analyser` → `.studio/analyse_projet.json`) et l'utilisateur ne répond qu'à ce qui manque.
+
+1. `adoption.py preremplir` écrit `.studio/reponses_questionnaire.json` avec `"mode": "adoption"`, `"analyse": ".studio/analyse_projet.json"`, et les réponses **sûres** : `{"valeur", "source": "deduit", "via": "analyse", "raison": "déduit du projet : <preuve>"}`. Il ne remplace jamais une réponse de l'utilisateur et refuse un questionnaire déjà `termine`.
+2. Il écrit aussi `deductions.json` : `fixes` = les réponses sûres (la page ne les pose pas, même en mode complet) ; `recommandes` = les réponses **probables** (la carte ★ est pré-sélectionnée avec le badge « déduit du projet » au lieu de « recommandé » : un clic pour confirmer) ; `propositions["vision.pitch"]` = le premier paragraphe du README ; `message_assistant` = « Je reprends ton projet ! J'ai lu ce qui existe (…). Je ne te demande que ce qui manque : ta vision, ton ambition, tes envies. »
+3. Dans la page, `"mode": "adoption"` se comporte comme le mode rapide (questions `rapide` seulement) ; l'assistant dit « Je reprends ton projet » à l'ouverture ; le récapitulatif marque les réponses déduites `~` et montre la preuve au survol. « Je passe en mode complet » reste possible (les `fixes` restent sautées). La page relit aussi `analyse_projet.json` : ses réponses sûres et ses ★ tiennent même si `deductions.json` est complété après le pitch (une réponse `via: "analyse"` n'est jamais reposée), et le pitch du README est proposé en puce sous le champ.
+
+| Déduit de l'analyse | Question | Sûr (`fixes`) ou ★ |
+|---|---|---|
+| fichier projet du moteur | `moteur.nom` | sûr |
+| langage majoritaire | `moteur.langage` | sûr |
+| version dans le fichier projet | `moteur.version` = `precise` | sûr |
+| `.git`, LFS dans `.gitattributes` | `moteur.versionnage` | sûr |
+| type racine des scènes (≥ 80 % en 2D ou en 3D) | `camera.dimension` | sûr (sinon ★) |
+| — | `accueil.mode` = `rapide` | sûr (raison « adoption ») |
+| mots du code (saut, tir, faim, quête…) | `genre.principal`, `gameplay.verbe` | ★ |
+| 2D avec gravité → de côté ; sans → du dessus | `camera.vue` | ★ |
+| systèmes déjà codés | `gameplay.systemes` | ★ |
+| code réseau ou non | `multijoueur.mode` | ★ |
+| `export_presets.cfg` | `plateforme.cibles` | ★ |
+| ≥ 2 scènes de niveau | `monde.structure` = `niveaux` | ★ |
+| filtre de texture « nearest » | `da.style` = `pixel` | ★ |
+| rythme des commits | `ambition.temps` | ★ |
+
+Toujours posées à l'utilisateur : nom, expérience, **pitch et vision**, **ambition** (taille, temps), **envies** (DA, son, monétisation, outils IA, budget) et personnages. Ce que l'utilisateur répond l'emporte sur l'analyse ; si sa réponse contredit le projet (ex. « 3D » pour un projet 2D), pose une question de suivi.
+
 ## Accueil et choix du mode
 
 L'assistant se présente (« Salut ! Je suis ton assistant. On va créer ton jeu ensemble. ») et demande d'abord : « Comment je t'appelle ? » (texte ou voix). Puis :
@@ -301,7 +330,7 @@ Tout le reste prend son ★ et est marqué `à confirmer` dans `reponses_questio
 - **R1 Roblox** : plateforme = Roblox (PC, mobile, consoles), moteur = Roblox Studio (Luau), monétisation = Robux (passes, objets) ; saute 4, 5 et la question « où publier ».
 - **R2 Navigateur** : ★ moteur = Phaser (2D) ou three.js (3D) ; machine cible = « petite config » ; publication ★ itch.io.
 - **R3 Mobile** : contrôles tactiles ; ★ Godot ou Unity ; avertir si 3D réaliste.
-- **R4 Projet existant** (moteur détecté en phase 0) : moteur et langage fixés ; saute 5.
+- **R4 Projet existant** (moteur détecté en phase 0) : mode adoption ; moteur, langage et ce que l'analyse sait sûrement sont fixés (voir « Mode adoption »).
 - **R5 Calcul du ★ moteur** : 
   - 2D, débutant ou petit projet → Godot.
   - 3D réaliste, monde ouvert, PC haut de gamme → Unreal (avertir : lourd, compilations longues, une seule chaîne moteur indispensable).
@@ -400,8 +429,9 @@ Illustrations : `studio/cartes/<nom>.svg`, 160 × 120, style carnet (papier crè
 }
 ```
 
+- `mode` : `rapide`, `complet` ou `adoption` (projet déjà commencé ; champ `analyse` = chemin de `analyse_projet.json`).
 - `source` : `utilisateur`, `deduit`, `a_confirmer`, `voix_a_interpreter`.
-- `via` : `clic`, `ecrit`, `voix`, `passer`.
+- `via` : `clic`, `ecrit`, `voix`, `passer`, `analyse` (déduit du projet en mode adoption ; `raison` donne la preuve).
 - Une dictée est d'abord comparée aux `libelle` et `mots_voix` des cartes ; si une seule carte correspond, elle est choisie (`via: voix`, la page la montre sélectionnée et laisse 3 s pour corriger) ; sinon `voix_a_interpreter` + `texte_brut`, et tu poses une question de suivi.
 - `etat` passe à `termine` quand le maître valide le récapitulatif.
 - Le chapitre Personnages écrit `profil.json` (pas ce fichier), via la même API.
@@ -507,7 +537,7 @@ Dans la page : l'assistant présente le studio construit, puis un **parchemin** 
 
 ## Roadmap générée (fin du questionnaire, étape non sautable)
 
-Après la dernière réponse, tu écris **toujours**, avant tout autre livrable, `docs/ROADMAP.md` et `<projet>/.studio/roadmap.json`. Aucune réponse, aucun mode (rapide, jam, repli conversation) ne permet de sauter cette étape. Schéma de `roadmap.json` : `references/studio.md` ; exemple : `modeles/roadmap.json`.
+Après la dernière réponse, tu écris **toujours**, avant tout autre livrable, `docs/ROADMAP.md` (en adoption, si ce fichier existe : `docs/ROADMAP.studio.md`) et `<projet>/.studio/roadmap.json`. Aucune réponse, aucun mode (rapide, jam, repli conversation) ne permet de sauter cette étape. Schéma de `roadmap.json` : `references/studio.md` ; exemple : `modeles/roadmap.json`.
 
 **Jalons** (`jalons.decoupage`, `ambition.taille`) :
 - `propose` : J0 Cadrage · J1 Prototype jouable · J2 Boucle centrale · J3 Contenu · J4 Finition · J5 Sortie (découpage détaillé : `livrables.md`).
@@ -543,3 +573,8 @@ Toute réponse `a_confirmer` qui pèse sur une tâche donne une tâche « Confir
 
 **État de départ** : J0-01 (questionnaire et documents) `verse` ; le reste `a_faire`. Le studio gagne `xp_par_tache` par tâche versée et `xp_par_jalon` par jalon terminé.
 
+**Mode adoption** (roadmap à partir de l'existant) :
+- **J0 « Ce qui existe déjà »** : une tâche par élément de `analyse_projet.json.existant` (projet moteur, scènes, chaque système codé, assets, tests, docs), `"statut": "verse"`, `preuve` = le fichier qui le montre ou un commit, `fait_le` = maintenant, estimation = `estimation_standard_h` ; plus « Analyse du projet » et « Roadmap à partir de l'existant », versées. 5 à 12 tâches (regroupe au-delà). Succès : « Je reprends ton projet ».
+- **J1 « Reprise en main »** : le projet s'ouvre et se lance sans erreur ; tests de base (ou tests existants verts) ; TODO prioritaires ; le verbe principal tient 1 minute ; version à essayer.
+- Jalons suivants : selon les réponses, comme ci-dessus, sans refaire ce qui existe (un système déjà codé devient au plus « à consolider ») et en traitant `manques` (sauvegarde, interface, son, GDD…).
+- **Estimations calibrées** : estimation du studio × `calibrage.facteur` (travail déjà fait estimé par les sessions git, ou lignes de code ÷ 25 + 0,5 h par scène, rapporté aux estimations standard de l'existant ; borné de 0,6 à 1,8), au demi-heure ; rythme = `ambition.temps`, sinon `calibrage.heures_par_semaine_observees`. `roadmap.json` note `"mode": "adoption"`, `rythme.facteur_calibrage` et `sources.analyse`.

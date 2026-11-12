@@ -47,7 +47,7 @@ Puis quitte Claude Code et relance-le. C'est installé.
 
 ## Premier lancement, pas à pas
 
-1. **Crée un dossier vide** pour ton jeu, par exemple `MonJeu` (ou prends un jeu déjà commencé : le moteur est reconnu).
+1. **Crée un dossier vide** pour ton jeu, par exemple `MonJeu` (jeu déjà commencé ? voir « [Tu as déjà un projet en cours ?](#tu-as-déjà-un-projet-en-cours-) »).
 2. **Ouvre un terminal dans ce dossier** et lance `claude`.
 3. **Tape** `nouveau jeu` (ou `/studio-gamedev:studio`).
 4. Claude prépare le dossier `.studio/`, démarre un petit serveur sur ta machine (accessible seulement depuis ton ordinateur) et ouvre la page `http://127.0.0.1:8790/studio.html`. Si le navigateur ne s'ouvre pas tout seul, clique sur le lien que Claude te donne. Si le port 8790 est pris, Claude en prend un autre et te donne la bonne adresse.
@@ -56,6 +56,25 @@ Puis quitte Claude Code et relance-le. C'est installé.
 7. **Pour reprendre plus tard**, relance `claude` dans le même dossier et redis `nouveau jeu` ou `lance le studio` : tout est gardé dans `.studio/`.
 
 Phrases utiles ensuite : « point », « roadmap », « change la roadmap », « recrute un musicien », « version », « stop suivi ».
+
+## Tu as déjà un projet en cours ?
+
+Ça marche aussi, même avec quelques heures de travail et un socle déjà monté. Le studio s'installe **à côté** de ton projet, il ne le réécrit pas.
+
+1. Ouvre un terminal **dans le dossier de ton jeu** et lance `claude`.
+2. Tape `adopte mon projet` (ou `reprends mon jeu`, `nouveau jeu`, `/studio-gamedev:studio` : le jeu déjà commencé est reconnu tout seul).
+3. Claude **lit** le projet sans rien modifier : moteur et version, scènes, ce qui est déjà codé, assets, docs, conventions de code, tests, TODO, historique git. Il te résume ce qu'il a compris en 5 lignes et te demande si c'est bien ça avant d'ouvrir le studio.
+4. Le questionnaire est **raccourci** : ce qui se déduit du projet est déjà rempli (badge « déduit du projet »), tu ne réponds qu'au reste (vision, ambition, envies, personnages).
+5. La roadmap part de l'existant : un premier jalon « Ce qui existe déjà » (tout est coché, avec le fichier ou le commit en preuve), puis « Reprise en main » et la suite. Aucune tâche ne refait ce qui existe ; les estimations sont calées sur ton rythme réel (historique git).
+
+**Ce que le studio ne touche jamais pendant l'adoption :**
+- ton code, tes scènes, tes assets, les réglages du moteur ;
+- tes documents existants (`README.md`, `docs/ROADMAP.md`, `docs/GDD.md`, `docs/DECISIONS.md`, `docs/CHANGELOG.md`…) : la version du studio est écrite **à côté** (`docs/ROADMAP.studio.md`…), ou ajoutée à la fin dans un bloc délimité `<!-- studio-gamedev -->` **si tu es d'accord** ;
+- ton `CLAUDE.md` : au plus un bloc délimité ajouté à la fin, après ton accord ; sans accord, la proposition reste dans `.studio/propositions/` ;
+- tes agents dans `.claude/agents/` : gardés tels quels ;
+- ton `.gitignore` : seule la ligne `.studio/` est ajoutée, si elle manque.
+
+Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te rendre la main, il compare chaque fichier existant à la photo prise au départ et te prévient si l'un d'eux a changé. Aucun commit sans ton accord.
 
 ## Coût en jetons
 

@@ -14,10 +14,14 @@ Usage (Python 3.10+, bibliothèque standard) :
   python -I -B essai_complet.py progresser <poste> <pct> [--texte T] [--restant N]   écrit progression/<poste>.json
   python -I -B essai_complet.py rapport   [--dossier D]   écrit rapport_assistant.json (le rapport plein cadre s'ouvre)
   python -I -B essai_complet.py recrue <nom> [--dossier D]   vérifie la recrue : demande, fiche, définition d'agent
+  python -I -B essai_complet.py adoption --dossier D/essai_adoption   adoption d'un projet existant : projet Godot fictif
+                                          (scènes, scripts, README, CLAUDE.md, docs/ROADMAP.md, git), analyse, questionnaire
+                                          raccourci, roadmap J0 « Ce qui existe déjà », livrables à côté ; vérifie par
+                                          empreintes avant / après qu'aucun fichier existant n'est modifié
 Le serveur de l'essai lance aussi studio_etat.py en boucle (--intervalle, 5 s par défaut) et l'arrête en sortant.
 
 Le dossier par défaut est passé par --dossier ou la variable STUDIO_ESSAI ; le script refuse d'effacer
-un dossier qui ne s'appelle pas « essai_skill ».
+un dossier qui ne s'appelle pas « essai_skill » (« essai_adoption » pour l'essai de l'adoption).
 """
 import argparse
 import datetime as dt
@@ -413,10 +417,312 @@ def cmd_serveur(d, port, intervalle):
         alim.terminate()
 
 
+# ---------------------------------------------------------------------------- adoption d'un projet existant
+TSCN = '[gd_scene load_steps=2 format=3]\n\n[ext_resource type="Script" path="res://scripts/{script}.gd" id="1"]\n\n[node name="{nom}" type="{type}"]\nscript = ExtResource("1")\n{enfants}'
+FICTIF = {
+    "project.godot": '; Engine configuration file.\nconfig_version=5\n\n[application]\n\nconfig/name="Petit Renard"\nrun/main_scene="res://scenes/main.tscn"\n'
+                     'config/features=PackedStringArray("4.3", "GL Compatibility")\n\n[autoload]\n\nGameState="*res://scripts/game_state.gd"\n\n'
+                     '[input]\n\nmove_left={\n"deadzone": 0.5,\n"events": []\n}\nmove_right={\n"deadzone": 0.5,\n"events": []\n}\njump={\n"deadzone": 0.5,\n"events": []\n}\n\n'
+                     '[rendering]\n\ntextures/canvas_textures/default_texture_filter=0\n',
+    "export_presets.cfg": '[preset.0]\n\nname="Windows Desktop"\nplatform="Windows Desktop"\n\n[preset.1]\n\nname="Web"\nplatform="Web"\n',
+    "scenes/main.tscn": TSCN.format(script="main", nom="Main", type="Node2D", enfants=""),
+    "scenes/player.tscn": TSCN.format(script="player", nom="Player", type="CharacterBody2D", enfants='\n[node name="Camera2D" type="Camera2D" parent="."]\n'),
+    "scenes/enemy.tscn": TSCN.format(script="enemy", nom="Enemy", type="CharacterBody2D", enfants=""),
+    "scenes/levels/level_1.tscn": TSCN.format(script="main", nom="Level1", type="Node2D", enfants='\n[node name="Tiles" type="TileMapLayer" parent="."]\n'),
+    "scenes/levels/level_2.tscn": TSCN.format(script="main", nom="Level2", type="Node2D", enfants=""),
+    "scenes/ui/hud.tscn": TSCN.format(script="hud", nom="HUD", type="CanvasLayer", enfants='\n[node name="Coins" type="Label" parent="."]\n'),
+    "scripts/main.gd": "extends Node2D\n\n\nfunc _ready() -> void:\n\tGameState.load_game()\n",
+    "scripts/player.gd": "extends CharacterBody2D\n\nconst SPEED := 140.0\nconst JUMP_VELOCITY := -320.0\nvar gravity: float = ProjectSettings.get_setting(\"physics/2d/default_gravity\")\n\n\n"
+                         "func _physics_process(delta: float) -> void:\n\tif not is_on_floor():\n\t\tvelocity.y += gravity * delta\n"
+                         "\tif Input.is_action_just_pressed(\"jump\") and is_on_floor():\n\t\tvelocity.y = JUMP_VELOCITY\n"
+                         "\tvelocity.x = Input.get_axis(\"move_left\", \"move_right\") * SPEED\n\tmove_and_slide()\n\t# TODO: coyote time pour le saut\n",
+    "scripts/enemy.gd": "extends CharacterBody2D\n\n# Patrouille simple entre deux points\nvar direction := 1.0\n\n\nfunc _physics_process(_delta: float) -> void:\n"
+                        "\tvelocity.x = 40.0 * direction\n\tif is_on_wall():\n\t\tdirection = -direction\n\tmove_and_slide()\n",
+    "scripts/game_state.gd": "extends Node\n\nvar coins := 0\nconst SAVE_PATH := \"user://save.cfg\"\n\n\nfunc save_game() -> void:\n\tvar cfg := ConfigFile.new()\n"
+                             "\tcfg.set_value(\"jeu\", \"coins\", coins)\n\tcfg.save(SAVE_PATH)\n\n\nfunc load_game() -> void:\n\tvar cfg := ConfigFile.new()\n"
+                             "\tif cfg.load(SAVE_PATH) == OK:\n\t\tcoins = cfg.get_value(\"jeu\", \"coins\", 0)\n\t# FIXME: version du format de sauvegarde\n",
+    "scripts/hud.gd": "extends CanvasLayer\n\n\nfunc _process(_delta: float) -> void:\n\t$Coins.text = str(GameState.coins)\n",
+    "README.md": "# Petit Renard\n\nUn petit jeu de plateforme 2D où un renard ramasse des pièces dans une forêt d'automne.\n\n## Lancer\n\nOuvrir le dossier avec Godot 4.3.\n",
+    "CLAUDE.md": "# Petit Renard\n\nRègles du projet : GDScript typé, tabulations, une scène par objet.",   # sans fin de ligne : cas limite du bloc
+    "docs/ROADMAP.md": "# Ma liste\n\n- [x] le renard bouge et saute\n- [ ] un boss\n",
+    ".gitignore": ".godot/\n*.translation\n",
+}
+
+
+def wav(chemin):
+    import struct
+    donnees = b"\x00\x00" * 800
+    os.makedirs(os.path.dirname(chemin), exist_ok=True)
+    with open(chemin, "wb") as f:
+        f.write(b"RIFF" + struct.pack("<I", 36 + len(donnees)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 1, 1, 8000, 16000, 2, 16) + b"data" + struct.pack("<I", len(donnees)) + donnees)
+
+
+def creer_projet_fictif(d):
+    if os.path.basename(os.path.normpath(d)) != "essai_adoption":
+        raise SystemExit("refus : le dossier d'essai de l'adoption doit s'appeler essai_adoption")
+    if os.path.isdir(d):
+        reessai = lambda f, p, _e: (os.chmod(p, 0o700), f(p))   # fichiers en lecture seule de .git sous Windows
+        shutil.rmtree(d, **({"onexc": reessai} if sys.version_info >= (3, 12) else {"onerror": reessai}))
+    for rel, txt in FICTIF.items():
+        ch = os.path.join(d, *rel.split("/"))
+        os.makedirs(os.path.dirname(ch), exist_ok=True)
+        with open(ch, "w", encoding="utf-8", newline="\n") as f:
+            f.write(txt)
+    png(os.path.join(d, "assets", "sprites", "renard.png"), 32, 32, (200, 90, 30), (240, 160, 80))
+    png(os.path.join(d, "assets", "sprites", "tuiles.png"), 64, 32, (60, 90, 40), (120, 80, 40))
+    wav(os.path.join(d, "assets", "sons", "saut.wav"))
+    # un petit historique git (identité neutre, dates fixes) : « quelques heures de travail »
+    git = shutil.which("git")
+    if not git:
+        return "git absent : projet sans historique"
+    env = dict(os.environ, GIT_AUTHOR_NAME="essai", GIT_AUTHOR_EMAIL="essai@example.invalid", GIT_COMMITTER_NAME="essai", GIT_COMMITTER_EMAIL="essai@example.invalid")
+    lots = [("2026-11-01T14:00:00", ["project.godot", "scenes/main.tscn", "scenes/player.tscn", "scripts/main.gd", "scripts/player.gd", ".gitignore"], "Projet Godot et renard qui saute"),
+            ("2026-11-01T15:40:00", ["scenes/enemy.tscn", "scripts/enemy.gd", "scenes/levels", "assets"], "Ennemi qui patrouille, deux niveaux"),
+            ("2026-11-03T20:10:00", ["."], "Pièces, sauvegarde et HUD")]
+    try:
+        subprocess.run([git, "init", "-q", d], check=True, env=env, capture_output=True)
+        for date, chemins, msg in lots:
+            e = dict(env, GIT_AUTHOR_DATE=date, GIT_COMMITTER_DATE=date)
+            subprocess.run([git, "-C", d, "add", "--", *chemins], check=True, env=e, capture_output=True)
+            subprocess.run([git, "-C", d, "commit", "-q", "-m", msg], check=True, env=e, capture_output=True)
+    except subprocess.CalledProcessError as x:
+        return "git : historique non créé (" + (x.stderr or b"").decode("utf-8", "replace").strip()[:120] + ")"
+    return "3 commits sur 2 jours"
+
+
+def empreintes_essai(d, avec_git=True):
+    import hashlib
+    out = {}
+    for racine, dossiers, fichiers in os.walk(d):
+        rel_r = os.path.relpath(racine, d).replace("\\", "/")
+        dossiers[:] = [x for x in dossiers if x != ".studio" and (avec_git or x != ".git")]
+        for f in fichiers:
+            ch = os.path.join(racine, f)
+            r = f if rel_r == "." else rel_r + "/" + f
+            with open(ch, "rb") as fh:
+                out[r] = hashlib.sha256(fh.read()).hexdigest()
+    return out
+
+
+def adoption_py(d, *args, attendu=0):
+    r = subprocess.run([sys.executable, "-I", "-B", "-X", "utf8", os.path.join(ICI, "adoption.py"), args[0], "--projet", d, *args[1:]], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    if r.returncode != attendu:
+        raise SystemExit(f"adoption.py {args[0]} : code {r.returncode} (attendu {attendu})\n{r.stdout}\n{r.stderr}")
+    return r.stdout
+
+
+DEF_POSTES = {p["id"]: p for p in POSTES}
+DEF_POSTES.update({
+    "qualite-tests": {"id": "qualite-tests", "nom": "Qualité et tests", "role": "Tests, TODO, bugs : le projet reste sain", "couleur": "#5b6b2e", "apparence": "lunettes", "skills": ["gamedev:godot-gdscript-headless-testing"]},
+    "reseau": {"id": "reseau", "nom": "Réseau", "role": "Multijoueur, synchronisation, tests à 2", "couleur": "#2e5b6b", "apparence": "casque", "skills": ["gamedev:godot-multiplayer"]},
+    "narration": {"id": "narration", "nom": "Narration", "role": "Histoire, dialogues, textes", "couleur": "#6b2e5b", "apparence": "chapeau", "skills": ["gamedev:dialogue-systems"]},
+})
+
+
+def a_cote(d, rel):
+    """Cible d'écriture d'un document : le fichier lui-même s'il n'existe pas, sinon son voisin *.studio.md."""
+    return rel[:-3] + ".studio.md" if os.path.exists(os.path.join(d, rel)) else rel
+
+
+def generer_roadmap_adoption(d, a):
+    rep = (lire(os.path.join(d, ".studio", "reponses_questionnaire.json"), {}) or {}).get("reponses", {})
+    v = lambda k, df=None: (rep.get(k) or {}).get("valeur") or df
+    postes = set(a["postes_proposes"])
+    po = lambda p: p if p in postes else ("code-gameplay" if "code-gameplay" in postes else "direction")
+    k = a["calibrage"]["facteur"]
+    h = lambda x: max(0.5, round(x * k * 2) / 2)   # estimations calibrées sur le rythme observé, au demi-heure
+    hps = {"quelques_heures": 5, "soirs": 12, "plein": 35, "jam": 48}.get(v("ambition.temps"), 0) or a["calibrage"]["heures_par_semaine_observees"] or 5
+    t0, debut = maintenant(), dt.date.today()
+    doc = a_cote(d, "docs/ROADMAP.md")
+    # J0 : ce qui existe déjà, versé avec sa preuve (fichier ou commit)
+    j0 = [{"titre": e["titre"], "critere": "existe dans le projet (" + (e["preuve"] or "constaté à l'analyse") + ")", "poste": po(e["poste"]), "moteur": e["moteur"],
+           "estimation_h": max(0.5, e["estimation_standard_h"]), "preuve": e["preuve"] or "analyse"} for e in a["existant"][:10]]
+    j0 += [{"titre": "Analyse du projet (adoption)", "critere": "inventaire écrit sans rien modifier", "poste": "direction", "moteur": False, "estimation_h": 0.5, "preuve": ".studio/analyse_projet.json"},
+           {"titre": "Roadmap à partir de l'existant", "critere": "roadmap écrite à côté des documents existants", "poste": "direction", "moteur": False, "estimation_h": 0.5, "preuve": doc}]
+    verbe = v("gameplay.verbe", "jouer")
+    sys_ids = {s["id"] for s in a["systemes"]}
+    j1 = [("Le projet se lance sans erreur", "ouverture et lancement court sans erreur dans la console", "integration-moteur", True, 1),
+          ("Tests de base" if not a["tests"]["present"] else "Tests existants verts", "3 tests sans moteur passent" if not a["tests"]["present"] else "tous les tests passent", "qualite-tests", False, 3),
+          (f"TODO prioritaires ({a['todo']['nombre']})", "les TODO bloquants traités ou notés en écart", "qualite-tests", False, 2),
+          (f"Le verbe « {verbe} » tient 1 minute", f"on peut {verbe} 1 minute sans bug bloquant", "code-gameplay", True, 2),
+          ("Version à essayer", "build lancée et guide « quoi regarder »", "integration-moteur", True, 1)]
+    j2 = [("Objectif et victoire", "on peut gagner et perdre", "code-gameplay", False, 5)]
+    if "sauvegarde" not in sys_ids:
+        j2.append(("Sauvegarde", "la partie reprend après fermeture", "code-gameplay", False, 4))
+    else:
+        j2.append(("Sauvegarde versionnée", "le format de sauvegarde porte une version", "code-gameplay", False, 1.5))
+    j2.append(("Interface de jeu", "vie, objectif et pause affichés", "art-da", True, 4 if "interface" not in sys_ids else 2))
+    j2.append(("Sons et ambiance", "5 sons clés et une ambiance jouent", "son", True, 4 if not a["assets"]["audio"] else 2))
+    j2.append(("Version à essayer", "build et guide", "integration-moteur", True, 1))
+    jalons = [("J0", "Ce qui existe déjà", "Ce que tu as déjà construit, reconnu et compté.", "L'existant est inventorié, avec ses preuves.", [], None, j0,
+               {"titre": "Je reprends ton projet", "description": "Le studio connaît ton jeu.", "icone": "cartes/loupe.svg", "son": "moyen"}),
+              ("J1", "Reprise en main", "Le projet est sain et se lance.", "Lancement sans erreur, tests de base verts.", ["J0"], "J0", j1,
+               {"titre": "Sur de bonnes bases", "description": "Le projet tient debout.", "icone": "cartes/valide.svg", "son": "moyen"}),
+              ("J2", "Boucle complète", "Une partie se joue du début à la fin.", "Une partie complète en 5 minutes.", ["J1"], "J1", j2,
+               {"titre": "La boucle est bouclée", "description": "Une partie complète se joue.", "icone": "cartes/boucle.svg", "son": "grand"})]
+    if v("ambition.taille", "petit") != "prototype":
+        jalons.append(("J3", "Contenu et finition", "Assez de contenu pour une vraie partie, polie.", f"{max(3, len(a['scenes']['niveaux']) + 2)} niveaux finis, aucun bug bloquant connu.", ["J2"], "J2",
+                       [("Niveaux supplémentaires", "les nouveaux niveaux se jouent de bout en bout", "code-gameplay", True, 10),
+                        ("Assets finaux", "décors et personnages au style validé (image validée d'abord)", "art-da", True, 12),
+                        ("Mixage", "volumes réglés, options son", "son", True, 3),
+                        ("Réglages et accessibilité", "touches remappables, sous-titres", "code-gameplay", True, 4),
+                        ("Version candidate", "build finale et guide", "integration-moteur", True, 2)],
+                       {"titre": "Prêt à montrer", "description": "Le jeu tient debout.", "icone": "cartes/trophee.svg", "son": "grand"}))
+    rm_jalons, fin = [], debut
+    for jid, titre, but, critere, dep, prec, taches, succes in jalons:
+        tt = []
+        for i, x in enumerate(taches):
+            if isinstance(x, dict):   # J0 : versé
+                t = tache(jid, i + 1, x["titre"], x["critere"], x["poste"], x["moteur"], x["estimation_h"], [], "verse")
+                t.update(preuve=x["preuve"], fait_le=t0)
+            else:
+                ti, cr, p, m, e = x
+                deps = [f"{prec}-01"] if i == 0 else [f"{jid}-{i:02d}"]
+                if i == len(taches) - 1:
+                    deps = [f"{jid}-{n:02d}" for n in range(1, len(taches))]
+                t = tache(jid, i + 1, ti, cr, po(p), m, h(e), deps)
+            tt.append(t)
+        if jid != "J0":
+            fin = fin + dt.timedelta(days=max(1, round(7 * sum(x["estimation_h"] for x in tt) / hps)))
+        rm_jalons.append({"id": jid, "titre": titre, "but": but, "critere_fin": critere, "depend_de": dep, "fin_visee": (debut if jid == "J0" else fin).isoformat(),
+                          "succes": dict(succes, id=f"jalon-{jid}"), "taches": tt})
+    return {"version": 1, "langue": "fr", "projet": a["projet"]["nom"], "cree_le": t0, "maj": t0, "mode": "adoption",
+            "sources": {"questionnaire": ".studio/reponses_questionnaire.json", "document": doc, "analyse": ".studio/analyse_projet.json"},
+            "rythme": {"heures_par_semaine": hps, "debut": debut.isoformat(), "facteur_calibrage": k},
+            "niveau": {"xp_par_tache": 100, "xp_par_jalon": 500, "rangs": [{"niveau": 1, "nom": "Garage"}, {"niveau": 5, "nom": "Atelier de quartier"}, {"niveau": 10, "nom": "Studio indé"}, {"niveau": 16, "nom": "Studio AA"}, {"niveau": 24, "nom": "Studio AAA"}]},
+            "jalons": rm_jalons,
+            "succes_final": {"id": "roadmap-finie", "titre": "Le jeu est sorti", "description": "Tous les jalons sont terminés.", "icone": "cartes/trophee.svg", "son": "grand"}}
+
+
+def cmd_adoption(d, port):
+    """Essai complet de l'adoption : projet Godot fictif déjà commencé, analyse, questionnaire raccourci, roadmap, garde-fous."""
+    ok = lambda m: print("  ok  " + m)
+    print("1. projet fictif :", creer_projet_fictif(d))
+    avant = empreintes_essai(d)
+    print(f"   {len(avant)} fichiers (dont .git) photographiés")
+
+    print("2. analyse (lecture seule)")
+    print("   " + adoption_py(d, "analyser").strip().replace("\n", "\n   "))
+    apres = empreintes_essai(d)
+    diff = sorted(f for f in set(avant) | set(apres) if avant.get(f) != apres.get(f))
+    if diff:
+        raise SystemExit("ÉCHEC : l'analyse a modifié le projet : " + ", ".join(diff[:10]))
+    ok(f"aucun fichier modifié par l'analyse ({len(avant)} empreintes identiques, .git compris)")
+    a = lire(os.path.join(d, ".studio", "analyse_projet.json"))
+    err = []
+    if (a["moteur"]["nom"], a["moteur"]["version"], a["moteur"]["langage"]) != ("godot", "4.3", "gdscript"):
+        err.append(f"moteur : {a['moteur']}")
+    if a["scenes"]["nombre"] != 6 or len(a["scenes"]["niveaux"]) != 2:
+        err.append(f"scènes : {a['scenes']['nombre']} / niveaux {a['scenes']['niveaux']}")
+    ids = {s["id"] for s in a["systemes"]}
+    for attendu in ("joueur", "saut", "camera", "ennemis", "sauvegarde", "interface", "economie"):
+        if attendu not in ids:
+            err.append("système non reconnu : " + attendu)
+    if a["deductions"]["sures"].get("camera.dimension", {}).get("valeur") != "2d":
+        err.append("dimension 2D non déduite")
+    if a["deductions"]["probables"].get("genre.principal", {}).get("valeur") != "plateforme":
+        err.append("genre plateforme non proposé")
+    if a["todo"]["nombre"] != 2:
+        err.append(f"TODO : {a['todo']['nombre']} au lieu de 2")
+    prot = {p["chemin"]: p["cible"] for p in a["fichiers_proteges"]}
+    for f, c in (("docs/ROADMAP.md", "docs/ROADMAP.studio.md"), ("README.md", "README.studio.md"), ("CLAUDE.md", "CLAUDE.md"), (".gitignore", ".gitignore")):
+        if prot.get(f) != c:
+            err.append(f"fichier protégé {f} → {prot.get(f)}")
+    if a["git"].get("depot") and a["git"].get("commits") != 3:
+        err.append(f"git : {a['git'].get('commits')} commits")
+    if len(a["resume"]) != 5:
+        err.append("résumé : 5 lignes attendues")
+    if err:
+        raise SystemExit("ÉCHEC analyse :\n- " + "\n- ".join(err))
+    c = a["calibrage"]
+    ok(f"inventaire juste : Godot 4.3, 6 scènes (2 niveaux), {len(ids)} systèmes, {a['todo']['nombre']} TODO, docs protégés ; "
+       f"≈ {c['heures_deja_estimees']} h déjà faites, facteur {c['facteur']}, postes {', '.join(a['postes_proposes'])}")
+
+    print("3. questionnaire raccourci")
+    adoption_py(d, "preremplir")
+    q = lire(os.path.join(d, ".studio", "reponses_questionnaire.json"))
+    ded = lire(os.path.join(d, ".studio", "deductions.json"))
+    r_m = q["reponses"].get("moteur.nom", {})
+    if q.get("mode") != "adoption" or r_m.get("source") != "deduit" or "déduit du projet" not in r_m.get("raison", ""):
+        raise SystemExit("ÉCHEC : réponses pré-remplies non conformes")
+    if "Je reprends ton projet" not in ded.get("message_assistant", ""):
+        raise SystemExit("ÉCHEC : message d'accueil absent")
+    questions = lire(os.path.join(STUDIO, "questions.fr.json"))["questions"]
+    restantes = [x["id"] for x in questions if x.get("rapide") and x["id"] not in q["reponses"] and x["id"] not in ded["fixes"] and x["type"] != "personnage"]
+    rapides = [x["id"] for x in questions if x.get("rapide") and x["type"] != "personnage"]
+    ok(f"mode adoption ; {len(q['reponses'])} réponses déduites du projet ; {len(ded['recommandes'])} ★ proposées ; "
+       f"{len(restantes)} questions sur {len(rapides)} restent pour l'utilisateur : {', '.join(restantes)}")
+    remplir(d)   # l'utilisateur répond au reste (réponses fictives) ; les réponses déduites ne bougent pas
+    q = lire(os.path.join(d, ".studio", "reponses_questionnaire.json"))
+    if q["reponses"]["moteur.nom"]["source"] != "deduit" or q.get("mode") != "adoption":
+        raise SystemExit("ÉCHEC : une réponse déduite a été remplacée")
+    q.update(etat="termine", maj=maintenant())
+    ecrire(os.path.join(d, ".studio", "reponses_questionnaire.json"), q)
+
+    print("4. roadmap à partir de l'existant")
+    rm = generer_roadmap_adoption(d, a)
+    err = verifier(rm)
+    j0 = rm["jalons"][0]
+    if j0["titre"] != "Ce qui existe déjà" or any(t["statut"] != "verse" or not t.get("preuve") for t in j0["taches"]):
+        err.append("J0 : toutes les tâches doivent être versées avec une preuve")
+    if err:
+        raise SystemExit("ÉCHEC roadmap :\n- " + "\n- ".join(err))
+    ecrire(os.path.join(d, ".studio", "roadmap.json"), rm)
+    ecrire(os.path.join(d, rm["sources"]["document"]), roadmap_md(rm).replace("# Roadmap :", "# Roadmap du studio :", 1))
+    n = sum(len(j["taches"]) for j in rm["jalons"])
+    reste = sum(t["estimation_h"] for j in rm["jalons"][1:] for t in j["taches"])
+    ok(f"{len(rm['jalons'])} jalons, {n} tâches (J0 : {len(j0['taches'])} versées avec preuve) ; reste {reste} h calibrées ×{rm['rythme']['facteur_calibrage']} ; écrite dans {rm['sources']['document']}")
+
+    print("5. livrables sans rien écraser")
+    ecrits = []
+    for rel, contenu in (("docs/GDD.md", f"# {a['projet']['nom']} : GDD\n\n{a['pitch_readme']}\n"),
+                         ("docs/DECISIONS.md", "# Décisions\n\n- D001 Adoption : on garde le moteur, les conventions et la structure du projet existant.\n"),
+                         ("README.md", "# Studio gamedev\n\nCe projet est suivi par le studio : voir docs/ROADMAP.studio.md.\n")):
+        cible = a_cote(d, rel)
+        ecrire(os.path.join(d, *cible.split("/")), contenu)
+        ecrits.append(cible)
+    bloc = ("## Studio gamedev\n\n- Roadmap du studio : `" + rm["sources"]["document"] + "` et `.studio/roadmap.json`.\n"
+            "- Conventions du projet gardées : " + ", ".join(f"{k} {v}" for k, v in a["conventions"].items() if isinstance(v, str)) + ".\n"
+            "- Une seule chaîne moteur ; aucun push sans accord.\n")
+    ecrire(os.path.join(d, ".studio", "propositions", "CLAUDE.bloc.md"), bloc)
+    print("   " + adoption_py(d, "gitignore").strip())
+    print("   " + adoption_py(d, "gitignore").strip())
+    conf = lire(os.path.join(SKILL, "modeles", "studio.config.json"), {})
+    conf.update({"mode": "accueil", "nom_projet": a["projet"]["nom"], "langue": "fr", "port": port, "sources_images": [],
+                 "postes": [DEF_POSTES[p] for p in a["postes_proposes"] if p in DEF_POSTES]})
+    ecrire(os.path.join(d, ".studio", "studio.config.json"), conf)
+    ok("écrits : " + ", ".join(ecrits) + " ; bloc CLAUDE.md proposé dans .studio/propositions/ (en attente d'accord) ; studio : " + ", ".join(p["id"] for p in conf["postes"]))
+
+    print("6. contrôle : aucun fichier existant modifié")
+    fin = empreintes_essai(d, avec_git=False)
+    av = {f: h for f, h in avant.items() if not f.startswith(".git/")}
+    modifies = sorted(f for f in av if fin.get(f) != av[f])
+    if modifies != [".gitignore"]:
+        raise SystemExit("ÉCHEC : fichiers existants modifiés : " + ", ".join(modifies))
+    gi = open(os.path.join(d, ".gitignore"), encoding="utf-8").read()
+    if not gi.startswith(FICTIF[".gitignore"]) or gi.count(".studio/*") != 1:
+        raise SystemExit("ÉCHEC : .gitignore réécrit au lieu d'être complété")
+    print("   " + adoption_py(d, "verifier").strip().replace("\n", "\n   "))
+    ok(f"{len(av) - 1} fichiers existants identiques ; .gitignore seulement complété (bloc .studio/ une fois) ; nouveaux : {len(set(fin) - set(av))}")
+
+    print("7. bloc CLAUDE.md après accord (simulé)")
+    contenu = os.path.join(d, ".studio", "propositions", "CLAUDE.bloc.md")
+    adoption_py(d, "bloc", "--fichier", "CLAUDE.md", "--contenu", contenu)
+    une = open(os.path.join(d, "CLAUDE.md"), "rb").read()
+    adoption_py(d, "bloc", "--fichier", "CLAUDE.md", "--contenu", contenu)
+    deux = open(os.path.join(d, "CLAUDE.md"), "rb").read()
+    if not une.startswith(FICTIF["CLAUDE.md"].encode("utf-8")) or une != deux or une.count(b"<!-- studio-gamedev -->") != 1:
+        raise SystemExit("ÉCHEC : le bloc CLAUDE.md n'est pas un simple ajout idempotent")
+    adoption_py(d, "verifier", attendu=1)                      # sans accord noté : refusé
+    adoption_py(d, "verifier", "--accord", "CLAUDE.md")        # avec accord : permis
+    ok("CLAUDE.md : texte d'origine intact, bloc délimité ajouté une seule fois (2e passage sans effet) ; refusé par verifier sans --accord, accepté avec")
+    print(f"ESSAI ADOPTION RÉUSSI : {d}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("commande", choices=["preparer", "deduire", "remplir", "roadmap", "verser", "verifier", "serveur", "tout",
-                                         "travail", "etat", "progresser", "rapport", "recrue"])
+                                         "travail", "etat", "progresser", "rapport", "recrue", "adoption"])
     ap.add_argument("jalon", nargs="?", help="jalon (verser), poste (progresser) ou nom (recrue)")
     ap.add_argument("pct", nargs="?", type=int, help="progresser : pourcentage")
     ap.add_argument("--texte", default="")
@@ -461,6 +767,8 @@ def main():
         if not a.jalon:
             raise SystemExit("usage : recrue <nom>")
         cmd_recrue(d, a.jalon)
+    elif a.commande == "adoption":
+        cmd_adoption(d, a.port)
     elif a.commande == "tout":
         preparer(d, a.port)
         deduire(d)

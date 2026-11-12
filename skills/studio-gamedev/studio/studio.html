@@ -231,7 +231,7 @@ const TXT = {
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
     reflechit: 'Je réfléchis à ton pitch…', sans_attendre: 'Continuer sans attendre', compris: "J'ai compris", annuler: 'annuler', recap: 'Récapitulatif',
-    hasard: 'Au hasard', defaut: 'Par défaut', chapitre_fini: 'Chapitre terminé', questionnaire_fini: 'Le jeu est cadré !', bienvenue: 'On reprend où on en était.',
+    hasard: 'Au hasard', defaut: 'Par défaut', chapitre_fini: 'Chapitre terminé', questionnaire_fini: 'Le jeu est cadré !', bienvenue: 'On reprend où on en était.', deduit_projet: 'déduit du projet', reprends: 'Je reprends ton projet : j’ai lu ce qui existe, je ne te demande que ce qui manque.',
     micro_prive: "Dans plusieurs navigateurs, la dictée passe par un service en ligne du navigateur. Aucun son n'est gardé par le studio : seul le texte part vers le serveur local.",
     micro_absent: 'Micro indisponible ici : écris ta réponse.', transcription: 'Transcription…', enregistre: "J'enregistre… (clic pour arrêter)", decision: 'Décision',
     repondre: 'Répondre', reponse_envoyee: 'Réponse envoyée', nouvelle_decision: 'Une décision t’attend', reponse_assistant: "Réponse de l'assistant", file: 'encore', a_suivre: 'à suivre',
@@ -249,7 +249,7 @@ const TXT = {
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
     reflechit: 'Thinking about your pitch…', sans_attendre: 'Go on without waiting', compris: 'I understood', annuler: 'undo', recap: 'Summary',
-    hasard: 'Random', defaut: 'Default', chapitre_fini: 'Chapter complete', questionnaire_fini: 'Your game is framed!', bienvenue: 'Picking up where we left off.',
+    hasard: 'Random', defaut: 'Default', chapitre_fini: 'Chapter complete', questionnaire_fini: 'Your game is framed!', bienvenue: 'Picking up where we left off.', deduit_projet: 'from your project', reprends: 'I’m picking up your project: I’ve read what’s there, I’ll only ask what’s missing.',
     micro_prive: 'In several browsers, dictation goes through an online service of the browser vendor. The studio keeps no audio: only the text goes to the local server.',
     micro_absent: 'Microphone unavailable here: type your answer.', transcription: 'Transcribing…', enregistre: 'Recording… (click to stop)', decision: 'Decision',
     repondre: 'Answer', reponse_envoyee: 'Answer sent', nouvelle_decision: 'A decision needs you', reponse_assistant: 'Answer from the assistant', file: 'more', a_suivre: 'queued',
@@ -268,6 +268,12 @@ const t = k => (TXT[LANGUE] && TXT[LANGUE][k]) || TXT.fr[k] || k;
 function traduirePage() { document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); }); $('#indice').textContent = t('indice'); $('#niv-t').textContent = t('niv'); }
 
 // ====================================================================== données lues dans .studio/
+let ANALYSE = undefined;   // adoption : analyse_projet.json lu une fois ; ses déductions passent avant celles de deductions.json
+let DED_SIG = '';   // signature du deductions.json brut (avant fusion avec l'analyse)
+const avecProjet = d => { DED_SIG = JSON.stringify(d); const a = REP.mode === 'adoption' && ANALYSE && ANALYSE.deductions; if (!d || !a) return d; const fx = {}, rc = {};
+  for (const [k, v] of Object.entries(a.sures || {})) if (v && 'valeur' in v) fx[k] = { valeur: v.valeur, raison: v.raison };
+  for (const [k, v] of Object.entries(a.probables || {})) if (v && 'valeur' in v) rc[k] = v.valeur;
+  return Object.assign({}, d, { fixes: Object.assign({}, d.fixes || {}, fx), recommandes: Object.assign({}, d.recommandes || {}, rc) }); };
 let CONF = {}, PROFIL = {}, QF = null, REP = { reponses: {} }, DED = null, SUIVI = null, ETAT = null, RM_C = null;
 let PROG = {}, STATUTS = {}, DECISIONS = [], REPONSES_DEC = [], REP_ASSIST = [];
 async function lire(nom) {
@@ -299,8 +305,9 @@ async function chargerTout() {
   const lg = String(CONF.langue || (PROFIL.maitre && PROFIL.maitre.langue) || document.documentElement.lang || 'fr').slice(0, 2);
   if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
   const [prof, etat, st, dec, rdec, rass, ded, sui, idx, rap] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json'].map(lire));
-  if (prof) PROFIL = prof; ETAT = etat; STATUTS = st || {}; DECISIONS = Array.isArray(dec) ? dec : []; REPONSES_DEC = Array.isArray(rdec) ? rdec : [];
-  if (ded) DED = ded; if (sui) SUIVI = sui;
+  if (prof) { PROFIL = prof; for (const k of ['maitre', 'assistant']) if (PROFIL[k] && /\{\{/.test(String(PROFIL[k].nom || ''))) PROFIL[k].nom = ''; } ETAT = etat; STATUTS = st || {}; DECISIONS = Array.isArray(dec) ? dec : []; REPONSES_DEC = Array.isArray(rdec) ? rdec : [];
+  if (ANALYSE === undefined) ANALYSE = await lire('analyse_projet.json');   // null hors adoption (une seule lecture)
+  if (ded) DED = avecProjet(ded); if (sui) SUIVI = sui;
   // recrues : index tenu par le serveur, fiches lues une fois (puis à chaque changement de l'index)
   const noms = (Array.isArray(idx) ? idx : []).filter(n => typeof n === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(n)).slice(-NB_BUREAUX);
   await Promise.all(noms.filter(n => !FICHES_RECRUES[n]).map(async n => { const f = await lire('recrues/' + n + '.json'); if (f && f.nom === n) FICHES_RECRUES[n] = f; }));
@@ -1052,9 +1059,9 @@ const Quest = (() => {
       return true;
     });
   }
-  const fixe = q => DED && DED.fixes && DED.fixes[q.id];
+  const fixe = q => (DED && DED.fixes && DED.fixes[q.id]) || (REP.mode === 'adoption' && (R()[q.id] || {}).via === 'analyse');
   function incluse(q) {
-    if (q.chapitre !== 'fin' && (mode() === 'rapide' ? !q.rapide : q.seulement_rapide)) return false;
+    if (q.chapitre !== 'fin' && (mode() === 'complet' ? q.seulement_rapide : !q.rapide)) return false;   // adoption : comme rapide, moins ce qui est déduit du projet
     if (!cond(q.si)) return false;
     if (fixe(q)) return false;
     return true;
@@ -1128,18 +1135,20 @@ const Quest = (() => {
     Voix.arreter();
     majChapitres(q);
     if (q.chapitre && QF.questions.includes(q)) posterFond('/api/questionnaire', { chapitre_courant: q.chapitre }).catch(() => {});
-    const msg = DED && DED.message_assistant && !LS.get('ded_msg_' + (DED.maj || ''), false) ? DED.message_assistant : '';
-    if (msg) LS.set('ded_msg_' + (DED.maj || ''), true);
+    const cleMsg = 'ded_msg_' + (DED && DED.message_assistant ? String(DED.message_assistant).slice(0, 80) : '');   // un même message n'est dit qu'une fois, même si deductions.json est complété
+    const msg = DED && DED.message_assistant && !LS.get(cleMsg, false) ? DED.message_assistant : '';
+    if (msg) LS.set(cleMsg, true);
     const r = rec(q), cartes = (q.choix || []).filter(c => cond(c.si));
+    const badge = REP.mode === 'adoption' && ANALYSE && ANALYSE.deductions && q.id in (ANALYSE.deductions.probables || {}) ? t('deduit_projet') : t('recommande');   // adoption : la ★ vient du projet
     let milieu = '';
     if (q.type === 'choix' || q.type === 'multi') {
       milieu = `<div class="cartes" role="group">${cartes.map(c => { const estRec = Array.isArray(r) ? r.includes(c.id) : r === c.id; const choisie = q.type === 'multi' ? choixMulti.has(c.id) : val(q.id) === c.id;
-        return `<button type="button" class="carte${estRec ? ' rec' : ''}${choisie ? ' choisie' : ''}" data-rec="${esc(t('recommande'))}" data-c="${esc(c.id)}">${cheminSur(c.illustration, /\.svg$/i) ? `<img src="${esc(c.illustration)}" alt="" loading="lazy">` : ''}<b>${esc(c.libelle)}</b>${c.detail ? `<small>${esc(c.detail)}</small>` : ''}</button>`; }).join('')}</div>`;
+        return `<button type="button" class="carte${estRec ? ' rec' : ''}${choisie ? ' choisie' : ''}" data-rec="${esc(badge)}" data-c="${esc(c.id)}">${cheminSur(c.illustration, /\.svg$/i) ? `<img src="${esc(c.illustration)}" alt="" loading="lazy">` : ''}<b>${esc(c.libelle)}</b>${c.detail ? `<small>${esc(c.detail)}</small>` : ''}</button>`; }).join('')}</div>`;
       if (q.libre) milieu += `<div class="sc-libre"><input type="text" id="sc-libre" maxlength="400" placeholder="${esc(t('autre'))}">${boutonMicro('#sc-libre')}<button type="button" class="bts" id="sc-libre-ok">${esc(t('valider'))}</button></div>`;
       else if (q.micro !== false) milieu += `<div class="sc-libre"><input type="text" id="sc-libre" maxlength="400" placeholder="🎙" readonly hidden>${boutonMicro('#sc-libre')}</div>`;
     } else if (q.type === 'texte' || q.type === 'nom' || q.type === 'couleur') {
       const v = val(q.id), defaut = typeof v === 'string' ? v : (q.defaut || '');
-      const props = q.propositions_depuis && DED && DED.propositions && DED.propositions[q.id] || [];
+      const props = (q.propositions_depuis || REP.mode === 'adoption') && DED && DED.propositions && DED.propositions[q.id] || [];   // adoption : le pitch du README est proposé
       milieu = `<div class="sc-libre">${q.type === 'texte' ? `<textarea id="sc-libre" maxlength="2000">${esc(defaut)}</textarea>` : `<input type="${q.type === 'couleur' ? 'color' : 'text'}" id="sc-libre" maxlength="60" value="${esc(defaut)}">`}${q.micro !== false && q.type !== 'couleur' ? boutonMicro('#sc-libre') : ''}</div>
         ${props.length ? `<div class="puces">${props.slice(0, 8).map(p => `<button type="button" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>` : ''}`;
     } else if (q.type === 'curseur') {
@@ -1175,7 +1184,7 @@ const Quest = (() => {
     const parCh = {}; for (const q of QF.questions) if (q.id in R() && q.chapitre !== 'fin') (parCh[q.chapitre] = parCh[q.chapitre] || []).push(q);
     const marque = { utilisateur: '✔', deduit: '~', a_confirmer: '?', voix_a_interpreter: '?' };
     return `<table class="recap"><tbody>${Object.entries(parCh).map(([ch, l]) => `<tr><th colspan="3">${esc(chapTitre(ch))}</th></tr>` + l.map(q => { const r = R()[q.id];
-      return `<tr class="ligne" data-q="${esc(q.id)}"><td>${esc(q.titre)}</td><td>${esc(r.texte_brut && r.valeur == null ? '« ' + r.texte_brut + ' »' : libelleValeur(q, r.valeur))}</td><td class="src src-${esc(r.source)}" title="${esc(r.source)}">${marque[r.source] || ''}</td></tr>`; }).join('')).join('')}</tbody></table>`;
+      return `<tr class="ligne" data-q="${esc(q.id)}"><td>${esc(q.titre)}</td><td>${esc(r.texte_brut && r.valeur == null ? '« ' + r.texte_brut + ' »' : libelleValeur(q, r.valeur))}</td><td class="src src-${esc(r.source)}" title="${esc(r.raison || r.source)}">${marque[r.source] || ''}</td></tr>`; }).join('')).join('')}</tbody></table>`;
   }
   function editeurPerso(q) {
     const qui = q.cible === 'assistant' ? 'assistant' : 'maitre', a = JSON.parse(JSON.stringify(lookDe(qui)));
@@ -1260,15 +1269,17 @@ const Quest = (() => {
     noter(q, null, { via: 'voix', source: 'voix_a_interpreter', texte_brut: texte }).then(() => apres(q));
   }
   function attendreDeductions(q) {
-    const depuis = Date.now(), sig0 = DED ? JSON.stringify(DED) : '';
+    const depuis = Date.now(), sig0 = DED ? DED_SIG : '';
     corps.innerHTML = `<div class="sc-tete"><canvas id="sc-avatar" width="168" height="168"></canvas><div class="bulle"><div class="qui">${esc(nomAssistant())}</div><p class="attente"><span class="plume"></span>${esc(t('reflechit'))}</p></div></div>
       <div class="sc-bas"><span class="espace"></span><button type="button" class="bts" id="sc-sans" hidden>${esc(t('sans_attendre'))}</button></div>`;
     Bureau.portrait($('#sc-avatar'), lookDe('assistant'));
     const fin = () => { clearInterval(attente); attente = null; avancer(); };
     corps.querySelector('#sc-sans').onclick = fin;
     attente = setInterval(async () => {
-      const d = await lire('deductions.json');
-      if (d && JSON.stringify(d) !== sig0) { DED = d; return fin(); }
+      let d = await lire('deductions.json');
+      if (d && JSON.stringify(d) !== sig0) {
+        DED = avecProjet(d); return fin();   // adoption : ce que l'analyse a déduit du projet reste (fixes, ★ du projet)
+      }
       if (Date.now() - depuis > 8000) { const b = corps.querySelector('#sc-sans'); if (b) b.hidden = false; }
       if (Date.now() - depuis > 60000) fin();
     }, 2000);
@@ -1298,11 +1309,14 @@ const Quest = (() => {
       QF = await lire(`questions.${LANGUE}.json`) || await lire('questions.fr.json');
       if (!QF) return;
       const r = await lire('reponses_questionnaire.json'); if (r && r.reponses) REP = r;
+      if (DED_SIG) DED = avecProjet(JSON.parse(DED_SIG));   // le mode (adoption) n'est connu qu'ici
       const finis = chapitresFinis(); Bureau.construire([].concat(...(QF.chapitres || []).filter(c => finis.includes(c.id)).map(c => c.construit || [])), false);
       if (REP.etat === 'termine' || CONF.mode === 'travail') { scene.hidden = true; if (REP.etat === 'termine' && window.Roadmap && !Roadmap.etat()) Roadmap.voici(); return; }
       scene.hidden = false; document.body.classList.add('questionnaire'); Bureau.taille();
       const q = suivante(null);
-      if (Object.keys(R()).length) Bureau.dire('assistant', t('bienvenue'), 5);
+      const parLui = Object.values(R()).some(x => x && x.source !== 'deduit');
+      if (REP.mode === 'adoption' && !parLui) Bureau.dire('assistant', t('reprends'), 8);
+      else if (Object.keys(R()).length) Bureau.dire('assistant', t('bienvenue'), 5);
       montrer(q);
     },
     suivis
