@@ -11,7 +11,7 @@
       "name": "studio-gamedev",
       "source": "./",
       "description": "Studio virtuel animé, questionnaire joué dans la page, roadmap avec succès et niveau, GDD, routage vers les skills de game dev.",
-      "version": "0.4.14",
+      "version": "0.4.15",
       "author": {
         "name": "xavfrech-dev"
       },

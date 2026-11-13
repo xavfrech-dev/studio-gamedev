@@ -90,3 +90,7 @@ body.app #rm-panneau .rm-discret{font-size:14px}
 .rm-legende{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.82em;margin:4px 0}.rm-legende span{display:inline-flex;align-items:center;gap:5px}.rm-legende i{width:14px;height:10px;border-radius:3px;display:inline-block}
 .rm-est{cursor:help;border-bottom:1px dotted rgba(92,79,63,.5)}
 
+
+/* P11 : un seul chiffre héros, le reste replié */
+.rm-heros{font-size:15px;margin:8px 0 4px;color:var(--rm-encre2)}.rm-heros b{font-size:26px;color:var(--rm-encre);margin-right:4px}
+.rm-details>summary{cursor:pointer;color:var(--rm-encre3);font-size:13px;margin:4px 0}

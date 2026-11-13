@@ -162,11 +162,12 @@
 
   function ls(k) { const l = (opts && opts.langue) || 'fr'; return (LIB_SEG[l] || LIB_SEG.fr)[k]; }
   function pile(a) { return `<div class="rm-pile" title="${ORDRE_SEG.map(k => ls(k) + ' ' + Math.round(a.seg[k]) + ' %').join(' · ')}">${ORDRE_SEG.map(k => a.seg[k] > 0 ? `<i class="rm-seg-${k}" style="width:${a.seg[k].toFixed(2)}%"></i>` : '').join('')}</div>`; }
-  function texteAv(a) { return `${a.avance} % ${ls('avance')} · ${a.valides}/${a.total} ${ls('valide')}${a.reste_n ? ` · ${ls('reste')} : ${a.reste_n} ${a.reste_n > 1 ? ls('taches') : ls('tache')}${a.reste_j ? `, ≈ ${a.reste_j} ${ls('j')}` : ''}${a.sans_estimation ? ` (${a.sans_estimation} ${ls('sans')})` : ''}` : ''}`; }
+  function texteAv(a) { return `${a.avance} % ${ls('avance')} · ${a.valides}/${a.total} ${ls('valide')}${a.reste_n ? ` · ${ls('reste')} : ${a.reste_n} ${a.reste_n > 1 ? ls('taches') : ls('tache')}${a.reste_j ? `, ≈ ${nb(a.reste_j)} ${ls('j')}` : ''}${a.sans_estimation ? ` (${a.sans_estimation} ${ls('sans')})` : ''}` : ''}`; }
   // temps restant : estimation de roadmap.json si présente, sinon effort restant pondéré (à faire 100 %, en cours 65 %, prêt 30 %)
   const RESTE_ST = { verse: 0, ecart: 0, pret: 0.3, en_cours: 0.65, a_faire: 1 };
   function baseHeures(taches) { return (taches || []).reduce((s, t) => s + ((Number(t && t.estimation_h) > 0 ? Number(t.estimation_h) : 8) * (RESTE_ST[t && t.statut] ?? 1)), 0); }
-  function duree(hh) { const x = +hh || 0; const u = (opts && opts.langue) === 'en' ? ['min', 'h', 'd'] : ['min', 'h', 'j']; if (x <= 0) return '0 ' + u[0]; if (x < 1) return Math.max(5, Math.round(x * 60 / 5) * 5) + ' ' + u[0]; if (x < 8) return Math.round(x * 2) / 2 + ' ' + u[1]; return Math.round(x / 8 * 2) / 2 + ' ' + u[2]; }
+  const nb = x => Number(x).toLocaleString((opts && opts.langue) === 'en' ? 'en' : 'fr', { maximumFractionDigits: 1 });   // « 5,5 j » en français
+  function duree(hh) { const x = +hh || 0; const u = (opts && opts.langue) === 'en' ? ['min', 'h', 'd'] : ['min', 'h', 'j']; if (x <= 0) return '0 ' + u[0]; if (x < 1) return Math.max(5, Math.round(x * 60 / 5) * 5) + ' ' + u[0]; if (x < 8) return nb(Math.round(x * 2) / 2) + ' ' + u[1]; return nb(Math.round(x / 8 * 2) / 2) + ' ' + u[2]; }
   function temps(e, taches) { const est = e || { reste_h: baseHeures(taches), estime: true }; return `≈ ${duree(est.reste_h)}${est.estime ? ((opts && opts.langue) === 'en' ? ' (estimated)' : ' (estimé)') : ''}`; }
   function legende() { return `<div class="rm-legende">${ORDRE_SEG.map(k => `<span><i class="rm-seg-${k}"></i>${esc(ls(k))}</span>`).join('')}</div>`; }
   function barre(pct, texte) { return `<div class="rm-xp"><i style="width:${Math.max(0, Math.min(100, pct)).toFixed(1)}%"></i><span>${esc(texte)}</span></div>`; }
@@ -209,11 +210,14 @@
     corps.innerHTML = `<div class="rm-surtitre">${esc(RM.projet || t('surtitre'))}</div>
       <h2>${esc(modeVoici ? t('voici') : t('titre'))}</h2>
       ${modeVoici ? `<p class="rm-voici">${esc(t('voici_aide'))}</p>` : ''}
+      <p class="rm-heros" title="${esc(t('heros_aide'))}"><b>${C.av.avance} %</b> ${esc(t('de_la_v1'))} · ${esc(temps(RM.estimation, C.jalons.flatMap(j => j.taches)))} ${esc(t('restants'))}</p>
+      <details class="rm-details"><summary>${esc(t('details'))}</summary>
       <div class="rm-tete"><div class="rm-embleme"><span>niv.</span><b>${C.niveau}</b></div><div style="flex:1;min-width:0">
         <div class="rm-rang">${esc(C.rang || t('niveau'))}</div>
         ${barre(pcXp, `${C.xp - C.xp_niveau} / ${C.xp_suivant - C.xp_niveau} ${t('xp_vers')} ${C.niveau + 1}`)}
         <p class="rm-discret">${esc(t('avancement'))}${dp()} ${C.faites} / ${C.total} ${esc(t('taches'))} (${C.pct} %) · ${C.fermes} / ${C.jalons.length} ${esc(t('jalon').toLowerCase())}s · ★ ${gagnes.length} / ${tous}${C.heures ? ` · ${Math.round(C.heures - C.heures_faites)} ${esc(t('heures'))} ${esc(t('estimation'))}` : ''}</p></div></div>
       ${pile(C.av)}<p class="rm-discret">${esc(texteAv(C.av))} · <span class="rm-est" title="${esc(RM.estimation && RM.estimation.fin ? RM.estimation.fin.replace('T', ' ') : '')}">${esc(temps(RM.estimation, C.jalons.flatMap(j => j.taches)))}</span></p>${legende()}
+      </details>
       <div class="rm-frise" aria-hidden="true">${C.jalons.map(j => `<span class="${j.ferme ? 'ok' : C.en_cours && C.en_cours.id === j.id ? 'cours' : ''}" style="flex:${Math.max(1, j.total)}"><i style="width:${j.av.avance}%"></i><em>${esc(j.id)}</em></span>`).join('')}</div>
       ${C.jalons.map(vJalon).join('')}
       ${RM.succes_final ? `<h3 class="rm-x">${esc(t('succes_titre'))}</h3><div class="rm-badge${C.finie || RM.succes_final.obtenu_le ? ' ok' : ''}"><span class="bi">${C.finie || RM.succes_final.obtenu_le ? icone(RM.succes_final.icone) : '🔒'}</span><span><b>${esc(RM.succes_final.titre)}</b><small>${esc(RM.succes_final.description || '')}</small></span></div>` : ''}

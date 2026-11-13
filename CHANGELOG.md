@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.15] - 2026-11-13
+
+### Modifié
+- Roadmap (P11) : un seul chiffre en tête, « X % de la version 1 · ≈ N j restants » (le même que « Version 1 », pondéré par les durées, expliqué au survol) ; tâches, jalons, niveau et XP repliés sous « Détails » ; durées avec la virgule en français (« 5,5 j »).
+- Décisions (P13) : fenêtre étroite ; on voit qui demande et ce qui l'attend ; choix en cartes numérotées, touches 1 à 9 au clavier ; la ★ dit « la réponse recommandée par l'assistant ».
+- Accessibilité (P18) : la scène est dans un `<main>`, le groupe est une liste ; chaque membre est lu en mots (« au travail », « en attente »…), les pictogrammes sont cachés aux lecteurs d'écran.
+- Couleurs d'état (P19) : un jeton par état (`--etat-travaille`, `--etat-attend`…) partagé par le groupe et la scène.
+
 ## [0.4.14] - 2026-11-13
 
 ### Modifié
