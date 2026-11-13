@@ -150,7 +150,8 @@ body.questionnaire #indice{display:none}
 .liste-dec{display:flex;flex-direction:column;gap:6px;margin:6px 0}.liste-dec button{text-align:left}
 @media (max-width:640px){.form-rec{grid-template-columns:1fr}.mur{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}}
 /* conversation avec l'assistant (fil) */
-.fil{display:flex;flex-direction:column;gap:8px;max-height:58vh;overflow:auto;padding:6px 2px 10px;margin:6px 0 10px;border-bottom:1px solid rgba(92,79,63,.2)}
+.fil .md p{margin:.3em 0}.fil .md pre{max-height:300px;overflow:auto}.fil .md h2,.fil .md h3,.fil .md h4{margin:.4em 0;font-size:1.05em}
+.fil{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 330px);overflow:auto;padding:6px 2px 10px;margin:6px 0 10px;border-bottom:1px solid rgba(92,79,63,.2)}
 .fil .msg{max-width:78%;padding:8px 12px;border-radius:12px;background:#fffdf6;border:1px solid rgba(92,79,63,.22);box-shadow:0 2px 6px rgba(80,60,30,.08)}
 .fil .msg p{margin:2px 0 0;white-space:pre-wrap}
 .fil .msg small{font:600 11px var(--sans);letter-spacing:.04em;color:var(--encre3)}
@@ -337,7 +338,7 @@ const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message |
 
 // ====================================================================== textes de l'interface
 const TXT = {
-  fr: { tout_rallumer: 'Tout rallumer', rallume_ok: 'Tout rallumé : les automatismes reprennent comme avant.', pause_depuis: 'Automatismes en pause depuis', regle: 'réglé', nouvelle: 'dernière nouvelle de l’agent :', il_y_a: 'il y a {m} min', a_l_instant: 'à l’instant', app_aucune: 'aucun', app_casque: 'casque', app_casquette: 'casquette', app_beret: 'béret', app_lunettes: 'lunettes', app_chapeau: 'chapeau', app_casque_audio: 'casque audio', app_barbe: 'barbe', a_bureau: 'Le bureau du studio', a_v1: 'Avancement pondéré de la roadmap', a_niveau: 'Niveau du studio', a_outils: 'Outils', a_couper: 'Tout couper', a_reglages: 'Réglages', a_son: 'Son', a_notifs: 'Notifications', a_equipe: 'L\'équipe', a_fermer: 'Fermer', a_chat: 'Chat', a_micro_t: 'Parler au studio (ou barre d\'espace maintenue)', a_micro: 'Parler au studio', a_zoom_t: 'Zoomer (molette)', a_zoom: 'Zoomer', a_dezoom: 'Dézoomer', a_recentrer: 'Recentrer', modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Le plus fort (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : surveille processeur, mémoire, disque et carte graphique ; retarde les automatismes quand la machine sature', sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Mode nuit', je_suis_la: 'Je suis là', nuit_on: 'Mode nuit : plus aucune notification ; le studio continue et note tout', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+  fr: { role_temporaire: 'Rôle temporaire (sa tâche d’origine reste réservée)', point_journal: 'Nouveau point (rangé dans le journal : un point est déjà ouvert ou vient d’être lu)', points_anciens: '{n} point(s) plus ancien(s) dans le journal', conv_cc: 'La même conversation que dans Claude Code, lue sur cette machine (jamais envoyée ailleurs). Entrée : envoyer · Maj+Entrée : retour à la ligne.', tout_rallumer: 'Tout rallumer', rallume_ok: 'Tout rallumé : les automatismes reprennent comme avant.', pause_depuis: 'Automatismes en pause depuis', regle: 'réglé', nouvelle: 'dernière nouvelle de l’agent :', il_y_a: 'il y a {m} min', a_l_instant: 'à l’instant', app_aucune: 'aucun', app_casque: 'casque', app_casquette: 'casquette', app_beret: 'béret', app_lunettes: 'lunettes', app_chapeau: 'chapeau', app_casque_audio: 'casque audio', app_barbe: 'barbe', a_bureau: 'Le bureau du studio', a_v1: 'Avancement pondéré de la roadmap', a_niveau: 'Niveau du studio', a_outils: 'Outils', a_couper: 'Tout couper', a_reglages: 'Réglages', a_son: 'Son', a_notifs: 'Notifications', a_equipe: 'L\'équipe', a_fermer: 'Fermer', a_chat: 'Chat', a_micro_t: 'Parler au studio (ou barre d\'espace maintenue)', a_micro: 'Parler au studio', a_zoom_t: 'Zoomer (molette)', a_zoom: 'Zoomer', a_dezoom: 'Dézoomer', a_recentrer: 'Recentrer', modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Le plus fort (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : surveille processeur, mémoire, disque et carte graphique ; retarde les automatismes quand la machine sature', sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Mode nuit', je_suis_la: 'Je suis là', nuit_on: 'Mode nuit : plus aucune notification ; le studio continue et note tout', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
     travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
@@ -366,7 +367,7 @@ const TXT = {
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Alimentation arrêtée depuis {m} min : la page calcule l’état elle-même (relance studio_etat.py ou veille_studio.py).', illisible: 'Fichier illisible ignoré' },
-  en: { tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar)', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Strongest (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'Night mode', je_suis_la: 'I’m back', nuit_on: 'Night mode: no more notifications; the studio keeps going and logs everything', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+  en: { role_temporaire: 'Temporary role (the original task stays reserved)', point_journal: 'New report (kept in the log: a report is already open or was just read)', points_anciens: '{n} older report(s) in the log', conv_cc: 'The same conversation as in Claude Code, read on this machine (never sent anywhere). Enter: send · Shift+Enter: new line.', tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar)', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Strongest (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'Night mode', je_suis_la: 'I’m back', nuit_on: 'Night mode: no more notifications; the studio keeps going and logs everything', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
@@ -643,7 +644,8 @@ function majEntete() {
   majNiveau();
 }
 // ouverte : pas de réponse dans reponses.json et pas fermée par l'assistant (statut « repondue », « reglee »… après une réponse dans le chat)
-const decisionsOuvertes = () => DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(r => r && r.id === d.id) && (!d.statut || ['ouverte', 'en_attente'].includes(d.statut)));
+const decisionsOuvertes = () => { const r = (window.__tyrRemonter ? window.__tyrRemonter() : []);
+  return DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(x => x && x.id === d.id) && (!d.statut || ['ouverte', 'en_attente'].includes(d.statut))).sort((a, b) => (r.includes(a.id) ? 0 : 1) - (r.includes(b.id) ? 0 : 1)); };
 function verifierDecisions() {
   const l = decisionsOuvertes(), b = $('#bt-decisions');
   b.hidden = !l.length; $('#nb-decisions').textContent = l.length ? String(l.length) : ''; b.classList.toggle('sonne', !!l.length);
@@ -675,6 +677,28 @@ function ouvrirDecision(d) {
   }, { large: true });
 }
 function ouvrirCloche() { const l = decisionsOuvertes(); if (l.length) l.forEach(ouvrirDecision); else toast(esc(t('rien_cloche')), { duree: 2500 }); }
+function md(src) {
+  // Markdown simple → HTML sûr : tout est échappé, seuls titres, listes, gras/italique, code, tableaux et liens http(s) sont rendus
+  const ligne = t => esc(t).replace(/`([^`]+)`/g, '<code class="mono">$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*]+)\*/g, '$1<i>$2</i>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, txt, url) => `<a href="${url.replace(/"/g, '&quot;')}" target="_blank" rel="noopener">${txt}</a>`);
+  const L = String(src || '').replace(/\r/g, '').split('\n'), out = []; let i = 0;
+  while (i < L.length) {
+    const l = L[i];
+    if (/^\s*```/.test(l)) { const b = []; i++; while (i < L.length && !/^\s*```/.test(L[i])) b.push(esc(L[i++])); i++; out.push(`<pre class="mono" style="white-space:pre-wrap">${b.join('\n')}</pre>`); continue; }
+    let m = l.match(/^(#{1,4})\s+(.*)$/); if (m) { const n = Math.min(4, m[1].length + 1); out.push(`<h${n}>${ligne(m[2])}</h${n}>`); i++; continue; }
+    if (/^\s*\|.*\|\s*$/.test(l) && i + 1 < L.length && /^\s*\|?\s*:?-{2,}/.test(L[i + 1])) {
+      const cel = r => r.trim().replace(/^\||\|$/g, '').split('|').map(x => x.trim());
+      const tete = cel(l); i += 2; const rows = []; while (i < L.length && /^\s*\|.*\|\s*$/.test(L[i])) rows.push(cel(L[i++]));
+      out.push(`<table class="tableau"><tr>${tete.map(c => `<th>${ligne(c)}</th>`).join('')}</tr>${rows.map(r => `<tr>${r.map(c => `<td>${ligne(c)}</td>`).join('')}</tr>`).join('')}</table>`); continue;
+    }
+    if (/^\s*([-*]|\d+[.)])\s+/.test(l)) { const ord = /^\s*\d/.test(l), items = []; while (i < L.length && /^\s*([-*]|\d+[.)])\s+/.test(L[i])) items.push(L[i++].replace(/^\s*([-*]|\d+[.)])\s+/, '')); out.push(`<${ord ? 'ol' : 'ul'} class="md-liste">${items.map(x => `<li>${ligne(x)}</li>`).join('')}</${ord ? 'ol' : 'ul'}>`); continue; }
+    if (!l.trim()) { i++; continue; }
+    const para = []; while (i < L.length && L[i].trim() && !/^(#{1,4}\s|\s*([-*]|\d+[.)])\s|\s*\||\s*```)/.test(L[i])) para.push(ligne(L[i++]));
+    out.push(`<p>${para.join('<br>')}</p>`);
+  }
+  return out.join('');
+}
+
 function blocTexte(id) {
   return `<textarea id="${id}" maxlength="2000" placeholder="${esc(t('ecrire_demande'))}"></textarea>
     <div class="rangee">${boutonMicro('#' + id)}<button type="button" class="btp" data-envoyer>${esc(t('envoyer'))}</button><span class="discret" data-res></span></div>`;
@@ -864,11 +888,12 @@ document.addEventListener('click', async e => {
 });
 function ficheHaut(p, e) {
   const m = p.modele && p.modele !== 'inherit' ? ` · ${esc(t('modele_t'))} : ${esc(p.modele)}` : '';
+  const tp = (LS.get('tyr_temporaires', {}) || {})[p.id], tmp = tp && Date.now() - tp.t < 6 * 3600000 ? `<p class="discret" style="margin:0"><b>${esc(t('role_temporaire'))} :</b> ${esc(tp.titre)} · ${esc(tp.raison)}</p>` : '';
   return `${p.role || m ? `<p style="margin:0">${p.role ? `<b>${esc(t('role'))} :</b> ${esc(p.role)}` : ''}${Array.isArray(p.metiers) && p.metiers.length ? ' · ' + p.metiers.map(x => esc(t('m_' + x))).join(', ') : ''}${m}</p>` : ''}
       ${e.pct !== null ? `<div class="barre"><i style="width:${e.pct}%"></i><span>${Math.round(e.pct)} %${e.reste !== null || e.etat === 'travaille' ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}</span></div>` : ''}
       <p style="margin:0">${esc(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
       ${e.texte && e.texte !== e.ligne.texte ? `<p class="discret" style="margin:0">${esc(e.texte)}</p>` : ''}
-      ${e.nouvelle ? `<p class="discret" style="margin:0">${esc(nouvelleTxt(e))}</p>` : ''}`;
+      ${e.nouvelle ? `<p class="discret" style="margin:0">${esc(nouvelleTxt(e))}</p>` : ''}${tmp}`;
 }
 function ficheEtapes(e) { return e.restantes.length ? `<ol class="etapes">${e.restantes.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('aucune_etape'))}</p>`; }
 // tic de 5 s : l'équipe, la fiche ouverte (sans toucher aux champs) et la vue d'ensemble suivent la barre interpolée
@@ -1136,6 +1161,28 @@ const FinTache = (() => {
 // l'assistant (reponses_assistant.json), décisions (avec leurs choix cliquables tant qu'elles sont ouvertes). Le fil n'est
 // redessiné que s'il change ; le brouillon en cours est gardé. Filet : une réponse de l'assistant qui finit par une question
 // sans décision créée dans la minute -> bulle « L'assistant te pose une question » au-dessus de lui (clic = ce fil).
+// Conversation de Claude Code : /api/conversation lit le transcript de la session (fin du fichier seulement, en local),
+// toutes les 2,5 s quand le panneau Conversation est ouvert ; seulement le texte de l'utilisateur et de l'assistant.
+const CC = { offset: null, fichier: null, msgs: [], enCours: false };
+async function majCC() {
+  if (CC.enCours) return; CC.enCours = true;
+  try {
+    const r = await fetch('/api/conversation' + (CC.offset !== null ? `?depuis=${CC.offset}&fichier=${encodeURIComponent(CC.fichier || '')}` : ''), { cache: 'no-store' }).then(x => x.json());
+    if (r && r.ok) { if (r.debut || r.fichier !== CC.fichier) CC.msgs = []; CC.fichier = r.fichier; CC.offset = r.offset;
+      const vus = new Set(CC.msgs.map(m => m.id)); for (const m of r.messages || []) if (!vus.has(m.id)) CC.msgs.push(m); CC.msgs = CC.msgs.slice(-300); }
+  } catch (e) { /* hors ligne : on garde ce qu'on a */ } finally { CC.enCours = false; }
+}
+// réponse d'une question, d'où qu'elle vienne (cloche, fil, ou fermée par l'assistant après une réponse dans le chat) ; null = ouverte
+function reponseDec(d, r) {
+  const lib = id => { const c = (Array.isArray(d.choix) ? d.choix : []).find(x => (typeof x === 'string' ? x : x.id) === id); return c ? (typeof c === 'string' ? c : c.libelle || c.id) : id; };
+  if (r) return [r.choix ? lib(r.choix) : '', r.texte_libre || ''].filter(Boolean).join(' · ') || t('repondu');
+  if (d.statut && !['ouverte', 'en_attente'].includes(d.statut)) return d.reponse ? (typeof d.reponse === 'object' ? [lib(d.reponse.choix || ''), d.reponse.texte_libre || ''].filter(Boolean).join(' · ') : lib(String(d.reponse))) : t('regle');
+  return null;
+}
+setInterval(() => { if (Panneau.ouvert() === 'conv' && !document.hidden) majCC().then(() => Conv.maj()); }, 2500);
+window.__diag = () => Tyrannie.diagnostics();   // essais
+window.__bloques = () => Tyrannie.bloques();
+window.__cc = () => ({ n: CC.msgs.length, offset: CC.offset, fichier: CC.fichier, dernier: CC.msgs.slice(-1)[0] });   // essais
 const Conv = (() => {
   let sig = '', question = null; const MES = LS.get('mes_messages', []);
   const date = s => { const v = Date.parse(String(s || '')); return Number.isFinite(v) ? v : 0; };
@@ -1145,28 +1192,35 @@ const Conv = (() => {
     for (const m of MES) msg.set(m.id, { genre: 'moi', id: m.id, t: m.t, texte: m.texte, cible: m.cible, statut: 'nouvelle' });
     for (const m of (ETAT && Array.isArray(ETAT.messages) ? ETAT.messages : [])) if (m && m.texte) msg.set(m.id, { genre: 'moi', id: m.id, t: date(m.cree_le) || (msg.get(m.id) || {}).t || 0, texte: m.texte, cible: m.cible, statut: m.statut });
     const l = [...msg.values()];
-    for (const m of REP_ASSIST) if (m && m.texte) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000) });
-    for (const d of DECISIONS) if (d && d.id) { const r = REPONSES_DEC.find(x => x && x.id === d.id); l.push({ genre: 'question', id: 'd:' + d.id, t: date(d.cree_le), d, r }); }
+    if (CC.msgs.length) { const t0 = Math.min(...CC.msgs.map(m => date(m.t) || Date.now()));   // la conversation de Claude Code fait foi
+      for (const m of CC.msgs) l.push({ genre: m.role === 'utilisateur' ? 'cc_moi' : 'cc_lui', id: 'cc:' + m.id, t: date(m.t), texte: m.texte });
+      for (let k = l.length - 1; k >= 0; k--) if (l[k].genre === 'moi' && l[k].t && l[k].t < t0) l.splice(k, 1); }
+    else for (const m of REP_ASSIST) if (m && m.texte) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000) });
+    const rem = (window.__tyrRemonter ? window.__tyrRemonter() : []);
+    for (const d of DECISIONS) if (d && d.id) { const r = REPONSES_DEC.find(x => x && x.id === d.id); l.push({ genre: 'question', id: 'd:' + d.id, t: rem.includes(d.id) && !r ? Date.now() : date(d.cree_le), d, r }); }
     return l.sort((a, b) => a.t - b.t).slice(-80);
   }
   function rendreFil(z) {
     const l = elements(), dernier = l[l.length - 1];
     const statut = s => ({ nouvelle: t('depose'), prise: t('lu'), faite: t('traite') })[s] || '';
-    z.innerHTML = l.length ? l.map(x => x.genre === 'moi'
+    const enBas = !z._vu || z.scrollTop + z.clientHeight >= z.scrollHeight - 60, haut = z.scrollTop; z._vu = true;
+    z.innerHTML = l.length ? l.map(x => x.genre === 'cc_moi' ? `<div class="msg moi"><small>${esc(t('toi'))} · ${esc(heure(x.t))}</small><div class="md">${md(x.texte)}</div></div>`
+      : x.genre === 'cc_lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><div class="md">${md(x.texte)}</div></div>`
+      : x.genre === 'moi'
       ? `<div class="msg moi"><small>${esc(t('toi'))}${x.cible && x.cible !== 'assistant' ? ' → ' + esc(x.cible) : ''} · ${esc(heure(x.t))}${statut(x.statut) ? ' · ' + esc(statut(x.statut)) : ''}</small><p>${esc(x.texte)}</p></div>`
       : x.genre === 'lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><p>${esc(x.texte)}</p><details class="rep-lien"><summary>${esc(t('repondre'))}</summary>${blocRepondre('fil-' + x.id, x.id.replace(/^r:/, ''))}</details></div>`
       : `<div class="msg lui question" data-dec="${esc(x.d.id)}"><small>${esc(t('decision'))} · ${esc(heure(x.t))}</small><p><b>${esc(x.d.titre || '')}</b></p>${x.d.explication ? `<p>${esc(x.d.explication)}</p>` : ''}
-          ${x.r ? `<p class="discret">✓ ${esc(t('repondu'))} : ${esc(x.r.choix || x.r.texte_libre || '')}</p>` : `<div class="choix-dec">${boutonsChoix(x.d)}</div>`}</div>`).join('')
+          ${reponseDec(x.d, x.r) !== null ? `<p class="discret">✓ ${esc(t('regle'))} : ${esc(reponseDec(x.d, x.r))}</p>` : `<div class="choix-dec">${boutonsChoix(x.d)}</div>`}</div>`).join('')
       + (dernier && dernier.genre === 'lui' && /\?\s*["»)]*\s*$/.test(dernier.texte) ? `<p class="discret">${esc(t('reponds_ici'))}</p>` : '')
       : `<p class="vide">${esc(t('rien_conv'))}</p>`;
     z.querySelectorAll('[data-dec]').forEach(b => b.querySelectorAll('[data-c]').forEach(c => c.onclick = () => { const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) repondreDecision(d, c.dataset.c, ''); }));
-    z.scrollTop = z.scrollHeight;
+    z.scrollTop = enBas ? z.scrollHeight : haut;   // en bas, sauf si on a remonté pour relire
   }
-  const signature = () => JSON.stringify(elements().map(x => [x.id, x.statut || '', x.r ? 1 : 0]));
+  const signature = () => JSON.stringify(elements().map(x => [x.id, x.statut || '', x.r ? 1 : 0, x.d ? x.d.statut || '' : '']));
   function ouvrir() {
     sig = '';
     Panneau.montrer('conv', el => {
-      el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><div class="fil" data-fil></div>${blocTexte('conv-texte')}`;
+      el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><p class="discret">${esc(t('conv_cc'))}</p><div class="fil" data-fil></div>${blocTexte('conv-texte')}`;
       lierMicros(el); rendreFil(el.querySelector('[data-fil]')); sig = signature();
       const b = el.querySelector('[data-envoyer]'), ta = el.querySelector('#conv-texte');
       b.onclick = async () => {
@@ -1174,7 +1228,9 @@ const Conv = (() => {
         b.disabled = true;
         try { const r = await posterFond('/api/demande', { cible: 'assistant', texte: txt, via: ta.dataset.via || 'ecrit' }); envoye(r.id, 'assistant', txt); ta.value = ''; Son.clic(); } catch (e) { /* toast */ } finally { b.disabled = false; }
       };
-    }, { large: true });
+      ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); b.click(); } });   // comme Claude Code
+      majCC().then(maj);
+    });
     question = null; majPastille();
   }
   function maj() {
@@ -1236,8 +1292,17 @@ function verifierRapport() {
   const t0 = Date.parse(String(RAPPORT.heure)), vieux = Number.isFinite(t0) && Date.now() - t0 > 30 * 60000;
   if (!LS.get('rapports_init', false)) { LS.set('rapports_init', true); if (vieux) { LS.set('rapports_vus', [cle]); return; } }  // premier passage : on ne rejoue pas un vieux rapport
   LS.set('rapports_vus', vus.concat(cle).slice(-60));
+  // un seul point en plein cadre à la fois : à moins de 15 min du précédent (ou s'il est encore ouvert), le nouveau va au journal, sans cloche
+  const ouvert = String(Panneau.ouvert() || '').startsWith('rapport:');
+  if (ouvert || Date.now() - (+LS.get('point_t', 0) || 0) < 15 * 60000) {
+    LS.set('points_journal', (+LS.get('points_journal', 0) || 0) + 1);
+    Notifs.ajouter({ id: 'point-' + cle, type: 'info', titre: t('point_journal'), ligne: String(RAPPORT.heure).replace(/^\d{4}-\d{2}-\d{2}T/, '').slice(0, 5), cible: {} }, true);
+    return;
+  }
+  LS.set('point_t', Date.now()); const n = +LS.get('points_journal', 0) || 0; LS.set('points_journal', 0);
   Bureau.dire('assistant', t('nouveau_rapport'), 4); Son.cloche();
   ouvrirRapport();
+  if (n > 0) toast(esc(tf('points_anciens', { n })), { duree: 6000 });
 }
 // décision ouverte qui correspond à une ligne « à décider » : par id, sinon par le texte (l'un contient l'autre)
 function decisionDe(d) {
@@ -1435,8 +1500,11 @@ const Bureau = (() => {
     return theme.th || themeBase();
   }
   function themeBase() { const th = CONF.theme || {}; const c = v => /^#[0-9a-f]{6}$/i.test(v || '') ? v : null; return { sol: c(th.sol) || '#8a6a48', sol2: c(th.sol2) || '#7d5f40', mur: c(th.mur) || '#d9c9a6', accent: c(th.accent) || '#b98532', bois: c(th.bois) || '#a0744a' }; }
-  function ciel() { const h = new Date().getHours() + new Date().getMinutes() / 60; return h < 6 || h > 21 ? ['#1d2440', '#2e3a63'] : h < 8 || h > 19 ? ['#f0a46a', '#7c8fc0'] : ['#9cc7ea', '#dcecf7']; }
-  const nuit = () => { const h = new Date().getHours(); return h < 6 || h > 21; };
+  // ?heure=14 : aperçu à une autre heure (jour, crépuscule, nuit), comme ?palier=N
+  const HEURE_APERCU = (() => { const v = parseFloat(new URLSearchParams(location.search).get('heure')); return Number.isFinite(v) && v >= 0 && v < 24 ? v : null; })();
+  const heureDuJour = () => HEURE_APERCU !== null ? HEURE_APERCU : new Date().getHours() + new Date().getMinutes() / 60;
+  function ciel() { const h = heureDuJour(); return h < 6 || h > 21 ? ['#1d2440', '#2e3a63'] : h < 8 || h > 19 ? ['#f0a46a', '#7c8fc0'] : ['#9cc7ea', '#dcecf7']; }
+  const nuit = () => { const h = Math.floor(heureDuJour()); return h < 6 || h > 21; };
 
   // ---------- personnages rendus (sprites.js) avec repli vectoriel tant qu'ils chargent
   // Échelle : 1,6 × le rendu de référence, pour des personnages lisibles et un clavier à hauteur de bureau (1,36).
@@ -2150,7 +2218,7 @@ $('#z-plus').onclick = () => Bureau.zoomer(1.25);
 $('#z-moins').onclick = () => Bureau.zoomer(1 / 1.25);
 $('#z-cadre').onclick = () => Bureau.recadrer();
 $('#bt-plein').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
-setInterval(() => { const d = new Date(), h = $('#horloge'); if (h) h.innerHTML = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>';
+setInterval(() => { const d = new Date(), h = $('#horloge'); { const q = parseFloat(new URLSearchParams(location.search).get('heure')); if (Number.isFinite(q) && q >= 0 && q < 24) d.setHours(Math.floor(q), Math.round((q % 1) * 60)); }   /* ?heure= : aperçu */ if (h) h.innerHTML = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>';
   const r = RM_C, pc = r && r.av && Number.isFinite(r.av.avance) ? r.av.avance : r && Number.isFinite(r.pct) ? r.pct : null; $('#v1-pct').textContent = pc === null ? '—' : pc + ' %'; $('#v1-plein').style.width = (pc || 0) + '%'; $('#v1').hidden = CONF.mode !== 'travail'; }, 1000);
 $('#bt-journal').onclick = () => ouvrirJournal();
 $('#bt-optim').onclick = () => ouvrirOptimisation();
@@ -2254,12 +2322,86 @@ const Tyrannie = (() => {
     return e.etat === 'attend' && !!ep && !(Array.isArray(ep.demandes) && ep.demandes.length) && (nombre(ep.calme_min) === null || nombre(ep.calme_min) >= 10); } catch (err) { return false; } }); }
   function occupation() { const l = postes(); if (!l.length) return 0; return Math.round(100 * (l.length - inactifs().length) / l.length); }
   const pique = () => { const l = PIQUES[LANGUE] || PIQUES.en; return l[(Math.random() * l.length) | 0]; };
-  let derniere = 0, sig = '', fileMoteur = false;
+  let derniere = 0, sig = '', fileMoteur = false, sigDiag = '', DIAG = [], diagT = 0;
+  // Diagnostic d'un agent bloqué (marqué bloqué, figé 10 min sans finir, ou étape qui dit « bloqué / attend ») : pourquoi, et quoi faire.
+  // Ordre : ta décision, le moteur (place dans la file), un outil lourd déjà ouvert, un autre agent, un fichier, la machine, une erreur, le silence.
+  const FR = () => LANGUE === 'fr';
+  function diagnostic(p, file) {
+    const ep = etatFrais() && ETAT.postes.find(x => x && x.id === p.id) || {}, pr = PROG[p.id] || {};
+    const txt = [pr.etape, pr.texte, pr.bloque_raison, ep.texte, ep.tache].filter(Boolean).join(' '), bas = txt.toLowerCase();
+    const moi = [p.id, nomPoste(p)].map(x => String(x).toLowerCase());
+    const dec = decisionsOuvertes().find(d => [d.poste, d.agent, d.pour, d.qui].some(k => k && moi.includes(String(k).toLowerCase())))
+      || (/\b(ta décision|ta réponse|ton avis|your decision|your answer)\b/i.test(txt) ? decisionsOuvertes()[0] : null);
+    if (dec) return { type: 'decision', decision: dec.id, raison: (FR() ? 'attend ta décision « ' : 'waiting for your decision “') + String(dec.titre || dec.question || dec.id).slice(0, 70) + (FR() ? ' »' : '”'), action: FR() ? 'je remonte la question en haut de la cloche et du fil' : 'I move the question to the top of the bell and the chat' };
+    const moteur = String((CONF.moteur && CONF.moteur.nom) || '').toLowerCase();
+    if (/\b(moteur|engine|compil|build|shader)\b/.test(bas) || (moteur && bas.includes(moteur))) {
+      const place = (file.indexOf(p.id) + 1) || file.length + 1, occupe = !!(ETAT && (ETAT.chaine_active || (ETAT.outils_lourds || []).some(o => o.ouvert)));
+      return { type: 'moteur', raison: (FR() ? `attend le moteur (place ${place} dans la file${occupe ? ' ; il est occupé' : ' ; il est libre'})` : `waiting for the engine (place ${place} in the queue${occupe ? '; it is busy' : '; it is free'})`), action: occupe ? (FR() ? 'je le laisse dans la file' : 'I keep it in the queue') : (FR() ? 'le moteur est libre : je demande qu’on lui donne la main' : 'the engine is free: I ask to hand it over') };
+    }
+    const lourd = ((ETAT && ETAT.outils_lourds) || []).find(o => o.ouvert && bas.includes(String(o.nom).toLowerCase()) && o.poste !== p.id);
+    if (lourd) return { type: 'outil', raison: (FR() ? `attend ${lourd.nom} (déjà ouvert : un seul à la fois)` : `waiting for ${lourd.nom} (already open: one at a time)`), action: FR() ? 'il passera quand il sera libre' : 'it will go when it is free' };
+    for (const o of postes()) {
+      if (o.id === p.id) continue;
+      const noms = [o.id, nomPoste(o)].filter(x => String(x).length >= 4).map(x => String(x).toLowerCase());
+      // seulement une attente explicite suivie du nom (« attend X », « en attente de X », « bloqué par X », « waiting for X »)
+      const echappe = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (noms.some(x => new RegExp("(?:\\battend(?:s|re|ent)?|\\ben attente d[eu']?|\\bbloqu[ée]e?s? par|\\bwaiting for|\\bblocked by)\\s+(?:le |la |les |l'|du |de |the )?" + echappe(x) + "\\b", 'i').test(bas))) return { type: 'agent', relancer: o.id, raison: (FR() ? 'attend ' : 'waiting for ') + nomPoste(o), action: (FR() ? 'je relance ' : 'I nudge ') + nomPoste(o) };
+    }
+    const f = txt.match(/(?:attend|manque|introuvable|absent|missing|waiting for)\w*\s+(?:le |la |les |l'|the )?(?:fichier\s+|file\s+)?[`«"]?([\w./\\-]+\.(?:json|png|fbx|glb|gltf|tscn|unity|uasset|csv|md|txt|blend|wav|ogg))/i);
+    if (f) return { type: 'fichier', raison: (FR() ? 'attend le fichier ' : 'waiting for file ') + f[1], action: FR() ? 'je demande qui doit le produire' : 'I ask who should produce it' };
+    if (ETAT && ETAT.sante && ETAT.sante.sature) return { type: 'machine', lien: 'sante', raison: (FR() ? 'machine saturée : ' : 'machine saturated: ') + String((ETAT.sante.alertes || [])[0] || ''), action: FR() ? 'voir Santé du PC' : 'see PC health' };
+    const j = (Array.isArray(pr.journal) ? pr.journal.slice(-5).map(x => typeof x === 'object' ? x.t || x.texte || '' : String(x)) : []).concat([txt]);
+    const err = j.reverse().find(x => /erreur|error|échec|failed|exception|traceback|crash/i.test(x));
+    if (err) return { type: 'erreur', raison: (FR() ? 'erreur : ' : 'error: ') + String(err).slice(0, 110), action: FR() ? 'je dépose le diagnostic pour qu’on corrige' : 'I file the diagnosis so it gets fixed' };
+    const m = nombre(ep.calme_min);
+    return { type: 'silence', raison: FR() ? `plus de nouvelles depuis ${m !== null ? m + ' min' : 'longtemps'}, sans raison connue` : `no news for ${m !== null ? m + ' min' : 'a while'}, no known reason`, action: FR() ? 'je propose de le relancer' : 'I suggest restarting it' };
+  }
+  function bloques() {
+    return postes().filter(p => { try { const e = etatPoste(p), ep = etatFrais() && ETAT.postes.find(x => x && x.id === p.id) || {}, pr = PROG[p.id] || {};
+      const txt = [pr.etape, pr.texte, ep.texte].filter(Boolean).join(' '), calme = nombre(ep.calme_min);
+      if (e.pct !== null && e.pct >= 100) return false;            // 100 % : fini, en attente d'une tâche, jamais « bloqué »
+      if (pr.bloque) return true;                                    // l'agent le dit lui-même
+      if (calme !== null && calme < 20) return false;               // nouvelles depuis moins de 20 min : jamais « bloqué »
+      return e.etat === 'bloque' || (e.pct !== null && calme !== null && e.etat !== 'disponible') || /bloqu|attend|blocked|waiting/i.test(txt);
+    } catch (err) { return false; } });
+  }
+  function diagnostics() {
+    const l = bloques(), file = l.filter(p => { const pr = PROG[p.id] || {}; return /\b(moteur|engine|compil|build|shader)\b/i.test([pr.etape, pr.texte].join(' ')); }).map(p => p.id);
+    return l.map(p => Object.assign({ id: p.id, nom: nomPoste(p) }, diagnostic(p, file)));
+  }
+  window.__tyrRemonter = () => DIAG.filter(x => x.decision).map(x => x.decision);
   async function tour() {
     if (!active()) return;                                          // aussi onglet caché ou navigateur réduit (la nuit)
     const tous = inactifs(), l = tous.filter(p => { try { return FinTache.candidats(p.id).length > 0; } catch (e) { return true; } });
     fileMoteur = tous.length > 0 && !l.length;                       // tout le reste attend le moteur : on laisse souffler
-    if (l.length) { const p = l[(Math.random() * l.length) | 0]; try { Bureau.visiter(p.id, pique()); } catch (e) {} }
+    DIAG = diagnostics();
+    // attente longue (moteur, décision, autre agent, fichier, outil lourd) : une autre tâche faisable tout de suite, en rôle temporaire ;
+    // sa tâche d'origine reste réservée. Une par agent et par heure ; le serveur garde le plafond de 6 par heure.
+    const TEMPO = LS.get('tyr_temporaires', {});
+    for (const dg of DIAG) {
+      if (!['moteur', 'decision', 'agent', 'fichier', 'outil'].includes(dg.type) || (TEMPO[dg.id] && Date.now() - TEMPO[dg.id].t < 3600000)) continue;
+      let cands = []; try { cands = FinTache.candidats(dg.id).filter(c => { const tc = TACHES.find(x => x.id === c.tache_id) || {}; return tc.sans_moteur !== false && tc.moteur !== true; }); } catch (e) { cands = []; }
+      const pr = PROG[dg.id] || {}, c = cands.find(x => x.tache_id !== pr.tache && !(LS.get('taches_confiees', []) || []).includes(x.tache_id)); if (!c) continue;   // pas sa tâche bloquée, pas une tâche déjà donnée
+      LS.set('taches_confiees', (LS.get('taches_confiees', []) || []).concat(c.tache_id).slice(-300));
+      const origine = String(pr.etape || pr.texte || '').slice(0, 90);
+      const mission = (FR() ? `Rôle temporaire pendant que tu attends : ${dg.raison}.\n` : `Temporary role while you wait: ${dg.raison}.\n`) + c.mission
+        + (FR() ? `\nTa tâche d'origine reste réservée pour toi : ${origine || '—'}. Reprends-la dès qu'elle se débloque.` : `\nYour original task stays reserved for you: ${origine || '—'}. Resume it as soon as it is unblocked.`);
+      const calme = nombre(((etatFrais() && ETAT.postes.find(x => x && x.id === dg.id)) || {}).calme_min);
+      dg.action = (FR() ? 'je lui confie ' : 'I give it ') + c.titre;
+      dg.bulle = `${dg.nom} ${FR() ? 'attendait' : 'was waiting for'} ${dg.raison.replace(/^(attend|waiting for)\s*/, '')}${calme !== null ? (FR() ? ` depuis ${calme} min` : ` for ${calme} min`) : ''} → ${FR() ? 'je lui confie' : 'I give it'} ${c.titre}`;
+      TEMPO[dg.id] = { t: Date.now(), tache: c.tache_id, titre: c.titre, raison: dg.raison, origine };
+      LS.set('tyr_temporaires', TEMPO);
+      if (document.documentElement.dataset.essai !== 'sans-envoi') poster('/api/confier', { agent: dg.id, mission: mission.slice(0, 4000), titre: ((FR() ? 'Rôle temporaire · ' : 'Temporary role · ') + c.titre).slice(0, 200), tache_id: c.tache_id, origine: 'auto:temporaire' }).catch(() => { delete TEMPO[dg.id]; LS.set('tyr_temporaires', TEMPO); });
+    }
+    const dg = DIAG[(Math.random() * DIAG.length) | 0];
+    if (dg) { try { Bureau.visiter(dg.id, dg.bulle || `${dg.nom} ${FR() ? 'est bloqué' : 'is stuck'} : ${dg.raison} → ${dg.action}`); } catch (e) {} }
+    else if (l.length) { const p = l[(Math.random() * l.length) | 0]; try { Bureau.visiter(p.id, pique()); } catch (e) {} }
+    const sd = DIAG.map(x => x.id + ':' + x.type).sort().join(',');
+    if (DIAG.length && sd !== sigDiag && Date.now() - diagT >= 15 * 60000) {   // seulement si la liste change, au plus toutes les 15 min
+      sigDiag = sd; diagT = Date.now();
+      const texte = (FR() ? 'Contremaître : agents bloqués (diagnostic et action proposée)\n' : 'Foreman: stuck agents (diagnosis and proposed action)\n') + DIAG.map(x => `- ${x.nom} ${FR() ? 'est bloqué' : 'is stuck'} : ${x.raison} → ${x.action}`).join('\n');
+      if (document.documentElement.dataset.essai !== 'sans-envoi') poster('/api/demande', { cible: 'assistant', texte, via: 'ecrit' }).catch(() => {});
+    }
     const s = l.map(p => p.id).sort().join(',');
     if (l.length && (s !== sig || Date.now() - derniere > 15 * 60000)) {
       sig = s; derniere = Date.now();
@@ -2282,7 +2424,7 @@ const Tyrannie = (() => {
     LS.set('tyr_sans_metier', depuis);
   }
   setInterval(() => tour().catch(() => {}), 60000);
-  return { active, occupation, inactifs, tour, fileMoteur: () => fileMoteur };
+  return { active, occupation, inactifs, tour, fileMoteur: () => fileMoteur, diagnostics, bloques, remonter: () => DIAG.filter(x => x.decision).map(x => x.decision) };
 })();
 
 // ====================================================================== mode nuit / absent : plus aucune notification, le studio continue ; au retour « Pendant ton absence »
@@ -2616,7 +2758,7 @@ document.addEventListener('click', e => { const n = $('#notifs'); if (!n.hidden 
     { const nav = $('.outils'); ['bt-conv', 'bt-ensemble', 'bt-images', 'bt-journal', 'bt-roadmap', 'bt-decisions', 'bt-assistant', 'bt-optim', 'bt-jassist', 'bt-perso', 'bt-recruter', 'bt-rapport', 'bt-notifs', 'bt-reglages', 'bt-plein', 'bt-absent', 'bt-couper', 'bt-son'].forEach(id => { const b = $('#' + id); if (b) nav.appendChild(b); }); }
   }
   await Quest.demarrer().catch(e => erreur('questionnaire', e));
-  Tuto.auto();
+  if (!/[?&]apercu(=|&|$)/.test(location.search)) Tuto.auto();   // ?apercu : capture d'écran sans le tutoriel
   let vague = false, derniereVague = Date.now();   // une seule vague de lectures à la fois ; onglet caché : une vague par minute
   setInterval(() => { if (vague || (document.hidden && Date.now() - derniereVague < 60000)) return; vague = true; derniereVague = Date.now(); chargerTout().catch(e => erreur('chargement', e)).finally(() => { vague = false; }); }, 10000);
 })();

@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.12] - 2026-11-13
+
+### Ajouté
+- Conversation à droite : la même conversation que dans Claude Code, lue en local et en lecture seule dans le transcript de la session (`GET /api/conversation`, seulement la fin du fichier) ; texte de l'utilisateur et de l'assistant seulement, en markdown, relu toutes les 2,5 s, défilement en bas sauf si on remonte ; les questions avec leurs boutons puis « réglé : … » ; saisie en bas (Entrée envoie, Maj+Entrée retour à la ligne) avec le micro.
+- Tyrannie : diagnostic de chaque agent bloqué (ta décision, moteur et place dans la file, outil lourd, autre agent, fichier, machine saturée, erreur du journal, silence), bulle « X est bloqué : raison → action », demande à l'assistant avec le diagnostic (seulement si la liste change, au plus toutes les 15 min), question bloquante remontée en tête de la cloche et du fil.
+- Rôle temporaire : un agent qui attend (moteur, décision, autre agent, fichier, outil) reçoit une autre tâche sans moteur (`origine: auto:temporaire`, mêmes plafonds) ; sa tâche d'origine reste réservée ; affiché dans sa fiche.
+- Aperçus : `?heure=14` (jour, nuit…) et `?apercu` (sans tutoriel) pour les captures.
+
+### Corrigé
+- Un agent à 100 % ou avec des nouvelles depuis moins de 20 min n'est jamais « bloqué ».
+- Points : un seul rapport en plein cadre à la fois ; un nouveau point à moins de 15 min du précédent va au journal, sans cloche.
+
 ## [0.3.11] - 2026-11-13
 
 ### Ajouté

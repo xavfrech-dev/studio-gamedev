@@ -73,7 +73,7 @@ SOURCES = {"utilisateur", "deduit", "a_confirmer", "voix_a_interpreter"}
 VIAS = {"clic", "ecrit", "voix", "passer", "analyse"}
 ETATS = {"en_cours", "termine"}
 MODES = {"rapide", "complet", "adoption"}
-ORIGINE_RE = re.compile(r"^(page|tache:[A-Za-z0-9_.:-]{1,80}|auto:fin-de-tache)$")
+ORIGINE_RE = re.compile(r"^(page|tache:[A-Za-z0-9_.:-]{1,80}|auto:fin-de-tache|auto:temporaire)$")
 NB_BUREAUX = 12
 DOUBLON_S = 60
 AUTO_ATTENTE_MAX = 1        # attribution automatique : une seule en attente par poste
@@ -262,6 +262,25 @@ class Studio(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.headers.get("Host", "") not in self.hotes_permis():
             self.repondre(403, {"ok": False, "erreur": "hôte refusé"})
+            return
+        if urlsplit(self.path).path == "/api/conversation":   # conversation de Claude Code : lecture seule, en flux, en local
+            try:
+                if ICI not in sys.path:
+                    sys.path.insert(0, ICI)
+                import transcript_cc
+                from urllib.parse import parse_qs
+                q = parse_qs(urlsplit(self.path).query)
+                depuis = int(q["depuis"][0]) if q.get("depuis") and q["depuis"][0].isdigit() else None
+                conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+                dos = conf.get("dossier_session") if isinstance(conf.get("dossier_session"), str) and conf.get("dossier_session") not in ("", "auto") else None
+                dos = dos or os.path.join(os.path.expanduser("~"), ".claude", "projects", transcript_cc.slug(Etat.projet))
+                f = transcript_cc.session_active(dos)
+                r = transcript_cc.lire(f, depuis)
+                if depuis is not None and r.get("fichier") and q.get("fichier") and q["fichier"][0] != r["fichier"]:
+                    r = transcript_cc.lire(f, None)
+                self.repondre(200, dict(r, ok=True))
+            except Exception as e:
+                self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
             return
         if urlsplit(self.path).path == "/api/qui":          # reprise et arrêt : qui sert ce port ?
             self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1]})
@@ -751,7 +770,8 @@ def route_confier(d):
     if deja:
         return dict(deja, doublon=True)
     if origine.startswith("auto:"):
-        if not reglage("attribution_auto"):
+        # rôle temporaire d'un agent qui attend : permis par la tyrannie seule (mêmes plafonds)
+        if not reglage("attribution_auto") and not (origine == "auto:temporaire" and reglage("tyrannie_auto")):
             raise Refus(403, "attribution automatique coupée (Réglages ou economie.attribution_auto)")
         autos = [(x, st) for _, x, st in demandes_du_poste(agent) if str(x.get("origine", "")).startswith("auto:")]
         if sum(1 for _, st in autos if not st.startswith(FINIS)) >= AUTO_ATTENTE_MAX:
