@@ -253,6 +253,8 @@ def restant_de(prog):
             t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, int(m.group(1)), int(m.group(2) or 0), 0, 0, 0, -1))
             if t < time.time() - 6 * 3600:
                 t += 86400
+            elif t > time.time() + 18 * 3600:
+                t -= 86400                                   # F33 : « 23:50 » lu à 00:10 = hier soir (en retard), pas demain
     return round(max(0.0, (t - time.time()) / 60), 1) if t else None
 
 
@@ -447,7 +449,10 @@ class Studio:
         for j in r["jalons"]:
             if not isinstance(j, dict):
                 continue
-            j.setdefault("taches", [])
+            if not isinstance(j.get("taches"), list):      # F3 : « taches: null » ou un mauvais type ne fige plus l'alimentation
+                if j.get("taches") is not None:
+                    self.anomalies["roadmap.json"] = {"fichier": "roadmap.json", "raison": f"jalon {j.get('id')} : « taches » n'est pas une liste", "vu": time.strftime("%H:%M")}
+                j["taches"] = []
             j["taches"] = [t for t in j["taches"] if isinstance(t, dict) and t.get("id")]
         r["jalons"] = [j for j in r["jalons"] if isinstance(j, dict) and j.get("id")]
         return r
@@ -585,7 +590,9 @@ class Studio:
 
     def ecrire_taches(self, liste):
         chemin = self.f("taches_disponibles.json")
-        ancien = lire_json(chemin, {})
+        ancien = lire_json(chemin, None) if os.path.exists(chemin) else {}
+        if ancien is None:
+            return                                          # F15 : illisible (en cours d'écriture ?) : on ne réécrit pas, les tâches à la main restent
         main = [x for x in ((ancien.get("taches") if isinstance(ancien, dict) else None) or []) if isinstance(x, dict) and x.get("origine") not in ("roadmap", "backlog")]
         doc = {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "source": "roadmap.json (a_faire / en_cours, dépendances versées) + backlog_studio.json",
                "taches": main + liste + self.backlog()}
@@ -1048,7 +1055,13 @@ class Studio:
     # ---------------- passage complet
     def passer(self, tout=False):
         conf = self.config()
-        r = self.roadmap()
+        try:
+            r = self.roadmap()
+        except Exception as e:                              # une roadmap inattendue ne fige jamais l'alimentation
+            self.anomalies["roadmap.json"] = {"fichier": "roadmap.json", "raison": court(f"{type(e).__name__} : {e}", 140), "vu": time.strftime("%H:%M")}
+            r = None
+        for rel in [k for k in self.anomalies if not os.path.exists(self.f(*k.split("/")))]:
+            self.anomalies.pop(rel, None)                   # F16 : le fichier fautif a été supprimé : l'alerte part avec lui
         progs = self.progressions()
         statuts = self.statuts()
         demandes = self.demandes(statuts)
@@ -1085,18 +1098,21 @@ class Studio:
 
 
 def verrou(studio, forcer):
-    """Une seule boucle par projet : .studio/studio_etat.verrou (pid), rafraîchi à chaque passage."""
+    """Une seule boucle par projet : .studio/studio_etat.verrou (pid et heure de création), rafraîchi à chaque passage,
+    écrit d'un coup, effacé à la sortie ; un verrou dont le processus est mort ou n'est plus le nôtre est ignoré."""
+    if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from veille_studio import ecrire_verrou, lire_pid, verrou_vivant
     v = studio.f("studio_etat.verrou")
-    a = age_min(v)
-    if a is not None and a < 1 and not forcer:
-        try:
-            pid = int(open(v, encoding="utf-8").read().strip() or 0)
-        except (OSError, ValueError):
-            pid = 0
+    if not forcer:
+        pid = verrou_vivant(v)
         if pid and pid != os.getpid():
             raise SystemExit(f"une alimentation tourne déjà pour ce projet (pid {pid}) ; --forcer pour passer outre")
-    with open(v, "w", encoding="utf-8") as f:
-        f.write(str(os.getpid()))
+    if lire_pid(v) != os.getpid() or not getattr(verrou, "pose", False):
+        ecrire_verrou(v)
+        verrou.pose = True
+    else:
+        os.utime(v, None)
 
 
 def main(argv=None):

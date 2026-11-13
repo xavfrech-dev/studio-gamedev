@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.4] - 2026-11-13
+
+### Corrigé
+- Fichier JSON illisible (questionnaire, personnages, réglages) : 3 nouvelles lectures, puis une copie `<nom>.corrompu-<date>.json`, rien n'est écrit (503) et la page affiche pourquoi ; l'index des recrues illisible est reconstruit depuis les fiches (aucune recrue perdue).
+- Verrous : PID et heure de création du processus, écrits d'un coup et effacés à la sortie ; un PID repris par un autre programme après un redémarrage n'est plus jamais arrêté ni pris pour une veille en cours ; une alimentation figée est arrêtée avant d'en lancer une autre.
+- Roadmap avec `"taches": null` : l'alimentation ne se fige plus ; les tâches écrites à la main ne sont plus effacées ; une alerte « fichier illisible » disparaît avec le fichier ; « 23:50 » lu après minuit = en retard.
+- Tyrannie : une tâche refusée par le serveur reste proposable.
+- Rallumer un automatisme dans les Réglages pendant « Tout couper » rend aussi les autres comme avant.
+- Relance après un arrêt brutal : même port qu'avant s'il est libre ; embauche à la main au-delà de 12 bureaux refusée ; `Content-Length` ou valeur du mauvais type : refus 400 (plus d'erreur interne).
+- Page : serveur injoignable signalé (bandeau rouge, effacé au retour) ; double clic dans le questionnaire ; gros micro qui restait sur « J'écoute… » ; « Nom et rôles » garde le vrai modèle ; fiche de recrue relue tout de suite ; nom du jeu dans les panneaux.
+- Conversation : une ligne géante du transcript ne bloque plus le fil ; pas de relecture depuis le début sans fichier connu.
+- Dictée : seules les reprises de début de segment sont retirées ; « nous nous », « vous vous », les nombres, les fins de phrase et un segment vraiment redit sont gardés.
+
 ## [0.4.3] - 2026-11-13
 
 ### Corrigé

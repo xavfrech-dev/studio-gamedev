@@ -16,7 +16,7 @@ import urllib.request
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(ICI))
-from veille_studio import lire_pid, vivant  # noqa: E402
+from veille_studio import lire_pid, verrou_vivant, vivant  # noqa: E402
 
 
 def tuer(pid):
@@ -43,8 +43,14 @@ def main(argv=None):
         raise SystemExit(f"pas de dossier .studio dans {projet}")
     fait = []
     for nom, f in (("veille", "veille_studio.verrou"), ("alimentation", "studio_etat.verrou")):   # la veille d'abord : elle relancerait l'alimentation
-        if tuer(lire_pid(os.path.join(studio, f))):
+        v = os.path.join(studio, f)
+        if tuer(verrou_vivant(v)):              # seulement si le PID est encore bien notre processus (F2)
             fait.append(nom)
+        try:
+            if not verrou_vivant(v) and os.path.exists(v):
+                os.remove(v)                     # verrou périmé ou processus arrêté : on l'efface
+        except OSError:
+            pass
     info = os.path.join(studio, "serveur.json")
     try:
         with open(info, encoding="utf-8-sig") as h:

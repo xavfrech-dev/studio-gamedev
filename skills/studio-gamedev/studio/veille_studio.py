@@ -45,12 +45,72 @@ def vivant(pid):
         return False
 
 
-def lire_pid(chemin):
+def heure_creation(pid):
+    """Heure de création du processus (texte comparable), ou None : après un redémarrage, un PID repris par un autre
+    programme a une autre heure de création ; on ne le prend donc jamais pour le nôtre."""
+    if not pid:
+        return None
+    try:
+        if os.name == "nt":
+            import ctypes
+            from ctypes import wintypes
+            k = ctypes.windll.kernel32
+            h = k.OpenProcess(0x1000, False, pid)
+            if not h:
+                return None
+            c, e, ke, u = wintypes.FILETIME(), wintypes.FILETIME(), wintypes.FILETIME(), wintypes.FILETIME()
+            ok = k.GetProcessTimes(h, ctypes.byref(c), ctypes.byref(e), ctypes.byref(ke), ctypes.byref(u))
+            k.CloseHandle(h)
+            return str((c.dwHighDateTime << 32) | c.dwLowDateTime) if ok else None
+        if os.path.exists(f"/proc/{pid}/stat"):
+            with open(f"/proc/{pid}/stat", encoding="utf-8", errors="replace") as f:
+                return f.read().rsplit(")", 1)[1].split()[19]
+        import subprocess
+        r = subprocess.run(["ps", "-o", "lstart=", "-p", str(pid)], capture_output=True, text=True, timeout=5)
+        return r.stdout.strip() or None
+    except Exception:
+        return None
+
+
+def lire_verrou(chemin):
+    """(pid, heure de création) écrits dans un verrou ; (0, None) s'il est absent ou illisible."""
     try:
         with open(chemin, encoding="utf-8") as f:
-            return int(f.read().strip() or 0)
+            parts = f.read().split()
+        return (int(parts[0]) if parts else 0), (parts[1] if len(parts) > 1 else None)
     except (OSError, ValueError):
+        return 0, None
+
+
+def lire_pid(chemin):
+    return lire_verrou(chemin)[0]
+
+
+def verrou_vivant(chemin):
+    """PID du verrou s'il est encore NOTRE processus (vivant et même heure de création), sinon 0 (verrou périmé)."""
+    pid, cree = lire_verrou(chemin)
+    if not vivant(pid):
         return 0
+    if cree is not None and heure_creation(pid) not in (None, cree):
+        return 0                                   # PID repris par un autre programme
+    return pid
+
+
+def ecrire_verrou(chemin):
+    """Écrit « pid heure_de_création » d'un coup (fichier temporaire puis remplacement) et l'efface à la sortie."""
+    import atexit
+    tmp = chemin + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(f"{os.getpid()} {heure_creation(os.getpid()) or ''}".strip())
+    os.replace(tmp, chemin)
+
+    def effacer():
+        try:
+            if lire_pid(chemin) == os.getpid():
+                os.remove(chemin)
+        except OSError:
+            pass
+    atexit.register(effacer)
 
 
 def age_s(chemin):
@@ -79,10 +139,9 @@ def main(argv=None):
         except OSError:
             pass
 
-    if vivant(lire_pid(verrou)):
+    if verrou_vivant(verrou):
         raise SystemExit("une veille tourne déjà pour ce projet")
-    with open(verrou, "w", encoding="utf-8") as f:
-        f.write(str(os.getpid()))
+    ecrire_verrou(verrou)
     cmd = [sys.executable, "-I", "-B", os.path.join(ICI, "studio_etat.py"), "--projet", os.path.abspath(a.projet),
            "--duree-h", "0", "--intervalle", str(a.intervalle), "--forcer"]
     if a.donnees:
@@ -91,10 +150,18 @@ def main(argv=None):
     note("veille démarrée")
     rapides = 0
     while True:
-        autre = lire_pid(verrou_alim)
-        if autre and vivant(autre) and (age_s(etat) or 1e9) < FIGE_S:
+        autre = verrou_vivant(verrou_alim)
+        if autre and (age_s(etat) or 1e9) < FIGE_S:
             time.sleep(15)          # une autre alimentation tient le projet et elle vit : on ne double pas
             continue
+        if autre:                   # S35 : une alimentation à nous, vivante mais figée : on l'arrête avant d'en lancer une autre
+            try:
+                import signal
+                os.kill(autre, signal.SIGTERM)
+                note(f"alimentation figée arrêtée (pid {autre})")
+                time.sleep(2)
+            except OSError:
+                pass
         debut = time.time()
         enfant = subprocess.Popen(cmd, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         note(f"studio_etat.py lancé (pid {enfant.pid})")

@@ -64,6 +64,8 @@ def lire(chemin, depuis=None):
         bloc, debut = (bloc[i + 1:], debut + i + 1) if i >= 0 else (b"", fin)
     dernier = bloc.rfind(b"\n")                     # on s'arrête à la dernière ligne entière (la suivante est peut-être en cours)
     if dernier < 0:
+        if fin - debut >= (DEBUT_MAX if reprise else LOT_MAX):   # une seule ligne plus grande que le lot : on la saute
+            return {"fichier": os.path.basename(chemin), "offset": fin, "messages": [], "debut": reprise}
         return {"fichier": os.path.basename(chemin), "offset": debut, "messages": [], "debut": reprise}
     lignes, offset = bloc[:dernier].split(b"\n"), debut + dernier + 1
     out = []

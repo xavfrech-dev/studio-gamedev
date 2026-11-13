@@ -6,7 +6,15 @@ précédent (résultats partiels empilés, ou segments de Whisper qui se chevauc
 import re
 
 DOUBLES_PERMIS = {"très", "si", "oui", "non", "bien", "plus", "encore", "vite", "tout", "beaucoup", "trop", "jamais",
-                  "very", "so", "yes", "no", "really", "much", "too", "more", "bye", "ha", "ah", "oh"}
+                  "nous", "vous", "se", "s'", "en", "y", "l'", "la", "le",
+                  "very", "so", "yes", "no", "really", "much", "too", "more", "bye", "ha", "ah", "oh", "that", "had", "is"}
+FIN_PHRASE = re.compile(r"[.!?…:;]$")
+
+
+def _permis(mot):
+    """Doublon d'un seul mot qu'on garde : mots qui se répètent dans la langue (« nous nous », « très très »), nombres (« 11 11 »)."""
+    m = _n(mot)
+    return m in DOUBLES_PERMIS or m.isdigit()
 
 
 def _n(mot):
@@ -26,8 +34,7 @@ def fusion_segments(segments):
             if b[:len(a)] == a:
                 out[-1] = s
                 continue
-            if a[:len(b)] == b:
-                continue
+            # un segment plus court qui reprend le début du précédent est gardé : il a peut-être vraiment été redit
             k = next((k for k in range(min(len(a), len(b)), 1, -1) if a[-k:] == b[:k]), 0)   # recouvrement d'au moins 2 mots
             if k:
                 out[-1] = out[-1] + " " + " ".join(s.split()[k:])
@@ -45,7 +52,10 @@ def dedoublonner(texte):
     while i < len(mots):
         saut = 0
         for k in range(min(8, len(out), len(mots) - i), 0, -1):
-            if [_n(x) for x in out[-k:]] == [_n(x) for x in mots[i:i + k]] and not (k == 1 and _n(mots[i]) in DOUBLES_PERMIS):
+            avant = out[-k:]
+            if any(FIN_PHRASE.search(x) for x in avant):
+                continue                                         # jamais par-dessus une fin de phrase (« Il est parti. Parti où ? »)
+            if [_n(x) for x in avant] == [_n(x) for x in mots[i:i + k]] and not (k == 1 and _permis(mots[i])):
                 saut = k
                 break
         if saut:
@@ -70,4 +80,10 @@ if __name__ == "__main__":          # essai : le cas réel du 13/11
     assert propre(["il faut que tu fasses", "que tu fasses une version", "une version portable"]) == "il faut que tu fasses une version portable"
     assert propre("c'est très très bien, non non") == "c'est très très bien, non non"
     assert propre("une phrase normale sans répétition") == "une phrase normale sans répétition"
-    print("dictée propre : 5/5")
+    # F17 / F38 : répétitions voulues, fins de phrase et segment redit plus court
+    assert propre("nous nous sommes vus") == "nous nous sommes vus"
+    assert propre("vous vous trompez") == "vous vous trompez"
+    assert propre("Il est parti. Parti où ?") == "Il est parti. Parti où ?"
+    assert propre("rendez-vous le 11 11 à midi") == "rendez-vous le 11 11 à midi"
+    assert propre(["je pense que c'est bien", "je pense"]) == "je pense que c'est bien je pense"
+    print("dictée propre : 10/10")

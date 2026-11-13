@@ -129,29 +129,31 @@ MIS_DE_COTE = []          # fichiers illisibles mis de côté depuis le démarra
 
 
 def lire_ou_mettre_de_cote(chemin, defaut):
-    """Pour une route qui va réécrire le fichier : s'il existe et ne se lit pas, il est renommé
-    <nom>.illisible-<date>.json (rien n'est perdu) et on repart de « defaut »."""
+    """Pour une route qui va réécrire le fichier : absent → « defaut » ; illisible → 3 nouvelles lectures (une écriture est
+    peut-être en cours) ; toujours illisible → copie <nom>.corrompu-<date>.json, rien n'est écrit (503) et la page le dit."""
     if not os.path.exists(chemin):
         return defaut
+    erreur = None
+    for essai in range(4):
+        try:
+            with open(chemin, encoding="utf-8-sig") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return defaut
+        except Exception as e:
+            erreur = e
+            time.sleep(.15 * (essai + 1))
+    base, ext = os.path.splitext(chemin)
+    cible = f"{base}.corrompu-{time.strftime('%Y%m%d-%H%M%S')}{ext}"
     try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:
-        try:
-            if time.time() - os.path.getmtime(chemin) < 2:      # en cours d'écriture par un autre : on attend un peu
-                time.sleep(.3)
-                with open(chemin, encoding="utf-8-sig") as f:
-                    return json.load(f)
-        except Exception:
-            pass
-        base, ext = os.path.splitext(chemin)
-        cible = f"{base}.illisible-{time.strftime('%Y%m%d-%H%M%S')}{ext}"
-        try:
-            os.replace(chemin, cible)
-            MIS_DE_COTE.append({"fichier": os.path.basename(chemin), "copie": os.path.basename(cible), "quand": maintenant()})
-        except OSError:
-            raise Refus(503, f"{os.path.basename(chemin)} est illisible et ne peut pas être mis de côté : rien n'est écrit")
-        return defaut
+        if not any(x.get("fichier") == os.path.basename(chemin) and time.time() - x.get("t", 0) < 600 for x in MIS_DE_COTE):
+            import shutil
+            shutil.copyfile(chemin, cible)
+            MIS_DE_COTE.append({"fichier": os.path.basename(chemin), "copie": os.path.basename(cible), "quand": maintenant(), "t": time.time()})
+    except OSError:
+        pass
+    raise Refus(503, f"{os.path.basename(chemin)} est illisible ({type(erreur).__name__}) : rien n'est écrit pour ne rien perdre. "
+                     f"Une copie est gardée ({os.path.basename(cible)}) ; demande à l'assistant de le réparer.")
 
 
 def lire_json(chemin, defaut):
@@ -318,7 +320,7 @@ class Studio(SimpleHTTPRequestHandler):
         ext = os.path.splitext(rel)[1].lower()
         if ext not in EXTENSIONS or os.path.basename(rel).lower() in ("cle_reseau.txt", "adresse_telephone.txt"):
             return None
-        if ".illisible-" in rel or rel.lower().endswith((".bak", ".tmp")) or rel.startswith(("outils/", "_")):
+        if ".illisible-" in rel or ".corrompu-" in rel or rel.lower().endswith((".bak", ".tmp")) or rel.startswith(("outils/", "_")):
             return None                                   # copies mises de côté, sauvegardes, temporaires, crochet copié : jamais servis
         for base in (Etat.studio, ICI):
             if not base:
@@ -419,7 +421,12 @@ class Studio(SimpleHTTPRequestHandler):
             if origine not in {"http://" + h for h in self.hotes_permis()} or origine != "http://" + self.headers.get("Host", ""):
                 raise Refus(403, "origine refusée")
             route = urlsplit(self.path).path
-            n = int(self.headers.get("Content-Length", "0") or 0)
+            try:
+                n = int(self.headers.get("Content-Length", "0") or 0)
+            except ValueError:
+                raise Refus(400, "Content-Length invalide")
+            if n < 0:
+                raise Refus(400, "Content-Length invalide")
             if route == "/api/transcrire":
                 if n <= 0 or n > MAX_AUDIO:
                     raise Refus(413, "audio vide ou trop long")
@@ -446,7 +453,12 @@ class Studio(SimpleHTTPRequestHandler):
             if not action:
                 raise Refus(404, "route inconnue")
             with VERROU:
-                self.repondre(200, action(d))
+                try:
+                    rep = action(d)
+                except (TypeError, AttributeError, KeyError) as e:   # F22 / F23 : une valeur du mauvais type → 400, pas 500
+                    sys.stderr.write(f"donnée invalide sur {route} : {e!r}\n")
+                    raise Refus(400, "donnée invalide (type inattendu)")
+                self.repondre(200, rep)
         except Refus as e:
             self.repondre(e.code, {"ok": False, "erreur": str(e)})
         except Exception as e:  # jamais de trace détaillée vers la page
@@ -761,6 +773,8 @@ def route_recruter(d):
     auto = d.get("auto") is True
     if auto:
         garde_embauche_auto(conf, nom)
+    if not os.path.exists(os.path.join(Etat.studio, "recrues", nom + ".json")) and nb_bureaux(conf) >= NB_BUREAUX:
+        raise Refus(409, f"{NB_BUREAUX} bureaux occupés : renvoie une recrue avant d'en embaucher une autre")
         lancer, remplacer = False, False
     agents = dossier_agents(conf)
     chemin_agent = os.path.join(agents, nom + ".md")
@@ -786,8 +800,8 @@ def route_recruter(d):
                  agent=os.path.relpath(chemin_agent, Etat.projet).replace("\\", "/"))
     ecrire_json(os.path.join(Etat.studio, "recrues", nom + ".json"), fiche)
     idx_ch = os.path.join(Etat.studio, "recrues", "index.json")
-    idx = lire_json(idx_ch, [])
-    idx = [x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x != nom][-40:] + [nom]
+    idx = index_lisible(idx_ch)
+    idx = [x for x in idx if x != nom][-40:] + [nom]
     ecrire_json(idx_ch, idx)
     ident = creer_unique(os.path.join(Etat.studio, "demandes"), nom, dict(fiche, type="recrutement", statut="nouvelle"))
     return {"ok": True, "fiche": fiche, "demande": "demandes/" + ident + ".json", "agent": fiche["agent"]}
@@ -796,8 +810,8 @@ def route_recruter(d):
 def nb_bureaux(conf):
     base = [p for p in (conf.get("postes") or []) if isinstance(p, dict) and p.get("id")][:9]
     ids = {p["id"] for p in base}
-    idx = lire_json(os.path.join(Etat.studio, "recrues", "index.json"), [])
-    return len(base) + len([x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x not in ids])
+    idx = index_lisible(os.path.join(Etat.studio, "recrues", "index.json"))
+    return len(base) + len([x for x in idx if x not in ids])
 
 
 def garde_embauche_auto(conf, nom):
@@ -883,9 +897,23 @@ def recrue_occupee(nom):
     return None
 
 
+def index_lisible(chemin):
+    """recrues/index.json, ou, s'il est illisible, la liste reconstruite depuis les fiches recrues/*.json (F6 : aucune recrue perdue)."""
+    idx = lire_json(chemin, None) if os.path.exists(chemin) else []
+    if isinstance(idx, list):
+        return [x for x in idx if isinstance(x, str)]
+    dossier = os.path.dirname(chemin)
+    fiches = []
+    for f in os.listdir(dossier):
+        if f.endswith(".json") and f != "index.json" and ".corrompu-" not in f and ".illisible-" not in f:
+            x = lire_json(os.path.join(dossier, f), None)
+            if isinstance(x, dict) and isinstance(x.get("nom"), str):
+                fiches.append((x.get("cree_le") or "", x["nom"]))
+    return [n for _, n in sorted(fiches)]
+
+
 def index_noms(chemin, ajouter=None, retirer=None):
-    idx = lire_json(chemin, [])
-    idx = [x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str) and x not in (ajouter, retirer)]
+    idx = [x for x in index_lisible(chemin) if x not in (ajouter, retirer)]
     if ajouter:
         idx.append(ajouter)
     ecrire_json(chemin, idx[-60:])
@@ -1117,9 +1145,16 @@ def route_reglages(d):
     if ordre is not None:
         r["ordre_equipe"] = ordre
     if any(v for k, v in bascules.items() if k in AUTOS_COUPER) and r.get("pause"):
+        avant = r.pop("avant_pause", None)
+        if isinstance(avant, dict):                        # F8 : les autres automatismes reviennent comme avant la pause
+            for k, v in avant.items():
+                if k in AUTOS_COUPER and k not in bascules:
+                    if v is None:
+                        r.pop(k, None)
+                    else:
+                        r[k] = bool(v)
         r["pause"] = False
         r.pop("pause_depuis", None)
-        r.pop("avant_pause", None)
     r.update(bascules, maj=maintenant())
     ecrire_json(chemin, r)
     return {"ok": True, "reglages": r}
@@ -1358,6 +1393,12 @@ def main(argv=None):
         if not port_libre(port):
             raise SystemExit(f"le port {port} est déjà pris par un autre programme (ou un autre studio) : choisis un autre --port, ou lance sans --port")
     else:
+        try:                                              # F11 : reprise après un arrêt brutal : le même port que la dernière fois
+            ancien = int((lire_json(os.path.join(Etat.studio, "serveur.json"), {}) or {}).get("port") or 0)
+        except (TypeError, ValueError, AttributeError):
+            ancien = 0
+        if 1024 <= ancien <= 65535 and port_libre(ancien):
+            port = ancien
         libre = next((p for p in range(port, port + 50) if port_libre(p)), 0)
         if not libre:
             raise SystemExit(f"aucun port libre entre {port} et {port + 49} : relance avec --port N")
