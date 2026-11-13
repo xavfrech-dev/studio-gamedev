@@ -65,6 +65,118 @@ SUBPROC = {"capture_output": True, "text": True, "timeout": 20, "encoding": "utf
            "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
 
 # ------------------------------------------------------------------ outils
+# -------------------------------------------------------------------- santé du PC (réglage sante_auto, coupé par défaut)
+# psutil s'il est installé ; sinon repli léger : Windows (GetSystemTimes, GlobalMemoryStatusEx), Linux (/proc), macOS (os.getloadavg).
+# Aucun processus n'est tué, aucun réglage du système n'est touché.
+_CPU_HIST, _CPU_PREC = [], []
+
+
+def _cpu_pct():
+    try:
+        import psutil
+        return int(psutil.cpu_percent(interval=None))
+    except Exception:
+        pass
+    if os.name == "nt":
+        try:
+            import ctypes
+            i, k, u = (ctypes.c_ulonglong() for _ in range(3))
+            ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(i), ctypes.byref(k), ctypes.byref(u))
+            cur = (i.value, k.value + u.value)
+            if not _CPU_PREC:
+                _CPU_PREC.append(cur)
+                return None
+            di, dt = cur[0] - _CPU_PREC[0][0], cur[1] - _CPU_PREC[0][1]
+            _CPU_PREC[0] = cur
+            return int(round(100 * (dt - di) / dt)) if dt > 0 else None
+        except Exception:
+            return None
+    try:
+        with open("/proc/stat") as f:
+            v = [int(x) for x in f.readline().split()[1:]]
+        cur = (v[3] + (v[4] if len(v) > 4 else 0), sum(v))
+        if not _CPU_PREC:
+            _CPU_PREC.append(cur)
+            return None
+        di, dt = cur[0] - _CPU_PREC[0][0], cur[1] - _CPU_PREC[0][1]
+        _CPU_PREC[0] = cur
+        return int(round(100 * (dt - di) / dt)) if dt > 0 else None
+    except Exception:
+        pass
+    try:
+        return int(min(100, 100 * os.getloadavg()[0] / (os.cpu_count() or 1)))
+    except Exception:
+        return None
+
+
+def _mem_pct():
+    try:
+        import psutil
+        return int(psutil.virtual_memory().percent)
+    except Exception:
+        pass
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            class M(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong)] + [(n, ctypes.c_ulonglong) for n in ("t", "a", "tp", "ap", "tv", "av", "ae")]
+            m = M()
+            m.dwLength = ctypes.sizeof(M)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+            return int(m.dwMemoryLoad)
+        except Exception:
+            return None
+    try:
+        d = {}
+        with open("/proc/meminfo") as f:
+            for l in f:
+                k, v = l.split(":")
+                d[k] = int(v.split()[0])
+        return int(round(100 * (1 - d["MemAvailable"] / d["MemTotal"])))
+    except Exception:
+        return None
+
+
+def _gpu():
+    try:
+        r = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
+                           capture_output=True, text=True, timeout=5, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        u, mu, mt = [float(x) for x in r.stdout.strip().splitlines()[0].split(",")]
+        return {"gpu": int(u), "vram_pct": int(round(100 * mu / mt)) if mt else None}
+    except Exception:
+        return {}
+
+
+_GPU = {"t": 0, "v": {}}
+
+
+def mesures_pc():
+    """Échantillon léger : processeur (historique des 10 dernières minutes), mémoire, carte graphique (toutes les 60 s)."""
+    cpu, mem = _cpu_pct(), _mem_pct()
+    if cpu is not None and (not _CPU_HIST or _CPU_HIST[-1][0] < time.time() - 50):
+        _CPU_HIST.append((time.time(), cpu))
+        del _CPU_HIST[:-15]
+    if time.time() - _GPU["t"] > 60:
+        _GPU["t"], _GPU["v"] = time.time(), _gpu()
+    return dict({"cpu": cpu, "memoire_pct": mem, "cpu_sature_min": sum(1 for _, v in _CPU_HIST[-10:] if v >= 92)}, **_GPU["v"])
+
+
+def sante_pc(sy):
+    alertes = []
+    if (sy.get("cpu_sature_min") or 0) >= 8:
+        alertes.append(f"processeur saturé ({sy['cpu_sature_min']}/10 min au-dessus de 92 %)")
+    if sy.get("memoire_pct") is not None and sy["memoire_pct"] > 90:
+        alertes.append(f"mémoire utilisée à {sy['memoire_pct']} %")
+    if sy.get("disque_libre_go") is not None and sy["disque_libre_go"] < 30:
+        alertes.append(f"disque presque plein ({sy['disque_libre_go']} Go libres)")
+    charge = max([v for v in (sy.get("cpu"), sy.get("memoire_pct"), sy.get("gpu")) if isinstance(v, (int, float))] or [0])
+    pauses = ["espacer les tâches lourdes ; les attributions automatiques attendent la fin de la saturation",
+              "un seul outil lourd (moteur, rendu 3D) à la fois"] if alertes else []
+    return {"sature": bool(alertes), "alertes": alertes, "pauses": pauses, "charge": int(charge)}
+
+
+
 def dans(p, racine):
     return p == racine or p.startswith(racine.rstrip(os.sep) + os.sep)
 
@@ -254,7 +366,7 @@ class Studio:
             libre = round(u.free / 1e9, 1)
         except OSError:
             libre = None
-        return {"disque_libre_go": libre}
+        return dict({"disque_libre_go": libre}, **mesures_pc())
 
     def session_active(self, conf):
         """Âge (min) du journal de session Claude Code le plus récent du projet (lecture de la date seulement)."""
@@ -783,7 +895,7 @@ class Studio:
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": sysinfo, "sante": sante_pc(sysinfo), "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }

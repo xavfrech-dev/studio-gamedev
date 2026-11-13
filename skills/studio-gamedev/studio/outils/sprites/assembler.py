@@ -180,7 +180,7 @@ def planches(brut, sortie):
 TENUES = [
     {'nom': 'Unreal (casque audio)', 'peau': '#f0c9a4', 'cheveux': '#5a3a26', 'haut': '#4b6f99', 'bas': '#373c47', 'chaussures': '#2a211b', 'acc': 'casque_audio', 'acc_couleur': '#3a3a42'},
     {'nom': 'Blender (béret)', 'peau': '#d9a77f', 'cheveux': '#3b2a20', 'haut': '#d8782f', 'bas': '#3b3838', 'chaussures': '#5a3a26', 'acc': 'beret', 'acc_couleur': '#8e2f21'},
-    {'nom': 'Petit chinois (chapeau)', 'peau': '#efcfa6', 'cheveux': '#1d1a1a', 'haut': '#3d6d9e', 'bas': '#2b3340', 'chaussures': '#2a211b', 'acc': 'chapeau_conique', 'acc_couleur': '#d9b56a'},
+    {'nom': 'Assistant (chapeau de paille)', 'peau': '#efcfa6', 'cheveux': '#1d1a1a', 'haut': '#3d6d9e', 'bas': '#2b3340', 'chaussures': '#2a211b', 'acc': 'chapeau_conique', 'acc_couleur': '#d9b56a'},
     {'nom': 'Relecture (lunettes)', 'peau': '#eec4a0', 'cheveux': '#b9b1a6', 'haut': '#7a5c93', 'bas': '#463c4f', 'chaussures': '#2a211b', 'acc': 'lunettes', 'acc_couleur': '#3a2c22'},
     {'nom': 'Tripo (casquette)', 'peau': '#f2cfae', 'cheveux': '#a5652e', 'haut': '#5f8794', 'bas': '#403a3a', 'chaussures': '#e9e1cf', 'acc': 'casquette', 'acc_couleur': '#2f4a3a'},
     {'nom': 'Nanite (bonnet)', 'peau': '#c98f68', 'cheveux': '#1f1a18', 'haut': '#4f8a65', 'bas': '#31373a', 'chaussures': '#3a2a20', 'acc': 'bonnet', 'acc_couleur': '#b8895a'},

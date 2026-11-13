@@ -310,7 +310,7 @@ class Studio(SimpleHTTPRequestHandler):
             action = {"/api/questionnaire": route_questionnaire, "/api/profil": route_profil, "/api/demande": route_demande,
                       "/api/repondre": route_repondre, "/api/reglages": route_reglages,
                       "/api/recruter": route_recruter, "/api/confier": route_confier,
-                      "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher}.get(route)
+                      "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent}.get(route)
             if not action:
                 raise Refus(404, "route inconnue")
             with VERROU:
@@ -747,6 +747,61 @@ def index_noms(chemin, ajouter=None, retirer=None):
     ecrire_json(chemin, idx[-60:])
 
 
+METIERS_PERMIS = {"code", "relecture", "art", "son", "ia", "doc", "design", "test", "moteur"}
+
+
+def route_agent(d):
+    """Fiche d'un agent : nom affiché, métiers (liste) et rôle libre. Recrue : recrues/<nom>.json et sa définition d'agent
+    (description, nom, section « Métiers » ; le reste n'est pas touché). Poste de la config : reglages.json
+    (noms_postes, roles_postes, metiers_postes). La tyrannie et l'attribution choisissent les tâches d'après ces métiers."""
+    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    nom = texte(d, "id", 40, True).lower()
+    if not ID_RE.match(nom):
+        raise Refus(400, "id invalide")
+    affiche = texte(d, "nom_affiche", 40)
+    role = texte(d, "role", 200).replace("\n", " ")
+    metiers = d.get("metiers")
+    if metiers is not None and (not isinstance(metiers, list) or len(metiers) > 6 or any(m not in METIERS_PERMIS for m in metiers)):
+        raise Refus(400, "métiers : " + ", ".join(sorted(METIERS_PERMIS)))
+    fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
+    if os.path.isfile(fiche_ch):
+        fiche = lire_json(fiche_ch, {}) or {}
+        if affiche:
+            fiche["nom_affiche"] = affiche
+        if role:
+            fiche["role"] = role
+        if metiers is not None:
+            fiche["metiers"] = metiers
+        ecrire_json(fiche_ch, fiche)
+        md = os.path.join(dossier_agents(conf), nom + ".md")
+        if os.path.isfile(md):
+            with open(md, encoding="utf-8") as f:
+                t = f.read()
+            if role:
+                t = re.sub(r"(?m)^description: .*$", lambda m: "description: " + yaml_chaine(role), t, count=1)
+            if metiers is not None:
+                t = re.sub(r"\n## Métiers\n.*?(?=\n## |\Z)", "", t, flags=re.S)
+                if metiers:
+                    t = t.rstrip("\n") + "\n\n## Métiers\n" + ", ".join(metiers) + "\n"
+            with open(md + ".tmp", "w", encoding="utf-8", newline="\n") as f:
+                f.write(t)
+            os.replace(md + ".tmp", md)
+        return {"ok": True, "fiche": fiche}
+    if nom not in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
+        raise Refus(404, f"agent « {nom} » inconnu")
+    chemin = os.path.join(Etat.studio, "reglages.json")
+    r = lire_json(chemin, {}) or {}
+    if affiche:
+        r.setdefault("noms_postes", {})[nom] = affiche
+    if role:
+        r.setdefault("roles_postes", {})[nom] = role
+    if metiers is not None:
+        r.setdefault("metiers_postes", {})[nom] = metiers
+    r["maj"] = maintenant()
+    ecrire_json(chemin, r)
+    return {"ok": True}
+
+
 def route_renvoyer(d):
     """Renvoi d'une recrue (jamais un poste de la config) : rien n'est effacé. La fiche va dans recrues/_anciens/,
     la définition d'agent (seulement si elle porte la marque des recrues) dans .studio/anciens/agents/ : hors du
@@ -826,7 +881,7 @@ def route_repondre(d):
 
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
-    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent") if k in d}
+    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent", "sante_auto", "blague") if k in d}
     ordre = d.get("ordre_equipe")
     if ordre is not None and (not isinstance(ordre, list) or len(ordre) > 60 or any(not isinstance(x, str) or not ID_RE.match(x) for x in ordre)):
         raise Refus(400, "ordre_equipe : liste d'identifiants")

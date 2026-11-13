@@ -35,6 +35,14 @@ Pourquoi `attribution_auto` et `embauche_auto` sont coupés : chacun crée une d
 
 Réglages de la page (`.studio/reglages.json`, bouton « Réglages » ou tutoriel de départ) : `attribution_auto`, `embauche_auto`, `enchainement_auto` (équivaut à `enchainer`), `point_auto` (point régulier de l'assistant), `optimisation_auto`. **Tous à `false` tant que l'utilisateur n'a pas choisi** ; relis `reglages.json` avant d'enchaîner une tâche, de faire un point ou de lancer une optimisation : `false` y passe avant la config. Le bouton « Tout couper » de la page les remet tous à `false` d'un clic.
 
+## Point d'équipe (point régulier, coupé par défaut)
+
+Le point régulier de l'assistant (tableau chantier / étape / % / reste, heure de fin, ce qui a fini, rapport dans le studio, lecture des réponses, lancement des demandes en attente) est décrit dans `references/point_equipe.md`. Il ne tourne que si `point_auto` est à `true` (tutoriel, Réglages, « point d'équipe » ou `/point-equipe`) ; « Tout couper » l'arrête, le mode nuit l'empile. Petite blague d'ouverture bon enfant, désactivable (`"blague": false`).
+
+## Santé du PC (coupée par défaut)
+
+Avec `sante_auto: true` (Réglages ou tutoriel), le studio surveille le processeur, la mémoire, le disque et la carte graphique (psutil s'il est installé, sinon un repli léger). Quand la machine sature (processeur > 92 % au moins 8 des 10 dernières minutes, mémoire > 90 %, disque < 30 Go), il le signale, propose des pauses et **retarde** les attributions automatiques et la tyrannie. Il ne tue aucun processus et ne touche ni aux réglages du système, ni au moteur, ni au jeu.
+
 ## Tout arrive toujours dans le studio (règles permanentes de l'assistant)
 
 1. **Miroir des questions** : chaque question que tu poses à l'utilisateur dans le chat est aussi écrite dans `.studio/decisions.json` (cloche et bulle « ? » ; choix cliquables, ★ recommandé, champ `poste` si elle concerne un personnage). Même une petite question, même un choix oui / non.

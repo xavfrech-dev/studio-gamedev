@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.5] - 2026-11-13
+
+### Ajouté
+- Santé du PC (réglage `sante_auto`, coupé par défaut) : processeur, mémoire, disque et carte graphique (psutil s'il est installé, sinon un repli léger sous Windows, Linux et macOS), jauge dans le groupe ; quand la machine sature (processeur > 92 % au moins 8 des 10 dernières minutes, mémoire > 90 %, disque < 30 Go), il le signale, propose des pauses et retarde les attributions automatiques, la tyrannie et les embauches. Il ne tue aucun processus et ne touche ni au système, ni au moteur, ni au jeu.
+- Fiche d'un personnage : « Nom et rôles » (nom affiché, métiers à cocher, rôle libre), route `POST /api/agent` (fiche de recrue et définition d'agent mises à jour proprement ; postes de la config : `reglages.json`). La tyrannie compte ces métiers pour le travail disponible.
+- Point d'équipe : le point régulier de l'assistant (tableau chantier / étape / % / reste, heure de fin, ce qui a fini, rapport dans le studio, lecture des réponses, lancement des demandes en attente, fréquence réglable), décrit dans `references/point_equipe.md`, commande `/point-equipe`. Coupé par défaut ; « Tout couper » l'arrête, le mode nuit l'empile ; petite blague bon enfant désactivable (`blague`).
+
 ## [0.3.4] - 2026-11-13
 
 ### Ajouté
