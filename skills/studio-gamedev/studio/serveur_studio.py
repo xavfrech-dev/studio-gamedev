@@ -507,7 +507,7 @@ class Studio(SimpleHTTPRequestHandler):
                     raise Refus(400, "donnée invalide (type inattendu)")
                 self.repondre(200, rep)
         except Refus as e:
-            self.repondre(e.code, {"ok": False, "erreur": str(e)})
+            self.repondre(e.code, {"ok": False, "erreur": refus_langue(str(e))})
         except Exception as e:  # jamais de trace détaillée vers la page
             sys.stderr.write(f"erreur interne : {e!r}\n")
             self.repondre(500, {"ok": False, "erreur": "erreur interne"})
@@ -1030,10 +1030,13 @@ def route_agent(d):
                     t = re.sub(r"(?m)^model: .*$", "model: " + modele, t, count=1)
                 else:
                     t = re.sub(r"(?m)^(description: .*)$", lambda m: m.group(1) + "\nmodel: " + modele, t, count=1)
+            en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
+            if role:                                     # F24 : la section du rôle suit aussi (« Ton rôle » / « Your role »)
+                t = re.sub(r"(\n## (?:Ton rôle|Your role)\n).*?(?=\n## |\Z)", lambda m: m.group(1) + role + "\n", t, count=1, flags=re.S)
             if metiers is not None:
-                t = re.sub(r"\n## Métiers\n.*?(?=\n## |\Z)", "", t, flags=re.S)
+                t = re.sub(r"\n## (?:Métiers|Trades)\n.*?(?=\n## |\Z)", "", t, flags=re.S)
                 if metiers:
-                    t = t.rstrip("\n") + "\n\n## Métiers\n" + ", ".join(metiers) + "\n"
+                    t = t.rstrip("\n") + "\n\n## " + ("Trades" if en else "Métiers") + "\n" + ", ".join(metiers) + "\n"
             with open(md + ".tmp", "w", encoding="utf-8", newline="\n") as f:
                 f.write(t)
             os.replace(md + ".tmp", md)
@@ -1185,6 +1188,54 @@ def route_couper(d):
     r["maj"] = maintenant()
     ecrire_json(chemin, r)
     return {"ok": True, "reglages": r}
+
+
+# F25 : refus dans la langue du projet (les messages sont écrits en français ; un projet non français les reçoit en anglais)
+REFUS_EN = [
+    ('^« (.+) » a une tâche en cours : (.*)$', '“\\1” has a task in progress: \\2'),
+    ('^attribution automatique coupée.*$', 'automatic assignment is off (Settings or economie.attribution_auto)'),
+    ('^embauches automatiques coupées.*$', 'automatic hiring is off (Settings or economie.embauche_auto)'),
+    ('^les postes de base du studio ne se renvoient pas$', "the studio's base desks cannot be let go"),
+    ('^« (.+) » a été renvoyé : seule une réembauche à la main le fait revenir$', '“\\1” was let go: only a manual rehire brings them back'),
+    ('^« (.+) » est déjà un poste du studio : choisis un autre nom$', '“\\1” is already a studio desk: pick another name'),
+    ("^« (.+) » existe déjà dans l'équipe$", '“\\1” is already in the team'),
+    ("^l'agent « (.+) » existe déjà \\(coche « remplacer » pour remplacer une recrue du studio\\)$", 'agent “\\1” already exists (tick “replace” to replace a studio recruit)'),
+    ("^l'agent « (.+) » n'a pas été recruté par le studio.*$", 'agent “\\1” was not hired by the studio (written by hand?): it is never replaced, pick another name'),
+    ('^le studio a déjà (\\d+) bureaux$', 'the studio already has \\1 desks'),
+    ("^(\\d+) bureaux occupés : renvoie une recrue avant d'en embaucher une autre$", '\\1 desks taken: let a recruit go before hiring another'),
+    ('^une embauche automatique par heure au plus$', 'at most one automatic hire per hour'),
+    ('^une transcription est déjà en cours : réessaie dans un instant$', 'a transcription is already running: try again in a moment'),
+    ("^la demande d'optimisation d'il y a (\\d+) min attend encore sa réponse$", 'the optimization request from \\1 min ago is still waiting for an answer'),
+    ('^optimisation déjà demandée il y a (\\d+) min \\(une toutes les (\\d+) min au plus\\)$', 'optimization already requested \\1 min ago (at most one every \\2 min)'),
+    ('^(\\d+) attributions automatiques par heure au plus pour « (.+) »$', 'at most \\1 automatic assignments per hour for “\\2”'),
+    ('^« (.+) » a déjà une attribution automatique en attente$', '“\\1” already has an automatic assignment waiting'),
+    ('^transcription locale absente.*$', 'local transcription missing: install faster-whisper (pip install faster-whisper) or use a browser with speech recognition; you can always type your answer'),
+    ('^choisir une option ou écrire une réponse$', 'pick an option or write an answer'),
+    ('^fichier occupé \\((.+)\\), réessaie dans un instant$', 'file busy (\\1), try again in a moment'),
+    ('^reponses\\.json illisible.*$', 'reponses.json is unreadable: nothing is written (repair or rename it)'),
+    ("^(.+) est illisible \\((.+)\\) : rien n'est écrit pour ne rien perdre\\..*$", '\\1 is unreadable (\\2): nothing is written so nothing is lost.'),
+    ('^nom : 3 à 40 caractères.*$', 'name: 3 to 40 characters among a-z, 0-9 and - (starting with a letter or digit)'),
+    ('^audio illisible \\((.*)\\)$', 'unreadable audio (\\1)'),
+    ('^audio vide ou trop long$', 'audio empty or too long'),
+    ('^recrue « (.+) » inconnue$', 'unknown recruit “\\1”'),
+    ('^ancien « (.+) » inconnu$', 'unknown former member “\\1”'),
+    ('^agent « (.+) » inconnu$', 'unknown agent “\\1”'),
+    ('^poste inconnu$', 'unknown desk'),
+    ('^donnée invalide \\(type inattendu\\)$', 'invalid data (unexpected type)'),
+]
+
+
+def refus_langue(msg):
+    try:
+        conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) if Etat.studio else {}
+        if str((conf or {}).get("langue") or "fr")[:2].lower() == "fr":
+            return msg
+    except Exception:
+        return msg
+    for motif, rempl in REFUS_EN:
+        if re.match(motif, msg):
+            return re.sub(motif, rempl, msg)
+    return msg
 
 
 def route_reglages(d):

@@ -162,17 +162,18 @@ def mesures_pc():
     return dict({"cpu": cpu, "memoire_pct": mem, "cpu_sature_min": sum(1 for _, v in _CPU_HIST[-10:] if v >= 92)}, **_GPU["v"])
 
 
-def sante_pc(sy):
+def sante_pc(sy, en=False):
     alertes = []
     if (sy.get("cpu_sature_min") or 0) >= 8:
-        alertes.append(f"processeur saturé ({sy['cpu_sature_min']}/10 min au-dessus de 92 %)")
+        alertes.append(f"CPU saturated ({sy['cpu_sature_min']}/10 min above 92 %)" if en else f"processeur saturé ({sy['cpu_sature_min']}/10 min au-dessus de 92 %)")
     if sy.get("memoire_pct") is not None and sy["memoire_pct"] > 90:
-        alertes.append(f"mémoire utilisée à {sy['memoire_pct']} %")
+        alertes.append(f"memory used at {sy['memoire_pct']} %" if en else f"mémoire utilisée à {sy['memoire_pct']} %")
     if sy.get("disque_libre_go") is not None and sy["disque_libre_go"] < 30:
-        alertes.append(f"disque presque plein ({sy['disque_libre_go']} Go libres)")
+        alertes.append(f"disk almost full ({sy['disque_libre_go']} GB free)" if en else f"disque presque plein ({sy['disque_libre_go']} Go libres)")
     charge = max([v for v in (sy.get("cpu"), sy.get("memoire_pct"), sy.get("gpu")) if isinstance(v, (int, float))] or [0])
-    pauses = ["espacer les tâches lourdes ; les attributions automatiques attendent la fin de la saturation",
-              "un seul outil lourd (moteur, rendu 3D) à la fois"] if alertes else []
+    pauses = (["space out heavy tasks; automatic assignments wait until the saturation ends", "one heavy tool (engine, 3D render) at a time"] if en else
+              ["espacer les tâches lourdes ; les attributions automatiques attendent la fin de la saturation",
+               "un seul outil lourd (moteur, rendu 3D) à la fois"]) if alertes else []
     return {"sature": bool(alertes), "alertes": alertes, "pauses": pauses, "charge": int(charge)}
 
 
@@ -1093,7 +1094,7 @@ class Studio:
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "sante": sante_pc(sysinfo), "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": sysinfo, "sante": sante_pc(sysinfo, self.en()), "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }

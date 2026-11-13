@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.16] - 2026-11-13
+
+### Corrigé
+- Projet en anglais (F24) : changer le rôle d'une recrue réécrit aussi la section « Your role » / « Ton rôle » de sa définition d'agent ; le titre des métiers suit la langue du projet (« Trades » / « Métiers »).
+- Projet en anglais (F25) : les refus du serveur (tâche en cours, réglage coupé, poste de base, nom, plafonds…) et les alertes de santé du PC sont en anglais.
+- Projet en anglais (F26) : l'éditeur de personnage traduit ses libellés et ses options (« Build », « headphones »…) ; les valeurs enregistrées ne changent pas.
+
 ## [0.4.15] - 2026-11-13
 
 ### Modifié
