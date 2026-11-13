@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.6] - 2026-11-13
+
+### Corrigé
+- Tyrannie : elle ne relance plus un personnage pour qui il ne reste aucune tâche faisable (métier, préparation sans moteur, hors métier sans moteur, déjà confiées exclues). Quand tout le travail restant attend le moteur, elle affiche « file moteur » et laisse les personnages souffler, sans déposer de demande.
+
 ## [0.3.5] - 2026-11-13
 
 ### Ajouté
