@@ -763,6 +763,9 @@ def route_agent(d):
     metiers = d.get("metiers")
     if metiers is not None and (not isinstance(metiers, list) or len(metiers) > 6 or any(m not in METIERS_PERMIS for m in metiers)):
         raise Refus(400, "métiers : " + ", ".join(sorted(METIERS_PERMIS)))
+    modele = texte(d, "modele", 10)
+    if modele and modele not in ("haiku", "sonnet", "opus", "inherit"):
+        raise Refus(400, "modèle : haiku, sonnet, opus ou inherit")
     fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
     if os.path.isfile(fiche_ch):
         fiche = lire_json(fiche_ch, {}) or {}
@@ -772,6 +775,8 @@ def route_agent(d):
             fiche["role"] = role
         if metiers is not None:
             fiche["metiers"] = metiers
+        if modele:
+            fiche["modele"] = modele
         ecrire_json(fiche_ch, fiche)
         md = os.path.join(dossier_agents(conf), nom + ".md")
         if os.path.isfile(md):
@@ -779,6 +784,11 @@ def route_agent(d):
                 t = f.read()
             if role:
                 t = re.sub(r"(?m)^description: .*$", lambda m: "description: " + yaml_chaine(role), t, count=1)
+            if modele:                                   # frontmatter « model: » (vaut au prochain lancement de l'agent)
+                if re.search(r"(?m)^model: .*$", t.split("\n---", 1)[0]):
+                    t = re.sub(r"(?m)^model: .*$", "model: " + modele, t, count=1)
+                else:
+                    t = re.sub(r"(?m)^(description: .*)$", lambda m: m.group(1) + "\nmodel: " + modele, t, count=1)
             if metiers is not None:
                 t = re.sub(r"\n## Métiers\n.*?(?=\n## |\Z)", "", t, flags=re.S)
                 if metiers:
@@ -797,6 +807,8 @@ def route_agent(d):
         r.setdefault("roles_postes", {})[nom] = role
     if metiers is not None:
         r.setdefault("metiers_postes", {})[nom] = metiers
+    if modele:
+        r.setdefault("modeles_postes", {})[nom] = modele
     r["maj"] = maintenant()
     ecrire_json(chemin, r)
     return {"ok": True}

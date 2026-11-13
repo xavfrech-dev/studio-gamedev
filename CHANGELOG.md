@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.7] - 2026-11-13
+
+### Ajouté
+- Fiche « Nom et rôles » : choix du modèle d'IA de l'agent (Rapide = Haiku, Équilibré = Sonnet, Le plus fort = Opus, Comme la session). Recrue : champ `modele` de sa fiche et ligne `model:` de sa définition d'agent (ajoutée si elle manque) ; poste de la config : `modeles_postes` dans `reglages.json`, relu quand l'assistant lance l'agent. Le modèle s'affiche dans la bulle d'infos ; il vaut pour le prochain lancement, pas pour une tâche en cours.
+
 ## [0.3.6] - 2026-11-13
 
 ### Corrigé
