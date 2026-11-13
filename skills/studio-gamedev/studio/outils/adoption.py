@@ -539,11 +539,13 @@ def analyser(projet):
 
     nom = moteur.get("nom_projet") or (premier_titre(lire_texte(os.path.join(projet, readme))) if readme else "") or os.path.basename(os.path.abspath(projet))
     moteur_txt = f"{moteur['nom'] or 'moteur non reconnu'} {moteur['version'] or ''}".strip()
+    def pl(n, mot, mots=None):                 # « 1 scène », « 2 scènes »
+        return f"{n} {mot if n in (0, 1) else (mots or mot + 's')}"
     resume = [
         f"Projet « {nom} » : {moteur_txt}" + (f", {moteur['langage']}" if moteur["langage"] else "") + ".",
-        f"{len(scenes)} scènes" + (f" ({len(niveaux)} niveaux)" if niveaux else "") + f", {len(scripts)} scripts ({lignes_tot} lignes), {n_assets} assets.",
+        pl(len(scenes), "scène") + (f" ({pl(len(niveaux), 'niveau', 'niveaux')})" if niveaux else "") + f", {pl(len(scripts), 'script')} ({pl(lignes_tot, 'ligne')}), {pl(n_assets, 'asset')}.",
         "Déjà codé : " + (", ".join(s["titre"].lower() for s in systemes[:8]) or "rien de reconnu") + ".",
-        ("Historique : " + f"{git_inf['commits']} commits sur {git_inf.get('jours_actifs', 0)} jours, ≈ {deja} h de travail" if git_inf.get("commits") else f"Pas d'historique git ; ≈ {deja} h de travail estimées") + (f" ; {len(todo)} TODO" if todo else "") + ".",
+        ("Historique : " + f"{pl(git_inf['commits'], 'commit')} sur {pl(git_inf.get('jours_actifs', 0), 'jour')}, ≈ {deja} h de travail" if git_inf.get("commits") else f"Pas d'historique git ; ≈ {deja} h de travail estimées") + (f" ; {len(todo)} TODO" if todo else "") + ".",
         "Docs déjà là : " + (", ".join(d["chemin"] for d in docs[:6]) or "aucune") + " ; je n'écrase rien (fichiers *.studio.md ou bloc délimité avec ton accord).",
     ]
     return {

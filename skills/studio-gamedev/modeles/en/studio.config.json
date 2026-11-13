@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "mode": "accueil",
+  "nom_projet": "{{nom_projet}}",
+  "langue": "en",
+  "dossier_projet": ".",
+  "dossier_studio": ".studio",
+  "dossier_donnees": "",
+  "dossier_agents": ".claude/agents",
+  "dossier_session": "auto",
+  "port": 8790,
+  "moteur": {},
+  "profil": "profil.json",
+  "postes": [],
+  "sources_images": [],
+  "libelles_etapes": {},
+  "economie": {
+    "agents_max": 2,
+    "modele_agents": "sonnet",
+    "point_min": 120,
+    "point_si_changement": true,
+    "enchainer": false,
+    "pause_si_absent_min": 60,
+    "optimisation_auto": false,
+    "attribution_auto": false,
+    "embauche_auto": false,
+    "attente_max_s": 1800
+  },
+  "regles_agent": [
+    "Write in the project language, in short sentences.",
+    "Only start the engine if you are the engine chain; when in doubt, ask Direction.",
+    "Work in your own worktree; do not touch other people's work.",
+    "Minimal tests: build, targeted tests, one short run.",
+    "No push or release; never an API key in a file.",
+    "Heavy data outside the repository."
+  ]
+}

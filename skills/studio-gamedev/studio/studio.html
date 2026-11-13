@@ -87,6 +87,7 @@ body.questionnaire #indice{display:none}
 #toasts{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
 .toast{pointer-events:auto;max-width:min(380px,90vw);background:linear-gradient(180deg,#3a3128,#2a241d);border:1px solid rgba(226,184,102,.45);border-radius:10px;padding:9px 14px;color:#f4ecd9;box-shadow:0 10px 26px rgba(0,0,0,.45);transition:opacity .4s,transform .4s}
 .toast.erreur{border-color:#c2533c}
+#entete .bt.danger.rallumer,.bt.rallumer{background:#3f7a52;color:#fff;border-color:#8fc49e}
 .toast{position:relative;width:min(560px,92vw);max-width:min(560px,92vw);font-size:18px;line-height:1.35;padding:12px 16px 12px 58px}
 .toast::before{content:attr(data-picto);position:absolute;left:16px;top:12px;font-size:26px;line-height:1}
 .toast.part{opacity:0;transform:translateY(8px)}
@@ -273,13 +274,13 @@ body.questionnaire #indice{display:none}
 </style>
 </head>
 <body>
-<canvas id="bureau" aria-label="Le bureau du studio"></canvas>
+<canvas id="bureau" aria-label="Le bureau du studio" data-ta-a="a_bureau"></canvas>
 <header id="entete">
   <h1 id="nom">Studio</h1>
-  <div id="v1" title="Avancement pondéré de la roadmap"><span data-t="version">Version</span><div class="piste"><div class="plein" id="v1-plein"></div></div><b id="v1-pct">—</b></div>
+  <div id="v1" title="Avancement pondéré de la roadmap" data-tt-t="a_v1"><span data-t="version">Version</span><div class="piste"><div class="plein" id="v1-plein"></div></div><b id="v1-pct">—</b></div>
   <div id="horloge" aria-live="off"></div>
-  <button type="button" id="niveau" title="Niveau du studio" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b> · <span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
-  <nav class="outils" aria-label="Outils">
+  <button type="button" id="niveau" title="Niveau du studio" data-tt-t="a_niveau" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b> · <span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
+  <nav class="outils" aria-label="Outils" data-ta-a="a_outils">
     <button type="button" class="bt" id="bt-ensemble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg><span data-t="ensemble">Vue d’ensemble</span></button>
     <button type="button" class="bt" id="bt-journal"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 2h8l2 2v10H3z"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3"/></svg><span data-t="journal">Journal</span></button>
     <button type="button" class="bt" id="bt-optim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/><circle cx="8" cy="8" r="2.5"/></svg><span data-t="optimiser">Optimiser</span><b class="pastille" id="nb-optim"></b></button>
@@ -287,30 +288,30 @@ body.questionnaire #indice{display:none}
     <button type="button" class="bt" id="bt-perso"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="5" r="2.6"/><path d="M3 14c.5-3 2.5-4.5 5-4.5s4.5 1.5 5 4.5"/></svg><span data-t="personnaliser">Personnaliser</span></button>
     <button type="button" class="bt" id="bt-plein"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><span data-t="plein_ecran">Plein écran</span></button>
     <button type="button" class="bt" id="bt-absent"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12.5 10.2A5.5 5.5 0 0 1 5.8 3.5a5.5 5.5 0 1 0 6.7 6.7z"/></svg><span data-t="mode_nuit">Mode nuit</span></button>
-    <button type="button" class="bt danger" id="bt-couper" title="Tout couper"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5v4"/></svg><span data-t="tout_couper">Tout couper</span></button>
+    <button type="button" class="bt danger" id="bt-couper" title="Tout couper" data-tt-t="a_couper"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M8 4.5v4"/></svg><span data-t="tout_couper">Tout couper</span></button>
     <button type="button" class="bt" id="bt-decisions" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 11V7a4 4 0 0 1 8 0v4l1.5 1.5h-11z"/><path d="M6.5 14a1.5 1.5 0 0 0 3 0"/></svg><span data-t="decisions">Décisions</span> <span class="pastille" id="nb-decisions"></span></button>
     <button type="button" class="bt" id="bt-notifs" aria-haspopup="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="9" rx="1.5"/><path d="M2.5 4l5.5 4 5.5-4"/></svg><span data-t="notifs">Notifications</span> <span class="pastille" id="nb-notifs"></span></button>
     <button type="button" class="bt" id="bt-rapport" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="1.5" width="10" height="13" rx="1.5"/><path d="M5.5 5h5M5.5 8h5M5.5 11h3"/></svg><span data-t="rapport">Rapport</span></button>
     <button type="button" class="bt" id="bt-images" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><circle cx="5.5" cy="6" r="1.3"/><path d="M2 12l4-4 3 3 2-2 3.5 3.5"/></svg><span data-t="images">Images</span> <span class="pastille" id="nb-images"></span></button>
     <button type="button" class="bt" id="bt-recruter" hidden><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="6.5" cy="5" r="2.6"/><path d="M1.8 14c.4-3 2.3-4.6 4.7-4.6s4.3 1.6 4.7 4.6M12.5 4.5v5M10 7h5"/></svg><span data-t="recruter">Recruter</span></button>
     <button type="button" class="bt" id="bt-conv"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 3.5h9v6H6l-3 2.5v-2.5H2z"/><path d="M11 6h3v5.5h-1V14l-2.6-2.5H7"/></svg><span data-t="conversation">Conversation</span> <span class="pastille" id="nb-conv"></span></button>
-    <button type="button" class="bt" id="bt-reglages" title="Réglages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg><span data-t="reglages">Réglages</span></button>
+    <button type="button" class="bt" id="bt-reglages" title="Réglages" data-tt-t="a_reglages"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg><span data-t="reglages">Réglages</span></button>
     <button type="button" class="bt fort" id="bt-assistant"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8" rx="2.5"/><path d="M3 8a5 5 0 0 0 10 0M8 13v2"/></svg><span data-t="appeler">Appeler l'assistant</span></button>
-    <button type="button" class="bt" id="bt-son" title="Son"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="son-onde" d="M11 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
+    <button type="button" class="bt" id="bt-son" title="Son" data-tt-t="a_son"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path id="son-onde" d="M11 5.5a3.5 3.5 0 0 1 0 5"/></svg></button>
   </nav>
 </header>
-<aside id="notifs" hidden aria-label="Notifications"></aside>
-<aside id="equipe" aria-label="L'équipe"></aside>
+<aside id="notifs" hidden aria-label="Notifications" data-ta-a="a_notifs"></aside>
+<aside id="equipe" aria-label="L'équipe" data-ta-a="a_equipe"></aside>
 <div id="alerte-etat" role="alert" hidden></div>
-<div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer">×</button><div id="pn-corps"></div></div></div>
+<div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer" data-ta-a="a_fermer">×</button><div id="pn-corps"></div></div></div>
 <section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="sc-corps"></div></section>
 <div id="succes" role="status" aria-live="polite"></div>
 <div id="toasts"></div>
-<div id="micro-zone"><div id="micro-carte" hidden></div><div class="boutons-bas"><button type="button" id="bt-chat" aria-label="Chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button><button type="button" id="gros-micro" title="Parler au studio (ou barre d'espace maintenue)" aria-label="Parler au studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button></div></div>
+<div id="micro-zone"><div id="micro-carte" hidden></div><div class="boutons-bas"><button type="button" id="bt-chat" aria-label="Chat" data-ta-a="a_chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button><button type="button" id="gros-micro" title="Parler au studio (ou barre d'espace maintenue)" data-tt-t="a_micro_t" aria-label="Parler au studio" data-ta-a="a_micro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button></div></div>
 <div id="lune" hidden>🌙</div>
 <div id="bulle-info" aria-hidden="true"></div>
 <span id="fraicheur" hidden></span>
-<div id="zoom"><button type="button" id="z-plus" title="Zoomer (molette)" aria-label="Zoomer">+</button><button type="button" id="z-moins" title="Dézoomer" aria-label="Dézoomer">−</button><button type="button" id="z-cadre" title="Recentrer" aria-label="Recentrer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><circle cx="8" cy="8" r="1.6"/></svg></button></div>
+<div id="zoom"><button type="button" id="z-plus" title="Zoomer (molette)" data-tt-t="a_zoom_t" aria-label="Zoomer" data-ta-a="a_zoom">+</button><button type="button" id="z-moins" title="Dézoomer" data-tt-t="a_dezoom" aria-label="Dézoomer" data-ta-a="a_dezoom">−</button><button type="button" id="z-cadre" title="Recentrer" data-tt-t="a_recentrer" aria-label="Recentrer" data-ta-a="a_recentrer"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/><circle cx="8" cy="8" r="1.6"/></svg></button></div>
 <div id="msg-attente" hidden role="status"></div>
 <div id="radio-titre" hidden aria-live="off"></div>
 <div id="tuto" hidden role="dialog" aria-live="polite"></div>
@@ -336,7 +337,7 @@ const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message |
 
 // ====================================================================== textes de l'interface
 const TXT = {
-  fr: { modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Le plus fort (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : surveille processeur, mémoire, disque et carte graphique ; retarde les automatismes quand la machine sature', sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Mode nuit', je_suis_la: 'Je suis là', nuit_on: 'Mode nuit : plus aucune notification ; le studio continue et note tout', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+  fr: { tout_rallumer: 'Tout rallumer', rallume_ok: 'Tout rallumé : les automatismes reprennent comme avant.', pause_depuis: 'Automatismes en pause depuis', regle: 'réglé', nouvelle: 'dernière nouvelle de l’agent :', il_y_a: 'il y a {m} min', a_l_instant: 'à l’instant', app_aucune: 'aucun', app_casque: 'casque', app_casquette: 'casquette', app_beret: 'béret', app_lunettes: 'lunettes', app_chapeau: 'chapeau', app_casque_audio: 'casque audio', app_barbe: 'barbe', a_bureau: 'Le bureau du studio', a_v1: 'Avancement pondéré de la roadmap', a_niveau: 'Niveau du studio', a_outils: 'Outils', a_couper: 'Tout couper', a_reglages: 'Réglages', a_son: 'Son', a_notifs: 'Notifications', a_equipe: 'L\'équipe', a_fermer: 'Fermer', a_chat: 'Chat', a_micro_t: 'Parler au studio (ou barre d\'espace maintenue)', a_micro: 'Parler au studio', a_zoom_t: 'Zoomer (molette)', a_zoom: 'Zoomer', a_dezoom: 'Dézoomer', a_recentrer: 'Recentrer', modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Le plus fort (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : surveille processeur, mémoire, disque et carte graphique ; retarde les automatismes quand la machine sature', sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Mode nuit', je_suis_la: 'Je suis là', nuit_on: 'Mode nuit : plus aucune notification ; le studio continue et note tout', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
     travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
@@ -365,7 +366,7 @@ const TXT = {
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Alimentation arrêtée depuis {m} min : la page calcule l’état elle-même (relance studio_etat.py ou veille_studio.py).', illisible: 'Fichier illisible ignoré' },
-  en: { modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Strongest (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'Night mode', je_suis_la: 'I’m back', nuit_on: 'Night mode: no more notifications; the studio keeps going and logs everything', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+  en: { tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar)', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Strongest (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'Night mode', je_suis_la: 'I’m back', nuit_on: 'Night mode: no more notifications; the studio keeps going and logs everything', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
@@ -398,7 +399,7 @@ const TXT = {
 let LANGUE = 'fr';
 const t = k => (TXT[LANGUE] && TXT[LANGUE][k]) || TXT.fr[k] || k;
 const tf = (k, o) => t(k).replace(/\{(\w+)\}/g, (_, x) => o[x] == null ? '' : String(o[x]));
-function traduirePage() { document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); }); $('#indice').textContent = t('indice'); $('#niv-t').textContent = t('niv'); }
+function traduirePage() { document.querySelectorAll('[data-t]').forEach(e => { e.textContent = t(e.dataset.t); }); document.querySelectorAll('[data-tt-t]').forEach(e => { e.title = t(e.dataset.ttT); }); document.querySelectorAll('[data-ta-a]').forEach(e => { e.setAttribute('aria-label', t(e.dataset.taA)); }); $('#indice').textContent = t('indice'); $('#niv-t').textContent = t('niv'); }
 
 // ====================================================================== données lues dans .studio/
 let ANALYSE = undefined;   // adoption : analyse_projet.json lu une fois ; ses déductions passent avant celles de deductions.json
@@ -641,7 +642,8 @@ function majEntete() {
   document.title = nom + ' · Studio';
   majNiveau();
 }
-const decisionsOuvertes = () => DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(r => r && r.id === d.id));
+// ouverte : pas de réponse dans reponses.json et pas fermée par l'assistant (statut « repondue », « reglee »… après une réponse dans le chat)
+const decisionsOuvertes = () => DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(r => r && r.id === d.id) && (!d.statut || ['ouverte', 'en_attente'].includes(d.statut)));
 function verifierDecisions() {
   const l = decisionsOuvertes(), b = $('#bt-decisions');
   b.hidden = !l.length; $('#nb-decisions').textContent = l.length ? String(l.length) : ''; b.classList.toggle('sonne', !!l.length);
@@ -756,8 +758,26 @@ function etatPoste(p) {
   if (pct !== null && (!h.length || h[h.length - 1][1] !== pct || n - h[h.length - 1][0] > 60000)) h.push([n, pct]);
   HIST[p.id] = h.filter(x => n - x[0] < 20 * 60000).slice(-40);
   let reste = null;
-  if (etat === 'travaille' || etat === 'bloque') { reste = ep ? nombre(ep.restant_min) : null; if (reste === null) reste = minutesRestantes(p, pr, pct || 0); }
-  return { pct, etat, restantes, texte, reste, ligne, occupe: etat === 'travaille' };
+  if (etat === 'travaille' || etat === 'bloque') { reste = ep && nombre(ep.fin_t) ? Math.max(0, (ep.fin_t * 1000 - n) / 60000) : ep ? nombre(ep.restant_min) : null; if (reste === null) reste = minutesRestantes(p, pr, pct || 0); }
+  if (pct !== null) pct = pctVivant(p.id, pct, ep, etat);
+  return { pct, etat, restantes, texte, reste, ligne, occupe: etat === 'travaille', nouvelle: ep && nombre(ep.progression_t) ? ep.progression_t * 1000 : null };
+}
+// Temps réel : entre deux écritures de l'agent, la barre avance de pct (heure du fichier, progression_t) vers 100 à la fin
+// prévue (fin_t), jamais au-delà de 99 tant que l'agent n'a pas écrit 100 ; un nouveau fichier plus bas la fait redescendre
+// doucement (0,5 point par seconde), jamais d'un coup.
+const VIF = {};
+function pctVivant(id, b, ep, etat) {
+  const n = Date.now(), t0 = ep ? nombre(ep.progression_t) * 1000 : 0, fin = ep ? nombre(ep.fin_t) * 1000 : 0;
+  let cible = b;
+  if (b < 100 && t0 && fin > t0 && etat === 'travaille') cible = Math.min(99, b + (100 - b) * clamp((n - t0) / (fin - t0), 0, 1));
+  const v = VIF[id] || (VIF[id] = { aff: cible, t: n }), dt = Math.max(0, (n - v.t) / 1000); v.t = n;
+  v.aff = cible >= v.aff || b >= 100 ? cible : Math.max(cible, v.aff - .5 * dt);
+  return v.aff;
+}
+function nouvelleTxt(e) {
+  if (!e || !e.nouvelle) return '';
+  const d = new Date(e.nouvelle), m = Math.round((Date.now() - e.nouvelle) / 60000);
+  return t('nouvelle') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + (m >= 1 ? ' (' + tf('il_y_a', { m }) + ')' : ' (' + t('a_l_instant') + ')');
 }
 function duree(min) { if (min == null) return '?'; min = Math.round(min); if (min < 1) return '<1 min'; if (min < 60) return min + ' min'; const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : ''); }
 let ETATS_PREC = LS.get('etats_postes', {});
@@ -842,17 +862,34 @@ document.addEventListener('click', async e => {
   if (document.documentElement.dataset.essai === 'sans-envoi') { document.documentElement.dataset.dernierEnvoi = JSON.stringify(corps); res.textContent = t('enregistre'); return; }
   try { await poster('/api/agent', corps); res.textContent = t('enregistre'); Son.clic(); chargerTout().catch(() => {}); } catch (err) { res.textContent = err.message; }
 });
+function ficheHaut(p, e) {
+  const m = p.modele && p.modele !== 'inherit' ? ` · ${esc(t('modele_t'))} : ${esc(p.modele)}` : '';
+  return `${p.role || m ? `<p style="margin:0">${p.role ? `<b>${esc(t('role'))} :</b> ${esc(p.role)}` : ''}${Array.isArray(p.metiers) && p.metiers.length ? ' · ' + p.metiers.map(x => esc(t('m_' + x))).join(', ') : ''}${m}</p>` : ''}
+      ${e.pct !== null ? `<div class="barre"><i style="width:${e.pct}%"></i><span>${Math.round(e.pct)} %${e.reste !== null || e.etat === 'travaille' ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}</span></div>` : ''}
+      <p style="margin:0">${esc(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
+      ${e.texte && e.texte !== e.ligne.texte ? `<p class="discret" style="margin:0">${esc(e.texte)}</p>` : ''}
+      ${e.nouvelle ? `<p class="discret" style="margin:0">${esc(nouvelleTxt(e))}</p>` : ''}`;
+}
+function ficheEtapes(e) { return e.restantes.length ? `<ol class="etapes">${e.restantes.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('aucune_etape'))}</p>`; }
+// tic de 5 s : l'équipe, la fiche ouverte (sans toucher aux champs) et la vue d'ensemble suivent la barre interpolée
+function ticVif() {
+  try { majEquipe(); } catch (e) { /* rien */ }
+  const o = Panneau.ouvert() || '', corps = $('#pn-corps');
+  if (o.startsWith('poste:')) {
+    const p = postes().find(x => 'poste:' + x.id === o); if (!p) return;
+    const e = etatPoste(p), maj = (sel, html) => { const z = corps.querySelector(sel); if (z && z._html !== html) { z._html = html; z.innerHTML = html; } };
+    maj('[data-vif-haut]', ficheHaut(p, e)); maj('[data-vif-etapes]', ficheEtapes(e)); maj('[data-vif-nom]', esc(nomPoste(p))); maj('[data-vif-etat]', esc(t(e.etat)));
+  } else if (o === 'ensemble') { const z = corps.querySelector('[data-vif-ensemble]'); if (z) { const html = ensemblePostes(); if (z._html !== html) { z._html = html; z.innerHTML = html; lierEnsemble(z); } } }
+}
+setInterval(() => { ticVif(); try { majADecider(); } catch (e) { /* rien */ } }, 5000);
 function ficheposte(p) {
   Panneau.montrer('poste:' + p.id, el => {
     const e = etatPoste(p);
-    el.innerHTML = `<div class="surtitre">${esc(t(e.etat))}</div><h2>${esc(nomPoste(p))}</h2>
+    el.innerHTML = `<div class="surtitre" data-vif-etat>${esc(t(e.etat))}</div><h2 data-vif-nom>${esc(nomPoste(p))}</h2>
       <div style="display:flex;gap:14px;align-items:center"><canvas width="160" height="160" style="width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#fffaf0,#e9dcbc)"></canvas>
-      <div style="flex:1">${p.role ? `<p style="margin:0"><b>${esc(t('role'))} :</b> ${esc(p.role)}</p>` : ''}
-      ${e.pct !== null ? `<div class="barre"><i style="width:${e.pct}%"></i><span>${Math.round(e.pct)} %${e.reste !== null || e.etat === 'travaille' ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}</span></div>` : ''}
-      <p style="margin:0">${esc(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
-      ${e.texte && e.texte !== e.ligne.texte ? `<p class="discret" style="margin:0">${esc(e.texte)}</p>` : ''}</div></div>
+      <div style="flex:1" data-vif-haut>${ficheHaut(p, e)}</div></div>
       ${p.mission ? `<h3>${esc(t('mission'))}</h3><p style="white-space:pre-wrap">${esc(p.mission)}</p>` : ''}
-      <h3>${esc(t('etapes'))}</h3>${e.restantes.length ? `<ol class="etapes">${e.restantes.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('aucune_etape'))}</p>`}
+      <h3>${esc(t('etapes'))}</h3><div data-vif-etapes>${ficheEtapes(e)}</div>
       ${Array.isArray(p.skills) && p.skills.length ? `<p class="discret">${esc(t('skills'))} : ${p.skills.map(esc).join(', ')}</p>` : ''}
       ${e.etat === 'disponible' && CONF.mode === 'travail' ? FinTache.encadre(p) : ''}
       ${blocRoles(p)}
@@ -897,7 +934,7 @@ function recruter() {
         ${champ('rc-poste', 'rec_bureau', '<input type="text" id="rc-poste" maxlength="80" list="rc-postes"><datalist id="rc-postes">' + postes().map(p => `<option value="${esc(p.id)}">${esc(nomPoste(p))}</option>`).join('') + '</datalist>')}
         ${champ('rc-skills', 'rec_skills', '<input type="text" id="rc-skills" maxlength="400" placeholder="gamedev:router" spellcheck="false">')}
         ${champ('rc-couleur', 'rec_couleur', '<input type="color" id="rc-couleur" value="#6b8f71">')}
-        ${champ('rc-app', 'rec_apparence', '<select id="rc-app">' + APPARENCES.map(a => `<option value="${a}">${esc(a.replace('_', ' '))}</option>`).join('') + '</select>')}
+        ${champ('rc-app', 'rec_apparence', '<select id="rc-app">' + APPARENCES.map(a => `<option value="${a}">${esc(t('app_' + a))}</option>`).join('') + '</select>')}
         <label class="champ coche plein"><input type="checkbox" id="rc-lancer" checked> ${esc(t('rec_lancer'))}</label>
         <label class="champ coche plein"><input type="checkbox" id="rc-remplacer"> ${esc(t('rec_remplacer'))}</label>
       </div>
@@ -946,7 +983,7 @@ async function anciens(z) {
 // Une tâche prête dont le poste n'a personne : le studio embauche ce métier (1 par heure, 12 bureaux, jamais un ancien renvoyé ;
 // le serveur revérifie tout). La recrue arrive avec lancer: false : Claude ne lance rien sans accord.
 async function embaucheAuto() {
-  if (CONF.mode !== 'travail' || !(auto('embauche_auto') || Tyrannie.active()) || machineSaturee() || postes().length >= NB_BUREAUX || document.hidden) return;
+  if (CONF.mode !== 'travail' || !(auto('embauche_auto') || Tyrannie.active()) || machineSaturee() || postes().length >= NB_BUREAUX) return;   // aussi onglet caché : on peut partir et laisser tourner
   if (Date.now() - LS.get('embauche_auto_t', 0) < 3600e3) return;
   const ids = new Set(postes().map(p => p.id));
   const tc = TACHES.find(x => x.statut === 'a_faire' && typeof x.poste === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(x.poste) && !ids.has(x.poste));
@@ -1209,6 +1246,26 @@ function decisionDe(d) {
   const n = norm(d.titre || ''); if (n.length < 6) return null;
   return ouv.find(y => { const m = norm(y.titre || ''); return m.length >= 6 && (m.includes(n.slice(0, 60)) || n.includes(m.slice(0, 60))); }) || null;
 }
+// « À décider » du rapport : calculé en direct depuis les décisions, jamais la liste figée du rapport. Une ligne du rapport
+// dont la décision est réglée apparaît barrée « réglé » ; une ligne sans décision connue n'est plus montrée.
+function decisionToutes(d) {
+  if (d.id) { const x = DECISIONS.find(y => y && y.id === d.id); if (x) return x; }
+  const n = norm(d.titre || ''); if (n.length < 6) return null;
+  return DECISIONS.find(y => { const m = norm(y.titre || y.question || ''); return m.length >= 6 && (m.includes(n.slice(0, 60)) || n.includes(m.slice(0, 60))); }) || null;
+}
+function htmlADecider(liste) {
+  const ouv = decisionsOuvertes(), vus = new Set(), reglees = [];
+  for (const x of (Array.isArray(liste) ? liste : []).slice(0, 12)) {
+    const d = typeof x === 'string' ? { titre: x } : (x && typeof x === 'object' ? x : null); if (!d) continue;
+    const k = decisionToutes(d); if (k && !ouv.includes(k) && !vus.has(k.id)) { vus.add(k.id); reglees.push(String(d.titre || k.titre || k.question || '').slice(0, 300)); }
+  }
+  if (!ouv.length && !reglees.length) return `<p class="discret">${esc(t('rien_a_decider'))}</p>`;
+  return `<div class="liste-dec">${ouv.map(x => `<div class="rangee"><span style="flex:1">? ${esc(String(x.titre || x.question || x.id).slice(0, 300))}</span><button type="button" class="btp" data-dec="${esc(x.id)}">${esc(t('decider'))}</button></div>`).join('')}`
+    + reglees.map(tt => `<div class="rangee"><span style="flex:1;text-decoration:line-through;opacity:.6">${esc(tt)}</span><span class="discret">✓ ${esc(t('regle'))}</span></div>`).join('') + '</div>';
+}
+function majADecider() { document.querySelectorAll('[data-adecider]').forEach(z => { let l = []; try { l = JSON.parse(z.dataset.liste || '[]'); } catch (e) {} const h = htmlADecider(l); if (z._html !== h) { z._html = h; z.innerHTML = h; } }); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-adecider] [data-dec]'); if (!b) return; const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) { Panneau.fermer(); ouvrirDecision(d); } });
+window.__aDecider = l => htmlADecider(l);   // essais
 function ouvrirRapport() {
   const r = RAPPORT; if (!r) return;
   Panneau.montrer('rapport:' + cleRapport(r), el => {
@@ -1221,11 +1278,10 @@ function ouvrirRapport() {
       <div class="rapport-tete"><canvas width="160" height="160"></canvas>${r.blague ? `<div class="bulle">${esc(String(r.blague).slice(0, 600))}</div>` : ''}</div>${v1}
       ${tab.length ? `<table class="tab-rapport"><thead><tr><th>${esc(t('chantier'))}</th><th>${esc(t('etape'))}</th><th style="width:26%">%</th><th>${esc(t('reste_col'))}</th></tr></thead><tbody>${tab.map(x => { const p = nombre(x.pct); return `<tr><td>${esc(String(x.chantier || '').slice(0, 120))}</td><td>${esc(String(x.etape || '').slice(0, 200))}</td><td>${p === null ? '' : `<div class="barre"><i style="width:${clamp(p, 0, 100)}%"></i><span>${Math.round(clamp(p, 0, 100))} %</span></div>`}</td><td>${esc(String(x.reste || '').slice(0, 60))}</td></tr>`; }).join('')}</tbody></table>` : ''}
       ${l(r.fini, 20).length ? `<h3>${esc(t('fini_titre'))}</h3><ul class="liste-ok">${l(r.fini, 20).map(x => `<li>${esc(String(x).slice(0, 300))}</li>`).join('')}</ul>` : ''}
-      <h3>${esc(t('a_decider'))}</h3>${dec.length ? `<div class="liste-dec">${dec.map(d => { const x = decisionDe(d); return `<div class="rangee"><span style="flex:1">? ${esc(String(d.titre || d.id || '').slice(0, 300))}</span>${x ? `<button type="button" class="btp" data-dec="${esc(x.id)}">${esc(t('decider'))}</button>` : `<button type="button" class="bts" data-cloche>${esc(t('ouvrir_cloche'))}</button>`}</div>`; }).join('')}</div>` : `<p class="discret">${esc(t('rien_a_decider'))}</p>`}`;
+      <h3>${esc(t('a_decider'))}</h3><div data-adecider data-liste="${esc(JSON.stringify(dec))}">${htmlADecider(dec)}</div>`;
     Bureau.portrait(el.querySelector('canvas'), lookDe('assistant'));
     // une ligne « à décider » ouvre la décision correspondante, sinon la cloche : jamais un recrutement ni une tâche confiée
     el.insertAdjacentHTML('beforeend', blocRepondre('rapport-' + cleRapport(r), 'rapport:' + cleRapport(r)));
-    el.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) { Panneau.fermer(); ouvrirDecision(d); } });
     el.querySelectorAll('[data-cloche]').forEach(b => b.onclick = () => { Panneau.fermer(); ouvrirCloche(); });
   }, { large: true });
 }
@@ -1605,6 +1661,20 @@ const Bureau = (() => {
   }
   // Occupé = assis à son poste (chaise, tape au clavier) ; libre = debout à côté du bureau, une tasse à la main ;
   // en attente, fini ou bloqué = debout derrière son bureau. Une recrue entre d'abord par la porte.
+  // Loisirs des persos libres, selon ce que le palier du studio offre : café près de son bureau (toujours), le chat du garage,
+  // la fenêtre, la machine à café, l'îlot, la télé, la borne d'arcade. Chacun change de coin toutes les 90 s, sans doublon.
+  const LOISIR_DEP = {}, LIBRES_C = { t: 0, l: [] };
+  function loisir(p) {
+    const pal = PAL ? PAL.palier() : 1, i = postes().findIndex(x => x.id === p.id), sl = SLOTS[i] || [2, 2];
+    const coins = [{ cle: 'bureau', gx: sl[0] + 1.75, gy: sl[1] + .9, anim: 'cafe_debout', ang: Math.PI / 4, tasse: true }, { cle: 'fenetre', gx: 8.4, gy: 1.6, anim: 'repos', ang: -Math.PI / 2, tasse: true }];
+    if (pal <= 2) coins.push({ cle: 'chat', gx: 10.5, gy: 10.9, anim: 'joie', ang: Math.PI / 4 });
+    if (pal >= 3) coins.push({ cle: 'cafe', gx: 14.5, gy: 5.9, anim: 'cafe_debout', ang: 0, tasse: true }, { cle: 'ilot', gx: 5.9, gy: 5.6, anim: 'parle', ang: Math.PI }, { cle: 'tele', gx: 6.3, gy: 10.2, anim: 'manette', ang: Math.PI });
+    if (pal >= 5) coins.push({ cle: 'arcade', gx: 14.8, gy: 7.1, anim: 'manette', ang: 0 });
+    if (!LIBRES_C.t || performance.now() - LIBRES_C.t > 1000) { LIBRES_C.t = performance.now(); LIBRES_C.l = postes().filter(x => { try { return etatPoste(x).etat === 'disponible' && !FinTache.actif(x.id); } catch (e) { return false; } }).map(x => x.id).sort(); }
+    const libres = LIBRES_C.l;
+    const cycle = Math.floor(Date.now() / 90000), rang = Math.max(0, libres.indexOf(p.id));
+    return coins[(cycle + rang) % coins.length];
+  }
   function posteDessin(p, sx, sy, e, th) {
     const look = lookPoste(p), seed = (hashStr(p.id) % 97) / 9.7;
     const arr = ARRIVEES[p.id], k = arr ? clamp((performance.now() - arr) / 3200, 0, 1) : 1;
@@ -1638,8 +1708,13 @@ const Bureau = (() => {
       const gx = lerp(fx, rx, k2), gy = lerp(fy, ry, k2), [lx, ly] = iso(gx, gy), marche = k2 < 1 && ANIM;
       personnageXY(lx, ly, look, { anim: marche ? 'marche' : 'repos', ang: marche ? Math.atan2(ry - fy, rx - fx) : Math.atan2(RDV[1] - ry, RDV[0] - rx), dist: k2 * Math.hypot(rx - fx, ry - fy) / S_PERSO, seed }, { cligne: true, marche });
       ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1, p });
-    } else if (e.etat === 'disponible') {   // libre : debout à côté du bureau, une tasse à la main
-      const [lx, ly] = iso(fx, fy); personnageXY(lx, ly, look, { anim: 'cafe_debout', ang: Math.PI / 4, seed }, { cligne: true, tasse: true });
+    } else if (e.etat === 'disponible') {   // libre (et seulement lui) : il s'amuse, un coin du studio toutes les 90 s, marche jusque-là
+      const l = loisir(p), dep = LOISIR_DEP[p.id] || (LOISIR_DEP[p.id] = { cle: l.cle, t: performance.now(), x: fx, y: fy });
+      if (dep.cle !== l.cle) { const k0 = clamp((performance.now() - dep.t) / 3000, 0, 1); dep.x = lerp(dep.x, dep.gx ?? fx, k0); dep.y = lerp(dep.y, dep.gy ?? fy, k0); dep.cle = l.cle; dep.t = performance.now(); }
+      dep.gx = l.gx; dep.gy = l.gy;
+      const k3 = ANIM ? clamp((performance.now() - dep.t) / 3000, 0, 1) : 1, gx = lerp(dep.x, l.gx, k3), gy = lerp(dep.y, l.gy, k3), marche = k3 < 1 && Math.hypot(l.gx - dep.x, l.gy - dep.y) > .05;
+      const [lx, ly] = iso(gx, gy);
+      personnageXY(lx, ly, look, { anim: marche ? 'marche' : l.anim, ang: marche ? Math.atan2(l.gy - dep.y, l.gx - dep.x) : l.ang, dist: k3 * Math.hypot(l.gx - dep.x, l.gy - dep.y) / S_PERSO, seed }, { cligne: true, tasse: !marche && l.tasse, marche });
       ZONES.push({ x: lx - TW * .4, y: ly - TW * 1.2, w: TW * .8, h: TW * 1.3, f: () => ficheposte(p), perso: 1, p });
     }
     ZONES.push({ x: x - TW * .7, y: y - TW * 1.3, w: TW * 1.6, h: TW * 1.6, f: () => ficheposte(p), perso: 1, p });
@@ -2081,7 +2156,12 @@ $('#bt-journal').onclick = () => ouvrirJournal();
 $('#bt-optim').onclick = () => ouvrirOptimisation();
 $('#bt-jassist').onclick = () => ouvrirJournalAssistant();
 $('#bt-perso').onclick = () => ouvrirPersonnaliser();
-$('#bt-couper').onclick = async () => { const c = {}; AUTOS.forEach(k => c[k] = false); try { await regler(c); Radio.basculer(false); toast(esc(t('coupe_ok'))); Son.clic(); } catch (e) { toast(esc(e.message), { erreur: true }); } };
+// « Tout couper » garde l'état d'avant ; le même bouton devient « Tout rallumer » (vert) et le remet
+$('#bt-couper').onclick = async () => {
+  const pause = !!(REGLAGES && REGLAGES.pause), action = pause ? 'rallumer' : 'couper';
+  if (document.documentElement.dataset.essai === 'sans-envoi') { document.documentElement.dataset.dernierEnvoi = JSON.stringify({ action }); REGLAGES = Object.assign({}, REGLAGES, { pause: !pause }); majCouper(); return; }
+  try { const r = await poster('/api/couper', { action }); REGLAGES = r.reglages || REGLAGES; majCouper(); if (!pause) Radio.basculer(false); toast(esc(t(pause ? 'rallume_ok' : 'coupe_ok'))); Son.clic(); } catch (e) { toast(esc(e.message), { erreur: true }); }
+};
 $('#bt-assistant').onclick = () => demander('assistant');
 $('#bt-recruter').onclick = () => recruter();
 $('#bt-images').onclick = () => ouvrirMur();
@@ -2168,12 +2248,15 @@ const Tyrannie = (() => {
   const PIQUES = { fr: ['Alors, on admire la vue ?', 'Le café, c’est après le commit !', 'Une tâche t’attend, elle s’ennuie toute seule.', 'Pause terminée, la roadmap te réclame !', 'Allez, un petit jalon et on en parle.', 'Hop hop hop, au clavier !'],
     en: ['Enjoying the view?', 'Coffee comes after the commit!', 'A task is waiting, all alone.', 'Break is over, the roadmap is calling!', 'One small milestone, then we talk.', 'Chop chop, back to the keyboard!'] };
   const active = () => CONF.mode === 'travail' && auto('tyrannie_auto') && !(REGLAGES && REGLAGES.pause) && !machineSaturee();
-  function inactifs() { return postes().filter(p => { try { const e = etatPoste(p); return e.etat === 'disponible'; } catch (err) { return false; } }); }
+  // inactif : libre, ou « en attente » d'une simple suite de roadmap sans demande en cours ni progression depuis 10 min
+  function inactifs() { return postes().filter(p => { try { const e = etatPoste(p); if (e.etat === 'disponible') return true;
+    const ep = etatFrais() && ETAT.postes.find(x => x && x.id === p.id);
+    return e.etat === 'attend' && !!ep && !(Array.isArray(ep.demandes) && ep.demandes.length) && (nombre(ep.calme_min) === null || nombre(ep.calme_min) >= 10); } catch (err) { return false; } }); }
   function occupation() { const l = postes(); if (!l.length) return 0; return Math.round(100 * (l.length - inactifs().length) / l.length); }
   const pique = () => { const l = PIQUES[LANGUE] || PIQUES.en; return l[(Math.random() * l.length) | 0]; };
   let derniere = 0, sig = '', fileMoteur = false;
   async function tour() {
-    if (!active() || document.hidden) return;
+    if (!active()) return;                                          // aussi onglet caché ou navigateur réduit (la nuit)
     const tous = inactifs(), l = tous.filter(p => { try { return FinTache.candidats(p.id).length > 0; } catch (e) { return true; } });
     fileMoteur = tous.length > 0 && !l.length;                       // tout le reste attend le moteur : on laisse souffler
     if (l.length) { const p = l[(Math.random() * l.length) | 0]; try { Bureau.visiter(p.id, pique()); } catch (e) {} }
@@ -2376,7 +2459,12 @@ function verifierMessages() {
 // Automatismes : réglages et bouton « Tout couper » (rouge quand un automatisme tourne)
 const AUTOS = ['attribution_auto', 'embauche_auto', 'enchainement_auto', 'point_auto', 'optimisation_auto', 'tyrannie_auto', 'sante_auto'];
 const autoOn = k => REGLAGES && REGLAGES[k] === true;
-function majCouper() { const n = AUTOS.filter(autoOn).length, b = $('#bt-couper'); if (!b) return; b.classList.toggle('actif', n > 0); b.title = n ? n + ' ' + t('auto_tournent') : t('tout_couper'); }
+function majCouper() {
+  const n = AUTOS.filter(autoOn).length, b = $('#bt-couper'); if (!b) return; const pause = !!(REGLAGES && REGLAGES.pause);
+  b.classList.toggle('actif', !pause && n > 0); b.classList.toggle('rallumer', pause);
+  const sp = b.querySelector('span[data-t]'); if (sp) sp.textContent = t(pause ? 'tout_rallumer' : 'tout_couper');
+  b.title = pause ? t('pause_depuis') + ' ' + String(REGLAGES.pause_depuis || '').slice(11, 16) : n ? n + ' ' + t('auto_tournent') : t('tout_couper');
+}
 async function regler(corps) { const r = await poster('/api/reglages', corps); REGLAGES = r.reglages || Object.assign({}, REGLAGES, corps); majCouper(); return REGLAGES; }
 function coutAutos(choix) {             // estimation grossière, en milliers de jetons par heure
   const f = +(REGLAGES.frequence_rapport_min || 120), k = { attribution_auto: 200, embauche_auto: 60, enchainement_auto: 300, point_auto: Math.round(15 * 60 / f), optimisation_auto: 40, tyrannie_auto: 120, sante_auto: 0 };
@@ -2388,12 +2476,16 @@ function ouvrirEnsemble() {
   Panneau.remplacer('ensemble', el => {
     const ps = postes(), sy = (ETAT && ETAT.systeme) || {}, gi = (ETAT && ETAT.git) || {};
     el.innerHTML = `<div class="surtitre">${esc(CONF.nom || t('studio'))}</div><h2>${esc(t('ensemble'))}</h2><h3>${esc(t('ens_postes'))}</h3>
-      ${ps.map(p => { const e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct); return `<div class="prop" data-p="${esc(p.id)}" style="cursor:pointer"><b>${esc(nomPoste(p))}</b> · ${esc(e.ligne.picto + ' ' + e.ligne.texte)}${pc !== null ? `<div class="barre"><i style="width:${pc}%"></i><span>${pc} %${e.reste != null ? ' · ' + esc(duree(e.reste)) : ''}</span></div>` : ''}</div>`; }).join('') || `<p class="discret">${esc(t('journal_rien'))}</p>`}
+      <div data-vif-ensemble>${ensemblePostes()}</div>
       ${Object.keys(sy).length ? `<h3>${esc(t('ens_systeme'))}</h3><p class="discret">${Object.entries(sy).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}
       ${Object.keys(gi).length ? `<h3>${esc(t('ens_git'))}</h3><p class="discret">${Object.entries(gi).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}`;
-    el.querySelectorAll('[data-p]').forEach(d => d.onclick = () => { const p = postes().find(x => x.id === d.dataset.p); if (p) ficheposte(p); });
+    lierEnsemble(el);
   });
 }
+function ensemblePostes() {
+  return postes().map(p => { const e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct); return `<div class="prop" data-p="${esc(p.id)}" style="cursor:pointer" title="${esc(nouvelleTxt(e))}"><b>${esc(nomPoste(p))}</b> · ${esc(e.ligne.picto + ' ' + e.ligne.texte)}${pc !== null ? `<div class="barre"><i style="width:${pc}%"></i><span>${pc} %${e.reste != null ? ' · ' + esc(duree(e.reste)) : ''}</span></div>` : ''}</div>`; }).join('') || `<p class="discret">${esc(t('journal_rien'))}</p>`;
+}
+function lierEnsemble(el) { el.querySelectorAll('[data-p]').forEach(d => d.onclick = () => { const p = postes().find(x => x.id === d.dataset.p); if (p) ficheposte(p); }); }
 function ouvrirJournal() {
   Panneau.remplacer('journal', el => {
     const l = (LS.get('notifs', []) || []).slice().sort((a, b) => (b.t || 0) - (a.t || 0)).slice(0, 80);

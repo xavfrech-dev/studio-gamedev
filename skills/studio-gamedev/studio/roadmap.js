@@ -242,7 +242,7 @@
 
   function majBouton() {
     const b = document.getElementById('bt-roadmap'); if (!b) return;
-    const p = b.querySelector('.pastille'); if (p) p.textContent = C ? C.pct + ' %' : '';
+    const p = b.querySelector('.pastille'); if (p) p.textContent = C ? (C.av && Number.isFinite(C.av.avance) ? C.av.avance : C.pct) + ' %' : '';   // même chiffre que « Version 1 » (pondéré)
   }
 
   function bouton() {

@@ -530,6 +530,17 @@ def cmd_fonctions(d, port):
             echec(f"etat.json : messages du fil absents ({msgs})")
         ok("fin de tâche : rien à 2 min de calme, « fin_de_tache » après 10 min (100 %, rien devant lui) ; fil : messages dans etat.json")
 
+        # temps réel : heure de la dernière nouvelle (progression_t) et fin prévue (fin_t = fichier + restant_min)
+        ecrire(prog, {"pct": 40, "texte": "Ambiances de nuit", "restant_min": 10})
+        vieillir(prog, 2)
+        q = poste_de(etat_une_fois(), "renfort-essai")
+        t_fichier = int(os.path.getmtime(prog))
+        if not q or q.get("progression_t") != t_fichier or q.get("fin_t") != t_fichier + 600:
+            echec(f"temps réel : progression_t / fin_t absents ou faux ({q and {k: q.get(k) for k in ('progression_t', 'fin_t', 'progression')}})")
+        ecrire(prog, {"pct": 100, "texte": "Liste des sons écrite"})   # on remet la recrue libre pour la suite de l'essai
+        vieillir(prog, 10)
+        ok("temps réel : etat.json donne l'heure de la dernière nouvelle de l'agent et sa fin prévue (barre interpolée dans la page)")
+
         # attribution : automatique refusée tant que le réglage est coupé (défaut), puis garde-fous
         auto = {"agent": "renfort-essai", "mission": "Tâche J1-02 : contrôles.", "titre": "J1-02 · Contrôles", "tache_id": "J1-02", "origine": "auto:fin-de-tache"}
         api("/api/confier", auto, 403)

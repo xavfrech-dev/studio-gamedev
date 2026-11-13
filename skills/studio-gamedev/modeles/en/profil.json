@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "maitre": {
+    "nom": "{{nom_maitre}}",
+    "titre": "Studio director",
+    "apparence": {
+      "morphologie": "moyenne",
+      "peau": "#c68642",
+      "cheveux": {
+        "coupe": "courts",
+        "couleur": "#2b1d14"
+      },
+      "tenue": {
+        "style": "sweat",
+        "couleur1": "#3f7a52",
+        "couleur2": "#e9c47f"
+      },
+      "accessoire": "casque_audio"
+    },
+    "langue": "en"
+  },
+  "assistant": {
+    "nom": "{{nom_assistant}}",
+    "appellation": "assistant",
+    "espece": "humain",
+    "espece_detail": "",
+    "apparence": {
+      "morphologie": "petite",
+      "peau": "#f1c27d",
+      "cheveux": {
+        "coupe": "en_bataille",
+        "couleur": "#b55239"
+      },
+      "tenue": {
+        "style": "tablier",
+        "couleur1": "#4d6f9c",
+        "couleur2": "#f4ecd9"
+      },
+      "accessoire": "chapeau"
+    },
+    "personnalite": "espiegle",
+    "humour": "leger",
+    "tics": [],
+    "langue": "en",
+    "frequence_rapport_min": 120,
+    "rapport_fin_de_jalon": true,
+    "analyse_continue": true,
+    "vie_dans_le_studio": true,
+    "voix_haute": "non"
+  },
+  "voix": {
+    "micro_actif": true,
+    "langue_reconnaissance": "en-US"
+  }
+}

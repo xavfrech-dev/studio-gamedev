@@ -2,6 +2,22 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.11] - 2026-11-13
+
+### Ajouté
+- Temps réel : entre deux écritures de l'agent, la barre avance d'elle-même (du % écrit vers 100 à la fin prévue, jamais au-delà de 99 % avant que l'agent écrive 100 ; un nouveau % plus bas la fait redescendre doucement). `etat.json` donne `progression_t` (dernière nouvelle de l'agent, affichée) et `fin_t`. La fiche ouverte, le groupe et la vue d'ensemble se mettent à jour toutes les 5 s, dans chaque onglet.
+- « À décider » des rapports calculé en direct depuis les décisions : les ouvertes avec « Décider », celles réglées entretemps barrées « réglé » (vieux rapports compris). Une décision que l'assistant ferme (`statut: repondue`, réponse donnée dans le chat) quitte aussi la cloche.
+- « Tout rallumer » : après « Tout couper », le même bouton remet les automatismes comme avant (`/api/couper`).
+- Persos libres qui s'amusent : café, fenêtre, chat du garage, machine à café, îlot, télé, borne d'arcade selon le palier (un coin toutes les 90 s, ils y marchent).
+- Projet en anglais : `modeles/en/profil.json` et `studio.config.json` (règles des agents, titre, reconnaissance vocale en anglais) ; lignes des postes, « Version 1 », infobulles et accessoires du recrutement en anglais.
+
+### Corrigé
+- L'en-tête de `SKILL.md` n'était pas du YAML valide : le skill se chargeait sans sa description (trouvé par un essai d'installation propre). Le contrôle avant publication le vérifie désormais.
+- Tyrannie : un perso qui attend seulement la suite de la roadmap, sans demande ni progression depuis 10 min, compte comme inactif ; la tyrannie et l'embauche tournent aussi quand l'onglet est caché.
+- La définition d'agent n'écrit plus de chemin de la machine (`.studio/progression/…` relatif).
+- Pastille du bouton Roadmap = même chiffre pondéré que « Version 1 ».
+- Résumé d'adoption : pluriels (« 1 scène », « 1 commit »).
+
 ## [0.3.10] - 2026-11-13
 
 ### Modifié

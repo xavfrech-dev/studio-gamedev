@@ -489,15 +489,23 @@ class Studio:
             reste += (h if h > 0 else 8) * RESTE[st]
         return (round(100 * av / tot, 1) if tot else 0.0), round(reste, 1)
 
+    def en(self):
+        """Projet non français (studio.config.json → langue) : textes de la page en anglais."""
+        return str((self.memo.c.get("_conf_langue") or "fr"))[:2].lower() != "fr"
+
+    def tx(self, fr, en):
+        return en if self.en() else fr
+
     def version1(self, r):
         taches = [t for j in (r or {}).get("jalons", []) for t in j.get("taches", [])]
         if not taches:
-            return {"pct": 0, "texte": "pas encore de roadmap", "source": "aucune"}
+            return {"pct": 0, "texte": self.tx("pas encore de roadmap", "no roadmap yet"), "source": "aucune"}
         pc, reste_h = self.avance(taches)
         valides = sum(1 for t in taches if t.get("statut") in FAITS)
         jalon = next((j for j in r["jalons"] if any(t.get("statut") not in FAITS for t in j.get("taches", []))), None)
         return {"pct": round(pc), "pct_exact": pc, "reste_h": reste_h, "source": "roadmap",
-                "texte": f"{valides}/{len(taches)} tâches de roadmap versées · avancement pondéré {round(pc)} %",
+                "texte": self.tx(f"{valides}/{len(taches)} tâches de roadmap versées · avancement pondéré {round(pc)} %",
+                                 f"{valides}/{len(taches)} roadmap tasks merged · weighted progress {round(pc)} %"),
                 "jalon": ({"id": jalon["id"], "titre": jalon.get("titre", ""), "pct": round(self.avance(jalon["taches"])[0])} if jalon else None)}
 
     def taches_disponibles(self, r):
@@ -560,6 +568,8 @@ class Studio:
 
     # ---------------- postes
     def postes(self, conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine=None):
+        self.memo.c["_conf_langue"] = conf.get("langue") or "fr"
+        tx = self.tx
         recr = self.recrues()
         liste = []
         for p in conf.get("postes") or []:
@@ -628,36 +638,36 @@ class Studio:
                 vu = [x for x in (prog.get("etape"), prog.get("texte")) if x]
                 texte_prog = court(next((x for x in vu if re.search(r"\b[A-Z]\d+-\d+\b", str(x))), vu[0] if vu else ""), 120)
             if etat == "bloque":
-                picto, complet = "⛔", "bloqué : " + (texte_prog or court(st.get("texte"), 100) or "raison à voir")
+                picto, complet = "⛔", tx("bloqué : ", "blocked: ") + (texte_prog or court(st.get("texte"), 100) or tx("raison à voir", "reason to check"))
             elif etat == "travaille":
                 picto = "▶"
                 if frais and texte_prog and not fini_prog:
                     complet = texte_prog
                 elif lancee:
-                    complet = lancee["titre"] or "demande lancée"
+                    complet = lancee["titre"] or tx("demande lancée", "request started")
                 elif ouvert:
-                    complet = f"{ouvert['nom']} ouvert" + (f" : {texte_prog}" if texte_prog and not fini_prog else "")
+                    complet = f"{ouvert['nom']} " + tx("ouvert", "open") + (f" : {texte_prog}" if texte_prog and not fini_prog else "")
                 elif pid == sess_poste:
-                    complet = "orchestre la session"
+                    complet = tx("orchestre la session", "runs the session")
                 else:
-                    complet = court(st.get("texte"), 100) or texte_prog or "au travail"
+                    complet = court(st.get("texte"), 100) or texte_prog or tx("au travail", "at work")
             elif etat in ("attend", "fini"):
                 if a.get("attente"):
-                    picto, complet = "⏸", "attend " + court(a["attente"], 100)
+                    picto, complet = "⏸", tx("attend ", "waiting for ") + court(a["attente"], 100)
                 elif dem:
-                    picto, complet = "⏸", "attend le lancement : " + (dem[0]["titre"] or dem[0]["fichier"])
+                    picto, complet = "⏸", tx("attend le lancement : ", "waiting to start: ") + (dem[0]["titre"] or dem[0]["fichier"])
                 elif prog is not None and not fini_prog and texte_prog:
-                    picto, complet = "⏸", f"en pause ({int(prog_age or 0)} min) : {texte_prog}"
+                    picto, complet = "⏸", tx("en pause", "paused") + f" ({int(prog_age or 0)} min) : {texte_prog}"
                 elif a.get("suite"):
-                    picto, complet = "↔", "suite : " + court(a["suite"], 100)
+                    picto, complet = "↔", tx("suite : ", "next: ") + court(a["suite"], 100)
                 elif restantes:
-                    picto, complet = "↔", "suite : " + restantes[0]
+                    picto, complet = "↔", tx("suite : ", "next: ") + restantes[0]
                 else:
-                    picto, complet = "⏸", "en attente"
+                    picto, complet = "⏸", tx("en attente", "waiting")
             else:
-                picto, complet = "☕", "libre"
+                picto, complet = "☕", tx("libre", "free")
             if not str(complet).strip():
-                picto, complet = "?", "état inconnu"
+                picto, complet = "?", tx("état inconnu", "unknown state")
             q = {"id": pid, "nom": p.get("nom") or pid, "role": p.get("role", ""), "couleur": p.get("couleur", ""), "apparence": p.get("apparence", ""),
                  "skills": p.get("skills") or [], "genre": p["genre"], "etat": etat, "occupe": etat == "travaille", "actif": etat == "travaille",
                  "progression": prog_aff, "progression_source": src, "restant_min": restant_de(prog) if etat in ("travaille", "bloque") else None,
@@ -667,6 +677,17 @@ class Studio:
                  "ligne": {"picto": picto, "texte": court(complet, 40), "complet": court(complet, 200)}}
             # fin de tâche : vrai calme (100 % immobile depuis 5 min, rien devant lui, pas de chaîne à son nom, pas de demande lancée)
             q["calme_min"] = int(prog_age) if prog is not None and prog_age is not None else None
+            # temps réel : heure de la dernière nouvelle de l'agent et fin prévue, pour une barre qui avance entre deux écritures
+            if prog is not None and prog_age is not None and src.startswith("progression/"):
+                try:
+                    q["progression_t"] = int(os.path.getmtime(self.f("progression", prog_nom + ".json")))
+                except OSError:
+                    q["progression_t"] = int(time.time() - prog_age * 60)
+                r_ = prog.get("restant_min") if isinstance(prog, dict) else None
+                if isinstance(r_, (int, float)) and not isinstance(r_, bool) and r_ >= 0:
+                    q["fin_t"] = int(q["progression_t"] + r_ * 60)
+                elif isinstance(q.get("restant_min"), (int, float)):
+                    q["fin_t"] = int(time.time() + q["restant_min"] * 60)
             q["fin_de_tache"] = bool(etat == "disponible" and fini_prog and prog_age is not None and prog_age >= CALME_FIN_MIN
                                      and not lancee and not (chaine and chaine.get("poste") == pid))
             if q["fin_de_tache"]:

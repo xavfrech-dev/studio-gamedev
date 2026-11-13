@@ -337,7 +337,7 @@ class Studio(SimpleHTTPRequestHandler):
             if not isinstance(d, dict):
                 raise Refus(400, "objet JSON attendu")
             action = {"/api/questionnaire": route_questionnaire, "/api/profil": route_profil, "/api/demande": route_demande,
-                      "/api/repondre": route_repondre, "/api/reglages": route_reglages,
+                      "/api/repondre": route_repondre, "/api/reglages": route_reglages, "/api/couper": route_couper,
                       "/api/recruter": route_recruter, "/api/confier": route_confier,
                       "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent}.get(route)
             if not action:
@@ -584,6 +584,14 @@ Mets-le à jour à chaque étape importante ; à la fin, `pct` 100.
 """
 
 
+def dossier_relatif():
+    try:
+        r = os.path.relpath(Etat.studio, Etat.projet).replace("\\", "/")
+    except ValueError:
+        r = ".studio"
+    return r if not r.startswith("..") else ".studio"
+
+
 def definition_agent(conf, v):
     """Remplit modeles/agent.md (sinon le gabarit intégré) en un seul passage :
     des accolades doubles écrites par l'utilisateur ne sont jamais réinterprétées."""
@@ -605,7 +613,7 @@ def definition_agent(conf, v):
     valeurs = {"id": v["nom"], "nom_affiche": v["nom_affiche"], "nom_projet": str(conf.get("nom_projet") or os.path.basename(Etat.projet)),
                "poste": v["poste"] or ("new desk" if en else "nouveau bureau"), "role": v["role"], "mission": v["mission"],
                "skills": "\n".join("- `" + s + "`" for s in v["skills"]) or ("- `gamedev:router` if installed (it picks the right skill)" if en else "- `gamedev:router` s'il est installé (il choisit le bon skill)"),
-               "regles_agent": "\n".join("- " + r for r in regles[:20]), "dossier_studio": Etat.studio.replace("\\", "/"),
+               "regles_agent": "\n".join("- " + r for r in regles[:20]), "dossier_studio": dossier_relatif(),   # relatif au projet : aucun chemin de la machine dans un fichier qu'on peut versionner
                "outils": OUTILS_AGENT, "modele": modele}
     entete_fin = gab.find("\n---", 3)
     if MARQUE_RECRUE not in gab and entete_fin > 0:   # gabarit sans marque : on l'ajoute après l'en-tête
@@ -923,6 +931,33 @@ def route_repondre(d):
     return {"ok": True, "reponse": r}
 
 
+AUTOS_COUPER = ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "sante_auto")
+
+
+def route_couper(d):
+    """« Tout couper » : tous les automatismes à false, l'état d'avant gardé (avant_pause) ; « Tout rallumer » le remet."""
+    action = d.get("action")
+    if action not in ("couper", "rallumer"):
+        raise Refus(400, "action : couper ou rallumer")
+    chemin = os.path.join(Etat.studio, "reglages.json")
+    r = lire_json(chemin, {})
+    if not isinstance(r, dict):
+        r = {}
+    if action == "couper":
+        if not r.get("pause"):
+            r["avant_pause"] = {k: bool(r.get(k)) for k in AUTOS_COUPER}
+        r.update({k: False for k in AUTOS_COUPER}, pause=True, pause_depuis=maintenant())
+    else:
+        avant = r.pop("avant_pause", None)
+        if isinstance(avant, dict):
+            r.update({k: bool(v) for k, v in avant.items() if k in AUTOS_COUPER})
+        r["pause"] = False
+        r.pop("pause_depuis", None)
+    r["maj"] = maintenant()
+    ecrire_json(chemin, r)
+    return {"ok": True, "reglages": r}
+
+
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
     bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent", "sante_auto", "blague") if k in d}
@@ -949,6 +984,10 @@ def route_reglages(d):
             r.pop("mode_absent_depuis", None)
     if ordre is not None:
         r["ordre_equipe"] = ordre
+    if any(v for k, v in bascules.items() if k in AUTOS_COUPER) and r.get("pause"):
+        r["pause"] = False
+        r.pop("pause_depuis", None)
+        r.pop("avant_pause", None)
     r.update(bascules, maj=maintenant())
     ecrire_json(chemin, r)
     return {"ok": True, "reglages": r}
