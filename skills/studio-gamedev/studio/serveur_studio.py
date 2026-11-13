@@ -44,7 +44,7 @@ import tempfile
 import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
@@ -227,7 +227,40 @@ class Studio(SimpleHTTPRequestHandler):
 
     def hotes_permis(self):
         port = self.server.server_address[1]
-        return {f"127.0.0.1:{port}", f"localhost:{port}"}
+        h = {f"127.0.0.1:{port}", f"localhost:{port}"}
+        if RESEAU["ip"]:
+            h.add(f"{RESEAU['ip']}:{port}")
+        return h
+
+    def cle_ok(self):
+        """Clé du réseau de la maison : ?cle= (la réponse pose un cookie) ou cookie studio_cle."""
+        import hmac
+        if not RESEAU["cle"]:
+            return False
+        donnee = (parse_qs(urlsplit(self.path).query).get("cle") or [""])[0]
+        if donnee and hmac.compare_digest(donnee, RESEAU["cle"]):
+            self._poser_cookie = True
+            return True
+        for morceau in (self.headers.get("Cookie") or "").split(";"):
+            k, _, v = morceau.strip().partition("=")
+            if k == "studio_cle" and hmac.compare_digest(v.strip(), RESEAU["cle"]):
+                return True
+        return False
+
+    def acces_ok(self):
+        """Hôte connu ; toute requête qui ne vient pas de 127.0.0.1 (option --reseau) arrive par l'IP locale et porte la clé."""
+        hote = self.headers.get("Host", "")
+        if hote not in self.hotes_permis():
+            return False
+        if self.client_address[0] != "127.0.0.1":
+            return bool(RESEAU["ip"]) and hote == f"{RESEAU['ip']}:{self.server.server_address[1]}" and self.cle_ok()
+        return True
+
+    def end_headers(self):
+        if getattr(self, "_poser_cookie", False):
+            self._poser_cookie = False
+            self.send_header("Set-Cookie", f"studio_cle={RESEAU['cle']}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000")
+        super().end_headers()
 
     def repondre(self, code, donnees):
         corps = json.dumps(donnees, ensure_ascii=False).encode("utf-8")
@@ -245,7 +278,7 @@ class Studio(SimpleHTTPRequestHandler):
         if "\\" in rel or "\x00" in rel or any(p in ("", ".", "..") for p in rel.split("/")):
             return None
         ext = os.path.splitext(rel)[1].lower()
-        if ext not in EXTENSIONS:
+        if ext not in EXTENSIONS or os.path.basename(rel).lower() in ("cle_reseau.txt", "adresse_telephone.txt"):
             return None
         for base in (Etat.studio, ICI):
             if not base:
@@ -260,7 +293,7 @@ class Studio(SimpleHTTPRequestHandler):
         return None
 
     def do_GET(self):
-        if self.headers.get("Host", "") not in self.hotes_permis():
+        if not self.acces_ok():
             self.repondre(403, {"ok": False, "erreur": "hôte refusé"})
             return
         if urlsplit(self.path).path == "/api/conversation":   # conversation de Claude Code : lecture seule, en flux, en local
@@ -329,10 +362,10 @@ class Studio(SimpleHTTPRequestHandler):
     # ---------------------------------------------------------------- POST
     def do_POST(self):
         try:
-            if self.headers.get("Host", "") not in self.hotes_permis():
+            if not self.acces_ok():
                 raise Refus(403, "hôte refusé")
             origine = self.headers.get("Origin", "")
-            if origine not in {"http://" + h for h in self.hotes_permis()}:
+            if origine not in {"http://" + h for h in self.hotes_permis()} or origine != "http://" + self.headers.get("Host", ""):
                 raise Refus(403, "origine refusée")
             route = urlsplit(self.path).path
             n = int(self.headers.get("Content-Length", "0") or 0)
@@ -1180,10 +1213,45 @@ def serveur_deja_la(studio, projet):
         return 0
 
 
+RESEAU = {"ip": None, "cle": None}   # option --reseau (coupée par défaut) : IP locale servie aussi, clé exigée
+
+
+def ip_locale():
+    """IP de cette machine sur le réseau local (aucun paquet n'est envoyé)."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as so:
+            so.connect(("192.168.1.1", 9))
+            ip = so.getsockname()[0]
+        if re.match(r"^(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.", ip):
+            return ip
+    except OSError:
+        pass
+    return None
+
+
+def cle_reseau(studio):
+    import secrets
+    f = os.path.join(studio, "cle_reseau.txt")
+    try:
+        with open(f, encoding="utf-8") as h:
+            c = h.read().strip()
+        if re.fullmatch(r"[0-9a-f]{32}", c):
+            return c
+    except OSError:
+        pass
+    c = secrets.token_hex(16)
+    with open(f, "w", encoding="utf-8") as h:
+        h.write(c + "\n")
+    return c
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Serveur local du studio gamedev (127.0.0.1 seulement).")
     ap.add_argument("--projet", required=True, help="dossier du projet (le studio lit et écrit dans <projet>/.studio)")
     ap.add_argument("--port", type=int, default=0, help=f"port local (défaut : studio.config.json, sinon {PORT_DEFAUT} ; s'il est pris, le premier libre après)")
+    ap.add_argument("--reseau", action="store_true", help="aussi sur l'IP locale (téléphone sur le Wi-Fi de la maison), avec une clé secrète exigée")
+    ap.add_argument("--ip", default=None, help="IP locale à servir avec --reseau (sinon détectée)")
     a = ap.parse_args(argv)
     Etat.projet = os.path.abspath(a.projet)
     Etat.studio = os.path.join(Etat.projet, ".studio")
@@ -1209,6 +1277,18 @@ def main(argv=None):
     srv = ThreadingHTTPServer(("127.0.0.1", port), Studio)
     srv.daemon_threads = True
     print(f"studio sur http://127.0.0.1:{port}/studio.html (projet : {Etat.projet})", flush=True)
+    if a.reseau:
+        ip = a.ip or ip_locale()
+        if not ip or not re.match(r"^(192\.168|10\.|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+$", ip):
+            raise SystemExit("--reseau : adresse locale introuvable ou pas privée (préciser --ip=192.168.x.y)")
+        RESEAU["ip"], RESEAU["cle"] = ip, cle_reseau(Etat.studio)
+        srv_reseau = ThreadingHTTPServer((ip, port), Studio)
+        srv_reseau.daemon_threads = True
+        threading.Thread(target=srv_reseau.serve_forever, daemon=True).start()
+        adresse = f"http://{ip}:{port}/studio.html?cle={RESEAU['cle']}"
+        with open(os.path.join(Etat.studio, "adresse_telephone.txt"), "w", encoding="utf-8") as h:
+            h.write(adresse + "\n")
+        print(f"réseau de la maison : {ip}:{port}, clé exigée ; adresse du téléphone dans .studio/adresse_telephone.txt", flush=True)
     info = os.path.join(Etat.studio, "serveur.json")
     try:
         ecrire_json(info, {"port": port, "pid": os.getpid(), "depuis": maintenant()})

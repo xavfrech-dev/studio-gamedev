@@ -231,5 +231,7 @@ Personnages (`sprites.js`) : assis à leur poste, dos à nous, face à l'écran 
 
 « Arrête le studio » : `python -I -B <skill>/studio/outils/arreter.py --projet <projet>` arrête la veille, l'alimentation puis le serveur, et seulement eux (pids notés dans `.studio/veille_studio.verrou`, `.studio/studio_etat.verrou` et `.studio/serveur.json` ; le serveur doit d'abord confirmer sur `GET /api/qui` qu'il sert ce projet avec ce pid). Les fichiers restent ; relancer reprend où on en était (questionnaire compris : la page repart à la première question sans réponse).
 
+**Téléphone sur le Wi-Fi de la maison** (coupé par défaut, seulement si l'utilisateur le demande) : `serveur_studio.py --projet <projet> --reseau` écoute aussi sur l'IP locale (privée, détectée, ou `--ip=192.168.x.y`). Toute requête qui ne vient pas de 127.0.0.1 doit porter la clé secrète (32 caractères, `.studio/cle_reseau.txt`, jamais servie) en `?cle=` ou en cookie ; sinon refus. L'adresse à ouvrir sur le téléphone est écrite dans `.studio/adresse_telephone.txt`. Aucun réglage du système n'est touché : Windows peut demander d'autoriser Python, c'est l'utilisateur qui accepte.
+
 **Reprise** : le serveur note son port et son pid dans `.studio/serveur.json` (effacé à l'arrêt). Relancé alors que le serveur de ce projet répond encore, `serveur_studio.py` ne double pas : il affiche la même adresse (« déjà lancé, réutilisé ») et rend la main. La veille refuse aussi de tourner deux fois (`veille_studio.verrou`).
 

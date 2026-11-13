@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.1] - 2026-11-13
+
+### Ajouté
+- Option `--reseau` du serveur (coupée par défaut) : le studio aussi sur l'IP locale, pour l'ouvrir depuis un téléphone sur le Wi-Fi de la maison. Toute requête qui ne vient pas de la machine elle-même doit porter une clé secrète (32 caractères, `.studio/cle_reseau.txt`, jamais servie), en `?cle=` puis en cookie ; Host et Origin vérifiés ; l'adresse à ouvrir est écrite dans `.studio/adresse_telephone.txt`. Aucun réglage du système n'est modifié.
+
 ## [0.4.0] - 2026-11-13
 
 ### Ajouté
