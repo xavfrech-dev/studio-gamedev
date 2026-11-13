@@ -72,6 +72,16 @@
 #rm-succes small{display:block;font:14.5px "Jeu Texte",Georgia,serif}
 #rm-succes .sur{font:600 11px "Jeu Interface","Segoe UI",system-ui,sans-serif;letter-spacing:.18em;text-transform:uppercase;opacity:.75}
 @media (max-width:560px){.rm-feuille{padding:18px 16px 28px 52px}.rm-feuille h2{font-size:24px}.rm-embleme{width:70px;height:70px}.rm-embleme b{font-size:30px}}
+/* T10 : au téléphone, la roadmap est un vrai plein écran (l'onglet sert de fermeture), en-tête resserré, jalons collants */
+body.app #rm-panneau{top:0;left:0;right:0;bottom:calc(64px + env(safe-area-inset-bottom));height:auto;width:auto;padding:0;padding-top:env(safe-area-inset-top);z-index:60}
+body.app #rm-panneau .rm-feuille{border-radius:0;padding:14px 14px 28px 48px;font-size:16px;box-shadow:none}
+body.app #rm-panneau .rm-fermer{display:none}
+body.app #rm-panneau .rm-legende{display:none}
+body.app #rm-panneau .rm-tete{gap:10px;margin:4px 0}
+body.app #rm-panneau .rm-embleme{width:56px;height:56px}body.app #rm-panneau .rm-embleme b{font-size:24px}
+body.app #rm-panneau .rm-jalon h3{position:sticky;top:-14px;z-index:1;min-height:44px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:-6px;padding:6px;background:#f2e8cf;border-bottom:1px solid rgba(92,79,63,.18)}
+body.app #rm-panneau .rm-discret{font-size:14px}
+@media (orientation:landscape) and (max-height:500px){body.app #rm-panneau{left:calc(72px + env(safe-area-inset-left));bottom:0}}
 @media (prefers-reduced-motion:reduce){#rm-panneau,#rm-succes,.rm-xp i{transition:none}.rm-plume{animation:none}}
 
 /* barre empilée par statut (pondérée par l'effort) et temps restant */

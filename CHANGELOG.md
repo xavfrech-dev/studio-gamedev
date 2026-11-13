@@ -2,6 +2,19 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.7] - 2026-11-13
+
+### Modifié
+- Barre d'outils du PC sur une ligne : actions et vues d'abord, icônes seules pour Notifications, Mode nuit et Son, puis un menu « ⋯ » (Vue d'ensemble, Journal de l'assistant, Optimiser, Personnaliser, Recruter, Réglages, Plein écran) ; Tout couper à part.
+- Équipe sur une seule colonne qui défile (plus de deuxième colonne sur la scène en 720p), version compacte sous 800 px de haut ; notifications à gauche des boutons de zoom.
+- Téléphone : texte à 16 px et texte secondaire à 14 px ; réglages en lignes tactiles avec interrupteurs et intertitres (Automatismes, Son et notifications, Affichage) ; roadmap en vrai plein écran, jalons collants.
+- Le bouton Retour du téléphone ferme le panneau ouvert au lieu de quitter le studio ; tirer vers le bas ne recharge plus la page.
+
+### Accessibilité
+- Panneaux nommés par leur titre, focus placé à l'ouverture puis rendu à la fermeture, tabulation gardée dans le panneau ; roadmap en fenêtre nommée ; Son, Mode nuit et Tout couper annoncent leur état (aria-pressed).
+- Raccourcis à une lettre (A, V, Espace) désactivables dans les réglages, ignorés quand le focus est sur un bouton ; « ? » ouvre la fiche des raccourcis.
+- Textes atténués plus contrastés.
+
 ## [0.4.6] - 2026-11-13
 
 ### Modifié

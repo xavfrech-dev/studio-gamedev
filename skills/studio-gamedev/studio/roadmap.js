@@ -153,7 +153,7 @@
   function squelette() {
     if (document.getElementById('rm-panneau')) return;
     const p = document.createElement('aside');
-    p.id = 'rm-panneau'; p.setAttribute('aria-label', t('titre'));
+    p.id = 'rm-panneau'; p.setAttribute('aria-label', t('titre')); p.setAttribute('role', 'dialog'); p.setAttribute('aria-modal', 'false');
     p.innerHTML = '<div class="rm-feuille"><button class="rm-fermer" type="button" aria-label="×">×</button><div class="rm-corps"></div></div>';
     document.body.appendChild(p);
     p.querySelector('.rm-fermer').onclick = fermer;
