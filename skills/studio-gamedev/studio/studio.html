@@ -148,6 +148,14 @@ html[data-theme=clair] #radio-titre{color:rgba(90,74,54,.7);text-shadow:none}
 html[data-theme=clair] #entete{background:linear-gradient(180deg,rgba(247,239,221,.97),rgba(247,239,221,.75) 80%,rgba(247,239,221,0))}
 html[data-theme=clair] #equipe .n{color:#2b241c}html[data-theme=clair] #equipe .e{color:#5a4a36}html[data-theme=clair] #equipe .rt{color:#8a5b12}
 html[data-theme=clair] #v1 b,html[data-theme=clair] #horloge b,html[data-theme=clair] #niveau b{color:#8a5b12}html[data-theme=clair] #niveau .rang{color:#8a5b12}html[data-theme=clair] #niveau .xpm{background:#e2d4b4}
+/* P9 : grand écran : l'interface (en-tête, groupe, panneaux, questionnaire, notifications, micro, zoom) grandit avec l'écran ;
+   le canevas de la scène n'est pas agrandi (il se redessine à la taille de la fenêtre) */
+:root{--k:1}
+@media (min-width:1800px) and (min-height:950px){:root{--k:1.15}}
+@media (min-width:2200px) and (min-height:1200px){:root{--k:1.32}}
+@media (min-width:3000px) and (min-height:1600px){:root{--k:1.6}}
+body:not(.app) #entete,body:not(.app) #equipe,body:not(.app) #panneau,body:not(.app) #scene,body:not(.app) #toasts,body:not(.app) #micro-zone,body:not(.app) #zoom,body:not(.app) #succes,body:not(.app) #rm-panneau{zoom:var(--k)}body:not(.app) #notifs{zoom:calc(var(--k) * .88)}
+body:not(.app) #scene{width:min(1200px,100vw / var(--k))}
 .micro{display:inline-flex;align-items:center;gap:6px}
 .carte-jour .jour-heros{font-size:1.1em;margin:.2em 0 .6em}.carte-jour .jour-heros b{font-size:1.4em}.jour-bloc{border-top:1px solid rgba(92,79,63,.15);padding-top:6px;margin-top:8px}.jour-bloc h3{margin:.2em 0 .3em}
 .choix-dec.balayable{touch-action:pan-y;transition:transform .25s ease}.choix-dec.balayable[data-sens=droite]{box-shadow:0 0 0 3px #3f7a52;border-radius:12px}.choix-dec.balayable[data-sens=gauche]{box-shadow:0 0 0 3px #c2533c;border-radius:12px}

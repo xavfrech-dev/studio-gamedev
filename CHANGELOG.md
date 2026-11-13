@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.14] - 2026-11-13
+
+### Modifié
+- Grand écran (P9) : à partir de 1800 × 950, puis 2200 × 1200 (1440p) et 3000 × 1600, l'interface grandit avec l'écran (en-tête, groupe, panneaux, questionnaire, notifications, micro, zoom : × 1,15, × 1,32, × 1,6) ; la scène reste nette (elle se redessine à la taille de la fenêtre). Le questionnaire s'élargit jusqu'à 1 200 px.
+
 ## [0.4.13] - 2026-11-13
 
 ### Ajouté
