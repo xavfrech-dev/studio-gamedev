@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.0] - 2026-11-13
+
+### Ajouté
+- Vitrine : README français et anglais avec un GIF du studio animé et des captures (jour, nuit, questionnaire, tutoriel, téléphone) prises sur des projets d'essai, dans `docs/images/`.
+- Suggestions de l'alimentation (alertes de la page) dans la langue du projet.
+
+### Modifié
+- Téléphone : la barre « Version 1 » tient dans l'écran ; `?apercu` coupe aussi les notifications (captures propres).
+
 ## [0.3.12] - 2026-11-13
 
 ### Ajouté

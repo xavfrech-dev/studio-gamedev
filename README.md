@@ -8,9 +8,21 @@ Tu dis « nouveau jeu » à Claude. Un petit studio de jeu vidéo s'ouvre dans t
 
 Pas besoin de savoir programmer pour commencer : il suffit de savoir ce que tu as envie de faire.
 
-![Le questionnaire joué dans le studio : création de ton personnage](docs/studio-questionnaire.png)
+![Le studio en marche : chaque agent à son bureau, sa barre qui avance, l'assistant qui fait sa ronde](docs/images/fr-studio-anime.gif)
 
-![Le bureau du studio : un poste par agent, barres de progression, cloche des décisions](docs/studio-bureau.png)
+## En images
+
+*Captures d'un projet d'essai (« Le Renard des neiges », Unity, en français), prises avec le skill tel que tu l'installes.*
+
+| De jour | De nuit |
+|---|---|
+| ![Le studio de jour : le groupe à gauche, les bureaux, les barres de progression et le temps restant](docs/images/fr-studio-jour.jpg) | ![Le même studio la nuit : ciel étoilé à la fenêtre, voile plus sombre](docs/images/fr-studio-nuit.jpg) |
+
+| Le questionnaire | Le tutoriel du premier passage | Sur téléphone |
+|---|---|---|
+| ![Le questionnaire joué dans la page : cartes illustrées, choix conseillé, champ libre, micro](docs/images/fr-questionnaire.jpg) | ![Le tutoriel : l'assistant présente le studio en quelques bulles, puis propose les automatismes](docs/images/fr-tutoriel.jpg) | ![Le studio sur un écran de téléphone : barre d'outils en icônes, équipe en bas](docs/images/fr-telephone.jpg) |
+
+Pour refaire ces images chez toi : `studio.html?palier=3&heure=14&apercu` (palier du décor, heure du jour, sans tutoriel ni notification).
 
 ## Ce que ça fait
 
@@ -94,6 +106,13 @@ Phrases utiles ensuite : « point », « roadmap », « change la roadmap », «
 
 Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te rendre la main, il compare chaque fichier existant à la photo prise au départ et te prévient si l'un d'eux a changé. Aucun commit sans ton accord.
 
+## Nouveautés de la 0.4
+
+- **Conversation à droite** : le bouton « Conversation » montre la même conversation que dans Claude Code (lue sur ta machine, jamais envoyée ailleurs), avec une zone pour écrire (Entrée envoie) et le micro ; les questions de Claude y ont leurs boutons.
+- **Barres en temps réel** : entre deux nouvelles d'un agent, sa barre avance d'elle-même jusqu'à sa fin prévue (jamais 100 % avant qu'il le dise) ; l'heure de sa dernière nouvelle est affichée ; fiches et vue d'ensemble se mettent à jour seules.
+- **Tyrannie plus fine** (facultative) : elle dit pourquoi un agent est bloqué (ta décision, le moteur, un autre agent, un fichier, la machine, une erreur…) et quoi faire ; un agent qui attend trop reçoit une autre tâche en rôle temporaire.
+- **« À décider » toujours juste**, **« Tout rallumer »**, des persos libres qui vivent (café, télé, borne d'arcade selon le palier), un seul point d'équipe en plein écran à la fois, et le studio sur téléphone.
+
 ## Nouveautés de la 0.3.1
 
 - **0.3.5 : santé du PC, rôles, point d'équipe** : un agent surveille la machine et retarde les automatismes quand elle sature (coupé par défaut) ; la fiche d'un personnage permet de changer son nom et ses métiers ; `/point-equipe` lance le point régulier de l'assistant (coupé par défaut).
@@ -156,7 +175,7 @@ Ces réglages sont dans `.studio/studio.config.json`, bloc `economie`. Le plus s
 - Aucune clé d'API n'est stockée par le studio.
 - Si tu ouvres un projet que tu n'as pas créé (un dépôt cloné), Claude te montre sa configuration et attend ton accord avant de lancer quoi que ce soit.
 
-## Limites de la version 0.3
+## Limites de la version 0.4
 
 - Développé et essayé sous Windows. macOS et Linux devraient marcher (Python standard seulement) mais n'ont pas encore été essayés.
 - Claude ne pilote pas ton moteur à ta place : il écrit le code et lance ce qui se lance en ligne de commande (builds, tests). Ce qui se voit à l'écran, c'est toi qui le juges.

@@ -266,6 +266,49 @@ MUR_EXAMENS_MAX, MUR_SECONDES_MAX = 2000, 2.0
 MUR_CACHES = re.compile(r"/(\.git|node_modules|Intermediate|DerivedDataCache|ShaderCache|Library|Temp|obj|\.godot/imported|\.import|__pycache__)/", re.I)
 
 
+# Suggestions : phrases françaises → anglais (motif, remplacement), appliquées dans l'ordre quand le projet n'est pas en français
+SUGG_EN = [
+    (r"^(.+) est inactif alors qu'une tâche l'attend$", r"\1 is idle while a task is waiting for it"),
+    (r"^Aucun (.+) depuis (\d+) min ni chaîne active ; prochaine tâche : (.+)\.$", r"No \1 for \2 min and no active chain; next task: \3."),
+    (r"^Relancer la chaîne (.+) sur cette tâche\.$", r"Restart the \1 chain on this task."),
+    (r"^(\d+) (.+) ouverts en même temps$", r"\1 \2 open at the same time"),
+    (r"^Une seule chaîne moteur à la fois : risque de conflit et de mémoire\.$", "One engine chain at a time: risk of conflicts and memory pressure."),
+    (r"^Fermer l'instance de (.+) qui n'appartient pas à la chaîne\.$", r"Close the \1 instance that is not part of the chain."),
+    (r"^Disque du projet presque plein$", "Project disk almost full"),
+    (r"^([\d.]+) Go libres \(seuil (.+) Go\)\.$", r"\1 GB free (threshold \2 GB)."),
+    (r"^Déplacer les données lourdes hors du disque du projet ou supprimer d'anciens worktrees\.$", "Move heavy data off the project disk or remove old worktrees."),
+    (r"^Modifications non commitées sur (.+)$", r"Uncommitted changes on \1"),
+    (r"^(\d+) fichier\(s\) suivi\(s\), par ex\. (.+)\.$", r"\1 tracked file(s), e.g. \2."),
+    (r"^Les committer ou les ranger avant le prochain versement\.$", "Commit or stash them before the next merge."),
+    (r"^(.+) est bloqué$", r"\1 is blocked"),
+    (r"^Lire sa progression et débloquer, ou poser une décision\.$", "Read its progress and unblock it, or ask a decision."),
+    (r"^Progression figée : (.+)$", r"Progress frozen: \1"),
+    (r"^(\d+) % depuis (\d+) min : (.*)$", r"\1 % for \2 min: \3"),
+    (r"^Vérifier si l'agent tourne encore ; sinon le relancer ou passer la tâche en attente\.$", "Check whether the agent is still running; otherwise restart it or put the task on hold."),
+    (r"^Demande en attente : (.+)$", r"Pending request: \1"),
+    (r"^Déposée à (.+) : (.*)$", r"Filed at \1: \2"),
+    (r"^Lancer l'agent \(voir SKILL\.md, « Demandes »\) ou répondre pourquoi elle attend\.$", "Start the agent (see SKILL.md, “Demandes”) or say why it is waiting."),
+    (r"^Fichier illisible ignoré : (.+)$", r"Unreadable file ignored: \1"),
+    (r"^Le réécrire au bon format \(JSON objet\) ; le studio continue sans lui\.$", "Rewrite it in the right format (JSON object); the studio carries on without it."),
+    (r"^(\d+) demande\(s\) de la page sans réponse$", r"\1 request(s) from the page without an answer"),
+    (r"^Les traiter et répondre dans reponses_assistant\.json\.$", "Handle them and answer in reponses_assistant.json."),
+    (r"^La roadmap n'a pas suivi : (.+) est encore « (.+) »$", r"The roadmap fell behind: \1 is still “\2”"),
+    (r"^Le commit (.+) \((.*)\) la cite : « (.*) »( ; (\d+) autre\(s\) tâche\(s\) dans le même cas)?$", r"Commit \1 (\2) mentions it: “\3”\4"),
+    (r" ; (\d+) autre\(s\) tâche\(s\) dans le même cas", r"; \1 other task(s) in the same case"),
+    (r"^Si elle est versée : statut, preuve et fait_le dans \.studio/roadmap\.json et docs/ROADMAP\.md\.$", "If it is merged: status, proof and fait_le in .studio/roadmap.json and docs/ROADMAP.md."),
+    (r"^docs/ROADMAP\.md a changé, pas roadmap\.json$", "docs/ROADMAP.md changed, not roadmap.json"),
+    (r"^(.+) est plus récent de (\d+) min : le studio montre peut-être un avancement en retard\.$", r"\1 is \2 min newer: the studio may show outdated progress."),
+    (r"^Reporter les mêmes changements dans \.studio/roadmap\.json\.$", "Copy the same changes into .studio/roadmap.json."),
+]
+
+
+def traduire_sugg(texte):
+    texte = str(texte or "")
+    for motif, rempl in SUGG_EN:
+        texte = re.sub(motif, rempl, texte)
+    return texte
+
+
 class Memo:
     """Garde un résultat coûteux quelques secondes (et l'ancienne valeur en cas d'erreur)."""
     def __init__(self):
@@ -704,7 +747,11 @@ class Studio:
     # ---------------- analyse continue
     def analyser(self, conf, postes, chaine, ouverts, procs, dispo, gitinfo, sysinfo, demandes):
         sug = []
+        self.memo.c["_conf_langue"] = conf.get("langue") or self.memo.c.get("_conf_langue") or "fr"
+
         def ajoute(id_, gravite, titre, explication, action):
+            if self.en():                              # projet non français : suggestions en anglais (la page les montre)
+                titre, explication, action = (traduire_sugg(x) for x in (titre, explication, action))
             sug.append({"id": id_, "gravite": gravite, "titre": titre, "explication": explication, "action_proposee": action})
         seuils = conf.get("seuils") if isinstance(conf.get("seuils"), dict) else {}
         inactif_min = float(seuils.get("inactivite_min") or 10)

@@ -8,9 +8,21 @@ Tell Claude "new game project". A small video game studio opens in your browser.
 
 You don't need to know how to code to get started: you only need to know what you want to make.
 
-![The questionnaire played in the studio: creating your character](docs/studio-questionnaire.png)
+![The studio at work: every agent at their desk, their bar moving, the assistant doing the rounds](docs/images/en-studio-anime.gif)
 
-![The studio office: one desk per agent, progress bars, decision bell](docs/studio-bureau.png)
+## Screenshots
+
+*Taken from a test project ("Sky Lantern", Godot, in English) with the skill exactly as you install it.*
+
+| Day | Night |
+|---|---|
+| ![The studio by day: the team on the left, the desks, progress bars and time left](docs/images/en-studio-jour.jpg) | ![The same studio at night: stars in the window, darker light](docs/images/en-studio-nuit.jpg) |
+
+| The questionnaire | First-run tutorial | On a phone |
+|---|---|---|
+| ![The questionnaire played in the page: illustrated cards, recommended choice, free text, microphone](docs/images/en-questionnaire.jpg) | ![The tutorial: the assistant presents the studio in a few bubbles, then offers the automations](docs/images/en-tutoriel.jpg) | ![The studio on a phone screen: icon toolbar, team at the bottom](docs/images/en-telephone.jpg) |
+
+To make these pictures yourself: `studio.html?palier=3&heure=14&apercu` (decor tier, time of day, no tutorial or notifications).
 
 ## What it does
 
@@ -94,6 +106,13 @@ It works too, even with a few hours of work and a foundation already in place. T
 
 Claude only creates files in `.studio/` (ignored by git). Before handing back, it compares every existing file with the snapshot taken at the start and tells you if one changed. No commit without your consent.
 
+## What's new in 0.4
+
+- **Conversation on the right**: the "Conversation" button shows the same conversation as in Claude Code (read on your machine, never sent anywhere), with a box to write (Enter sends) and the microphone; Claude's questions have their buttons there.
+- **Real-time bars**: between two updates from an agent, its bar moves on its own towards the expected end (never 100 % before the agent says so); the time of its last news is shown; cards and the overview update by themselves.
+- **Smarter tyranny** (optional): it says why an agent is stuck (your decision, the engine, another agent, a file, the machine, an error…) and what to do; an agent waiting too long gets another task in a temporary role.
+- **"To decide" always right**, **"Turn all back on"**, idle characters who live (coffee, TV, arcade cabinet depending on the tier), one team report on screen at a time, and the studio on a phone.
+
 ## What's new in 0.3.1
 
 - **0.3.5: PC health, roles, team report**: an agent watches the machine and delays automations when it is saturated (off by default); a character's card lets you rename it and set its trades; `/point-equipe` starts the assistant's regular report (off by default).
@@ -156,7 +175,7 @@ These settings live in `.studio/studio.config.json`, `economie` block. The easie
 - The studio stores no API key.
 - If you open a project you did not create (a cloned repository), Claude shows you its configuration and waits for your approval before starting anything.
 
-## Limits of version 0.3
+## Limits of version 0.4
 
 - Developed and tested on Windows. macOS and Linux should work (standard-library Python only) but have not been tested yet.
 - Claude does not drive your engine for you: it writes the code and runs what can be run from the command line (builds, tests). What shows on screen is yours to judge.

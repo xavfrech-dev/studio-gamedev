@@ -270,6 +270,7 @@ body.questionnaire #indice{display:none}
 #v1 b{font:600 15px var(--sans);color:#f1d9a4}
 @media (max-width:900px){#v1 .piste{width:70px}#horloge{display:none}}
 @media (prefers-reduced-motion:reduce){#scene,#succes,#panneau,.carte{transition:none}.plume{animation:none}}
+@media (max-width:640px){#v1{max-width:calc(100vw - 32px);min-width:0}#v1 .piste{width:56px}#entete{max-width:100vw;overflow:hidden}}
 /* téléphone : barre d'outils sur une ligne qui défile, icônes seules (le texte reste lu par les lecteurs d'écran) */
 @media (max-width:640px){#entete .outils,.outils{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch}.outils::-webkit-scrollbar{display:none}.outils>*{flex:0 0 auto}.outils .bt>span[data-t]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}#entete .outils .bt,#entete .outils .bt.fort,#entete #bt-optim,#entete #bt-notifs,#entete #bt-son{padding:7px 10px;min-width:0}}
 </style>
@@ -536,6 +537,7 @@ const Son = (() => {
 
 // ====================================================================== toasts et notifications
 function toast(html, o = {}) {
+  if (/[?&]apercu(=|&|$)/.test(location.search)) return { fermer() {}, el: document.createElement('div') };   // ?apercu : capture d'écran sans notification
   if (typeof modeAbsent === 'function' && modeAbsent() && !o.forcer) return { fermer() {}, el: document.createElement('div') };
   const el = document.createElement('div'); el.className = 'toast' + (o.erreur ? ' erreur' : ''); el.innerHTML = html; el.dataset.picto = o.picto || (o.erreur ? '⚠' : 'ℹ');
   if (o.action) { const b = document.createElement('button'); b.textContent = o.action.libelle; b.onclick = () => { o.action.f(); fin(); }; el.appendChild(b); }
