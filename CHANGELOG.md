@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.11] - 2026-11-13
+
+### Modifié
+- Questionnaire au téléphone (T11) : la scène des questions prend l'écran (la pièce reste en bandeau au-dessus), une barre « Vision · 1/9 » remplace les pastilles des chapitres, seuls les Réglages restent dans les onglets ; le bandeau des succès passe sous la zone sûre du haut.
+- Questionnaire au PC (P16) : pendant le premier questionnaire, la barre d'outils se réduit à Son, Plein écran et Réglages ; la fenêtre des questions monte à 70 % de la hauteur ; « Direction artistique » devient « Style » dans les chapitres.
+- Bouton Dicter (T15) : même icône que le gros micro (20 px), icône seule dans un rond de 44 px au téléphone, anneau qui pulse pendant l'écoute (sauf mouvement réduit).
+
 ## [0.4.10] - 2026-11-13
 
 ### Corrigé
