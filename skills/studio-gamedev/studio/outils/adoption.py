@@ -31,7 +31,7 @@ import sys
 sys.dont_write_bytecode = True
 for _flux in (sys.stdout, sys.stderr):
     try:
-        _flux.reconfigure(errors="replace")
+        _flux.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
         pass
 

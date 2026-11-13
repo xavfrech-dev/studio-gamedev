@@ -11,6 +11,11 @@ import os
 import shutil
 import subprocess
 import sys
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
 
 ICI = os.path.dirname(os.path.abspath(__file__))

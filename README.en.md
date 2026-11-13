@@ -56,7 +56,7 @@ Each new tier plays out as a **building site** (scaffolding, dust, drill), then 
 
 You need:
 - [Claude Code](https://claude.com/claude-code) (with a Claude subscription or an API key);
-- [Python](https://www.python.org/downloads/) 3.10 or newer (nothing else to install: the studio only uses the standard library);
+- [Python](https://www.python.org/downloads/) 3.10 or newer (nothing else to install: the studio only uses the standard library). **Check it** in a terminal: `python --version` (on macOS and Linux: `python3 --version`; on Windows, `py --version` also works). On Windows, if the command opens the Microsoft Store or says "Python was not found", Python is not installed: install it from python.org and tick "Add python.exe to PATH".
 - a recent browser (Chrome, Edge, Firefox…).
 
 Open Claude Code and type these two lines, one after the other:
@@ -85,7 +85,7 @@ Then quit Claude Code and start it again. Done.
 6. After the last answer, the page shows "**Here is your roadmap**". Claude writes the project documents and offers to start the first milestone (a playable prototype). It asks for your approval before each important step.
 7. **To resume later**, run `claude` again in the same folder and say `new game project` or `start a game studio`: everything is kept in `.studio/`.
 
-Useful phrases afterwards: "status", "roadmap", "change the roadmap", "hire a composer", "build", "stop reports".
+Useful phrases afterwards: "status", "roadmap", "change the roadmap", "hire a composer", "make a playable build", "stop reports".
 
 ## Already have a project in progress?
 
@@ -106,41 +106,29 @@ It works too, even with a few hours of work and a foundation already in place. T
 
 Claude only creates files in `.studio/` (ignored by git). Before handing back, it compares every existing file with the snapshot taken at the start and tells you if one changed. No commit without your consent.
 
-## What's new in 0.4
+## What's new
 
-- **Conversation on the right**: the "Conversation" button shows the same conversation as in Claude Code (read on your machine, never sent anywhere), with a box to write (Enter sends) and the microphone; Claude's questions have their buttons there.
-- **Real-time bars**: between two updates from an agent, its bar moves on its own towards the expected end (never 100 % before the agent says so); the time of its last news is shown; cards and the overview update by themselves.
-- **Smarter tyranny** (optional): it says why an agent is stuck (your decision, the engine, another agent, a file, the machine, an error…) and what to do; an agent waiting too long gets another task in a temporary role.
-- **"To decide" always right**, **"Turn all back on"**, idle characters who live (coffee, TV, arcade cabinet depending on the tier), one team report on screen at a time, and the studio on a phone.
+0.4 brings the Claude Code conversation into the studio, progress bars that move in real time, the studio on your phone (installable app) and a page that stays light when idle. Every version is detailed in the [CHANGELOG](CHANGELOG.md).
 
-## What's new in 0.3.1
+## On your phone
 
-- **0.3.5: PC health, roles, team report**: an agent watches the machine and delays automations when it is saturated (off by default); a character's card lets you rename it and set its trades; `/point-equipe` starts the assistant's regular report (off by default).
-- **0.3.4: tyranny, chat, team order, night mode**: an optional foreman puts idle agents back to work (off by default); a chat button next to the microphone; drag-and-drop the team list; night mode silences every notification and gives you a “While you were away” summary when you return.
-- **0.3.3: big microphone and info bubbles**: a big microphone at the bottom of the screen (or the space bar) to talk to the studio; hovering a character shows its task, percentage and time left. If the browser blocks the microphone, the studio explains how to allow it.
-- **0.3.2: zoom and camera**: mouse wheel to zoom, click-and-drag to move, double-click, +, − and “recenter” buttons; clicking a character recenters on it.
+1. In Claude Code, say: "**open the studio on my phone**". Claude restarts the server with the network option and gives you an address (with a secret key) to open on the phone.
+2. The phone must be on the **same Wi-Fi** as the computer (home network only). Windows may ask to allow Python on the private network: accept.
+3. In the phone's browser, "Add to Home Screen": the studio then opens full screen like an app (Team, Conversation, Bell, Roadmap, Settings tabs).
 
-- **Stop and resume**: say “stop the studio” (or `python -I -B <skill>/studio/outils/arreter.py --projet <project>`); on resume, a server still running for that project is reused.
-- **Fully in English**: a project started in English gets English documents and agents (`modeles/en/`); the page follows the browser language by default.
-- **The same studio as the original**, adapted to your project: full top bar (Overview, Log, Optimize, Assistant log, Customize, Full screen, **Stop all**…), your team on the left, a radio playing your game's music (off by default), a first-run tutorial.
-- **Tutorial and automations**: on first run the assistant presents the studio in 6 bubbles, then offers the automations (assignment when a task ends, hiring, task chaining, regular report, optimization) with a tokens-per-hour estimate. Nothing turns on without your choice; “Stop all” stops everything. You can go to bed or to work and let it run; with Claude Code Remote Control you follow from your phone and can stop everything.
-- **Everything lands in the studio**:
-  - *Stop hook (optional, only with your consent)*: each assistant reply is copied to `.studio/journal_assistant.json` and shown in the studio with a “Reply” field (mic, V key). It is written to `<project>/.claude/settings.local.json`, merged with what is there (`.bak` backup). **Remove it**: `python -I -B <skill>/studio/outils/installer_crochet.py --projet <project> --retirer`.
-  - *Questions*: every chat question lands under the bell; an answer given in the studio counts as an answer in the chat.
-  - *Sensitive actions*: a click in the studio is not enough to publish, push, delete or spend credits; Claude Code still asks you. To allow a precise action once and for all, add it to `<project>/.claude/settings.local.json`:
+Without this option, the studio can only be reached from the computer.
 
-    ```json
-    { "permissions": { "allow": [ "Bash(git push origin main)", "Bash(python -I -B tools/export_build.py:*)" ] } }
-    ```
-    Only list commands you know and accept without review.
+## Going further
 
-## What's new in 0.2
+- **The foreman** (optional, off by default, called "tyranny" in the settings): it walks around the desks, puts an idle agent back to work and says why an agent is blocked (your decision, the engine, another agent, a file, the machine, an error).
+- **Stop and resume**: say "stop the studio" (or `python -I -B <skill>/studio/outils/arreter.py --projet <project>`); when you resume, a server still running for this project is reused.
+- **Assistant replies in the studio** (optional, only with your consent): a small script that Claude Code runs at the end of each reply (a "Stop hook") copies it to `.studio/journal_assistant.json` so the studio shows it. It is written to `<project>/.claude/settings.local.json`, merged with what is there (`.bak` copy). **Remove it**: `python -I -B <skill>/studio/outils/installer_crochet.py --projet <project> --retirer`.
+- **Sensitive actions**: a click in the studio is not enough to publish, push, delete or spend credits: Claude Code still asks you. To allow one specific action for good, add it to `<project>/.claude/settings.local.json`:
 
-- **Decision bubbles in the scene**: when a decision is waiting for you, a golden "?" floats above the character concerned (otherwise above the assistant, with a counter). One click opens it full size: choices, free text or microphone. Once answered, the bubble flies away.
-- **Conversation with the assistant** (new button): your messages with their status (posted, read, handled), its replies and its decisions with buttons. If a reply ends with a question but no decision, an "The assistant is asking you something" bubble shows up.
-- **End of task**: a character who has finished goes to wait next to the assistant. Its card offers "Give them a task", "Find yourself a task" or "Leave on break". Nothing starts without you, unless you turn on automatic assignment.
-- **Hiring and letting go**: a "Let go…" button on hires (with confirmation, refused while a task is running, nothing is deleted) and a "Former staff" list to rehire. The studio may suggest letting someone go under the bell, never does it on its own.
-- **Sturdier**: a watchdog (`studio/veille_studio.py`) restarts the feeder if it stops; red banner when the page state is more than a minute old; unreadable file skipped and reported; requests never overwritten.
+  ```json
+  { "permissions": { "allow": [ "Bash(git push origin main)", "Bash(python -I -B tools/export_build.py:*)" ] } }
+  ```
+  Only put commands there that you know and whose effect you accept without re-reading.
 
 ## Token cost
 
@@ -165,12 +153,12 @@ These settings live in `.studio/studio.config.json`, `economie` block. The easie
 ## Voice (optional)
 
 - **Nothing to install**: Chrome and Edge recognise speech (through an online service of the browser). Firefox and Brave often do not: the page then switches to text.
-- **On-device recognition** (nothing leaves your computer): install `faster-whisper` (`pip install faster-whisper`; a model is downloaded on first use) and, to make it faster, [ffmpeg](https://ffmpeg.org/download.html) on your PATH.
+- **On-device recognition** (nothing leaves your computer): install `faster-whisper` **with the same Python as the studio**: `python -m pip install faster-whisper` (a model is downloaded on first use), then **restart the studio**. On macOS and Linux, if `pip` refuses ("externally-managed-environment"), create a virtual environment (`python3 -m venv ~/.studio-venv`, then `~/.studio-venv/bin/pip install faster-whisper`) and ask Claude to run the studio with that Python. To make it faster, [ffmpeg](https://ffmpeg.org/download.html) in the PATH.
 - To turn the microphone off: ask Claude, or set `voix.micro_actif` to `false` in `.studio/profil.json`.
 
 ## Privacy
 
-- Everything stays on your machine. The studio server only listens on `127.0.0.1` and runs no command received from the page.
+- Everything stays on your machine. By default, the studio server only listens on `127.0.0.1` (the computer itself); with the phone option, it also listens on the home Wi-Fi and requires a secret key. It runs no command received from the page.
 - Your answers, profile and reports are in `<your game>/.studio/`. On the first run, Claude adds `.studio/` to your project's `.gitignore`: they are not uploaded to GitHub if you publish your game (only `roadmap.json` and `studio.config.json` may be, if you want).
 - The studio stores no API key.
 - If you open a project you did not create (a cloned repository), Claude shows you its configuration and waits for your approval before starting anything.

@@ -25,6 +25,11 @@ import os
 import subprocess
 import sys
 import time
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 sys.dont_write_bytecode = True
 
@@ -62,6 +67,8 @@ def empreintes(studio, motifs):
 
 
 def tete_git(projet):
+    if not os.path.exists(os.path.join(projet, ".git")):      # S13 : jamais l'historique d'un dépôt parent
+        return ""
     try:
         r = subprocess.run(["git", "-C", projet, "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))

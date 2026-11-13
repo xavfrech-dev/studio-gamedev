@@ -395,8 +395,8 @@ class Studio:
                 r = subprocess.run(["tasklist", "/fo", "csv", "/nh"], **SUBPROC)
                 noms = [l.split('","')[0].strip('"') for l in r.stdout.splitlines() if l.startswith('"')]
             else:
-                r = subprocess.run(["ps", "-A", "-o", "comm="], **SUBPROC)
-                noms = [os.path.basename(l.strip()) for l in r.stdout.splitlines() if l.strip()]
+                r = subprocess.run(["ps", "-A", "-o", "args="], **SUBPROC)   # S13 : « comm » coupe les noms à 15 caractères sous Linux
+                noms = [os.path.basename(l.strip().split(" ")[0]) for l in r.stdout.splitlines() if l.strip()]
         except Exception:
             return None
         return [re.sub(r"\.exe$", "", n.lower()) for n in noms]
@@ -435,7 +435,7 @@ class Studio:
         d = conf.get("dossier_session") or "auto"
         if d == "auto":
             code = re.sub(r"[^A-Za-z0-9]", "-", self.projet)
-            d = os.path.join(os.path.expanduser("~"), ".claude", "projects", code)
+            d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "projects", code)   # S13
         try:
             fichiers = glob.glob(os.path.join(d, "*.jsonl"))
             return min((age_min(f) for f in fichiers if age_min(f) is not None), default=None)
@@ -1125,7 +1125,7 @@ def main(argv=None):
     ap.add_argument("--donnees", default=None, help="dossier de données hors du projet (motifs « {donnees}/… » du mur d'images)")
     a = ap.parse_args(argv)
     try:
-        sys.stdout.reconfigure(errors="replace")   # console sans UTF-8 : les pictogrammes deviennent « ? »
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # console sans UTF-8 : les pictogrammes deviennent « ? »
     except Exception:
         pass
     s = Studio(a.projet, a.donnees)

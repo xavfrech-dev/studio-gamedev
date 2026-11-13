@@ -21,6 +21,11 @@ Caméra orthographique : élévation 30°, azimut 45° → losange 2:1 exact du 
 import bpy, bmesh, sys, os, json, math, time
 from mathutils import Vector, Matrix, Euler, Quaternion
 from bpy_extras.object_utils import world_to_camera_view
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 # ------------------------------------------------------------------------------------------
 # Arguments

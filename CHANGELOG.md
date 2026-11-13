@@ -2,6 +2,18 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.9] - 2026-11-13
+
+### Ajouté
+- Les suggestions de l'alimentation (disque plein, moteur ouvert deux fois, progression figée, roadmap en retard…) sont enfin montrées : notification pour les urgentes, liste dans la Vue d'ensemble avec « Confier à l'assistant ».
+- Icône du plugin.
+
+### Modifié
+- Avec plusieurs onglets ouverts (PC et téléphone), un seul fait tourner les automatismes (le plus ancien encore ouvert, désigné par le serveur) ; les autres affichent seulement.
+- Sortie des scripts en UTF-8 même redirigée (plus de « pr�t » sous Windows).
+- macOS et Linux : noms de processus complets, dossier de configuration de Claude Code (`CLAUDE_CONFIG_DIR`) respecté, historique git lu seulement si le projet a son propre dépôt.
+- README : vérifier Python, voix locale installée avec le bon Python, section « Sur ton téléphone », confidentialité précisée, historique renvoyé au CHANGELOG, français et anglais en miroir ; description du skill sous 1 024 caractères ; exemples sans noms internes.
+
 ## [0.4.8] - 2026-11-13
 
 ### Modifié

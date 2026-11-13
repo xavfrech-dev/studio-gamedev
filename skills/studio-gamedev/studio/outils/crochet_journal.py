@@ -14,6 +14,11 @@ import os
 import re
 import sys
 import time
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 MAX = 60
 FIN = 4 * 1024 * 1024

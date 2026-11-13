@@ -10,6 +10,11 @@ Rien d'autre n'est copié : pas de planche de contrôle, pas de démo.
 """
 import io, json, os, sys
 from PIL import Image
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 
 def arg(nom, d=None):

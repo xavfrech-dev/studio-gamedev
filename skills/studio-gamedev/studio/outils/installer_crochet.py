@@ -10,6 +10,11 @@ import json
 import os
 import shutil
 import sys
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 MARQUE = "crochet_journal.py"

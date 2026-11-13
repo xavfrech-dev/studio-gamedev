@@ -45,6 +45,11 @@ import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
+for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
@@ -359,7 +364,7 @@ class Studio(SimpleHTTPRequestHandler):
                 depuis = int(q["depuis"][0]) if q.get("depuis") and q["depuis"][0].isdigit() else None
                 conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
                 dos = conf.get("dossier_session") if isinstance(conf.get("dossier_session"), str) and conf.get("dossier_session") not in ("", "auto") else None
-                dos = dos or os.path.join(os.path.expanduser("~"), ".claude", "projects", transcript_cc.slug(Etat.projet))
+                dos = dos or os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "projects", transcript_cc.slug(Etat.projet))   # S13
                 f = transcript_cc.session_active(dos)
                 r = transcript_cc.lire(f, depuis)
                 if depuis is not None and r.get("fichier") and q.get("fichier") and q["fichier"][0] != r["fichier"]:
@@ -490,7 +495,8 @@ class Studio(SimpleHTTPRequestHandler):
             action = {"/api/questionnaire": route_questionnaire, "/api/profil": route_profil, "/api/demande": route_demande,
                       "/api/repondre": route_repondre, "/api/reglages": route_reglages, "/api/couper": route_couper, "/api/relancer": route_relancer,
                       "/api/recruter": route_recruter, "/api/confier": route_confier,
-                      "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent}.get(route)
+                      "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent,
+                      "/api/meneur": route_meneur}.get(route)
             if not action:
                 raise Refus(404, "route inconnue")
             with VERROU:
@@ -508,6 +514,28 @@ class Studio(SimpleHTTPRequestHandler):
 
 
 # -------------------------------------------------------------------- routes
+ONGLETS = {}                # S37 : onglets ouverts (identifiant → dernier signe de vie) ; le plus ancien encore vivant agit
+ONGLETS_VERROU = threading.Lock()
+
+
+def route_meneur(d):
+    """Un seul onglet (PC ou téléphone) fait tourner les automatismes : le plus ancien qui a donné signe de vie depuis 25 s."""
+    oid = str(d.get("onglet") or "")[:40]
+    if not re.fullmatch(r"[A-Za-z0-9_-]{6,40}", oid):
+        raise Refus(400, "onglet invalide")
+    maintenant = time.time()
+    with ONGLETS_VERROU:
+        for k in [k for k, v in ONGLETS.items() if maintenant - v["vu"] > 25]:
+            ONGLETS.pop(k, None)
+        o = ONGLETS.setdefault(oid, {"depuis": maintenant, "vu": maintenant})
+        o["vu"] = maintenant
+        if len(ONGLETS) > 50:                                 # garde-fou : jamais plus de 50 onglets suivis
+            for k in sorted(ONGLETS, key=lambda k: ONGLETS[k]["vu"])[:len(ONGLETS) - 50]:
+                ONGLETS.pop(k, None)
+        meneur = min(ONGLETS, key=lambda k: (ONGLETS[k]["depuis"], k))
+    return {"ok": True, "meneur": meneur == oid, "onglets": len(ONGLETS)}
+
+
 def route_questionnaire(d):
     chemin = os.path.join(Etat.studio, "reponses_questionnaire.json")
     q = lire_ou_mettre_de_cote(chemin, None)

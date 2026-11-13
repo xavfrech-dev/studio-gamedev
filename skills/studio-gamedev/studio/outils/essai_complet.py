@@ -44,7 +44,7 @@ SKILL = os.path.dirname(STUDIO)
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
 for _flux in (sys.stdout, sys.stderr):   # console Windows sans UTF-8 : « ★ » ne doit pas faire planter --help
     try:
-        _flux.reconfigure(errors="replace")
+        _flux.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
         pass
 PORTS_INTERDITS = {8790}   # port par défaut du vrai studio : l'essai ne le prend jamais (mémoire du navigateur séparée)
