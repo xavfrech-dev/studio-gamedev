@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.10] - 2026-11-13
+
+### Modifié
+- Téléphone (≤ 640 px) : barre d'outils sur une ligne qui défile, icônes seules (le nom de chaque bouton reste lu par les lecteurs d'écran) ; la pièce se centre dans la hauteur laissée par l'équipe.
+- Mur d'images : le parcours borné reprend au passage suivant là où il s'est arrêté ; les images déjà trouvées et les dossiers qui en donnent sont relus d'abord (les images récentes d'un très gros dossier ne manquent plus).
+
 ## [0.3.9] - 2026-11-13
 
 ### Ajouté

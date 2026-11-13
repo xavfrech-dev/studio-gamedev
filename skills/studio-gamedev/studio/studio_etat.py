@@ -293,6 +293,8 @@ class Studio:
         self.memo = Memo()
         self.debut = time.time()
         self.outil_vu = {}          # nom d'outil lourd -> dernière fois vu ouvert (départ : lancement du script)
+        # mur d'images : parcours repris là où le passage précédent s'est arrêté, images déjà trouvées et dossiers qui en donnent
+        self.mur_iter, self.mur_connus, self.mur_dossiers = {}, {}, {}
         self.depuis = {}
         self.anomalies = {}         # fichier d'agent illisible -> {fichier, raison, vu} : ignoré, signalé
 
@@ -841,40 +843,79 @@ class Studio:
         os.makedirs(mur, exist_ok=True)
         vus = {}
         limite = time.time() - 4   # un fichier encore en cours d'écriture attend le passage suivant
-        # borne (gros projet Unreal ou Unity) : 2 000 chemins examinés et 2 s au plus par passage, dossiers de cache ignorés
+        # borne (gros projet Unreal ou Unity) : 2 000 chemins examinés et 2 s au plus par passage, dossiers de cache ignorés.
+        # Pour ne pas manquer les images récentes d'un très gros dossier : le parcours reprend où il s'était arrêté, les images
+        # déjà trouvées sont revérifiées, et les dossiers qui ont déjà donné des images sont relus d'abord à chaque passage.
         budget, t0 = [MUR_EXAMENS_MAX], time.time()
+        sources = {}
         for s in conf.get("sources_images") or []:
-            if budget[0] <= 0 or time.time() - t0 > MUR_SECONDES_MAX:
-                break
             if not isinstance(s, dict) or not isinstance(s.get("motif"), str) or "{{" in s["motif"]:
                 continue
             racine, motif = self.motif_permis(s["motif"])
-            if not motif:
+            if motif:
+                sources[s["motif"]] = (racine, s, motif)
+
+        def examiner(p, racine, s):
+            if not dans(os.path.realpath(p), racine):
+                return
+            try:                                   # dossiers de cache cherchés sous la racine seulement (le projet peut vivre sous « Temp »)
+                if MUR_CACHES.search("/" + os.path.relpath(p, racine).replace("\\", "/")):
+                    return
+            except ValueError:
+                pass
+            ext = os.path.splitext(p)[1].lower()
+            if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif") or TECHNIQUE.search(os.path.splitext(os.path.basename(p))[0]):
+                return
+            try:
+                t, n = os.path.getmtime(p), os.path.getsize(p)
+            except OSError:
+                self.mur_connus.pop(p, None)
+                return
+            if t < limite and 0 < n <= IMAGE_MAX_OCTETS:
+                vus[p] = (t, ext, s)
+                self.mur_connus[p] = s["motif"]
+                self.mur_dossiers.pop(os.path.dirname(p), None)       # le plus récent en dernier, 200 dossiers au plus
+                self.mur_dossiers[os.path.dirname(p)] = s["motif"]
+                while len(self.mur_dossiers) > 200:
+                    self.mur_dossiers.pop(next(iter(self.mur_dossiers)))
+
+        for p, m in list(self.mur_connus.items()):          # 1. images déjà trouvées (encore là ? modifiées ?)
+            if m in sources:
+                examiner(p, sources[m][0], sources[m][1])
+            else:
+                self.mur_connus.pop(p, None)
+        for d, m in list(self.mur_dossiers.items())[-40:]:   # 2. dossiers productifs : leurs nouvelles images
+            if m not in sources or time.time() - t0 > MUR_SECONDES_MAX:
                 continue
             try:
-                fichiers = glob.iglob(motif, recursive=True)
-            except Exception:
-                continue
-            for p in fichiers:
-                budget[0] -= 1
-                if budget[0] < 0 or time.time() - t0 > MUR_SECONDES_MAX:
-                    break
-                if not dans(os.path.realpath(p), racine):
-                    continue
-                try:                                   # dossiers de cache cherchés sous la racine seulement (le projet peut vivre sous « Temp »)
-                    if MUR_CACHES.search("/" + os.path.relpath(p, racine).replace("\\", "/")):
-                        continue
-                except ValueError:
-                    pass
-                ext = os.path.splitext(p)[1].lower()
-                if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif") or TECHNIQUE.search(os.path.splitext(os.path.basename(p))[0]):
-                    continue
+                with os.scandir(d) as it:
+                    for k, e in enumerate(it):
+                        if k >= 300:
+                            break
+                        if e.is_file() and e.path not in vus:
+                            examiner(e.path, sources[m][0], sources[m][1])
+            except OSError:
+                self.mur_dossiers.pop(d, None)
+        for cle, (racine, s, motif) in sources.items():     # 3. parcours, repris là où il s'était arrêté
+            if budget[0] <= 0 or time.time() - t0 > MUR_SECONDES_MAX:
+                break
+            it = self.mur_iter.get(cle)
+            if it is None:
                 try:
-                    t, n = os.path.getmtime(p), os.path.getsize(p)
-                except OSError:
+                    it = self.mur_iter[cle] = glob.iglob(motif, recursive=True)
+                except Exception:
                     continue
-                if t < limite and 0 < n <= IMAGE_MAX_OCTETS:
-                    vus[p] = (t, ext, s)
+            while budget[0] > 0 and time.time() - t0 <= MUR_SECONDES_MAX:
+                p = next(it, None)
+                if p is None:
+                    self.mur_iter.pop(cle, None)            # parcours fini : il recommence au passage suivant
+                    break
+                budget[0] -= 1
+                if p not in vus:
+                    examiner(p, racine, s)
+        if len(self.mur_connus) > 5000:                      # mémoire bornée : on garde les plus récentes
+            garder_ = dict(sorted(vus.items(), key=lambda x: -x[1][0])[:2000])
+            self.mur_connus = {p: m for p, m in self.mur_connus.items() if p in garder_}
         out, garder = [], set()
         for p, (t, ext, s) in sorted(vus.items(), key=lambda x: -x[1][0])[:IMAGES_MAX]:
             nom = hashlib.sha1((p + str(int(t))).encode("utf-8", "replace")).hexdigest()[:16] + ext
