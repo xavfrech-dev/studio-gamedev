@@ -59,7 +59,7 @@ VERROU = threading.Lock()
 EXTENSIONS = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
               ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
               ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif", ".ogg": "audio/ogg", ".mp3": "audio/mpeg",
-              ".wav": "audio/wav", ".woff2": "font/woff2", ".ttf": "font/ttf", ".txt": "text/plain; charset=utf-8", ".md": "text/plain; charset=utf-8"}
+              ".wav": "audio/wav", ".woff2": "font/woff2", ".webmanifest": "application/manifest+json", ".ttf": "font/ttf", ".txt": "text/plain; charset=utf-8", ".md": "text/plain; charset=utf-8"}
 
 CLE_RE = re.compile(r"^(?:[a-z0-9_]{1,40}(?:\.[a-z0-9_]{1,40}){0,3}|suivi-[a-z0-9-]{1,40})$")
 ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,80}$")
@@ -262,6 +262,15 @@ class Studio(SimpleHTTPRequestHandler):
             self.send_header("Set-Cookie", f"studio_cle={RESEAU['cle']}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000")
         super().end_headers()
 
+    def repondre_type(self, code, corps, type_):
+        self.send_response(code)
+        self.send_header("Content-Type", type_)
+        self.send_header("Content-Length", str(len(corps)))
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(corps)
+
     def repondre(self, code, donnees):
         corps = json.dumps(donnees, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -295,6 +304,17 @@ class Studio(SimpleHTTPRequestHandler):
     def do_GET(self):
         if not self.acces_ok():
             self.repondre(403, {"ok": False, "erreur": "hôte refusé"})
+            return
+        if urlsplit(self.path).path == "/manifest.webmanifest":   # application installable : nom du projet, icône du studio
+            conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+            nom = str(conf.get("nom_projet") or os.path.basename(Etat.projet))[:40]
+            lg = str(conf.get("langue") or "fr")[:2]
+            self.repondre_type(200, json.dumps({"name": nom + " · Studio", "short_name": "Studio", "start_url": "/studio.html?app=1", "scope": "/",
+                                                "display": "fullscreen", "display_override": ["fullscreen", "standalone"], "orientation": "portrait",
+                                                "background_color": "#1a1612", "theme_color": "#2b241c", "lang": lg,
+                                                "icons": [{"src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+                                                          {"src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}]},
+                                               ensure_ascii=False).encode("utf-8"), "application/manifest+json")
             return
         if urlsplit(self.path).path == "/api/conversation":   # conversation de Claude Code : lecture seule, en flux, en local
             try:
@@ -1094,7 +1114,14 @@ _INFOS = {}
 
 def _transcrire_avec(m, signal, langue):
     segments, _ = m.transcribe(signal, language=langue, beam_size=1, vad_filter=True, condition_on_previous_text=False)
-    return " ".join(s.text.strip() for s in segments).strip()
+    morceaux = [s.text.strip() for s in segments]
+    try:                                           # segments qui se recouvrent, débuts de phrase répétés : une seule fois
+        if ICI not in sys.path:
+            sys.path.insert(0, ICI)
+        import dictee_propre
+        return dictee_propre.propre(morceaux)
+    except Exception:
+        return " ".join(x for x in morceaux if x).strip()
 
 
 def _dll_cuda():

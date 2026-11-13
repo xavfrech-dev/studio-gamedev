@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.2] - 2026-11-13
+
+### Ajouté
+- Application sur le téléphone : studio installable (manifeste au nom du projet, icônes, balises iOS, service worker qui ne met en cache que la coquille, en « réseau d'abord » : jamais les données ni l'API) ; sur téléphone ou depuis l'écran d'accueil, barre d'onglets en bas (Équipe, Conversation, Cloche, Roadmap, Réglages), panneaux plein écran, gros boutons. L'aide (Réglages) explique l'ajout à l'écran d'accueil en http sur le Wi-Fi (sans mode hors ligne).
+
+### Corrigé
+- Dictée qui répétait les débuts de phrase (« faut faut que faut que tu… ») : texte reconstruit à chaque événement, segments fusionnés, débuts répétés retirés, mode phrase sur téléphone, texte rendu une seule fois ; même nettoyage pour la transcription locale. Essais : `studio/outils/test_dictee.js`, `studio/dictee_propre.py`.
+
 ## [0.4.1] - 2026-11-13
 
 ### Ajouté
