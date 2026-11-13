@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Studio</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#2b241c">
@@ -172,7 +172,9 @@ body.questionnaire #indice{display:none}
 .encadre.fin{border:2px solid #c9953e;background:linear-gradient(180deg,#fffaf0,#fbefd2)}
 .encadre.danger{border-color:rgba(168,67,46,.55);background:#fbeee9}
 .rangee.choix{flex-wrap:wrap}
-#alerte-etat{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:40;max-width:min(720px,92vw);padding:8px 16px;border-radius:10px;background:#7a2a1c;color:#fbe9e2;border:1px solid #c2533c;font:13.5px var(--sans);box-shadow:0 8px 20px rgba(0,0,0,.4)}
+#alerte-etat{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-basis:100%;order:99;margin:2px 0 0;padding:6px 10px 6px 14px;border-radius:10px;background:#5c4214;color:#fbf0d8;border:1px solid #c99a3e;font:14px var(--sans)}
+#alerte-etat[hidden]{display:none}#alerte-etat .bts,#alerte-etat .x{min-height:32px;padding:4px 12px;font-size:13px}#alerte-etat .x{margin-left:auto;background:none;border:0;color:#fbf0d8;font-size:20px;line-height:1;cursor:pointer}
+#alerte-etat-ancien{position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:40;max-width:min(720px,92vw);padding:8px 16px;border-radius:10px;background:#7a2a1c;color:#fbe9e2;border:1px solid #c2533c;font:13.5px var(--sans);box-shadow:0 8px 20px rgba(0,0,0,.4)}
 .reglage{display:flex;gap:10px;align-items:center;margin:8px 0}
 
 /* ---------- bandeau des succès (file) ---------- */
@@ -294,6 +296,39 @@ body.app #panneau{left:0!important;right:0!important;width:100vw!important;max-w
 body.app #panneau .feuille{width:100vw;max-height:100%;height:100%;border-radius:0;padding:18px 16px}
 body.app .bt,body.app .btp,body.app .bts{min-height:44px}
 body.app #conv-texte{font-size:17px}
+/* T3 : bords sûrs (encoche, indicateur d'accueil) en haut, à gauche et à droite aussi */
+#entete{padding-top:calc(10px + env(safe-area-inset-top));padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
+body.app #panneau .feuille{padding-top:calc(18px + env(safe-area-inset-top));padding-left:calc(16px + env(safe-area-inset-left));padding-right:calc(16px + env(safe-area-inset-right))}
+body.app #rm-panneau{padding-top:env(safe-area-inset-top)}
+body.app #toasts{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+/* T2 : clavier ouvert, la barre d'onglets s'efface et le panneau descend jusqu'en bas */
+body.app.clavier #onglets-app{display:none}
+body.app.clavier #panneau{bottom:0!important}
+body.app.clavier #micro-zone,body.app.clavier #equipe{display:none}
+/* T4 et T5 : la conversation en colonne, le fil prend la place, la saisie est collée en bas comme dans une messagerie */
+body.app #panneau.conv-app .feuille{display:flex;flex-direction:column;overflow:hidden}
+body.app #panneau.conv-app #pn-corps{display:flex;flex-direction:column;flex:1;min-height:0}
+body.app #panneau.conv-app .fil{flex:1;max-height:none;min-height:0;overflow:auto;overscroll-behavior:contain;margin-bottom:0}
+.conv-saisie{display:flex;flex-direction:column;gap:6px}
+body.app .conv-saisie{position:sticky;bottom:0;margin:0 -16px;padding:8px 12px calc(8px + env(safe-area-inset-bottom));background:#f2e8cf;border-top:1px solid rgba(92,79,63,.2)}
+body.app.clavier .conv-saisie{padding-bottom:8px}
+body.app .conv-saisie textarea{min-height:44px;max-height:30vh;field-sizing:content;margin:0}
+body.app .conv-saisie .rangee{margin:0;flex-wrap:nowrap}
+body.app .conv-saisie .rangee [data-envoyer]{margin-left:auto;min-width:96px}
+/* T1 + T2 : téléphone couché (petite hauteur, doigt) : icônes seules sur une rangée qui défile, onglets en rail vertical */
+@media (orientation:landscape) and (max-height:500px){
+  #entete .outils{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#entete .outils>*{flex:0 0 auto}
+  #entete .outils .bt>span[data-t]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  #entete .outils .bt,#entete .outils .bt.fort,#entete #bt-optim,#entete #bt-notifs,#entete #bt-son{padding:6px 10px;min-width:0;min-height:40px}
+  body.app #onglets-app{top:0;bottom:0;right:auto;width:calc(72px + env(safe-area-inset-left));height:auto;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);border-top:0;border-right:1px solid rgba(226,184,102,.35)}
+  body.app #onglets-app button.actif::before{top:22%;bottom:22%;left:0;right:auto;width:3px;height:auto;border-radius:0 3px 3px 0}
+  body.app #panneau{left:calc(72px + env(safe-area-inset-left))!important;width:auto!important;max-width:none!important;bottom:0!important}
+  body.app #panneau .feuille{width:100%}
+  body.app #entete{padding-left:calc(84px + env(safe-area-inset-left))}
+  body.app #equipe{left:calc(80px + env(safe-area-inset-left))!important;bottom:8px!important}
+  body.app #micro-zone{bottom:calc(100px + env(safe-area-inset-bottom))}
+  body.app #toasts{left:calc(84px + env(safe-area-inset-left))}
+}
 </style>
 </head>
 <body>
@@ -325,7 +360,7 @@ body.app #conv-texte{font-size:17px}
 </header>
 <aside id="notifs" hidden aria-label="Notifications" data-ta-a="a_notifs"></aside>
 <aside id="equipe" aria-label="L'équipe" data-ta-a="a_equipe"></aside>
-<div id="alerte-etat" role="alert" hidden></div>
+
 <div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer" data-ta-a="a_fermer">×</button><div id="pn-corps"></div></div></div>
 <section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="sc-corps"></div></section>
 <div id="succes" role="status" aria-live="polite"></div>
@@ -388,7 +423,7 @@ const TXT = {
     mission_tache: 'Tâche {id} : {titre}. Critère de fait : {critere}.', mission_prep: 'Préparer sans moteur (plans, données, tests ; rien n’est versé) la tâche {id} : {titre}. Critère visé : {critere}.',
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
-    decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Alimentation arrêtée depuis {m} min : la page calcule l’état elle-même (relance studio_etat.py ou veille_studio.py).', illisible: 'Fichier illisible ignoré' },
+    decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Les infos du studio datent de {m} min : il continue avec ses propres estimations.', etat_vieux_detail: 'Le programme qui met le studio à jour (veille_studio.py, studio_etat.py) ne répond plus. « Relancer » le redémarre ; tu peux aussi dire à Claude : relance le studio.', relancer_b: 'Relancer', etat_relance: '… relance demandée, les infos reviennent dans quelques secondes.', masquer_30: 'Masquer 30 min', illisible: 'Fichier illisible ignoré' },
   en: { telephone_titre: 'On a phone', telephone_aide: 'Start the server with --reseau, open the studio in the phone browser (same Wi-Fi), then “Add to Home Screen” (Safari: Share button; Chrome: ⋮ menu). It then opens full screen like an app, with its tabs at the bottom. Over http on Wi-Fi, adding works but without offline mode: the offline cache needs an https address (or the computer itself).', o_equipe: 'Team', o_conv: 'Chat', o_cloche: 'Bell', o_roadmap: 'Roadmap', o_reglages: 'Settings', role_temporaire: 'Temporary role (the original task stays reserved)', point_journal: 'New report (kept in the log: a report is already open or was just read)', points_anciens: '{n} older report(s) in the log', conv_cc: 'The same conversation as in Claude Code, read on this machine (never sent anywhere). Enter: send · Shift+Enter: new line.', tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar)', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Strongest (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'Night mode', je_suis_la: 'I’m back', nuit_on: 'Night mode: no more notifications; the studio keeps going and logs everything', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
@@ -417,7 +452,7 @@ const TXT = {
     mission_tache: 'Task {id}: {titre}. Done when: {critere}.', mission_prep: 'Prepare without the engine (plans, data, tests; nothing is merged) task {id}: {titre}. Target: {critere}.',
     renvoyer: 'Let go…', renvoyer_q: 'Let {n} go?', renvoyer_expl: 'Their card and agent definition are archived (nothing is deleted); you can hire them back.', oui_renvoyer: 'Yes, let go', annuler_b: 'Cancel',
     renvoye: 'leaves the studio', anciens: 'Former staff', reembaucher: 'Hire back', revient: 'is back at the studio', embauche_auto_ok: 'The assistant hired', aucun_ancien: 'Nobody yet.',
-    decider: 'Decide', ouvrir_cloche: 'Open the bell', rien_cloche: 'No decision waiting.', etat_vieux: 'Feed stopped {m} min ago: the page computes states itself (restart studio_etat.py or veille_studio.py).', illisible: 'Unreadable file ignored' }
+    decider: 'Decide', ouvrir_cloche: 'Open the bell', rien_cloche: 'No decision waiting.', etat_vieux: 'The studio info is {m} min old: it carries on with its own estimates.', etat_vieux_detail: 'The program that updates the studio (veille_studio.py, studio_etat.py) is not answering. “Restart” starts it again; you can also tell Claude: restart the studio.', relancer_b: 'Restart', etat_relance: '… restart requested, the info will be back in a few seconds.', masquer_30: 'Hide for 30 min', illisible: 'Unreadable file ignored' }
 };
 let LANGUE = 'fr';
 const t = k => (TXT[LANGUE] && TXT[LANGUE][k]) || TXT.fr[k] || k;
@@ -494,9 +529,20 @@ async function chargerTout() {
 }
 // Alimentation figée : bandeau rouge (la page calcule alors l'état elle-même) ; fichier d'agent illisible : alerte une fois.
 function majBandeauEtat() {
-  const b = $('#alerte-etat'), age = ETAT && Number.isFinite(+ETAT.horodatage) ? Date.now() / 1000 - ETAT.horodatage : null;
-  const vieux = CONF.mode === 'travail' && age !== null && age > 60;
-  b.hidden = !vieux; if (vieux) b.textContent = tf('etat_vieux', { m: Math.max(1, Math.round(age / 60)) });
+  let b = $('#alerte-etat');
+  if (!b) {                                                  // dans l'en-tête, sous les boutons ; role=status : annoncé sans interrompre
+    b = document.createElement('div'); b.id = 'alerte-etat'; b.setAttribute('role', 'status'); b.hidden = true;
+    b.innerHTML = '<span data-txt></span><button type="button" class="bts" data-relancer></button><button type="button" class="x" data-fermer aria-label=""></button>';
+    ($('#entete') || document.body).appendChild(b);
+    b.querySelector('[data-fermer]').onclick = () => { LS.set('bandeau_etat_masque', Date.now()); b.hidden = true; };
+    b.querySelector('[data-relancer]').onclick = async e => { const bt = e.currentTarget; bt.disabled = true; try { await poster('/api/relancer', {}); b.querySelector('[data-txt]').textContent = t('etat_relance'); } catch (err) { toast(esc(err.message), { erreur: true }); } finally { setTimeout(() => { bt.disabled = false; }, 15000); } };
+  }
+  b.querySelector('[data-relancer]').textContent = t('relancer_b'); b.querySelector('[data-fermer]').textContent = '×'; b.querySelector('[data-fermer]').setAttribute('aria-label', t('masquer_30'));
+  const age = ETAT && Number.isFinite(+ETAT.horodatage) ? Date.now() / 1000 - ETAT.horodatage : null;
+  const vieux = CONF.mode === 'travail' && age !== null && age > 60 && Date.now() - (+LS.get('bandeau_etat_masque', 0) || 0) > 30 * 60000;
+  b.hidden = !vieux;
+  if (vieux) { const m = Math.max(1, Math.round(age / 60)), txt = tf('etat_vieux', { m: m < 5 ? m : m < 60 ? 5 * Math.floor(m / 5) : 60 * Math.floor(m / 60) });
+    const z = b.querySelector('[data-txt]'); if (z.textContent !== txt && !/^…/.test(z.textContent)) z.textContent = txt; b.title = t('etat_vieux_detail'); }
   for (const a of (ETAT && Array.isArray(ETAT.anomalies) ? ETAT.anomalies : []).slice(0, 5)) if (a && a.fichier)
     Notifs.ajouter({ id: 'anom-' + a.fichier + ':' + a.raison, type: 'alerte', titre: t('illisible'), ligne: String(a.fichier) + ' : ' + String(a.raison || '') });
 }
@@ -602,7 +648,7 @@ const Panneau = (() => {
   // o.large : plein cadre (rapport de l'assistant, mur d'images)
   function montrer(cle, rendu, o = {}) {
     if (ouvert) { if (ouvert !== cle && !FILE.some(x => x.cle === cle)) FILE.push({ cle, rendu, o }); majFile(); return; }
-    ouvert = cle; corps.innerHTML = ''; el.classList.toggle('large', !!o.large); try { rendu(corps); } catch (e) { erreur('panneau', e); }
+    ouvert = cle; corps.innerHTML = ''; el.classList.toggle('large', !!o.large); el.classList.remove('conv-app'); try { rendu(corps); } catch (e) { erreur('panneau', e); }
     majFile(); el.classList.add('vu'); const f = corps.querySelector('textarea,input,button'); if (f) setTimeout(() => f.focus(), 60);
   }
   function majFile() { let f = corps.querySelector('.file'); if (FILE.length) { if (!f) { f = document.createElement('p'); f.className = 'file'; corps.prepend(f); } f.textContent = `${FILE.length} ${t('a_suivre')}`; } else if (f) f.remove(); }
@@ -1208,7 +1254,20 @@ window.__diag = () => Tyrannie.diagnostics();   // essais
 window.__bloques = () => Tyrannie.bloques();
 window.__cc = () => ({ n: CC.msgs.length, offset: CC.offset, fichier: CC.fichier, dernier: CC.msgs.slice(-1)[0] });   // essais
 // ---------------- mode application (téléphone, ou lancé depuis l'écran d'accueil) ----------------
-const MODE_APP = () => /[?&]app=1/.test(location.search) || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true || innerWidth <= 640;
+const MODE_APP = () => /[?&]app=1/.test(location.search) || matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true || innerWidth <= 640
+  || matchMedia('(pointer:coarse) and (max-height:500px)').matches;
+// T2 : clavier virtuel ouvert = la hauteur visible fond ; on efface la barre d'onglets pour garder la saisie et ses boutons en vue
+const HAUTEUR_PLEINE = { v: window.visualViewport ? visualViewport.height : innerHeight };
+function majClavier() {
+  const vv = window.visualViewport, h = vv ? vv.height : innerHeight, a = document.activeElement;
+  const champ = !!a && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'range', 'color', 'button'].includes(a.type)));
+  if (!champ) HAUTEUR_PLEINE.v = h;                                    // hauteur de référence : sans saisie active
+  const ouvert = champ && MODE_APP() && h < HAUTEUR_PLEINE.v * .8;
+  document.body.classList.toggle('clavier', ouvert);
+  if (ouvert) setTimeout(() => { try { a.scrollIntoView({ block: 'nearest' }); } catch (e) { /* rien */ } }, 60);
+}
+if (window.visualViewport) visualViewport.addEventListener('resize', majClavier);
+addEventListener('focusin', majClavier); addEventListener('focusout', () => setTimeout(majClavier, 80));
 function majOngletsApp() {
   document.body.classList.toggle('app', MODE_APP()); if (!MODE_APP()) return;
   let n = document.getElementById('onglets-app');
@@ -1272,7 +1331,8 @@ const Conv = (() => {
   function ouvrir() {
     sig = '';
     Panneau.montrer('conv', el => {
-      el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><p class="discret">${esc(t('conv_cc'))}</p><div class="fil" data-fil></div>${blocTexte('conv-texte')}`;
+      el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><p class="discret conv-aide">${esc(t('conv_cc'))}</p><div class="fil" data-fil></div><div class="conv-saisie">${blocTexte('conv-texte')}</div>`;
+      $('#panneau').classList.add('conv-app'); el.querySelector('#conv-texte').setAttribute('enterkeyhint', 'send');
       lierMicros(el); rendreFil(el.querySelector('[data-fil]')); sig = signature();
       const b = el.querySelector('[data-envoyer]'), ta = el.querySelector('#conv-texte');
       b.onclick = async () => {
@@ -2687,7 +2747,7 @@ function verifierMessages() {
 
 // Automatismes : réglages et bouton « Tout couper » (rouge quand un automatisme tourne)
 const AUTOS = ['attribution_auto', 'embauche_auto', 'enchainement_auto', 'point_auto', 'optimisation_auto', 'tyrannie_auto', 'sante_auto'];
-const autoOn = k => REGLAGES && REGLAGES[k] === true;
+const autoOn = k => auto(k);   // S28 : un automatisme allumé par la config (economie) compte aussi
 function majCouper() {
   const n = AUTOS.filter(autoOn).length, b = $('#bt-couper'); if (!b) return; const pause = !!(REGLAGES && REGLAGES.pause);
   b.classList.toggle('actif', !pause && n > 0); b.classList.toggle('rallumer', pause);

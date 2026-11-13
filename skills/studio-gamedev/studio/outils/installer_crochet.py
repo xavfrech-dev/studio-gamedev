@@ -15,9 +15,19 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 MARQUE = "crochet_journal.py"
 
 
-def commande():
+def copie_locale(projet):
+    """Copie du crochet dans <projet>/.studio/outils/ (bibliothèque standard seule) : il ne dépend plus du dossier de version du plugin."""
+    dest = os.path.join(projet, ".studio", "outils")
+    os.makedirs(dest, exist_ok=True)
+    cible = os.path.join(dest, MARQUE)
+    shutil.copyfile(os.path.join(ICI, MARQUE), cible + ".tmp")
+    os.replace(cible + ".tmp", cible)
+    return cible
+
+
+def commande(script):
     exe = sys.executable or "python"
-    return f'"{exe}" -I -B "{os.path.join(ICI, MARQUE)}"'
+    return f'"{exe}" -I -B "{script}"'
 
 
 def lire(chemin):
@@ -35,7 +45,8 @@ def main():
     a.add_argument("--projet", required=True)
     a.add_argument("--retirer", action="store_true")
     o = a.parse_args()
-    dossier = os.path.join(os.path.abspath(o.projet), ".claude")
+    projet = os.path.abspath(o.projet)
+    dossier = os.path.join(projet, ".claude")
     chemin = os.path.join(dossier, "settings.local.json")
     try:
         d = lire(chemin)
@@ -57,11 +68,12 @@ def main():
             del d["hooks"]
         msg = "crochet du studio retiré"
     else:
-        if deja:
-            print("déjà installé")
+        cmd = commande(copie_locale(projet))
+        if deja and all(h.get("command") == cmd for g in deja for h in g.get("hooks", []) if isinstance(h, dict) and MARQUE in str(h.get("command", ""))):
+            print("déjà installé (copie du crochet mise à jour)")
             return
-        stop.append({"hooks": [{"type": "command", "command": commande(), "timeout": 20}]})
-        msg = "crochet du studio installé"
+        hooks["Stop"] = [g for g in stop if g not in deja] + [{"hooks": [{"type": "command", "command": cmd, "timeout": 20}]}]
+        msg = "crochet du studio mis à jour" if deja else "crochet du studio installé"
     os.makedirs(dossier, exist_ok=True)
     if os.path.exists(chemin):
         shutil.copyfile(chemin, chemin + ".bak")

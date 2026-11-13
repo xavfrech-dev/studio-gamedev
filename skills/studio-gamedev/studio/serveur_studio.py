@@ -125,6 +125,35 @@ def ecrire_json(chemin, donnees):
         raise Refus(503, f"fichier occupé ({os.path.basename(chemin)}), réessaie dans un instant")
 
 
+MIS_DE_COTE = []          # fichiers illisibles mis de côté depuis le démarrage (montrés par /api/qui)
+
+
+def lire_ou_mettre_de_cote(chemin, defaut):
+    """Pour une route qui va réécrire le fichier : s'il existe et ne se lit pas, il est renommé
+    <nom>.illisible-<date>.json (rien n'est perdu) et on repart de « defaut »."""
+    if not os.path.exists(chemin):
+        return defaut
+    try:
+        with open(chemin, encoding="utf-8-sig") as f:
+            return json.load(f)
+    except Exception:
+        try:
+            if time.time() - os.path.getmtime(chemin) < 2:      # en cours d'écriture par un autre : on attend un peu
+                time.sleep(.3)
+                with open(chemin, encoding="utf-8-sig") as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        base, ext = os.path.splitext(chemin)
+        cible = f"{base}.illisible-{time.strftime('%Y%m%d-%H%M%S')}{ext}"
+        try:
+            os.replace(chemin, cible)
+            MIS_DE_COTE.append({"fichier": os.path.basename(chemin), "copie": os.path.basename(cible), "quand": maintenant()})
+        except OSError:
+            raise Refus(503, f"{os.path.basename(chemin)} est illisible et ne peut pas être mis de côté : rien n'est écrit")
+        return defaut
+
+
 def lire_json(chemin, defaut):
     try:
         with open(chemin, encoding="utf-8-sig") as f:   # avec ou sans BOM
@@ -289,6 +318,8 @@ class Studio(SimpleHTTPRequestHandler):
         ext = os.path.splitext(rel)[1].lower()
         if ext not in EXTENSIONS or os.path.basename(rel).lower() in ("cle_reseau.txt", "adresse_telephone.txt"):
             return None
+        if ".illisible-" in rel or rel.lower().endswith((".bak", ".tmp")) or rel.startswith(("outils/", "_")):
+            return None                                   # copies mises de côté, sauvegardes, temporaires, crochet copié : jamais servis
         for base in (Etat.studio, ICI):
             if not base:
                 continue
@@ -336,7 +367,7 @@ class Studio(SimpleHTTPRequestHandler):
                 self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
             return
         if urlsplit(self.path).path == "/api/qui":          # reprise et arrêt : qui sert ce port ?
-            self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1]})
+            self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1], "mis_de_cote": MIS_DE_COTE[-5:]})
             return
         if urlsplit(self.path).path in ("", "/"):
             self.send_response(302)
@@ -409,7 +440,7 @@ class Studio(SimpleHTTPRequestHandler):
             if not isinstance(d, dict):
                 raise Refus(400, "objet JSON attendu")
             action = {"/api/questionnaire": route_questionnaire, "/api/profil": route_profil, "/api/demande": route_demande,
-                      "/api/repondre": route_repondre, "/api/reglages": route_reglages, "/api/couper": route_couper,
+                      "/api/repondre": route_repondre, "/api/reglages": route_reglages, "/api/couper": route_couper, "/api/relancer": route_relancer,
                       "/api/recruter": route_recruter, "/api/confier": route_confier,
                       "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent}.get(route)
             if not action:
@@ -426,7 +457,7 @@ class Studio(SimpleHTTPRequestHandler):
 # -------------------------------------------------------------------- routes
 def route_questionnaire(d):
     chemin = os.path.join(Etat.studio, "reponses_questionnaire.json")
-    q = lire_json(chemin, None)
+    q = lire_ou_mettre_de_cote(chemin, None)
     if not isinstance(q, dict):
         q = {"version": 1, "etat": "en_cours", "cree_le": maintenant(), "reponses": {}}
     if not isinstance(q.get("reponses"), dict):
@@ -475,7 +506,7 @@ def route_questionnaire(d):
 
 def route_profil(d):
     chemin = os.path.join(Etat.studio, "profil.json")
-    p = lire_json(chemin, None)
+    p = lire_ou_mettre_de_cote(chemin, None)
     if not isinstance(p, dict):
         p = {"version": 1}
 
@@ -896,7 +927,7 @@ def route_agent(d):
             with open(md, encoding="utf-8") as f:
                 t = f.read()
             if role:
-                t = re.sub(r"(?m)^description: .*$", lambda m: "description: " + yaml_chaine(role), t, count=1)
+                t = re.sub(r"(?m)^description: .*$", lambda m: 'description: "' + yaml_chaine(role) + '"', t, count=1)
             if modele:                                   # frontmatter « model: » (vaut au prochain lancement de l'agent)
                 if re.search(r"(?m)^model: .*$", t.split("\n---", 1)[0]):
                     t = re.sub(r"(?m)^model: .*$", "model: " + modele, t, count=1)
@@ -913,7 +944,7 @@ def route_agent(d):
     if nom not in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
         raise Refus(404, f"agent « {nom} » inconnu")
     chemin = os.path.join(Etat.studio, "reglages.json")
-    r = lire_json(chemin, {}) or {}
+    r = lire_ou_mettre_de_cote(chemin, {}) or {}
     if affiche:
         r.setdefault("noms_postes", {})[nom] = affiche
     if role:
@@ -1007,23 +1038,51 @@ def route_repondre(d):
 AUTOS_COUPER = ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "sante_auto")
 
 
+def route_relancer(d):
+    """Bouton « Relancer » du bandeau : relance l'alimentation du studio par sa veille (rien d'autre n'est lancé)."""
+    sys.path.insert(0, ICI) if ICI not in sys.path else None
+    from veille_studio import lire_pid, vivant
+    verrou = os.path.join(Etat.studio, "veille_studio.verrou")
+    if vivant(lire_pid(verrou)):
+        alim = lire_pid(os.path.join(Etat.studio, "studio_etat.verrou"))
+        if vivant(alim):
+            try:
+                import signal
+                os.kill(alim, signal.SIGTERM)             # alimentation figée : la veille la relance aussitôt
+            except OSError:
+                pass
+        return {"ok": True, "quoi": "alimentation relancée par la veille"}
+    import subprocess
+    drapeaux = (getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) | getattr(subprocess, "CREATE_NO_WINDOW", 0)) if os.name == "nt" else 0
+    subprocess.Popen([sys.executable, "-I", "-B", os.path.join(ICI, "veille_studio.py"), "--projet", Etat.projet],
+                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=drapeaux,
+                     start_new_session=os.name != "nt", close_fds=True)
+    return {"ok": True, "quoi": "veille lancée"}
+
+
 def route_couper(d):
     """« Tout couper » : tous les automatismes à false, l'état d'avant gardé (avant_pause) ; « Tout rallumer » le remet."""
     action = d.get("action")
     if action not in ("couper", "rallumer"):
         raise Refus(400, "action : couper ou rallumer")
     chemin = os.path.join(Etat.studio, "reglages.json")
-    r = lire_json(chemin, {})
+    r = lire_ou_mettre_de_cote(chemin, {})
     if not isinstance(r, dict):
         r = {}
     if action == "couper":
         if not r.get("pause"):
-            r["avant_pause"] = {k: bool(r.get(k)) for k in AUTOS_COUPER}
+            r["avant_pause"] = {k: r.get(k) for k in AUTOS_COUPER}     # None = la clé n'existait pas (valeur de la config)
         r.update({k: False for k in AUTOS_COUPER}, pause=True, pause_depuis=maintenant())
     else:
         avant = r.pop("avant_pause", None)
         if isinstance(avant, dict):
-            r.update({k: bool(v) for k, v in avant.items() if k in AUTOS_COUPER})
+            for k, v in avant.items():
+                if k not in AUTOS_COUPER:
+                    continue
+                if v is None:
+                    r.pop(k, None)                               # on rend la main à la config
+                else:
+                    r[k] = bool(v)
         r["pause"] = False
         r.pop("pause_depuis", None)
     r["maj"] = maintenant()
@@ -1044,7 +1103,7 @@ def route_reglages(d):
     if f is not None and f not in (15, 30, 60, 120):
         raise Refus(400, "fréquence : 15, 30, 60 ou 120")
     chemin = os.path.join(Etat.studio, "reglages.json")
-    r = lire_json(chemin, {})
+    r = lire_ou_mettre_de_cote(chemin, {})
     if not isinstance(r, dict):
         r = {}
     if f is not None:
@@ -1296,11 +1355,14 @@ def main(argv=None):
         port = PORT_DEFAUT
     if a.port:
         port = a.port
+        if not port_libre(port):
+            raise SystemExit(f"le port {port} est déjà pris par un autre programme (ou un autre studio) : choisis un autre --port, ou lance sans --port")
     else:
         libre = next((p for p in range(port, port + 50) if port_libre(p)), 0)
         if not libre:
             raise SystemExit(f"aucun port libre entre {port} et {port + 49} : relance avec --port N")
         port = libre
+    ThreadingHTTPServer.allow_reuse_address = os.name != "nt"     # Windows : SO_REUSEADDR laisserait un 2e serveur sur le même port
     srv = ThreadingHTTPServer(("127.0.0.1", port), Studio)
     srv.daemon_threads = True
     print(f"studio sur http://127.0.0.1:{port}/studio.html (projet : {Etat.projet})", flush=True)

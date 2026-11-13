@@ -2,6 +2,20 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.3] - 2026-11-13
+
+### Corrigé
+- Un fichier JSON illisible (réponses du questionnaire, personnages, réglages) n'est plus jamais écrasé : il est mis de côté (`<nom>.illisible-<date>.json`) avant d'en repartir, et signalé par `/api/qui`.
+- Deux serveurs ne peuvent plus écouter le même port sous Windows : un `--port` déjà pris est refusé avec un message clair.
+- Le rôle d'un agent qui contient « : » ne casse plus l'en-tête de sa définition.
+- « Tout rallumer » rend la main à la config pour les automatismes qu'elle allume (au lieu de les laisser coupés) ; le bouton les compte aussi.
+- Le crochet de journal est copié dans le projet (`.studio/outils/`) : une mise à jour du plugin ne le casse plus ; une réinstallation remplace une entrée périmée.
+- Les copies mises de côté, sauvegardes, temporaires et le crochet copié ne sont jamais servis.
+
+### Modifié
+- Téléphone : bords sûrs (encoche, indicateur d'accueil) ; clavier ouvert, la barre d'onglets s'efface et la saisie reste visible ; conversation en colonne avec la saisie collée en bas et la touche « envoyer » ; téléphone couché : icônes sur une rangée et onglets en rail vertical.
+- Bandeau « infos qui datent » : sous les boutons (il ne les cache plus), en ambre, sans jargon, avec « Relancer » (redémarre l'alimentation, `/api/relancer`) et une croix qui le masque 30 min.
+
 ## [0.4.2] - 2026-11-13
 
 ### Ajouté
