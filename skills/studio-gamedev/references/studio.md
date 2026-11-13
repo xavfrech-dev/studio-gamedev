@@ -1,5 +1,7 @@
 # Le studio virtuel animé
 
+> **English summary.** The animated studio: files, `studio.config.json` settings, install, local API, file contract (`etat.json`, `roadmap.json`, studio backlog…), studio tiers, voice and stopping.
+
 Une page web locale, en vue isométrique. Elle a deux modes :
 - **accueil** : dès le lancement du skill, « le jeu commence ». L'assistant accueille le maître et lui fait créer son jeu question par question (cartes illustrées, ★ mise en avant, champ libre, micro). Le studio se construit à chaque chapitre terminé (voir `questionnaire.md`, « Chapitres »).
 - **travail** : chaque poste est un personnage à son bureau, avec une barre de progression façon barre de vie. Le maître est à son bureau de direction ; l'assistant circule, fait ses rapports et sonne la cloche quand une décision attend. On y trouve aussi le mur des dernières images et le bouton de recrutement.
@@ -219,5 +221,7 @@ Personnages (`sprites.js`) : assis à leur poste, dos à nous, face à l'écran 
 
 ## Arrêt
 
-Arrête le processus Python lancé en arrière-plan. Les fichiers restent ; relancer reprend où on en était (questionnaire compris : la page repart à la première question sans réponse).
+« Arrête le studio » : `python -I -B <skill>/studio/outils/arreter.py --projet <projet>` arrête la veille, l'alimentation puis le serveur, et seulement eux (pids notés dans `.studio/veille_studio.verrou`, `.studio/studio_etat.verrou` et `.studio/serveur.json` ; le serveur doit d'abord confirmer sur `GET /api/qui` qu'il sert ce projet avec ce pid). Les fichiers restent ; relancer reprend où on en était (questionnaire compris : la page repart à la première question sans réponse).
+
+**Reprise** : le serveur note son port et son pid dans `.studio/serveur.json` (effacé à l'arrêt). Relancé alors que le serveur de ce projet répond encore, `serveur_studio.py` ne double pas : il affiche la même adresse (« déjà lancé, réutilisé ») et rend la main. La veille refuse aussi de tourner deux fois (`veille_studio.verrou`).
 

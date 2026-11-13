@@ -5,7 +5,9 @@ description: Lance un nouveau projet de jeu vidéo comme un jeu. Ouvre tout de s
 
 # Studio gamedev
 
-Tu montes un studio de jeu vidéo virtuel pour l'utilisateur (« le maître »). Dès le lancement, **la page du studio s'ouvre et le jeu commence** : le questionnaire se joue dans la page, pas dans la conversation. Toi, tu fais tourner le studio en coulisses : tu lis ce que la page écrit, tu déduis, tu poses des questions de suivi par fichier, puis tu écris le projet et tu lances le travail. Réponds dans la langue de l'utilisateur.
+> **English summary.** Opens an animated virtual game studio in the browser and turns starting a game into a game: the assistant asks the questionnaire in the page (cards, voice or text), then writes the roadmap (with `roadmap.json` shown in the studio), the GDD, the decisions and the working rules, and starts the work by routing each task to the installed game dev skills. Everything is bilingual: the project language is the language of the user's first message (`fr`, otherwise `en`), and English templates live in `modeles/en/`.
+
+Tu montes un studio de jeu vidéo virtuel pour l'utilisateur (« le maître »). Dès le lancement, **la page du studio s'ouvre et le jeu commence** : le questionnaire se joue dans la page, pas dans la conversation. Toi, tu fais tourner le studio en coulisses : tu lis ce que la page écrit, tu déduis, tu poses des questions de suivi par fichier, puis tu écris le projet et tu lances le travail. Réponds dans la langue de l'utilisateur. **Langue du projet** = celle de son premier message (`fr` si c'est du français, sinon `en`) : elle va dans `studio.config.json` → `langue` et `profil.json` (page, questions, reconnaissance vocale `fr-FR` / `en-US`) ; documents et agents en anglais depuis `modeles/en/` (même forme, mêmes `{{clés}}`), rangs du studio dans cette langue.
 
 Lis les références au moment indiqué :
 - `references/studio.md` : phase 1 (installation, lancement, contrat de fichiers).
@@ -75,7 +77,7 @@ Essai : `python -I -B studio/outils/essai_complet.py adoption --dossier <…>/es
 ## Phase 1 : ouvrir le studio, le questionnaire se joue dans la page
 
 1. Installe le studio en mode **accueil** (`references/studio.md`, « Installation ») : `<projet>/.studio/` avec `studio.config.json` minimal (postes vides) et `profil.json` par défaut, et **ajoute tout de suite au `.gitignore` du projet** le bloc qui garde `.studio/` sur la machine (seuls `roadmap.json` et `studio.config.json` peuvent être versionnés). Lance le serveur en arrière-plan (Python standard, 127.0.0.1 seulement) :
-   `python -I -B <dossier du skill>/studio/serveur_studio.py --projet <projet>` (`--port N` pour choisir ; sinon le port de la config, sinon 8790 ; s'il est pris, le premier libre après : lis l'adresse sur la première ligne affichée). Il sert `.studio/` puis les fichiers du skill, sans rien copier. Puis **ouvre** `http://127.0.0.1:<port>/studio.html` (navigateur intégré s'il existe, sinon donne le lien).
+   `python -I -B <dossier du skill>/studio/serveur_studio.py --projet <projet>` (`--port N` pour choisir ; sinon le port de la config, sinon 8790 ; s'il est pris, le premier libre après : lis l'adresse sur la première ligne affichée ; à une reprise, si le serveur de ce projet tourne encore, il est réutilisé et la même adresse s'affiche). Il sert `.studio/` puis les fichiers du skill, sans rien copier. Puis **ouvre** `http://127.0.0.1:<port>/studio.html` (navigateur intégré s'il existe, sinon donne le lien).
    **Crochet Stop (avec accord)** : propose en une phrase d'installer le crochet qui recopie tes réponses dans le studio (`.studio/journal_assistant.json`). Seulement s'il dit oui : `python -I -B <skill>/studio/outils/installer_crochet.py --projet <projet>` (fusion avec `<projet>/.claude/settings.local.json`, copie `.bak`, jamais d'écrasement ; `--retirer` pour l'enlever).
 2. Dis en deux lignes à l'utilisateur que le studio est ouvert, qu'il peut répondre **à la voix ou par écrit**, et que tu suis ses réponses.
 3. **Attends et accompagne** avec `attendre.py` en arrière-plan (voir « Économie » : jamais de boucle de lecture, aucun message entre deux réveils). À chaque réveil, ne lis que les fichiers signalés :
@@ -95,7 +97,7 @@ Dès la dernière réponse donnée, **avant tout autre livrable**, génère la r
 3. Vérifie avant de continuer : JSON valide, identifiants uniques, chaque dépendance existe et ne forme pas de boucle, chaque tâche a un critère et une estimation, mêmes jalons et tâches dans les deux fichiers.
 4. Résume la roadmap en 3 à 5 lignes dans la conversation (jalons, total d'heures, fin visée du premier jalon jouable).
 
-Même en repli conversation, même si l'utilisateur est pressé : la roadmap est écrite. Seul l'utilisateur peut ensuite la modifier (« change la roadmap ») ; tu mets alors à jour les deux fichiers ensemble.
+**Reprise** : à chaque reprise (« reprends mon studio », nouvelle session), si `reponses_questionnaire.json` dit `"etat": "termine"` et que `.studio/roadmap.json` manque, écris la roadmap **avant toute autre chose** (la page attend sur « J'écris ta roadmap… » ; au bout de 5 min elle propose de rouvrir la session et dépose, sur un clic, un rappel dans `demandes_vocales/`). Même en repli conversation, même si l'utilisateur est pressé : la roadmap est écrite. Seul l'utilisateur peut ensuite la modifier (« change la roadmap ») ; tu mets alors à jour les deux fichiers ensemble.
 
 ## Phase 2 : écrire le projet
 
@@ -140,6 +142,8 @@ Suis `references/regles_de_travail.md` :
 - **Rapport** : chaque ligne `a_decider` porte l'`id` de sa décision (ou reprend son titre) : la page ouvre cette décision, sinon la cloche ; jamais un recrutement ni une tâche confiée.
 - Phrases utiles dans la conversation : « point », « roadmap » (résumé + panneau Roadmap ouvert dans la page), « change la roadmap », « stop suivi », « change mon assistant » (rouvre le chapitre Personnages dans la page), « nouvelle décision », « recrute <rôle> » (même effet que le bouton Recruter : définition d'agent, fiche dans `recrues/`, demande), « version », « attribution automatique » / « embauches automatiques » (passe le réglage à `true` dans `reglages.json`, seulement sur demande explicite).
 - Tâche retirée de la roadmap (sortie, écartée, reportée, remplacée) : garde-la dans `roadmap.json` avec une `note` qui le dit (ou `"retiree": true`) : elle n'est plus jamais proposée.
+
+**« Arrête le studio »** : `python -I -B <skill>/studio/outils/arreter.py --projet <projet>` (veille, alimentation, serveur de ce projet seulement ; les fichiers restent). Une reprise relance le serveur et la veille comme en phase 1 et en phase 4.
 
 ## Règles de sécurité
 

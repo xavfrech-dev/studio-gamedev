@@ -197,6 +197,12 @@ def ecrire_json(chemin, donnees, indent=None):
     tmp = chemin + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(donnees, f, ensure_ascii=False, indent=indent)
+    for essai in range(5):                       # Windows : la page ou un agent peut tenir le fichier un court instant
+        try:
+            os.replace(tmp, chemin)
+            return
+        except PermissionError:
+            time.sleep(0.1 * (essai + 1))
     os.replace(tmp, chemin)
 
 
@@ -234,13 +240,17 @@ def restant_de(prog):
     r = prog.get("restant_min")
     if isinstance(r, (int, float)) and not isinstance(r, bool) and r >= 0:
         return round(float(r), 1)
-    fin = str(prog.get("fin", "") or "")
+    fin = str(prog.get("fin", "") or "").strip()
+    m_dans = re.match(r"^(?:dans|in)\s+(\d+(?:[.,]\d+)?)\s*(min|h)", fin, re.I)      # « dans 20 min », « in 2 h »
+    if m_dans:
+        v = float(m_dans.group(1).replace(",", "."))
+        return round(v * (60 if m_dans.group(2).lower() == "h" else 1), 1)
     t = iso_vers_t(fin)
     if not t:
-        m = re.match(r"^(\d{1,2})[:h](\d{2})$", fin)
+        m = re.match(r"^(\d{1,2})\s*[:h]\s*(\d{2})?$", fin, re.I)                   # « 14:30 », « 14h30 », « 14 h »
         if m:
             lt = time.localtime()
-            t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, int(m.group(1)), int(m.group(2)), 0, 0, 0, -1))
+            t = time.mktime((lt.tm_year, lt.tm_mon, lt.tm_mday, int(m.group(1)), int(m.group(2) or 0), 0, 0, 0, -1))
             if t < time.time() - 6 * 3600:
                 t += 86400
     return round(max(0.0, (t - time.time()) / 60), 1) if t else None
@@ -250,6 +260,10 @@ def pct_de(prog):
     if isinstance(prog, dict) and isinstance(prog.get("pct"), (int, float)) and not isinstance(prog.get("pct"), bool):
         return max(0, min(100, int(round(prog["pct"]))))
     return None
+
+
+MUR_EXAMENS_MAX, MUR_SECONDES_MAX = 2000, 2.0
+MUR_CACHES = re.compile(r"/(\.git|node_modules|Intermediate|DerivedDataCache|ShaderCache|Library|Temp|obj|\.godot/imported|\.import|__pycache__)/", re.I)
 
 
 class Memo:
@@ -344,7 +358,8 @@ class Studio:
         """Branche, fichiers suivis modifiés, derniers commits. Lecture seule (aucun verrou d'index pris)."""
         if not os.path.exists(os.path.join(self.projet, ".git")):
             return None
-        env = dict(os.environ, GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0")
+        env = dict(os.environ, GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0",   # sans fsmonitor : pas de démon de surveillance lancé
+                   GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="core.fsmonitor", GIT_CONFIG_VALUE_0="false")
         def g(*a):
             return subprocess.run(["git", "-C", self.projet, *a], env=env, **SUBPROC)
         try:
@@ -826,19 +841,31 @@ class Studio:
         os.makedirs(mur, exist_ok=True)
         vus = {}
         limite = time.time() - 4   # un fichier encore en cours d'écriture attend le passage suivant
+        # borne (gros projet Unreal ou Unity) : 2 000 chemins examinés et 2 s au plus par passage, dossiers de cache ignorés
+        budget, t0 = [MUR_EXAMENS_MAX], time.time()
         for s in conf.get("sources_images") or []:
+            if budget[0] <= 0 or time.time() - t0 > MUR_SECONDES_MAX:
+                break
             if not isinstance(s, dict) or not isinstance(s.get("motif"), str) or "{{" in s["motif"]:
                 continue
             racine, motif = self.motif_permis(s["motif"])
             if not motif:
                 continue
             try:
-                fichiers = glob.glob(motif, recursive=True)
+                fichiers = glob.iglob(motif, recursive=True)
             except Exception:
                 continue
-            for p in fichiers[:4000]:
+            for p in fichiers:
+                budget[0] -= 1
+                if budget[0] < 0 or time.time() - t0 > MUR_SECONDES_MAX:
+                    break
                 if not dans(os.path.realpath(p), racine):
                     continue
+                try:                                   # dossiers de cache cherchés sous la racine seulement (le projet peut vivre sous « Temp »)
+                    if MUR_CACHES.search("/" + os.path.relpath(p, racine).replace("\\", "/")):
+                        continue
+                except ValueError:
+                    pass
                 ext = os.path.splitext(p)[1].lower()
                 if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif") or TECHNIQUE.search(os.path.splitext(os.path.basename(p))[0]):
                     continue

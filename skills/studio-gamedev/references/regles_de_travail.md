@@ -1,5 +1,7 @@
 # Règles de travail du studio
 
+> **English summary.** Working rules copied into the project's CLAUDE.md and each agent: one milestone at a time, one engine chain, minimal tests, honest roadmap, no push without approval.
+
 Ces règles sont recopiées (adaptées au moteur et aux réponses) dans le `CLAUDE.md` du projet, et dans chaque définition d'agent créée pour un poste. Elles viennent d'un vrai projet mené avec des agents ; elles évitent les deux pièges classiques : le moteur saturé par plusieurs agents, et une roadmap qui ne dit plus la vérité.
 
 ## 1. Un jalon à la fois

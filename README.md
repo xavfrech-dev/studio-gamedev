@@ -119,6 +119,8 @@ Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te r
 - **Conversation avec l'assistant** (nouveau bouton) : tes messages avec leur statut (déposé, lu, traité), ses réponses et ses décisions avec boutons. Si sa réponse finit par une question sans décision, une bulle « L'assistant te pose une question » apparaît.
 - **Fin de tâche** : le personnage qui a fini va attendre près de l'assistant. Sa fiche propose « Lui confier une tâche », « Trouve-toi une tâche » ou « Laisser en pause ». Rien n'est lancé sans toi, sauf si tu actives l'attribution automatique.
 - **Embauche et renvoi** : bouton « Renvoyer… » sur les recrues (avec confirmation, refusé si une tâche est en cours, rien n'est effacé) et liste « Anciens » pour réembaucher. Le studio peut proposer un renvoi sous la cloche, jamais l'appliquer seul.
+- **Arrêter et reprendre** : dis « arrête le studio » (ou `python -I -B <skill>/studio/outils/arreter.py --projet <projet>`) ; à la reprise, un serveur encore lancé pour ce projet est réutilisé.
+- **Anglais complet** : un projet commencé en anglais a ses documents et ses agents en anglais (`modeles/en/`) ; la page suit la langue du navigateur par défaut.
 - **Plus solide** : une veille (`studio/veille_studio.py`) relance l'alimentation si elle s'arrête ; bandeau rouge si l'état de la page date de plus d'une minute ; fichier illisible ignoré et signalé ; demandes jamais écrasées.
 
 ## Coût en jetons

@@ -2,6 +2,24 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.9] - 2026-11-13
+
+### Ajouté
+- Anglais complet : gabarits `modeles/en/` (GDD, ROADMAP, DECISIONS, CLAUDE, agent) ; un projet non français reçoit des agents en anglais ; langue du projet = celle du premier message ; la page prend la langue du navigateur par défaut ; résumé anglais en tête de SKILL.md et des références.
+- « Arrête le studio » : `studio/outils/arreter.py` arrête la veille, l'alimentation et le serveur du projet (seulement eux). Le serveur note son port dans `.studio/serveur.json` et répond sur `GET /api/qui` ; relancé, il réutilise celui qui tourne déjà pour ce projet.
+- Questionnaire posé dans le chat : la page ouverte relit les réponses toutes les 5 s et avance seule.
+- « J'écris ta roadmap… » bloqué plus de 5 min : explication (rouvrir la session et dire « reprends mon studio ») et bouton de rappel pour l'assistant.
+- Micro refusé : bouton « Ouvrir dans mon navigateur » (adresse copiée en secours).
+
+### Modifié
+- Notifications plus grandes (560 px, texte 18 px, pictogramme).
+- Moins de téléchargements : ETag et réponses 304, une seule vague de lectures à la fois (8 s au plus), onglet caché lu une fois par minute.
+- Mur d'images borné : 2 000 chemins et 2 s au plus par passage, dossiers de cache (Intermediate, DerivedDataCache, Library, .godot/imported…) ignorés.
+- Heure de fin acceptée sous plus de formes (« dans 20 min », « 14h30 », « 14 h ») ; git lancé sans fsmonitor ; écritures réessayées sous Windows (sinon « fichier occupé »).
+
+### Corrigé
+- Transcription locale : elle suit la langue du projet ; une seule à la fois ; ffmpeg limité au flux reçu.
+
 ## [0.3.8] - 2026-11-13
 
 ### Ajouté

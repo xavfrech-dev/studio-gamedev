@@ -1,5 +1,7 @@
 # Point d'équipe : le point régulier de l'assistant
 
+> **English summary.** Team report: the assistant's regular status report (off by default), only when something changed, with a table of work items, %, time left and decisions.
+
 Le studio a un point régulier, fait par l'assistant (son nom est celui que l'utilisateur a choisi ; sans nom, « le Chef d'équipe »).
 Il est **coupé par défaut** (`point_auto: false` dans `.studio/reglages.json`). L'utilisateur l'active dans le tutoriel de départ,
 dans « Réglages », ou en disant « point d'équipe » / `/point-equipe`. « Tout couper » l'arrête ; le mode nuit l'empile.

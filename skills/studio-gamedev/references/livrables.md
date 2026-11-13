@@ -1,6 +1,8 @@
 # Livrables de la phase 2
 
-Remplis les gabarits de `modeles/` avec `.studio/reponses_questionnaire.json` (réponses écrites par la page) et `.studio/profil.json`. Écris dans la langue du projet. Les réponses `à confirmer` restent visibles (marque « ? ») au lieu d'être présentées comme sûres.
+> **English summary.** Phase 2 deliverables: fill the templates (`modeles/`, or `modeles/en/` for an English project) from the questionnaire answers; never overwrite an existing document when adopting a project.
+
+Remplis les gabarits de `modeles/` avec `.studio/reponses_questionnaire.json` (réponses écrites par la page) et `.studio/profil.json`. Écris dans la langue du projet : `langue` = `en` (ou toute autre que `fr`) → gabarits de `modeles/en/` (GDD, ROADMAP, DECISIONS, CLAUDE, agent ; mêmes `{{clés}}`), et rangs de `roadmap.json` traduits (Garage, Neighborhood workshop, Indie studio, AA studio, AAA studio). Les réponses `à confirmer` restent visibles (marque « ? ») au lieu d'être présentées comme sûres.
 
 | Fichier du projet | Gabarit | Contenu |
 |---|---|---|

@@ -1,5 +1,7 @@
 # Routage vers les skills spécialisés
 
+> **English summary.** Routing: which installed game dev skill to call for each engine, discipline, genre (questionnaire answer → skill table), milestone and desk.
+
 Ce skill **n'embarque aucun skill tiers** : il les appelle s'ils sont installés (outil Skill, nom complet `plugin:skill`). S'il en manque un, dis-le, donne la commande d'installation, et continue avec ta propre connaissance.
 
 ## Skills requis et optionnels

@@ -109,7 +109,20 @@ def ecrire_json(chemin, donnees):
     fd, tmp = tempfile.mkstemp(dir=os.path.dirname(chemin), suffix=".tmp")
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         json.dump(donnees, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, chemin)
+    for essai in range(5):                       # Windows : la page ou un agent peut tenir le fichier un court instant
+        try:
+            os.replace(tmp, chemin)
+            return
+        except PermissionError:
+            time.sleep(0.1 * (essai + 1))
+    try:
+        os.replace(tmp, chemin)
+    except PermissionError:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise Refus(503, f"fichier occupé ({os.path.basename(chemin)}), réessaie dans un instant")
 
 
 def lire_json(chemin, defaut):
@@ -250,6 +263,9 @@ class Studio(SimpleHTTPRequestHandler):
         if self.headers.get("Host", "") not in self.hotes_permis():
             self.repondre(403, {"ok": False, "erreur": "hôte refusé"})
             return
+        if urlsplit(self.path).path == "/api/qui":          # reprise et arrêt : qui sert ce port ?
+            self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1]})
+            return
         if urlsplit(self.path).path in ("", "/"):
             self.send_response(302)
             self.send_header("Location", "/studio.html")
@@ -260,6 +276,17 @@ class Studio(SimpleHTTPRequestHandler):
             self.repondre(404, {"ok": False, "erreur": "introuvable"})
             return
         chemin, type_ = trouve
+        try:                                       # ETag (date et taille) : 304 quand rien n'a changé, sans relire le fichier
+            st = os.stat(chemin)
+            etag = f'"{int(st.st_mtime_ns):x}-{st.st_size:x}"'
+        except OSError:
+            etag = None
+        if etag and self.headers.get("If-None-Match") == etag:
+            self.send_response(304)
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            return
         try:
             with open(chemin, "rb") as f:
                 corps = f.read()
@@ -269,7 +296,9 @@ class Studio(SimpleHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", type_)
         self.send_header("Content-Length", str(len(corps)))
-        self.send_header("Cache-Control", "no-store" if type_.startswith(("application/json", "text/html", "text/javascript", "text/css")) else "max-age=300")
+        if etag:
+            self.send_header("ETag", etag)
+        self.send_header("Cache-Control", "no-cache" if type_.startswith(("application/json", "text/html", "text/javascript", "text/css")) else "max-age=300")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Referrer-Policy", "no-referrer")
         self.end_headers()
@@ -559,20 +588,23 @@ def definition_agent(conf, v):
     """Remplit modeles/agent.md (sinon le gabarit intégré) en un seul passage :
     des accolades doubles écrites par l'utilisateur ne sont jamais réinterprétées."""
     gab = None
-    try:
-        with open(os.path.join(os.path.dirname(ICI), "modeles", "agent.md"), encoding="utf-8-sig") as f:
-            gab = f.read()
-    except OSError:
-        pass
+    en = str(conf.get("langue") or "fr")[:2].lower() != "fr"           # projet en anglais (ou autre langue) : gabarit anglais
+    for chemin in ([os.path.join(os.path.dirname(ICI), "modeles", "en", "agent.md")] if en else []) + [os.path.join(os.path.dirname(ICI), "modeles", "agent.md")]:
+        try:
+            with open(chemin, encoding="utf-8-sig") as f:
+                gab = f.read()
+            break
+        except OSError:
+            pass
     gab = gab or GABARIT_AGENT
     # règles de la config (qui peut venir d'un dépôt cloné) : 20 au plus, une ligne de 200 caractères chacune
     regles = [re.sub(r"\s+", " ", x).strip()[:200] for x in (conf.get("regles_agent") or []) if isinstance(x, str)]
-    regles = [r.lstrip("#>-* ") for r in regles if r.strip("#>-* ")] or ["Écris dans la langue du projet, en phrases courtes."]
+    regles = [r.lstrip("#>-* ") for r in regles if r.strip("#>-* ")] or ["Write in the project language, in short sentences." if en else "Écris dans la langue du projet, en phrases courtes."]
     eco = conf.get("economie") if isinstance(conf.get("economie"), dict) else {}
     modele = eco.get("modele_agents") if eco.get("modele_agents") in MODELES_AGENT else "sonnet"
     valeurs = {"id": v["nom"], "nom_affiche": v["nom_affiche"], "nom_projet": str(conf.get("nom_projet") or os.path.basename(Etat.projet)),
-               "poste": v["poste"] or "nouveau bureau", "role": v["role"], "mission": v["mission"],
-               "skills": "\n".join("- `" + s + "`" for s in v["skills"]) or "- `gamedev:router` s'il est installé (il choisit le bon skill)",
+               "poste": v["poste"] or ("new desk" if en else "nouveau bureau"), "role": v["role"], "mission": v["mission"],
+               "skills": "\n".join("- `" + s + "`" for s in v["skills"]) or ("- `gamedev:router` if installed (it picks the right skill)" if en else "- `gamedev:router` s'il est installé (il choisit le bon skill)"),
                "regles_agent": "\n".join("- " + r for r in regles[:20]), "dossier_studio": Etat.studio.replace("\\", "/"),
                "outils": OUTILS_AGENT, "modele": modele}
     entete_fin = gab.find("\n---", 3)
@@ -924,9 +956,19 @@ def route_reglages(d):
 
 # -------------------------------------------------------------------- transcription locale (facultative)
 _MODELE, _VERROU_MODELE = None, threading.Lock()
+_UNE_TRANSCRIPTION = threading.Semaphore(1)        # une transcription à la fois : la machine ne rame pas pendant le moteur
 
 
 def transcrire(audio):
+    if not _UNE_TRANSCRIPTION.acquire(timeout=20):
+        raise Refus(429, "une transcription est déjà en cours : réessaie dans un instant")
+    try:
+        return _transcrire(audio)
+    finally:
+        _UNE_TRANSCRIPTION.release()
+
+
+def _transcrire(audio):
     """Transcription locale avec faster-whisper si installé (pip install faster-whisper). Sinon 501."""
     try:
         from faster_whisper import WhisperModel  # noqa: import facultatif
@@ -934,7 +976,8 @@ def transcrire(audio):
         raise Refus(501, "transcription locale absente : installe faster-whisper (pip install faster-whisper) "
                          "ou utilise un navigateur avec reconnaissance vocale ; tu peux toujours écrire ta réponse")
     profil = lire_json(os.path.join(Etat.studio, "profil.json"), {})
-    langue = str(((profil.get("voix") or {}).get("langue_reconnaissance") or "fr"))[:2]
+    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    langue = str(((profil.get("voix") or {}).get("langue_reconnaissance") or conf.get("langue") or "fr"))[:2].lower()   # langue du projet par défaut
     t0 = time.time()
     signal, decodeur, erreurs = decoder(audio)
     if signal is None:
@@ -1008,7 +1051,7 @@ def decoder(audio):
     if ffmpeg:
         import subprocess
         try:
-            r = subprocess.run([ffmpeg, "-nostdin", "-loglevel", "error", "-i", "pipe:0", "-f", "f32le", "-ac", "1", "-ar", "16000", "pipe:1"],
+            r = subprocess.run([ffmpeg, "-nostdin", "-loglevel", "error", "-protocol_whitelist", "pipe", "-i", "pipe:0", "-f", "f32le", "-ac", "1", "-ar", "16000", "pipe:1"],
                                input=audio, capture_output=True, timeout=60, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
             if r.returncode == 0 and r.stdout:
                 return np.frombuffer(r.stdout, dtype=np.float32), "ffmpeg", erreurs
@@ -1060,6 +1103,24 @@ def port_libre(port):
             return False
 
 
+def serveur_deja_la(studio, projet):
+    """Port du serveur déjà lancé pour ce projet (.studio/serveur.json, vérifié par /api/qui), sinon 0."""
+    d = lire_json(os.path.join(studio, "serveur.json"), {})
+    try:
+        port = int(d.get("port") or 0)
+    except (TypeError, ValueError):
+        return 0
+    if not 1024 <= port <= 65535:
+        return 0
+    import urllib.request
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/qui", timeout=2) as r:
+            q = json.loads(r.read().decode("utf-8"))
+        return port if os.path.normcase(str(q.get("projet") or "")) == os.path.normcase(projet) else 0
+    except Exception:
+        return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Serveur local du studio gamedev (127.0.0.1 seulement).")
     ap.add_argument("--projet", required=True, help="dossier du projet (le studio lit et écrit dans <projet>/.studio)")
@@ -1069,6 +1130,10 @@ def main(argv=None):
     Etat.studio = os.path.join(Etat.projet, ".studio")
     os.makedirs(Etat.studio, exist_ok=True)
     conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    deja = serveur_deja_la(Etat.studio, Etat.projet)
+    if deja and (not a.port or a.port == deja):          # reprise : le serveur de ce projet répond déjà, on le réutilise
+        print(f"studio sur http://127.0.0.1:{deja}/studio.html (projet : {Etat.projet}) : déjà lancé, réutilisé", flush=True)
+        return
     try:
         port = int(conf.get("port") or PORT_DEFAUT)
     except (TypeError, ValueError):
@@ -1085,12 +1150,22 @@ def main(argv=None):
     srv = ThreadingHTTPServer(("127.0.0.1", port), Studio)
     srv.daemon_threads = True
     print(f"studio sur http://127.0.0.1:{port}/studio.html (projet : {Etat.projet})", flush=True)
+    info = os.path.join(Etat.studio, "serveur.json")
+    try:
+        ecrire_json(info, {"port": port, "pid": os.getpid(), "depuis": maintenant()})
+    except Exception:
+        pass
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
     finally:
         srv.server_close()
+        try:
+            if lire_json(info, {}).get("pid") == os.getpid():
+                os.remove(info)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

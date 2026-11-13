@@ -1,5 +1,7 @@
 # Questionnaire
 
+> **English summary.** Questionnaire: played in the studio page (cards, free text, voice), chapter by chapter; Claude infers answers, asks follow-ups by file, then writes the mandatory roadmap.
+
 ## Mode d'emploi
 
 Le questionnaire **se joue dans la page du studio**, comme un jeu pour créer son jeu :
@@ -12,7 +14,7 @@ Les questions sont des **données** (`studio/questions.fr.json`, `studio/questio
 
 Toi (Claude), pendant que la page tourne : tu écris `deductions.json` après le pitch, `questions_suivi.json` si une réponse doit être précisée, et tu lis `.studio/reponses_questionnaire.json` (réponses).
 
-**Repli conversation** (pas de studio) : mêmes questions avec `AskUserQuestion` (1 à 4 questions par appel, 2 à 4 choix, « Autre » d'office), une étape par appel, ★ en premier suffixé « (recommandé) ». Même fichier de réponses.
+**Repli conversation** (pas de studio) : mêmes questions avec `AskUserQuestion` (1 à 4 questions par appel, 2 à 4 choix, « Autre » d'office), une étape par appel, ★ en premier suffixé « (recommandé) ». Même fichier de réponses. Si la page est ouverte, elle relit ce fichier toutes les 5 s : les réponses écrites depuis le chat la font avancer d'elle-même (« Je reprends les réponses données dans la conversation »), et `"etat": "termine"` ouvre « J'écris ta roadmap… ».
 
 Règles communes :
 - Le ★ indiqué ici est le défaut ; il est recalculé avec le pitch et les réponses précédentes (règles R, via `deductions.json`).

@@ -196,9 +196,12 @@
     const btFermer = document.querySelector('#rm-panneau .rm-fermer');
     if (btFermer) btFermer.hidden = modeVoici && !RM;
     if (!RM) {
-      const long = attenteDepuis && Date.now() - attenteDepuis > 90000;
+      const long = attenteDepuis && Date.now() - attenteDepuis > 90000, bloque = modeVoici && attenteDepuis && Date.now() - attenteDepuis > 300000;
       corps.innerHTML = `<div class="rm-surtitre">${esc(t('surtitre'))}</div><h2>${esc(modeVoici ? t('voici') : t('titre'))}</h2>
-        <p class="rm-attente"><span class="rm-plume" aria-hidden="true"></span>${esc(modeVoici ? t(long ? 'attente_longue' : 'attente') : t('aucune'))}</p>`;
+        <p class="rm-attente"><span class="rm-plume" aria-hidden="true"></span>${esc(modeVoici ? t(long ? 'attente_longue' : 'attente') : t('aucune'))}</p>
+        ${bloque ? `<p class="rm-voici">${esc(t('attente_bloquee'))}</p>${typeof opts.relancer === 'function' ? `<button type="button" class="rm-go" data-rm-relancer>${esc(t('relancer'))}</button><p class="rm-voici" data-rm-relance-res></p>` : ''}` : ''}`;
+      const bt = corps.querySelector('[data-rm-relancer]');
+      if (bt) bt.onclick = () => { bt.disabled = true; Promise.resolve(opts.relancer(t('relance_texte'))).then(() => { corps.querySelector('[data-rm-relance-res]').textContent = t('relance_ok'); }).catch(() => { bt.disabled = false; }); };
       return;
     }
     const gagnes = succesGagnes(C, RM), tous = C.jalons.filter(j => j.succes).length + (RM.succes_final ? 1 : 0);
@@ -224,7 +227,7 @@
   // ---- lecture périodique de roadmap.json
   async function charger() {
     try {
-      const r = await fetch(opts.url + '?t=' + Date.now(), { cache: 'no-store' });
+      const r = await fetch(opts.url, { cache: 'no-cache' });
       if (!r.ok) throw new Error(r.status);
       const txt = await r.text();
       if (txt === sig) return; sig = txt;
