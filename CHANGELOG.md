@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.5] - 2026-11-13
+
+### Modifié
+- Notifications : au-delà de deux à l'écran, une seule carte « N nouvelles notifications » qui ouvre la liste ; au téléphone, en haut de l'écran, une à la fois, masquées pendant la saisie.
+- Téléphone : en-tête compact (nom du jeu, pourcentage, point d'état, bouton « ⋯ ») ; les outils du bureau passent dans une feuille d'actions ; plus de bouton de chat flottant (l'onglet Conversation suffit) ; boutons de zoom au-dessus de l'équipe ; équipe en défilement aimanté avec un dégradé.
+- Conversation au téléphone : titre compact, aide clavier masquée, état vide avec trois suggestions.
+
 ## [0.4.4] - 2026-11-13
 
 ### Corrigé
