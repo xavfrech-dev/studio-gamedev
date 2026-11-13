@@ -60,6 +60,31 @@ Vérifie la présence dans la liste des skills de la session (`gamedev:router`, 
 
 `platformer`, `roguelike`, `rpg`, `fps-shooter`, `tower-defense`, `card-game`, `visual-novel`, `survival-crafting`, `puzzle` (préfixe `gamedev:`). Un seul genre à la fois ; le secondaire seulement si la tâche le demande.
 
+Réponse du questionnaire (`genre.principal`) → skill de genre ; sans skill de genre, les disciplines à appeler à la place :
+
+| Réponse | Skill de genre | Sinon (ou en plus) |
+|---|---|---|
+| `action_aventure` | — | `game-feel`, `camera-systems`, `level-design`, `game-ai` |
+| `survie` | `survival-crafting` | `save-systems`, `procedural-gen` |
+| `rpg` | `rpg` | `dialogue-systems`, `save-systems` |
+| `plateforme` | `platformer` | `game-feel`, `level-design` |
+| `roguelike` | `roguelike` | `procedural-gen` |
+| `fps` | `fps-shooter` | `camera-systems`, `game-ai` |
+| `strategie` | — | `game-ai`, `ai-behavior-trees-utility-ai`, `game-ui-ux` |
+| `tower_defense` | `tower-defense` | `game-ai` |
+| `gestion` | — | `game-ui-ux`, `save-systems` ; Roblox : `roblox-simulator-economy` |
+| `simulation` | — | `physics-tuning`, `game-ui-ux`, `save-systems` |
+| `course` | — | `physics-tuning`, `camera-systems`, `input-systems` |
+| `sport` | — | `physics-tuning`, `game-ai`, `input-systems` |
+| `cartes` | `card-game` | `game-ui-ux` |
+| `puzzle` | `puzzle` | `level-design` |
+| `visual_novel` | `visual-novel` | `dialogue-systems` |
+| `horreur` | — | `audio-design`, `game-ai`, `level-design`, `shader-programming` |
+| `rythme` | — | `audio-design`, `input-systems`, `game-feel` |
+| `bac_a_sable` | — | `procedural-gen`, `save-systems`, `physics-tuning` |
+
+Moteur « maison » ou sans skill moteur : pas de skill moteur ; les disciplines ci-dessus, `gamedev:prototype-fast`, et les skills de test du langage (`ecc:python-testing`, `ecc:cpp-testing`, `ecc:rust-testing`…).
+
 ## Jalon → skills attendus
 
 | Jalon | Skills |

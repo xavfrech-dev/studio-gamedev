@@ -747,7 +747,7 @@ def index_noms(chemin, ajouter=None, retirer=None):
     ecrire_json(chemin, idx[-60:])
 
 
-METIERS_PERMIS = {"code", "relecture", "art", "son", "ia", "doc", "design", "test", "moteur"}
+METIERS_PERMIS = {"code", "relecture", "art", "son", "ia", "doc", "design", "test", "moteur", "studio"}
 
 
 def route_agent(d):

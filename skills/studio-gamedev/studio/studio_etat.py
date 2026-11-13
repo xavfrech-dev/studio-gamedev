@@ -503,11 +503,24 @@ class Studio:
         out.sort(key=lambda x: x["statut"] != "en_cours")
         return out
 
+    def backlog(self):
+        """Tâches propres au studio et au skill (.studio/backlog_studio.json, statut « a_corriger ») : pour les postes de métier « studio »."""
+        b = lire_json(self.f("backlog_studio.json"), {})
+        out = []
+        for t in ((b.get("taches") if isinstance(b, dict) else None) or [])[:300]:
+            if isinstance(t, dict) and t.get("statut") == "a_corriger" and t.get("id"):
+                out.append({"id": "studio-" + court(str(t["id"]), 40), "origine": "backlog", "jalon": "studio", "jalon_titre": "backlog du studio",
+                            "titre": court(t.get("titre") or str(t["id"]), 120), "critere": court(t.get("version") or t.get("critere") or "", 160),
+                            "statut": "a_faire", "poste": "", "pour": [], "metier": "studio", "moteur": False, "sans_moteur": True,
+                            "effort_h": None, "depend_de": []})
+        return out
+
     def ecrire_taches(self, liste):
         chemin = self.f("taches_disponibles.json")
         ancien = lire_json(chemin, {})
-        main = [x for x in ((ancien.get("taches") if isinstance(ancien, dict) else None) or []) if isinstance(x, dict) and x.get("origine") != "roadmap"]
-        doc = {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "source": "roadmap.json (a_faire / en_cours, dépendances versées)", "taches": main + liste}
+        main = [x for x in ((ancien.get("taches") if isinstance(ancien, dict) else None) or []) if isinstance(x, dict) and x.get("origine") not in ("roadmap", "backlog")]
+        doc = {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "source": "roadmap.json (a_faire / en_cours, dépendances versées) + backlog_studio.json",
+               "taches": main + liste + self.backlog()}
         if not isinstance(ancien, dict) or doc["taches"] != ancien.get("taches"):
             ecrire_json(chemin, doc, indent=1)
 
@@ -695,12 +708,44 @@ class Studio:
         for a in list(self.anomalies.values())[:5]:
             ajoute("illisible-" + re.sub(r"[^a-z0-9]+", "-", a["fichier"].lower()), "urgent", f"Fichier illisible ignoré : {a['fichier']}",
                    a["raison"], "Le réécrire au bon format (JSON objet) ; le studio continue sans lui.")
+        for s_ in self.roadmap_en_retard(gitinfo):
+            ajoute(*s_)
         vocales = [lire_json(f, {}) for f in glob.glob(self.f("demandes_vocales", "*.json"))]
         vieilles = [v for v in vocales if isinstance(v, dict) and v.get("statut") == "nouvelle" and iso_vers_t(v.get("cree_le")) and time.time() - iso_vers_t(v.get("cree_le")) > 5 * 60]
         if vieilles:
             ajoute("demandes-vocales", "info", f"{len(vieilles)} demande(s) de la page sans réponse", court(vieilles[0].get("texte"), 120),
                    "Les traiter et répondre dans reponses_assistant.json.")
         return sug
+
+    def roadmap_en_retard(self, gitinfo):
+        """roadmap.json en retard : un commit récent cite une tâche encore « a_faire » / « en_cours », ou docs/ROADMAP.md
+        a été modifié plus de 10 min après roadmap.json. Seulement des suggestions : la roadmap reste écrite par Claude."""
+        r, out = self.roadmap(), []
+        if not r:
+            return out
+        ouvertes = {t["id"]: t for j in r["jalons"] for t in j["taches"] if t.get("statut") in ("a_faire", "en_cours")}
+        cites = []
+        for c in ((gitinfo or {}).get("commits") or []):
+            for tid in ouvertes:
+                if len(tid) >= 3 and re.search(r"(?<![\w-])" + re.escape(tid) + r"(?![\w-])", c.get("sujet") or ""):
+                    cites.append((tid, c))
+        if cites:
+            tid, c = cites[0]
+            out.append(("roadmap-commit-" + re.sub(r"[^a-z0-9]+", "-", tid.lower()), "conseil",
+                        f"La roadmap n'a pas suivi : {tid} est encore « {ouvertes[tid].get('statut')} »",
+                        f"Le commit {c.get('hash')} ({c.get('h')}) la cite : « {court(c.get('sujet'), 90)} »"
+                        + (f" ; {len(cites) - 1} autre(s) tâche(s) dans le même cas" if len(cites) > 1 else ""),
+                        "Si elle est versée : statut, preuve et fait_le dans .studio/roadmap.json et docs/ROADMAP.md."))
+        doc = (r.get("sources") or {}).get("document") if isinstance(r.get("sources"), dict) else None
+        md = os.path.join(self.projet, doc if isinstance(doc, str) and doc and not os.path.isabs(doc) and ".." not in doc else os.path.join("docs", "ROADMAP.md"))
+        try:
+            if os.path.getmtime(md) - os.path.getmtime(self.f("roadmap.json")) > 600:
+                out.append(("roadmap-md-seul", "conseil", "docs/ROADMAP.md a changé, pas roadmap.json",
+                            f"{os.path.basename(md)} est plus récent de {int((os.path.getmtime(md) - os.path.getmtime(self.f('roadmap.json'))) // 60)} min : "
+                            "le studio montre peut-être un avancement en retard.", "Reporter les mêmes changements dans .studio/roadmap.json."))
+        except OSError:
+            pass
+        return out
 
     # ---------------- propositions de renvoi (sous la cloche, jamais appliquées seules)
     def decisions_studio(self, postes, dispo):

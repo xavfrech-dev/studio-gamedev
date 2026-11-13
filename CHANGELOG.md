@@ -2,6 +2,17 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.3.8] - 2026-11-13
+
+### Ajouté
+- Backlog du studio : `.studio/backlog_studio.json` liste les tâches propres au studio lui-même (pas au jeu). Les entrées « a_corriger » rejoignent `taches_disponibles.json` (`origine: "backlog"`, métier « studio ») ; la fin de tâche et la tyrannie les proposent seulement aux personnages qui ont le métier « Studio » (fiche « Nom et rôles »), jamais hors métier.
+- Roadmap en retard : une suggestion quand un commit récent cite une tâche encore « à faire » ou « en cours », ou quand `docs/ROADMAP.md` a changé sans `roadmap.json`.
+- Routage : table des 18 genres du questionnaire vers le skill de genre ou, sans skill de genre, les disciplines à appeler ; ligne pour un moteur « maison ».
+
+### Modifié
+- Gabarit d'agent : règle « Roadmap » (mettre à jour `docs/ROADMAP.md` et `.studio/roadmap.json` à chaque versement, citer l'id dans le commit) ; progression avec `tache`, `restant_min` et `fin`.
+- Documentation : mur d'images, bandeau d'événements, ligne de tâche et personnages libres décrits dans `references/studio.md`.
+
 ## [0.3.7] - 2026-11-13
 
 ### Ajouté
