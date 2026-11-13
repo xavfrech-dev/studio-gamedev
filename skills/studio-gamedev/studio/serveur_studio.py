@@ -368,6 +368,47 @@ class Studio(SimpleHTTPRequestHandler):
             except Exception as e:
                 self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
             return
+        if urlsplit(self.path).path == "/api/instantane":   # P6 : tous les JSON d'un cycle en une requête, ETag commun (304 si rien n'a changé)
+            from urllib.parse import parse_qs
+            noms = [n for n in (parse_qs(urlsplit(self.path).query).get("f", [""])[0]).split(",") if n.endswith(".json")][:80]
+            trouves, marques = {}, []
+            for n in noms:
+                t = self.trouver("/" + n)              # mêmes règles que la lecture d'un fichier seul (jamais les copies mises de côté)
+                if not t:
+                    trouves[n] = None
+                    marques.append(n + ":-")
+                    continue
+                try:
+                    st = os.stat(t[0])
+                    trouves[n] = t[0]
+                    marques.append(f"{n}:{int(st.st_mtime_ns):x}-{st.st_size:x}")
+                except OSError:
+                    trouves[n] = None
+                    marques.append(n + ":-")
+            import hashlib
+            etag = '"' + hashlib.sha1("|".join(marques).encode("utf-8")).hexdigest()[:20] + '"'
+            if self.headers.get("If-None-Match") == etag:
+                self.send_response(304)
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                return
+            fichiers = {}
+            for n, chemin in trouves.items():
+                try:
+                    fichiers[n] = open(chemin, encoding="utf-8").read() if chemin else None
+                except (OSError, UnicodeDecodeError):
+                    fichiers[n] = None
+            corps = json.dumps({"ok": True, "fichiers": fichiers}, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(corps)))
+            self.send_header("ETag", etag)
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.wfile.write(corps)
+            return
         if urlsplit(self.path).path == "/api/qui":          # reprise et arrêt : qui sert ce port ?
             self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1], "mis_de_cote": MIS_DE_COTE[-5:]})
             return

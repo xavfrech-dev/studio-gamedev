@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.6] - 2026-11-13
+
+### Modifié
+- Sobriété au repos : une seule requête par cycle (`/api/instantane`, un ETag commun, réponse 304 si rien n'a changé) au lieu d'une par fichier, soit environ 12 requêtes par minute au lieu de 160.
+- Rendu du bureau limité à 30 images/s, puis 10 quand personne n'a touché la page depuis 2 minutes, et 1 sans animations.
+- « Réduire les animations » du système respecté pour toutes les animations ; la cloche et « Tout couper » ne clignotent plus sans fin.
+- L'en-tête n'écrit dans la page que ce qui a changé (horloge, version, fraîcheur, mode nuit, bandeau).
+
 ## [0.4.5] - 2026-11-13
 
 ### Modifié

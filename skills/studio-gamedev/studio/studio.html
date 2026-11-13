@@ -44,7 +44,7 @@ button{cursor:pointer}
 .bt.fort svg{color:inherit}
 .bt .pastille{background:var(--rouge);color:#fff;border-radius:9px;padding:0 6px;font-size:11px;line-height:17px;font-weight:600}
 .bt .pastille:empty{display:none}
-.bt.sonne svg{animation:sonne 1s ease-in-out infinite}
+.bt.sonne svg{animation:sonne 1s ease-in-out 3}
 @keyframes sonne{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}}
 #niveau{display:flex;flex-direction:column;gap:3px;min-width:150px;padding:6px 14px;border:1px solid var(--bord);border-radius:14px;background:rgba(255,250,235,.05);color:#e8dcc2;font:13px var(--serif);cursor:pointer;text-align:left}
 #niveau b{color:#f1d9a4;font-size:17px}
@@ -237,7 +237,7 @@ body.questionnaire #indice{display:none}
 @media (max-width:640px){.perso-ed>div{grid-template-columns:1fr}#entete h1{max-width:60vw;font-size:18px}#niveau{min-width:0}.cartes{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}#sc-avatar{width:56px;height:56px}.bulle h2{font-size:18px}.perso-ed{grid-template-columns:1fr}}
 #equipe{position:fixed;left:10px;top:74px;bottom:14px;z-index:15;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:6px;width:364px;overflow:hidden;pointer-events:none}
 #equipe .membre{width:176px;flex:none}
-.bt.danger{border-color:rgba(192,87,62,.35)}.bt.danger.actif{background:#a8432e;color:#fff;border-color:#e08a72;animation:dec-pouls 1.6s infinite}
+.bt.danger{border-color:rgba(192,87,62,.35)}.bt.danger.actif{background:#a8432e;color:#fff;border-color:#e08a72;animation:dec-pouls 1.6s 4}
 @keyframes dec-pouls{50%{box-shadow:0 0 0 5px rgba(192,87,62,.25)}}
 .pastille:empty{display:none}
 #msg-attente{position:fixed;left:50%;top:var(--haut,84px);transform:translateX(-50%);z-index:25;max-width:min(560px,92vw);background:#5c3a12;color:#fbe9e2;border:1px solid #e2b866;border-radius:10px;padding:8px 14px;font:400 14px var(--sans);box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer}
@@ -279,7 +279,7 @@ body.questionnaire #indice{display:none}
 #v1 .piste{width:150px;height:12px;border-radius:6px;background:#3a3128;border:1px solid rgba(0,0,0,.4);overflow:hidden}#v1 .plein{height:100%;width:0;background:linear-gradient(90deg,#c9953e,#7fae5e);transition:width .8s}
 #v1 b{font:600 15px var(--sans);color:#f1d9a4}
 @media (max-width:900px){#v1 .piste{width:70px}#horloge{display:none}}
-@media (prefers-reduced-motion:reduce){#scene,#succes,#panneau,.carte{transition:none}.plume{animation:none}}
+@media (prefers-reduced-motion:reduce){#scene,#succes,#panneau,.carte{transition:none}.plume{animation:none}*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}}
 @media (max-width:640px){#v1{max-width:calc(100vw - 32px);min-width:0}#v1 .piste{width:56px}#entete{max-width:100vw;overflow:hidden}}
 /* téléphone : barre d'outils sur une ligne qui défile, icônes seules (le texte reste lu par les lecteurs d'écran) */
 @media (max-width:640px){#entete .outils,.outils{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;max-width:100%;gap:6px;padding-bottom:2px;-webkit-overflow-scrolling:touch}.outils::-webkit-scrollbar{display:none}.outils>*{flex:0 0 auto}.outils .bt>span[data-t]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}#entete .outils .bt,#entete .outils .bt.fort,#entete #bt-optim,#entete #bt-notifs,#entete #bt-son{padding:7px 10px;min-width:0}}
@@ -503,7 +503,22 @@ let CONF = {}, PROFIL = {}, QF = null, REP = { reponses: {} }, DED = null, SUIVI
 let PROG = {}, STATUTS = {}, DECISIONS = [], REPONSES_DEC = [], REP_ASSIST = [], TACHES = [], REGLAGES = {};
 // automatismes (attribution en fin de tâche, embauche) : reglages.json, sinon economie de la config, sinon coupés (sobriété)
 const auto = k => (REGLAGES && typeof REGLAGES[k] === 'boolean') ? REGLAGES[k] : !!(CONF.economie && CONF.economie[k] === true);
+// P6 : une lecture groupée par cycle ; lire() sert d'abord ce qu'elle a rapporté (moins de 5 s), sinon lit le fichier seul
+const INSTANT = { textes: {}, t: 0, etag: '', absent: false };
+async function instantane(noms) {
+  if (INSTANT.absent || !noms.length) return;
+  const ac = window.AbortController ? new AbortController() : null, minut = ac ? setTimeout(() => ac.abort(), 8000) : 0;
+  try {
+    const r = await fetch('/api/instantane?f=' + encodeURIComponent(noms.join(',')), Object.assign({ cache: 'no-cache' }, ac ? { signal: ac.signal } : {}));
+    RESEAU.ok = Date.now();
+    if (r.status === 404) { INSTANT.absent = true; return; }   // serveur plus ancien : lecture fichier par fichier
+    if (!r.ok) return;
+    const j = await r.json(); if (j && j.fichiers) { INSTANT.textes = j.fichiers; INSTANT.t = Date.now(); }
+  } catch (e) { if (e && (e.name === 'TypeError' || e.name === 'AbortError')) RESEAU.echec = Date.now(); } finally { clearTimeout(minut); }
+}
 async function lire(nom) {   // revalidation (ETag → 304 si rien n'a changé) et 8 s au plus
+  if (Date.now() - INSTANT.t < 5000 && Object.prototype.hasOwnProperty.call(INSTANT.textes, nom)) {
+    const x = INSTANT.textes[nom]; if (x === null) return null; try { return JSON.parse(x); } catch (e) { return null; } }
   const ac = window.AbortController ? new AbortController() : null, minut = ac ? setTimeout(() => ac.abort(), 8000) : 0;
   try { const r = await fetch(nom, Object.assign({ cache: 'no-cache' }, ac ? { signal: ac.signal } : {})); RESEAU.ok = Date.now(); if (!r.ok) return null; return await r.json(); }
   catch (e) { if (e && (e.name === 'TypeError' || e.name === 'AbortError')) RESEAU.echec = Date.now(); return null; } finally { clearTimeout(minut); }
@@ -534,7 +549,9 @@ const postes = () => {
 const nomPoste = p => String(p.nom || p.id);
 const nomAssistant = () => (PROFIL.assistant && PROFIL.assistant.nom) || t('assistant');
 
+const FICHIERS_CYCLE = ['studio.config.json', 'profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json', 'optimisation.json'];
 async function chargerTout() {
+  await instantane(FICHIERS_CYCLE.concat(postes().map(p => 'progression/' + encodeURIComponent(p.id) + '.json')));
   const conf = await lire('studio.config.json'); if (conf) CONF = conf;
   const lg = String(CONF.langue || (PROFIL.maitre && PROFIL.maitre.langue) || navigator.language || 'fr').slice(0, 2).toLowerCase();   // sinon : langue du navigateur
   if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
@@ -574,7 +591,7 @@ function majBandeauEtat() {
     b.querySelector('[data-fermer]').onclick = () => { LS.set('bandeau_etat_masque', Date.now()); b.hidden = true; };
     b.querySelector('[data-relancer]').onclick = async e => { const bt = e.currentTarget; bt.disabled = true; try { await poster('/api/relancer', {}); b.querySelector('[data-txt]').textContent = t('etat_relance'); } catch (err) { toast(esc(err.message), { erreur: true }); } finally { setTimeout(() => { bt.disabled = false; }, 15000); } };
   }
-  b.querySelector('[data-relancer]').textContent = t('relancer_b'); b.querySelector('[data-fermer]').textContent = '×'; b.querySelector('[data-fermer]').setAttribute('aria-label', t('masquer_30'));
+  if (b._lg !== LANGUE) { b._lg = LANGUE; b.querySelector('[data-relancer]').textContent = t('relancer_b'); b.querySelector('[data-fermer]').textContent = '×'; b.querySelector('[data-fermer]').setAttribute('aria-label', t('masquer_30')); }
   const age = ETAT && Number.isFinite(+ETAT.horodatage) ? Date.now() / 1000 - ETAT.horodatage : null;
   const coupe = serveurInjoignable();
   b.classList.toggle('coupe', coupe); b.querySelector('[data-relancer]').hidden = coupe;
@@ -1360,7 +1377,7 @@ function majOngletsApp() {
   }
   const o = String(Panneau.ouvert() || ''), actif = o === 'conv' ? 'conv' : o === 'reglages' ? 'reglages' : o.startsWith('dec:') ? 'cloche' : document.querySelector('#rm-panneau.ouvert, #rm-panneau.vu') ? 'roadmap' : !o ? 'equipe' : '';
   n.querySelectorAll('[data-onglet]').forEach(b => b.classList.toggle('actif', b.dataset.onglet === actif));
-  const nb = decisionsOuvertes().length, p = document.getElementById('nb-onglet-cloche'); if (p) { p.hidden = !nb; p.textContent = nb; }
+  const nb = decisionsOuvertes().length, p = document.getElementById('nb-onglet-cloche'); if (p) { if (p.hidden !== !nb) p.hidden = !nb; if (p.textContent !== String(nb)) p.textContent = nb; }
 }
 addEventListener('resize', () => { try { majOngletsApp(); } catch (e) { /* rien */ } });
 setInterval(() => { try { majOngletsApp(); } catch (e) { /* rien */ } }, 1000);
@@ -2087,7 +2104,15 @@ const Bureau = (() => {
   }
   window.essaiPalier = p => { forcePalier = clamp(+p || 0, 0, 5); majPalier.t = 0; return forcePalier ? 'palier ' + forcePalier : 'palier automatique'; };
   let dernier = performance.now();
-  function boucle(n) { const dt = Math.min(.1, (n - dernier) / 1000); dernier = n; try { bouger(dt); dessiner(); } catch (e) { erreur('boucle', e); } requestAnimationFrame(boucle); }
+  // P6 : 30 images/s au plus, 10 au repos (rien touché depuis 2 min), 1 sans animations ; rien quand l'onglet est caché (rAF suspendu)
+  let derniereInter = performance.now();
+  ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'].forEach(ev => addEventListener(ev, () => { derniereInter = performance.now(); }, { passive: true }));
+  function boucle(n) {
+    requestAnimationFrame(boucle);
+    const pas = !ANIM ? 1000 : n - derniereInter > 120000 ? 100 : 33;
+    if (n - dernier < pas - 4) return;
+    const dt = Math.min(.1, (n - dernier) / 1000); dernier = n; try { bouger(dt); dessiner(); } catch (e) { erreur('boucle', e); }
+  }
   const zoneSous = (cxp, cyp) => { const [x, y] = versMonde(cxp, cyp); return ZONES.slice().reverse().find(z => x >= z.x && x <= z.x + z.w && y >= z.y && y <= z.y + z.h); };
   let GLISSE = null, BOUGE = false, PINCE = null; const DOIGTS = new Map();
   cv.addEventListener('pointerdown', e => {
@@ -2444,8 +2469,8 @@ $('#z-plus').onclick = () => Bureau.zoomer(1.25);
 $('#z-moins').onclick = () => Bureau.zoomer(1 / 1.25);
 $('#z-cadre').onclick = () => Bureau.recadrer();
 $('#bt-plein').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); };
-setInterval(() => { const d = new Date(), h = $('#horloge'); { const q = parseFloat(new URLSearchParams(location.search).get('heure')); if (Number.isFinite(q) && q >= 0 && q < 24) d.setHours(Math.floor(q), Math.round((q % 1) * 60)); }   /* ?heure= : aperçu */ if (h) h.innerHTML = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>';
-  const r = RM_C, pc = r && r.av && Number.isFinite(r.av.avance) ? r.av.avance : r && Number.isFinite(r.pct) ? r.pct : null; $('#v1-pct').textContent = pc === null ? '—' : pc + ' %'; $('#v1-plein').style.width = (pc || 0) + '%'; $('#v1').hidden = CONF.mode !== 'travail'; }, 1000);
+setInterval(() => { const d = new Date(), h = $('#horloge'); { const q = parseFloat(new URLSearchParams(location.search).get('heure')); if (Number.isFinite(q) && q >= 0 && q < 24) d.setHours(Math.floor(q), Math.round((q % 1) * 60)); }   /* ?heure= : aperçu */ if (h) { const x = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>'; if (h._x !== x) { h._x = x; h.innerHTML = x; } }
+  const r = RM_C, pc = r && r.av && Number.isFinite(r.av.avance) ? r.av.avance : r && Number.isFinite(r.pct) ? r.pct : null; { const v = pc === null ? '—' : pc + ' %', w = (pc || 0) + '%', cache = CONF.mode !== 'travail'; if ($('#v1-pct').textContent !== v) $('#v1-pct').textContent = v; if ($('#v1-plein').style.width !== w) $('#v1-plein').style.width = w; if ($('#v1').hidden !== cache) $('#v1').hidden = cache; } }, 1000);   // P6 : n'écrit que ce qui change
 $('#bt-journal').onclick = () => ouvrirJournal();
 $('#bt-optim').onclick = () => ouvrirOptimisation();
 $('#bt-jassist').onclick = () => ouvrirJournalAssistant();
@@ -2668,7 +2693,7 @@ function rapportAbsence(avant) {
     + bloc(t('abs_fini'), fini) + (RM_C && RM_C.faites > avant.rm ? `<p>Roadmap : +${RM_C.faites - avant.rm}</p>` : '') + bloc(t('abs_equipe'), equipe) + bloc(t('abs_dec'), dec) + bloc(t('abs_pb'), pb); }, { large: true });
   Notifs.ajouter({ id: 'absence-' + Date.now(), type: 'info', titre: t('absence_titre') + ' (' + duree_ + ')', ligne: `${fini.length} · ${equipe.length} · ${dec.length} · ${pb.length}`, cible: {} }, true);
 }
-function majAbsent() { const on = modeAbsent(), b = $('#bt-absent'); if (!b) return; b.classList.toggle('actif', on); b.querySelector('span').textContent = on ? t('je_suis_la') : t('mode_nuit'); $('#lune').hidden = !on; }
+function majAbsent() { const on = modeAbsent(), b = $('#bt-absent'); if (!b) return; b.classList.toggle('actif', on); const sp = b.querySelector('span'), v = on ? t('je_suis_la') : t('mode_nuit'); if (sp.textContent !== v) sp.textContent = v; if ($('#lune').hidden !== !on) $('#lune').hidden = !on; }
 $('#bt-absent').onclick = async () => {
   const on = !modeAbsent(); Son.clic(); if (on) LS.set('absence_photo', photoAbsence());
   REGLAGES = Object.assign({}, REGLAGES, { mode_absent: on }); majAbsent();
@@ -2725,8 +2750,8 @@ const GrosMicro = (() => {
 function majFraicheur() {
   const f = $('#fraicheur'); if (!f) return; if (!ETAT || !Number.isFinite(+ETAT.horodatage)) { f.hidden = true; return; }
   if (f.parentElement !== $('#entete')) { const h = $('#horloge'); $('#entete').insertBefore(f, h ? h.nextSibling : null); }
-  const age = Date.now() / 1000 - ETAT.horodatage; f.hidden = false; f.className = age < 60 ? '' : 'vieux';
-  f.textContent = age < 60 ? '● ' + t('a_jour') + ' · ' + new Date(ETAT.horodatage * 1000).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }) : '● ' + t('fige_depuis') + ' ' + duree(age / 60);
+  const age = Date.now() / 1000 - ETAT.horodatage; if (f.hidden) f.hidden = false; const cl = age < 60 ? '' : 'vieux'; if (f.className !== cl) f.className = cl;
+  const ft = age < 60 ? '● ' + t('a_jour') + ' · ' + new Date(ETAT.horodatage * 1000).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }) : '● ' + t('fige_depuis') + ' ' + duree(age / 60); if (f.textContent !== ft) f.textContent = ft;
 }
 setInterval(majFraicheur, 2000);
 function appliquerTaille() { document.body.classList.remove('t-petite', 't-grande'); const v = LS.get('taille_texte', 'normale'); if (v !== 'normale') document.body.classList.add('t-' + v); }
