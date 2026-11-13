@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.8] - 2026-11-13
+
+### Modifié
+- Cloche au téléphone : toucher un choix suffit (petite vibration de confirmation) ; la réponse libre est repliée sous « Autre réponse… » ; sans décision, un écran « Rien à décider. L’équipe avance. ».
+- Barre d'onglets : onglet actif annoncé (aria-current) et plus marqué, retour visuel au toucher, pastille plus lisible, nom de barre correct.
+- Fermetures (×) de 44 px ; hauteur du fil calculée sur la hauteur visible réelle (dvh).
+- Tutoriel au téléphone : « En bas, ton équipe… Touche un perso » ; la bulle du tutoriel disparaît quand on le ferme.
+
 ## [0.4.7] - 2026-11-13
 
 ### Modifié
