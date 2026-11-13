@@ -802,7 +802,7 @@ class Studio:
                    a["raison"], "Le réécrire au bon format (JSON objet) ; le studio continue sans lui.")
         for s_ in self.roadmap_en_retard(gitinfo):
             ajoute(*s_)
-        vocales = [lire_json(f, {}) for f in glob.glob(self.f("demandes_vocales", "*.json"))]
+        vocales = [lire_json(f, {}) for f in sorted(glob.glob(self.f("demandes_vocales", "*.json")))[-200:]]   # F34 : les 200 plus récentes
         vieilles = [v for v in vocales if isinstance(v, dict) and v.get("statut") == "nouvelle" and iso_vers_t(v.get("cree_le")) and time.time() - iso_vers_t(v.get("cree_le")) > 5 * 60]
         if vieilles:
             ajoute("demandes-vocales", "info", f"{len(vieilles)} demande(s) de la page sans réponse", court(vieilles[0].get("texte"), 120),
@@ -887,14 +887,18 @@ class Studio:
                 continue
             for p in fichiers:
                 ext = os.path.splitext(p)[1].lower()
-                if ext in (".ogg", ".mp3", ".wav") and dans(os.path.realpath(p), racine) and 0 < os.path.getsize(p) <= 15 * 1024 * 1024:
-                    trouves[p] = ext
+                try:                                          # F37 : un lien cassé ne coupe plus toute la radio
+                    if ext in (".ogg", ".mp3", ".wav") and dans(os.path.realpath(p), racine) and 0 < os.path.getsize(p) <= 15 * 1024 * 1024:
+                        trouves[p] = ext
+                except OSError:
+                    continue
         if not trouves:
             return []
         os.makedirs(dossier, exist_ok=True)
         out, garder = [], set()
         for p, ext in sorted(trouves.items())[:20]:
-            nom = re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(p))[0])[:60] + ext
+            nom = re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(p))[0])[:52]
+            nom = (nom + ext) if nom + ext not in garder else f"{nom}_{len(garder)}{ext}"   # F37 : deux theme.ogg ne s'écrasent plus
             dst = os.path.join(dossier, nom)
             try:
                 if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(p):

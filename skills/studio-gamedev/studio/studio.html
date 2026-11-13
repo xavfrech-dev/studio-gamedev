@@ -3065,7 +3065,7 @@ const Tuto = (() => {
   let i = 0, cible = null;
   const box = () => $('#tuto');
   function placer(sel) {
-    if (cible) cible.classList.remove('tuto-cible'); cible = sel ? [...document.querySelectorAll(sel)].find(e => e.offsetParent !== null) : null;
+    if (cible) cible.classList.remove('tuto-cible'); cible = sel ? [...document.querySelectorAll(sel)].find(e => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden') : null;   // F27 : position fixe comprise
     const b = box(); if (cible) { cible.classList.add('tuto-cible'); const r = cible.getBoundingClientRect(); b.style.left = clamp(r.left, 8, innerWidth - b.offsetWidth - 8) + 'px'; b.style.top = clamp(r.bottom + 12, 8, innerHeight - b.offsetHeight - 8) + 'px'; }
     else { b.style.left = Math.max(8, (innerWidth - b.offsetWidth) / 2) + 'px'; b.style.top = Math.max(70, (innerHeight - b.offsetHeight) / 3) + 'px'; }
   }
@@ -3094,7 +3094,7 @@ const Tuto = (() => {
     requestAnimationFrame(() => placer(null));
   }
   function finir() { const b = box(); b.hidden = true; if (cible) cible.classList.remove('tuto-cible'); cible = null; LS.set('tuto_vu', true); try { Bureau.taire('assistant'); } catch (e) { /* rien */ } }
-  return { lancer() { i = 0; etape(); }, auto() { if (!LS.get('tuto_vu', false) && CONF.mode === 'travail') setTimeout(() => { if (!LS.get('tuto_vu', false)) { i = 0; etape(); } }, 2500); } };
+  return { lancer() { i = 0; etape(); }, auto() { if (!LS.get('tuto_vu', false) && CONF.mode === 'travail') { const essai = () => { if (LS.get('tuto_vu', false)) return; if (Panneau.ouvert() || document.querySelector('#rm-panneau.ouvert')) { setTimeout(essai, 3000); return; } i = 0; etape(); }; setTimeout(essai, 2500); } }   /* F28 : jamais par-dessus un panneau */ };
 })();
 
 // P3 : outils secondaires dans un menu « ⋯ » (au téléphone, ils restent dans la feuille d'actions) ; icônes seules pour les bascules

@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.10] - 2026-11-13
+
+### Corrigé
+- Radio : un lien cassé dans le dossier de musiques ne coupe plus toute la radio ; deux fichiers de même nom ne s'écrasent plus.
+- Les demandes vocales ne sont plus relues en entier toutes les minutes (les 200 plus récentes).
+- Tutoriel : l'équipe est bien entourée à la première étape ; le tutoriel automatique attend qu'aucun panneau ne soit ouvert.
+
 ## [0.4.9] - 2026-11-13
 
 ### Ajouté
