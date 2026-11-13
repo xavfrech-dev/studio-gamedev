@@ -2,6 +2,14 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.13] - 2026-11-13
+
+### Ajouté
+- Thème clair et sombre (P4) : l'interface suit le thème du système, ou le réglage « Thème : comme le système / clair / sombre » (Réglages, Affichage). En clair : fond papier, en-tête, groupe, notifications, onglets du téléphone et boutons de zoom clairs ; la scène garde son décor. La couleur de la barre du navigateur (`theme-color`) suit.
+
+### Modifié
+- « Mode nuit » s'appelle « Je m'absente » : ce n'est pas un thème sombre mais le mode absent (plus de notifications, résumé au retour).
+
 ## [0.4.12] - 2026-11-13
 
 ### Ajouté
