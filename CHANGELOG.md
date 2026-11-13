@@ -2,6 +2,12 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.17] - 2026-11-13
+
+### Ajouté
+- Automatismes côté serveur : la fin de tâche, la tyrannie (inactifs, diagnostic, rôle temporaire, renvoi) et l'embauche automatique tournent dans l'alimentation (`studio/automatismes.py`), même sans aucun onglet ouvert ; la page ne fait plus qu'afficher (`etat.json` → `automatismes`) ; `/api/meneur` reste le repli pour une ancienne alimentation. Essai : `studio/outils/essai_automatismes.py` (6 cas).
+- Icônes d'état : un seul jeu d'icônes SVG (au travail, en attente, suite, libre, bloqué, fini, alerte, inconnu, verrou) aux couleurs des jetons d'état, lisibles en 16 px, en clair comme en sombre, à la place des emoji (groupe, fiche, vue d'ensemble, légende, étiquettes du bureau, roadmap).
+
 ## [0.4.16] - 2026-11-13
 
 ### Corrigé

@@ -6,6 +6,7 @@
  * Studio panel "Roadmap": milestones, tasks, achievements and studio level, read from roadmap.json.
  */
 (function (racine) {
+  const VERROU = '<svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true" style="color:var(--etat-inconnu,#8a8174)"><path d="M4.5 7.5h7v6h-7zM6 7.5V5.6a2 2 0 0 1 4 0v1.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';   // icône d'état « verrou » (P19), au lieu de l'emoji
   'use strict';
 
   const STATUTS = ['a_faire', 'en_cours', 'pret', 'verse', 'ecart'];
@@ -188,7 +189,7 @@
       ${j.but ? `<p class="rm-but">${esc(j.but)}</p>` : ''}
       ${pile(j.av)}<p class="rm-discret">${esc(texteAv(j.av))} · <span class="rm-est" title="${esc(j.estimation && j.estimation.fin ? j.estimation.fin.replace('T', ' ') : '')}">${esc(temps(j.estimation, j.taches))}</span></p>
       <p class="rm-discret">${j.critere_fin ? `<b>${esc(t('critere_fin'))}${dp()}</b> ${esc(j.critere_fin)}` : ''}${j.fin_visee ? ` · ${esc(t('fin_visee'))} ${date(j.fin_visee)}` : ''}${j.heures ? ` · ${esc(t('estimation'))} ${Math.round(j.heures)} ${esc(t('heures'))}` : ''}${(j.depend_de || []).length ? ` · ${esc(t('depend_de'))} ${j.depend_de.map(esc).join(', ')}` : ''}</p>
-      ${s ? `<div class="rm-badge${gagne ? ' ok' : ''}" title="${esc(s.description || '')}"><span class="bi">${gagne ? icone(s.icone) : '🔒'}</span><span><b>${esc(s.titre)}</b><small>${gagne ? (s.obtenu_le ? `${esc(t('succes_gagne'))} ${date(s.obtenu_le)}` : esc(s.description || '')) : esc(t('succes_verrouille')) + (s.description ? ' · ' + esc(s.description) : '')}</small></span></div>` : ''}
+      ${s ? `<div class="rm-badge${gagne ? ' ok' : ''}" title="${esc(s.description || '')}"><span class="bi">${gagne ? icone(s.icone) : VERROU}</span><span><b>${esc(s.titre)}</b><small>${gagne ? (s.obtenu_le ? `${esc(t('succes_gagne'))} ${date(s.obtenu_le)}` : esc(s.description || '')) : esc(t('succes_verrouille')) + (s.description ? ' · ' + esc(s.description) : '')}</small></span></div>` : ''}
       <ul class="rm-taches">${j.taches.map(vTache).join('')}</ul></section>`;
   }
 
@@ -220,7 +221,7 @@
       </details>
       <div class="rm-frise" aria-hidden="true">${C.jalons.map(j => `<span class="${j.ferme ? 'ok' : C.en_cours && C.en_cours.id === j.id ? 'cours' : ''}" style="flex:${Math.max(1, j.total)}"><i style="width:${j.av.avance}%"></i><em>${esc(j.id)}</em></span>`).join('')}</div>
       ${C.jalons.map(vJalon).join('')}
-      ${RM.succes_final ? `<h3 class="rm-x">${esc(t('succes_titre'))}</h3><div class="rm-badge${C.finie || RM.succes_final.obtenu_le ? ' ok' : ''}"><span class="bi">${C.finie || RM.succes_final.obtenu_le ? icone(RM.succes_final.icone) : '🔒'}</span><span><b>${esc(RM.succes_final.titre)}</b><small>${esc(RM.succes_final.description || '')}</small></span></div>` : ''}
+      ${RM.succes_final ? `<h3 class="rm-x">${esc(t('succes_titre'))}</h3><div class="rm-badge${C.finie || RM.succes_final.obtenu_le ? ' ok' : ''}"><span class="bi">${C.finie || RM.succes_final.obtenu_le ? icone(RM.succes_final.icone) : VERROU}</span><span><b>${esc(RM.succes_final.titre)}</b><small>${esc(RM.succes_final.description || '')}</small></span></div>` : ''}
       ${modeVoici ? `<p style="text-align:center;margin-top:22px"><button type="button" class="rm-go">${esc(t('continuer'))}</button></p>` : ''}`;
     const go = corps.querySelector('.rm-go'); if (go) go.onclick = fermer;
   }

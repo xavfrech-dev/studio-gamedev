@@ -50,6 +50,7 @@ import time
 
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
 FAITS = ("verse", "ecart")
+ICI = os.path.dirname(os.path.abspath(__file__))
 POIDS_AV = {"verse": 1, "ecart": 1, "pret": 0.7, "en_cours": 0.35, "a_faire": 0}
 RESTE = {"verse": 0, "ecart": 0, "pret": 0.3, "en_cours": 0.65, "a_faire": 1}
 FRAIS_MIN = 30          # une progression plus vieille que ça n'est plus « en train de travailler »
@@ -338,6 +339,7 @@ class Studio:
         self.dossier = os.path.join(self.projet, ".studio")
         self.memo = Memo()
         self.debut = time.time()
+        self.auto_srv = None        # automatismes côté serveur (automatismes.py), créés au premier passage
         self.outil_vu = {}          # nom d'outil lourd -> dernière fois vu ouvert (départ : lancement du script)
         # mur d'images : parcours repris là où le passage précédent s'est arrêté, images déjà trouvées et dossiers qui en donnent
         self.mur_iter, self.mur_connus, self.mur_dossiers = {}, {}, {}
@@ -1090,11 +1092,22 @@ class Studio:
             except Exception as e:
                 print("erreur analyse", repr(e), flush=True)
         sug = self.memo.c.get("_sugg", (0, []))[1] or []
+        sante = sante_pc(sysinfo, self.en())
+        # S37 : fin de tâche, tyrannie et embauche tournent ici, sans aucun onglet ouvert ; la page ne fait plus qu'afficher
+        try:
+            if self.auto_srv is None:
+                if ICI not in sys.path:
+                    sys.path.insert(0, ICI)
+                import automatismes
+                self.auto_srv = automatismes.Automatismes(self)
+            autos = self.auto_srv.passer(conf, postes, r, progs, ouverts, chaine, sante)
+        except Exception as e:
+            autos = {"serveur": False, "erreur": f"{type(e).__name__} : {e}"[:200]}
         etat = {
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "sante": sante_pc(sysinfo, self.en()), "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": sysinfo, "sante": sante, "automatismes": autos, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }

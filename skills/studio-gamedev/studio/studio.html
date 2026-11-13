@@ -150,6 +150,7 @@ html[data-theme=clair] #equipe .n{color:#2b241c}html[data-theme=clair] #equipe .
 html[data-theme=clair] #v1 b,html[data-theme=clair] #horloge b,html[data-theme=clair] #niveau b{color:#8a5b12}html[data-theme=clair] #niveau .rang{color:#8a5b12}html[data-theme=clair] #niveau .xpm{background:#e2d4b4}
 /* P9 : grand écran : l'interface (en-tête, groupe, panneaux, questionnaire, notifications, micro, zoom) grandit avec l'écran ;
    le canevas de la scène n'est pas agrandi (il se redessine à la taille de la fenêtre) */
+.ic-etat{display:inline-block;vertical-align:-.18em;flex:none}
 :root{--k:1;--etat-travaille:#6fae5e;--etat-attend:#c9953e;--etat-fini:#4d6f9c;--etat-disponible:#8fb3c9;--etat-bloque:#c0573e;--etat-inconnu:#8a8174}
 @media (min-width:1800px) and (min-height:950px){:root{--k:1.15}}
 @media (min-width:2200px) and (min-height:1200px){:root{--k:1.32}}
@@ -1152,9 +1153,9 @@ function majEquipe() {
     const complet = lg.picto + ' ' + lg.texte, pct = e.pct == null ? null : clamp(Math.round(e.pct), 0, 100);
     const reste = !e.sansReste && (e.etat === 'travaille' || e.etat === 'bloque') && pct !== null && pct < 100 ? (e.reste == null ? '?' : '~' + duree(e.reste)) : '';
     const sens = { '▶': t('au_travail'), '⏸': t('en_attente'), '↔': t('suite'), '☕': t('libre'), '⛔': t('bloque'), '⚑': t('attend_assistant'), '⚠': t('bloque'), '?': t('inconnu') }[lg.picto] || '';
-    return `<button type="button" role="listitem" class="membre" data-id="${esc(it.id)}" style="--ce:var(--etat-${esc(e.etat || 'inconnu')},${COUL_ETAT[e.etat] || '#8a8174'})" aria-label="${esc(it.nom + ' : ' + sens + ', ' + lg.texte + (pct !== null ? ', ' + pct + ' %' : '') + (reste ? ', ' + t('restant') + ' ' + reste.replace('~', '') : ''))}" title="${esc(it.nom + ' · ' + complet + (pct !== null ? ' · ' + pct + ' %' : ''))}">
+    return `<button type="button" role="listitem" class="membre" data-id="${esc(it.id)}" style="--ce:var(--etat-${esc(e.etat || 'inconnu')},${COUL_ETAT[e.etat] || '#8a8174'})" aria-label="${esc(it.nom + ' : ' + sens + ', ' + lg.texte + (pct !== null ? ', ' + pct + ' %' : '') + (reste ? ', ' + t('restant') + ' ' + reste.replace('~', '') : ''))}" title="${esc(it.nom + ' · ' + (sens ? sens + ' · ' : '') + lg.texte + (pct !== null ? ' · ' + pct + ' %' : ''))}">
       <canvas width="88" height="88"></canvas><span class="t"><span class="n">${esc(it.nom)}</span>
-      <span class="e" aria-hidden="true"><span class="tl${lg.picto === '?' ? ' inconnu' : ''}">${esc(complet.length > 90 ? complet.slice(0, 88) + '…' : complet)}</span>${reste ? `<span class="rt">${esc(reste)}</span>` : ''}</span>
+      <span class="e" aria-hidden="true"><span class="tl${lg.picto === '?' ? ' inconnu' : ''}">${iconeEtat(lg.picto, 14)} ${esc(lg.texte.length > 88 ? lg.texte.slice(0, 86) + '…' : lg.texte)}</span>${reste ? `<span class="rt">${esc(reste)}</span>` : ''}</span>
       ${pct !== null ? `<span class="vie"><i style="width:${pct}%"></i></span>` : ''}</span></button>`;
   }).join('');
   const ordre = (REGLAGES && Array.isArray(REGLAGES.ordre_equipe)) ? REGLAGES.ordre_equipe : [];
@@ -1188,10 +1189,10 @@ document.addEventListener('click', async e => {
 function modeleDe(p) { return p.modele || (CONF.economie && CONF.economie.modele_agents) || 'sonnet'; }
 function ficheHaut(p, e) {
   const m = p.modele && p.modele !== 'inherit' ? ` · ${esc(t('modele_t'))} : ${esc(p.modele)}` : '';
-  const tp = (LS.get('tyr_temporaires', {}) || {})[p.id], tmp = tp && Date.now() - tp.t < 6 * 3600000 ? `<p class="discret" style="margin:0"><b>${esc(t('role_temporaire'))} :</b> ${esc(tp.titre)} · ${esc(tp.raison)}</p>` : '';
+  const tp = (autosServeur() ? (AUTOS_SRV().temporaires || {}) : (LS.get('tyr_temporaires', {}) || {}))[p.id], tmp = tp && Date.now() - (tp.t < 1e12 ? tp.t * 1000 : tp.t) < 6 * 3600000 ? `<p class="discret" style="margin:0"><b>${esc(t('role_temporaire'))} :</b> ${esc(tp.titre)} · ${esc(tp.raison)}</p>` : '';
   return `${p.role || m ? `<p style="margin:0">${p.role ? `<b>${esc(t('role'))} :</b> ${esc(p.role)}` : ''}${Array.isArray(p.metiers) && p.metiers.length ? ' · ' + p.metiers.map(x => esc(t('m_' + x))).join(', ') : ''}${m}</p>` : ''}
       ${e.pct !== null ? `<div class="barre"><i style="width:${e.pct}%"></i><span>${Math.round(e.pct)} %${e.reste !== null || e.etat === 'travaille' ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}</span></div>` : ''}
-      <p style="margin:0">${esc(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
+      <p style="margin:0">${iconeEtat(e.ligne.picto)} ${esc(e.ligne.texte)}</p>
       ${e.texte && e.texte !== e.ligne.texte ? `<p class="discret" style="margin:0">${esc(e.texte)}</p>` : ''}
       ${e.nouvelle ? `<p class="discret" style="margin:0">${esc(nouvelleTxt(e))}</p>` : ''}${tmp}`;
 }
@@ -1315,7 +1316,7 @@ async function majMeneur() {
 }
 majMeneur(); setInterval(majMeneur, 10000);
 async function embaucheAuto() {
-  if (!ONGLET.meneur) return;
+  if (!ONGLET.meneur || autosServeur()) return;
   if (CONF.mode !== 'travail' || !(auto('embauche_auto') || Tyrannie.active()) || machineSaturee() || postes().length >= NB_BUREAUX) return;   // aussi onglet caché : on peut partir et laisser tourner
   if (Date.now() - LS.get('embauche_auto_t', 0) < 3600e3) return;
   const ids = new Set(postes().map(p => p.id));
@@ -1351,7 +1352,7 @@ function ouvrirReglages() {
       <label class="reglage"><input type="checkbox" id="rg-babil"${LS.get('babil', true) ? ' checked' : ''}> ${esc(t('babil'))}</label>
       <label class="reglage"><input type="checkbox" id="rg-radio"${LS.get('radio', false) ? ' checked' : ''}${Radio.liste().length ? '' : ' disabled'}> ${esc(t('radio'))}${Radio.liste().length ? ' (' + Radio.liste().length + ')' : ' : ' + esc(t('radio_aucune'))}</label>
       <label class="reglage">${esc(t('radio_vol'))} <input type="range" id="rg-rvol" min="0" max="1" step="0.05" value="${esc(LS.get('radio_vol', .25))}"></label>
-      <p class="discret">${esc(t('legende'))} : ▶ ${esc(t('au_travail'))} · ⏸ ${esc(t('en_attente'))} · ↔ ${esc(t('suite'))} · ☕ ${esc(t('libre'))} · ? ${esc(t('inconnu'))}</p>
+      <p class="discret legende-etats">${esc(t('legende'))} : ${iconeEtat('travaille', 14)} ${esc(t('au_travail'))} · ${iconeEtat('attend', 14)} ${esc(t('en_attente'))} · ${iconeEtat('suite', 14)} ${esc(t('suite'))} · ${iconeEtat('disponible', 14)} ${esc(t('libre'))} · ${iconeEtat('bloque', 14)} ${esc(t('bloque'))} · ${iconeEtat('inconnu', 14)} ${esc(t('inconnu'))}</p>
       <div class="rangee"><button type="button" class="bts" id="rg-plein">${esc(t('plein_ecran'))}</button><button type="button" class="bts" id="rg-tuto">${esc(t('tuto_relancer'))}</button></div>
       <h3>${esc(t('telephone_titre'))}</h3><p class="discret">${esc(t('telephone_aide'))}</p>
       <div class="rangee"><button type="button" class="btp" id="rg-ok">${esc(t('valider'))}</button><span class="discret" data-res></span></div>`;
@@ -1390,6 +1391,10 @@ function ouvrirReglages() {
 // seulement ensuite une tâche sans moteur hors de son métier. Garde-fous (revérifiés par le serveur) : une attribution
 // automatique en attente par poste, 4 par heure.
 const EXCLUE_RE = /\b(sorti|sortie|écart|ecart|abandonn|hors v1|hors version|remplac|report|retir|dropped|removed|postponed|out of scope|replaced)/i;
+// S37 : l'alimentation (studio_etat.py → automatismes.py) tient la fin de tâche, la tyrannie et l'embauche, même sans onglet ouvert.
+// Alors la page ne fait plus qu'afficher ; avec un ancien serveur (pas de « automatismes.serveur »), l'onglet meneur agit comme avant.
+const autosServeur = () => !!(etatFrais() && ETAT.automatismes && ETAT.automatismes.serveur);
+const AUTOS_SRV = () => (ETAT && ETAT.automatismes) || {};
 const FinTache = (() => {
   const FIN = {}, traites = new Set(LS.get('fins_traitees', [])), DELAI = 120000;
   const garder = () => LS.set('fins_traitees', [...traites].slice(-200));
@@ -1433,7 +1438,7 @@ const FinTache = (() => {
   }
   function encadre(p) {
     const f = FIN[p.id];
-    return `<div class="encadre fin" data-fin="${esc(p.id)}"><b>${f ? '⚑ ' + esc(t('fin_tache')) : '☕ ' + esc(t('libre_titre'))}</b>
+    return `<div class="encadre fin" data-fin="${esc(p.id)}"><b>${f ? iconeEtat('fin') + ' ' + esc(t('fin_tache')) : iconeEtat('disponible') + ' ' + esc(t('libre_titre'))}</b>
       ${f ? `<p style="margin:4px 0">${esc(t('jai_fini'))}${f.fini ? ' « ' + esc(f.fini) + ' »' : ''}. ${esc(t('quelque_chose'))}</p>` : ''}
       <div class="rangee choix"><button type="button" class="btp" data-ft="confier">${esc(t('confier'))}</button><button type="button" class="bts" data-ft="trouve">${esc(t('trouve_toi'))}</button><button type="button" class="bts" data-ft="pause">${esc(t('pause'))}</button></div>
       ${f ? `<p class="discret" data-compte></p>` : ''}<div class="liste-dec" data-liste></div><p class="discret" data-ft-res></p></div>`;
@@ -1453,7 +1458,7 @@ const FinTache = (() => {
   function tic() {
     const n = Date.now();
     for (const pid of Object.keys(FIN)) {
-      const f = FIN[pid], delai = Tyrannie.active() ? 30000 : DELAI; if (f.tente || !auto('attribution_auto') || machineSaturee() || n - f.debut < delai) continue;
+      const f = FIN[pid], delai = Tyrannie.active() ? 30000 : DELAI; if (autosServeur() || f.tente || !auto('attribution_auto') || machineSaturee() || n - f.debut < delai) continue;
       f.tente = true; const c = candidats(pid)[0];
       if (!c) { clore(pid); continue; }
       confier(pid, c, 'auto:fin-de-tache').catch(e => { erreur('attribution auto', e); Notifs.ajouter({ id: 'auto-refus-' + pid + '-' + n, type: 'info', titre: t('fin_tache'), ligne: e.message, cible: { poste: pid } }, true); clore(pid); });
@@ -1492,7 +1497,8 @@ function reponseDec(d, r) {
   return null;
 }
 setInterval(() => { if (Panneau.ouvert() === 'conv' && !document.hidden) majCC().then(() => Conv.maj()); }, 2500);
-window.__diag = () => Tyrannie.diagnostics();   // essais
+window.__diag = () => autosServeur() ? ((AUTOS_SRV().tyrannie || {}).diagnostics || []) : Tyrannie.diagnostics();   // essais
+window.__autosServeur = () => autosServeur();
 window.__bloques = () => Tyrannie.bloques();
 window.__cc = () => ({ n: CC.msgs.length, offset: CC.offset, fichier: CC.fichier, dernier: CC.msgs.slice(-1)[0] });   // essais
 // ---------------- mode application (téléphone, ou lancé depuis l'écran d'accueil) ----------------
@@ -1837,6 +1843,37 @@ function appliquerThemeUI() {
 }
 if (SOMBRE_SYS && SOMBRE_SYS.addEventListener) SOMBRE_SYS.addEventListener('change', appliquerThemeUI);
 appliquerThemeUI();
+// ====================================================================== icônes d'état (P19) : trait 1,5 sur 16 px, une seule source
+// pour le HTML (inline SVG) et le canevas (Path2D) ; couleur = jeton d'état (--etat-…), lisible en clair comme en sombre.
+const ICONES_ETAT = {
+  travaille: { d: 'M5.2 3.6v8.8L12.4 8z', plein: true },
+  attend: { d: 'M5.5 3.5v9M10.5 3.5v9' },
+  suite: { d: 'M2.5 8h11M5.2 5.3 2.5 8l2.7 2.7M10.8 5.3 13.5 8l-2.7 2.7' },
+  disponible: { d: 'M3 6.5h8v3.2a3.3 3.3 0 0 1-3.3 3.3H6.3A3.3 3.3 0 0 1 3 9.7zM11 7.5h.8a1.6 1.6 0 0 1 0 3.2H11M5.5 2.5v2M8.5 2.5v2' },
+  bloque: { d: 'M8 2.5a5.5 5.5 0 1 1 0 11a5.5 5.5 0 1 1 0-11zM4.1 4.1l7.8 7.8' },
+  fin: { d: 'M4 13.5v-11M4 3h7.5l-1.8 2.7L11.5 8.4H4' },
+  alerte: { d: 'M8 2.3 14.2 13.2H1.8zM8 6.4v3.2M8 11.4v.2' },
+  inconnu: { d: 'M8 2.5a5.5 5.5 0 1 1 0 11a5.5 5.5 0 1 1 0-11zM6.3 6.4a1.8 1.8 0 1 1 2.5 1.6c-.5.3-.8.7-.8 1.3M8 11.1v.2' },
+  verrou: { d: 'M4.5 7.5h7v6h-7zM6 7.5V5.6a2 2 0 0 1 4 0v1.9' },
+  regle: { d: 'M3 8.5 6.3 11.8 13 4.5' }
+};
+const PICTO_ICONE = { '▶': 'travaille', '⏸': 'attend', '↔': 'suite', '☕': 'disponible', '⛔': 'bloque', '⚑': 'fin', '⚠': 'alerte', '?': 'inconnu', '🔒': 'verrou', '✓': 'regle' };
+const ICONE_JETON = { travaille: 'travaille', attend: 'attend', suite: 'attend', disponible: 'disponible', bloque: 'bloque', fin: 'fini', alerte: 'bloque', inconnu: 'inconnu', verrou: 'inconnu', regle: 'travaille' };
+const ICONE_REPLI = { travaille: '#6fae5e', attend: '#c9953e', fini: '#4d6f9c', disponible: '#8fb3c9', bloque: '#c0573e', inconnu: '#8a8174' };
+function cleIcone(picto) { return ICONES_ETAT[picto] ? picto : (PICTO_ICONE[String(picto || '').trim()] || 'inconnu'); }
+function iconeEtat(picto, taille = 16) {
+  const k = cleIcone(picto), ic = ICONES_ETAT[k], j = ICONE_JETON[k] || 'inconnu';
+  return `<svg class="ic-etat" viewBox="0 0 16 16" width="${taille}" height="${taille}" aria-hidden="true" style="color:var(--etat-${j},${ICONE_REPLI[j]})"><path d="${ic.d}" fill="${ic.plein ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+const P2D = {};
+function iconeCanvas(c, picto, x, y, taille, couleur) {   // (x, y) : coin haut gauche
+  const k = cleIcone(picto), ic = ICONES_ETAT[k], j = ICONE_JETON[k] || 'inconnu';
+  const coul = couleur || (getComputedStyle(document.documentElement).getPropertyValue('--etat-' + j).trim() || ICONE_REPLI[j]);
+  const p = P2D[k] || (P2D[k] = new Path2D(ic.d));
+  c.save(); c.translate(x, y); c.scale(taille / 16, taille / 16); c.lineWidth = 1.6; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = coul; c.fillStyle = coul;
+  if (ic.plein) c.fill(p); c.stroke(p); c.restore();
+}
+window.__icones = () => Object.keys(ICONES_ETAT);   // essais
 function boutonMicro(cible) {
   return Voix.disponible() ? `<button type="button" class="bts micro" data-micro="${esc(cible)}" aria-label="${esc(t('dicter'))}"><svg class="ic-micro" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg><span class="lib">${esc(t('dicter'))}</span></button>` : `<span class="discret" title="${esc(t('micro_absent'))}">✕</span>`;
 }
@@ -2012,7 +2049,9 @@ const Bureau = (() => {
   function ligneTache(e, x, y, w, fs) {
     const l = e.ligne || { picto: '?', texte: '' };
     cx.font = `${fs}px ` + POLICE; cx.fillStyle = { travaille: '#bfe3b0', bloque: '#f2b7a6', attend: '#f3d9a0', fini: '#bfe3b0', disponible: '#c9dcf2' }[e.etat] || '#e8dcc2';
-    cx.fillText(couperTexte(`${l.picto} ${l.texte}`.trim(), w), x, y);
+    const tw = couperTexte(String(l.texte || '').trim(), w - fs - 4), lt = cx.measureText(tw).width, al = cx.textAlign, x0 = al === 'center' ? x - (lt + fs + 4) / 2 : al === 'right' ? x - lt - fs - 4 : x;
+    iconeCanvas(cx, l.picto, x0, y - fs * .85, fs);
+    cx.textAlign = 'left'; cx.fillText(tw, x0 + fs + 4, y); cx.textAlign = al;
   }
   function etiquette(b, p, e) {
     const { w: wb, h, compact, fs } = tailleEtiquette(), w = wb - 12, x = b.x + wb / 2, y0 = b.y;
@@ -2324,7 +2363,7 @@ const Bureau = (() => {
     SURVOL_ID = z && z.p ? z.p.id : null;
     if (!z || !z.p) { info.style.opacity = 0; return; }
     const p = z.p, e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct);
-    info.innerHTML = `<b>${esc(nomPoste(p))}</b>${p.role ? `<br><span style="opacity:.75">${esc(String(p.role).slice(0, 90))}</span>` : ''}<br><span style="opacity:.75">${esc(t('modele_t'))} : ${esc(t('mod_' + (p.modele || 'inherit')))}</span><br>${esc(e.ligne.picto + ' ' + e.ligne.texte)}`
+    info.innerHTML = `<b>${esc(nomPoste(p))}</b>${p.role ? `<br><span style="opacity:.75">${esc(String(p.role).slice(0, 90))}</span>` : ''}<br><span style="opacity:.75">${esc(t('modele_t'))} : ${esc(t('mod_' + (p.modele || 'inherit')))}</span><br>${iconeEtat(e.ligne.picto, 13)} ${esc(e.ligne.texte)}`
       + (pc !== null ? `<div class="vie"><i style="width:${pc}%"></i></div>${pc} %${e.reste != null && pc < 100 ? ' · ' + esc(t('restant')) + ' ' + esc(duree(e.reste)) : ''}` : '')
       + (e.texte && e.texte !== e.ligne.texte ? `<br><span style="opacity:.8">${esc(String(e.texte).slice(0, 120))}</span>` : '') + `<br><small style="opacity:.6">${esc(t('clic_fiche'))}</small>`;
     info.style.left = Math.min(innerWidth - 290, x + 16) + 'px'; info.style.top = Math.max(8, y - 10) + 'px'; info.style.opacity = 1;
@@ -2766,7 +2805,7 @@ const Tyrannie = (() => {
   function inactifs() { return postes().filter(p => { try { const e = etatPoste(p); if (e.etat === 'disponible') return true;
     const ep = etatFrais() && ETAT.postes.find(x => x && x.id === p.id);
     return e.etat === 'attend' && !!ep && !(Array.isArray(ep.demandes) && ep.demandes.length) && (nombre(ep.calme_min) === null || nombre(ep.calme_min) >= 10); } catch (err) { return false; } }); }
-  function occupation() { const l = postes(); if (!l.length) return 0; return Math.round(100 * (l.length - inactifs().length) / l.length); }
+  function occupation() { if (autosServeur() && AUTOS_SRV().tyrannie && AUTOS_SRV().tyrannie.occupation != null) return AUTOS_SRV().tyrannie.occupation; const l = postes(); if (!l.length) return 0; return Math.round(100 * (l.length - inactifs().length) / l.length); }
   const pique = () => { const l = PIQUES[LANGUE] || PIQUES.en; return l[(Math.random() * l.length) | 0]; };
   let derniere = 0, sig = '', fileMoteur = false, sigDiag = '', DIAG = [], diagT = 0;
   // Diagnostic d'un agent bloqué (marqué bloqué, figé 10 min sans finir, ou étape qui dit « bloqué / attend ») : pourquoi, et quoi faire.
@@ -2815,8 +2854,23 @@ const Tyrannie = (() => {
     const l = bloques(), file = l.filter(p => { const pr = PROG[p.id] || {}; return /\b(moteur|engine|compil|build|shader)\b/i.test([pr.etape, pr.texte].join(' ')); }).map(p => p.id);
     return l.map(p => Object.assign({ id: p.id, nom: nomPoste(p) }, diagnostic(p, file)));
   }
-  window.__tyrRemonter = () => DIAG.filter(x => x.decision).map(x => x.decision);
+  window.__tyrRemonter = () => autosServeur() ? (AUTOS_SRV().remonter || []) : DIAG.filter(x => x.decision).map(x => x.decision);
+  const RENVOIS_VUS = new Set(LS.get('tyr_renvois_vus', []));
+  function tourAffichage() {                                    // S37 : le serveur agit ; la page montre
+    const ty = AUTOS_SRV().tyrannie || {};
+    DIAG = Array.isArray(ty.diagnostics) ? ty.diagnostics : []; fileMoteur = !!ty.file_moteur;
+    const dg = DIAG[(Math.random() * DIAG.length) | 0], l = (ty.inactifs || []).map(id => postes().find(p => p.id === id)).filter(Boolean);
+    if (dg) { try { Bureau.visiter(dg.id, dg.bulle || `${dg.nom} ${FR() ? 'est bloqué' : 'is stuck'} : ${dg.raison} → ${dg.action}`); } catch (e) {} }
+    else if (l.length) { const p = l[(Math.random() * l.length) | 0]; try { Bureau.visiter(p.id, pique()); } catch (e) {} }
+    for (const x of AUTOS_SRV().renvois || []) {
+      const cle = x.nom + ':' + x.t; if (RENVOIS_VUS.has(cle)) continue; RENVOIS_VUS.add(cle); LS.set('tyr_renvois_vus', [...RENVOIS_VUS].slice(-50));
+      const msg = t('tyr_renvoi').replace('{n}', x.nom_affiche || x.nom).replace('{m}', x.role || x.nom), t0 = x.t * 1000;
+      Bureau.dire('assistant', msg, 7); Notifs.ajouter({ id: 'tyr-' + cle, type: 'alerte', titre: msg, cible: {} });
+      toast('<b>' + esc(msg) + '</b>', { duree: Math.max(1000, 600000 - (Date.now() - t0)), action: { libelle: t('reintegrer'), f: () => { if (Date.now() - t0 > 600000) { toast(esc(t('trop_tard'))); return; } poster('/api/reembaucher', { nom: x.nom }).then(() => toast(esc((x.nom_affiche || x.nom) + ' ' + t('reintegre')))).catch(err => toast(esc(err.message), { erreur: true })); } } });
+    }
+  }
   async function tour() {
+    if (autosServeur()) { if (active()) tourAffichage(); return; }
     if (!active() || !ONGLET.meneur) return;                                          // aussi onglet caché ou navigateur réduit (la nuit)
     const tous = inactifs(), l = tous.filter(p => { try { return FinTache.candidats(p.id).length > 0; } catch (e) { return true; } });
     fileMoteur = tous.length > 0 && !l.length;                       // tout le reste attend le moteur : on laisse souffler
@@ -3121,7 +3175,7 @@ function ouvrirEnsemble() {
   });
 }
 function ensemblePostes() {
-  return postes().map(p => { const e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct); return `<div class="prop" data-p="${esc(p.id)}" style="cursor:pointer" title="${esc(nouvelleTxt(e))}"><b>${esc(nomPoste(p))}</b> · ${esc(e.ligne.picto + ' ' + e.ligne.texte)}${pc !== null ? `<div class="barre"><i style="width:${pc}%"></i><span>${pc} %${e.reste != null ? ' · ' + esc(duree(e.reste)) : ''}</span></div>` : ''}</div>`; }).join('') || `<p class="discret">${esc(t('journal_rien'))}</p>`;
+  return postes().map(p => { const e = etatPoste(p), pc = e.pct == null ? null : Math.round(e.pct); return `<div class="prop" data-p="${esc(p.id)}" style="cursor:pointer" title="${esc(nouvelleTxt(e))}"><b>${esc(nomPoste(p))}</b> · ${iconeEtat(e.ligne.picto, 14)} ${esc(e.ligne.texte)}${pc !== null ? `<div class="barre"><i style="width:${pc}%"></i><span>${pc} %${e.reste != null ? ' · ' + esc(duree(e.reste)) : ''}</span></div>` : ''}</div>`; }).join('') || `<p class="discret">${esc(t('journal_rien'))}</p>`;
 }
 function lierEnsemble(el) { el.querySelectorAll('[data-p]').forEach(d => d.onclick = () => { const p = postes().find(x => x.id === d.dataset.p); if (p) ficheposte(p); });
   el.querySelectorAll('[data-sugg-confier]').forEach(b => b.onclick = async () => { const x = SUGG[+b.dataset.suggConfier]; if (!x) return; b.disabled = true;
