@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.4.12] - 2026-11-13
+
+### Ajouté
+- « Aujourd'hui » : l'état du studio en une carte (ce qui a avancé aujourd'hui, ce qui attend avec « Décider » et les agents bloqués, la prochaine étape, le % de la version 1). Premier onglet au téléphone, bouton au PC ; la carte se met à jour seule.
+- Décisions d'un balayage au téléphone : pour une question à deux réponses, balayer à droite choisit la réponse recommandée (★), à gauche l'autre ; la réponse part au bout de 5 s, « Annuler » la rouvre.
+- « Résumé du matin » : à la première ouverture après plus de 4 h sans studio ouvert, une feuille dit ce qui a été versé, les réponses de l'assistant, les décisions qui attendent et les problèmes, avec « Tout est vu ».
+
 ## [0.4.11] - 2026-11-13
 
 ### Modifié
