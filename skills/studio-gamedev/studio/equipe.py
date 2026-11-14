@@ -50,6 +50,20 @@ MODELE_RE = re.compile(r"(haiku|sonnet|opus|fable)", re.I)
 GENERIQUES = {"", "general-purpose", "workflow-subagent"}   # types d'agent sans identité : rattachés au bureau dont la barre suit la chaîne
 
 
+ETAPES_VERBES = {"choisir": "choisit sa prochaine tâche", "travail": "travaille", "preparer": "prépare", "relire": "relit", "verifier": "vérifie", "corriger": "corrige", "appliquer": "applique", "reparer": "répare", "planifier": "planifie", "controle": "contrôle", "auditer": "audite", "construire": "construit", "faire": "fait", "trier": "trie"}
+
+
+def etape_lisible(label):
+    """« choisir:blender » → « choisit sa prochaine tâche », « relire:faune » → « relit faune » (15/11 : les étiquettes brutes
+    des chaînes s'affichaient telles quelles)."""
+    verbe, _, suite = str(label or "").partition(":")
+    if verbe not in ETAPES_VERBES:
+        return str(label or "")
+    if verbe in ("choisir", "travail"):
+        return ETAPES_VERBES[verbe]
+    return ETAPES_VERBES[verbe] + (" " + suite.replace("-", " ") if suite else "")
+
+
 def _lire(chemin, defaut):
     return jsonio.lire(chemin, defaut)
 
@@ -267,7 +281,7 @@ def construire(agents, dossier, *, postes_etat=(), modeles=None, dossiers_agents
                         "progression": pct if isinstance(pct, (int, float)) else None,
                         "modele": "" if session or not agent else modele, "effort": "" if session or not agent else effort,
                         "session": session, "protege": prot, "occupe": occ or (tx("au travail", "at work") if etat == "travail" else ""),
-                        "chaine": (ch[0]["label"] + " · " + ch[0]["run"]) if ch else source, "actions": act})
+                        "chaine": (etape_lisible(ch[0]["label"]) + " · " + ch[0]["run"]) if ch else source, "actions": act})
     # agents des chaînes en cours (les « sous-marins ») : chaque étape ouverte, avec son bureau s'il en a un
     noms = {m["cle"]: m["nom"] for m in membres}
     for e in etapes:
