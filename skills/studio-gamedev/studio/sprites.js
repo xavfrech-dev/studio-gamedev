@@ -101,6 +101,21 @@
       if (tt) surTete(c, look, X + (tt[0] - 128) / 3.5 * u, Y - h, u * .62, couleurs(look));
       return h;
     },
+    // cartes du groupe (DA 13/11) : médaillon « carnet » + buste rendu « portrait » (caméra à 11°, trois quarts) ; false si pas prêt
+    buste(canvas, look) {
+      const P0 = ATLAS && ATLAS.anims.portrait; if (!P0) return false;
+      let pl = (P0.tailles || [128]).includes(256) ? ligne(look, 'portrait', 0, 256) : null; if (!pl) pl = ligne(look, 'portrait', 0, 128); if (!pl) return false;
+      const s = pl.height / 256, r = P0.cadrage_256 || [14, 4, 228, 228], W = canvas.width, Hh = canvas.height, D = Math.min(W, Hh), x0 = (W - D) / 2, y0 = (Hh - D) / 2;
+      const c = canvas.getContext('2d'), C = couleurs(look), rgbaH = (h, a) => `rgba(${parseInt(h.slice(1, 3), 16)},${parseInt(h.slice(3, 5), 16)},${parseInt(h.slice(5, 7), 16)},${a})`;
+      c.clearRect(0, 0, W, Hh); c.save(); c.beginPath(); c.arc(W / 2, Hh / 2, D / 2, 0, 7); c.clip();
+      const g0 = c.createRadialGradient(x0 + D * .38, y0 + D * .28, 1, x0 + D * .38, y0 + D * .28, D * .85); g0.addColorStop(0, '#fbf3df'); g0.addColorStop(1, '#d9c397'); c.fillStyle = g0; c.fillRect(0, 0, W, Hh);
+      const g1 = c.createRadialGradient(x0 + D * .5, y0 + D * .9, 1, x0 + D * .5, y0 + D * .9, D * .55); g1.addColorStop(0, rgbaH(C.haut, .45)); g1.addColorStop(1, rgbaH(C.haut, 0)); c.fillStyle = g1; c.fillRect(0, 0, W, Hh);
+      c.imageSmoothingQuality = 'high'; c.drawImage(pl, r[0] * s, r[1] * s, r[2] * s, r[3] * s, x0, y0, D, D);
+      const u = 7.07 * D / r[2];   // px du canevas par « px studio » dans le rendu portrait (caméra 2,02 × plus serrée que l'iso)
+      surTete(c, look, x0 + D * (128 - r[0]) / r[2], y0 + D * (50 - r[1]) / r[2], u * .62, C);
+      c.strokeStyle = 'rgba(92,70,40,.42)'; c.lineWidth = Math.max(1, D * .025); c.beginPath(); c.arc(W / 2, Hh / 2, D / 2 - c.lineWidth / 2, 0, 7); c.stroke();
+      c.restore(); return true;
+    },
     // buste/plein pied pour les aperçus (éditeur de personnage, fiches) : true si dessiné
     portrait(canvas, look) {
       if (!ATLAS) return false; const T = (ATLAS.anims.repos.tailles || [128]).includes(256) ? 256 : 128, pl = ligne(look, 'repos', 1, T); if (!pl) return false;

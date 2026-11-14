@@ -1,0 +1,4032 @@
+{
+ "version": 1,
+ "statut": "catalogue S4 (moteur studio/quetes.py ; pas encore branché à la page)",
+ "actes": [
+  {
+   "id": "fondations",
+   "titre": {
+    "fr": "Fondations",
+    "en": "Foundations"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "prototype",
+   "titre": {
+    "fr": "Prototype",
+    "en": "Prototype"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "identite",
+   "titre": {
+    "fr": "Identité",
+    "en": "Identity"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "boucle",
+   "titre": {
+    "fr": "Boucle",
+    "en": "Core loop"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "contenu",
+   "titre": {
+    "fr": "Contenu",
+    "en": "Content"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "finition",
+   "titre": {
+    "fr": "Finition",
+    "en": "Polish"
+   },
+   "xp_fin": 300
+  },
+  {
+   "id": "sortie",
+   "titre": {
+    "fr": "Sortie",
+    "en": "Release"
+   },
+   "xp_fin": 300
+  }
+ ],
+ "rythme": {
+  "frequence_min": 30,
+  "principales_max": 1,
+  "secondaires_max": 2,
+  "plus_tard_h": 24
+ },
+ "habillage": [
+  {
+   "palier": 1,
+   "nom": {
+    "fr": "Maquette grise",
+    "en": "Grey mock-up"
+   },
+   "da": []
+  },
+  {
+   "palier": 2,
+   "nom": {
+    "fr": "Palette",
+    "en": "Palette"
+   },
+   "da": [
+    "palette"
+   ]
+  },
+  {
+   "palier": 3,
+   "nom": {
+    "fr": "Polices",
+    "en": "Fonts"
+   },
+   "da": [
+    "palette",
+    "polices.titre",
+    "polices.interface"
+   ]
+  },
+  {
+   "palier": 4,
+   "nom": {
+    "fr": "Logo",
+    "en": "Logo"
+   },
+   "da": [
+    "palette",
+    "polices.titre",
+    "polices.interface",
+    "logo"
+   ]
+  },
+  {
+   "palier": 5,
+   "nom": {
+    "fr": "Décor",
+    "en": "Decor"
+   },
+   "da": [
+    "palette",
+    "polices.titre",
+    "polices.interface",
+    "logo",
+    "decor"
+   ]
+  }
+ ],
+ "signaux": [
+  "questionnaire",
+  "reponse",
+  "mode_projet",
+  "roadmap.existe",
+  "roadmap.pct",
+  "roadmap.jalon_pct",
+  "roadmap.jalons_finis",
+  "roadmap.tag",
+  "fichier",
+  "fichier_contient",
+  "doc_section",
+  "git.depot",
+  "git.commits",
+  "git.tag",
+  "systeme",
+  "equipe",
+  "da",
+  "habillage",
+  "quete",
+  "niveau",
+  "skill_installe",
+  "jours",
+  "mur.images"
+ ],
+ "tags_roadmap": [
+  "da",
+  "palette",
+  "polices",
+  "logo",
+  "ui",
+  "menu",
+  "hud",
+  "son",
+  "musique",
+  "feel",
+  "ia",
+  "sauvegarde",
+  "tests",
+  "version",
+  "niveau",
+  "dialogues",
+  "localisation",
+  "accessibilite",
+  "perf",
+  "options",
+  "tutoriel",
+  "export",
+  "magasin",
+  "bande_annonce",
+  "reseau"
+ ],
+ "agents": {
+  "integrateur-moteur": {
+   "nom": "integrateur-moteur",
+   "poste": "integration-moteur",
+   "nom_affiche": {
+    "fr": "Intégratrice moteur",
+    "en": "Engine integrator"
+   },
+   "role": {
+    "fr": "Monte et tient le projet dans le moteur : scènes, réglages, export.",
+    "en": "Sets up and keeps the engine project: scenes, settings, export."
+   },
+   "skills": [
+    "gamedev:router"
+   ]
+  },
+  "codeur-gameplay": {
+   "nom": "codeur-gameplay",
+   "poste": "code-gameplay",
+   "nom_affiche": {
+    "fr": "Codeur gameplay",
+    "en": "Gameplay coder"
+   },
+   "role": {
+    "fr": "Rend le verbe principal jouable et agréable.",
+    "en": "Makes the core verb playable and fun."
+   },
+   "skills": [
+    "gamedev:prototype-fast",
+    "gamedev:input-systems",
+    "gamedev:camera-systems"
+   ]
+  },
+  "testeur": {
+   "nom": "testeur",
+   "poste": "qualite-tests",
+   "nom_affiche": {
+    "fr": "Testeuse",
+    "en": "Tester"
+   },
+   "role": {
+    "fr": "Écrit les tests utiles et vérifie chaque versement.",
+    "en": "Writes the useful tests and checks every delivery."
+   },
+   "skills": [
+    "ecc:tdd-workflow",
+    "ecc:verification-loop"
+   ]
+  },
+  "directeur-artistique": {
+   "nom": "directeur-artistique",
+   "poste": "art-da",
+   "nom_affiche": {
+    "fr": "Directrice artistique",
+    "en": "Art director"
+   },
+   "role": {
+    "fr": "Donne au jeu son identité visuelle : références, palette, logo, bible de style.",
+    "en": "Gives the game its visual identity: references, palette, logo, style bible."
+   },
+   "skills": [
+    "gamedev:create-game-assets"
+   ]
+  },
+  "graphiste-ui": {
+   "nom": "graphiste-ui",
+   "poste": "art-da",
+   "nom_affiche": {
+    "fr": "Graphiste interface",
+    "en": "UI designer"
+   },
+   "role": {
+    "fr": "Dessine les menus, le HUD et les écrans du jeu.",
+    "en": "Designs the game's menus, HUD and screens."
+   },
+   "skills": [
+    "gamedev:game-ui-ux"
+   ]
+  },
+  "sound-designer": {
+   "nom": "sound-designer",
+   "poste": "son",
+   "nom_affiche": {
+    "fr": "Sound designer",
+    "en": "Sound designer"
+   },
+   "role": {
+    "fr": "Bruitages, ambiances et musique du jeu.",
+    "en": "Sound effects, ambiences and music for the game."
+   },
+   "skills": [
+    "gamedev:audio-design"
+   ]
+  },
+  "programmeur-ia": {
+   "nom": "programmeur-ia",
+   "poste": "code-gameplay",
+   "nom_affiche": {
+    "fr": "Programmeur IA",
+    "en": "AI programmer"
+   },
+   "role": {
+    "fr": "Fait réagir et penser les adversaires.",
+    "en": "Makes opponents react and think."
+   },
+   "skills": [
+    "gamedev:game-ai",
+    "gamedev:ai-behavior-trees-utility-ai"
+   ]
+  },
+  "ingenieur-reseau": {
+   "nom": "ingenieur-reseau",
+   "poste": "reseau",
+   "nom_affiche": {
+    "fr": "Ingénieure réseau",
+    "en": "Network engineer"
+   },
+   "role": {
+    "fr": "Multijoueur : synchronisation, hôte, sécurité.",
+    "en": "Multiplayer: sync, hosting, security."
+   },
+   "skills": [
+    "gamedev:router",
+    "/security-review"
+   ]
+  },
+  "level-designer": {
+   "nom": "level-designer",
+   "poste": "level-design",
+   "nom_affiche": {
+    "fr": "Level designer",
+    "en": "Level designer"
+   },
+   "role": {
+    "fr": "Construit les niveaux et leur rythme.",
+    "en": "Builds the levels and their pacing."
+   },
+   "skills": [
+    "gamedev:level-design"
+   ]
+  },
+  "scenariste": {
+   "nom": "scenariste",
+   "poste": "narration",
+   "nom_affiche": {
+    "fr": "Scénariste",
+    "en": "Writer"
+   },
+   "role": {
+    "fr": "Histoire, dialogues et textes du jeu.",
+    "en": "Story, dialogue and in-game text."
+   },
+   "skills": [
+    "gamedev:dialogue-systems"
+   ]
+  },
+  "generateur-monde": {
+   "nom": "generateur-monde",
+   "poste": "code-gameplay",
+   "nom_affiche": {
+    "fr": "Générateur de mondes",
+    "en": "World generator"
+   },
+   "role": {
+    "fr": "Génération procédurale des niveaux, cartes ou butins.",
+    "en": "Procedural generation of levels, maps or loot."
+   },
+   "skills": [
+    "gamedev:procedural-gen"
+   ]
+  },
+  "localisation": {
+   "nom": "localisation",
+   "poste": "narration",
+   "nom_affiche": {
+    "fr": "Traductrice",
+    "en": "Localizer"
+   },
+   "role": {
+    "fr": "Textes du jeu dans plusieurs langues, sans clé oubliée.",
+    "en": "Game text in several languages, no missing keys."
+   },
+   "skills": [
+    "ecc:i18n-sync"
+   ]
+  },
+  "accessibilite": {
+   "nom": "accessibilite",
+   "poste": "qualite-tests",
+   "nom_affiche": {
+    "fr": "Experte accessibilité",
+    "en": "Accessibility expert"
+   },
+   "role": {
+    "fr": "Sous-titres, touches, couleurs, difficulté : le jeu pour tous.",
+    "en": "Subtitles, remapping, colours, difficulty: a game for everyone."
+   },
+   "skills": [
+    "ecc:accessibility",
+    "gamedev:game-ui-ux"
+   ]
+  },
+  "optimiseur": {
+   "nom": "optimiseur",
+   "poste": "integration-moteur",
+   "nom_affiche": {
+    "fr": "Optimiseur",
+    "en": "Optimizer"
+   },
+   "role": {
+    "fr": "Mesure et fait gagner des images par seconde.",
+    "en": "Measures and wins back frames per second."
+   },
+   "skills": [
+    "gamedev:performance-optimization"
+   ],
+   "soutien": true
+  },
+  "editeur": {
+   "nom": "editeur",
+   "poste": "sortie",
+   "nom_affiche": {
+    "fr": "Éditrice",
+    "en": "Publisher"
+   },
+   "role": {
+    "fr": "Export, page de magasin, bande-annonce, sortie.",
+    "en": "Export, store page, trailer, release."
+   },
+   "skills": [
+    "gamedev:itch-publish",
+    "gamedev:steam-publish"
+   ]
+  },
+  "auditeur": {
+   "nom": "auditeur",
+   "poste": "audit",
+   "nom_affiche": {
+    "fr": "Auditrice",
+    "en": "Auditor"
+   },
+   "role": {
+    "fr": "Regard extérieur et impartial : audite le projet, les versions et le studio, propose les corrections.",
+    "en": "Impartial outside eye: audits the project, the builds and the studio, proposes fixes."
+   },
+   "skills": [
+    "ecc:code-review",
+    "ecc:verification-loop",
+    "ecc:harness-audit"
+   ],
+   "soutien": true
+  },
+  "controleur-modeles": {
+   "nom": "controleur-modeles",
+   "poste": "modeles",
+   "nom_affiche": {
+    "fr": "Contrôleur des modèles",
+    "en": "Model controller"
+   },
+   "role": {
+    "fr": "Donne à chaque agent le bon modèle et surveille la dépense de jetons.",
+    "en": "Gives each agent the right model and watches token spending."
+   },
+   "skills": [
+    "ecc:model-route",
+    "ecc:cost-tracking",
+    "ecc:token-budget-advisor"
+   ],
+   "soutien": true
+  }
+ },
+ "quetes": [
+  {
+   "id": "Q-FO-01",
+   "acte": "fondations",
+   "type": "principale",
+   "ordre": 10,
+   "titre": {
+    "fr": "Pose ta roadmap",
+    "en": "Lay down your roadmap"
+   },
+   "pitch": {
+    "fr": "Le questionnaire est fini : place au plan.",
+    "en": "The questionnaire is done: time for the plan."
+   },
+   "objectif": {
+    "fr": "Une roadmap avec ses jalons, ses tâches et leurs critères.",
+    "en": "A roadmap with milestones, tasks and their criteria."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "questionnaire",
+      "op": "eq",
+      "valeur": "termine"
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "roadmap.existe",
+      "op": "eq",
+      "valeur": true
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Le fichier .studio/roadmap.json, valide.",
+    "en": "A valid .studio/roadmap.json file."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": [
+     "ecc:blueprint"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Les plans sont posés",
+      "en": "Plans on the table"
+     },
+     "icone": "cartes/carnet.svg",
+     "son": "moyen"
+    },
+    "decor": "plan_mur"
+   }
+  },
+  {
+   "id": "Q-FO-02",
+   "acte": "fondations",
+   "type": "principale",
+   "ordre": 12,
+   "titre": {
+    "fr": "Range ton jeu dans git",
+    "en": "Put your game in git"
+   },
+   "pitch": {
+    "fr": "Avant la première ligne de code, une sauvegarde de tout.",
+    "en": "Before the first line of code, a backup of everything."
+   },
+   "objectif": {
+    "fr": "Un dépôt git avec un premier commit.",
+    "en": "A git repository with a first commit."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "questionnaire",
+      "op": "eq",
+      "valeur": "termine"
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "git.commits",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un commit dans le dépôt du projet.",
+    "en": "A commit in the project repository."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": [
+     "ecc:git-workflow"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Rien ne se perd",
+      "en": "Nothing gets lost"
+     },
+     "icone": "cartes/branches.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FO-03",
+   "acte": "fondations",
+   "type": "principale",
+   "ordre": 14,
+   "titre": {
+    "fr": "Ouvre ta boîte à outils",
+    "en": "Open your toolbox"
+   },
+   "pitch": {
+    "fr": "Les skills de game dev rendent chaque agent plus fort.",
+    "en": "Game dev skills make every agent stronger."
+   },
+   "objectif": {
+    "fr": "Le routeur de skills de game dev est installé.",
+    "en": "The game dev skill router is installed."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "questionnaire",
+      "op": "eq",
+      "valeur": "termine"
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "skill_installe",
+      "nom": "gamedev:router",
+      "op": "eq",
+      "valeur": true
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "gamedev:router listé dans .studio/skills.json.",
+    "en": "gamedev:router listed in .studio/skills.json."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": [
+     "gamedev:router"
+    ]
+   },
+   "recompense": {
+    "xp": 50,
+    "succes": {
+     "titre": {
+      "fr": "Bien outillé",
+      "en": "Well equipped"
+     },
+     "icone": "cartes/trousseau.svg",
+     "son": "petit"
+    }
+   }
+  },
+  {
+   "id": "Q-FO-04",
+   "acte": "fondations",
+   "type": "principale",
+   "ordre": 16,
+   "titre": {
+    "fr": "Écris le document de conception",
+    "en": "Write the design document"
+   },
+   "pitch": {
+    "fr": "Un GDD court évite de refaire le jeu trois fois.",
+    "en": "A short GDD saves rebuilding the game three times."
+   },
+   "objectif": {
+    "fr": "Un GDD dans docs/.",
+    "en": "A GDD in docs/."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-FO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/GDD.md",
+       "docs/GDD.studio.md",
+       "docs/gdd.md"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "docs/GDD.md (ou docs/GDD.studio.md).",
+    "en": "docs/GDD.md (or docs/GDD.studio.md)."
+   },
+   "preuve_type": "doc",
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "La bible du jeu",
+      "en": "The game's bible"
+     },
+     "icone": "cartes/livre.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FO-05",
+   "acte": "fondations",
+   "type": "principale",
+   "ordre": 18,
+   "titre": {
+    "fr": "Première tâche versée",
+    "en": "First task delivered"
+   },
+   "pitch": {
+    "fr": "Un premier pas réel, même petit.",
+    "en": "A first real step, however small."
+   },
+   "objectif": {
+    "fr": "Une tâche de la roadmap passe à « versé ».",
+    "en": "One roadmap task moves to \"delivered\"."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-FO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "roadmap.pct",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une tâche « verse » dans roadmap.json.",
+    "en": "A \"verse\" task in roadmap.json."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Ça avance",
+      "en": "It's moving"
+     },
+     "icone": "cartes/coche.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-PR-01",
+   "acte": "prototype",
+   "type": "principale",
+   "ordre": 20,
+   "titre": {
+    "fr": "Une scène qui se lance",
+    "en": "A scene that runs"
+   },
+   "pitch": {
+    "fr": "Le moteur est prêt : une scène grise suffit.",
+    "en": "The engine is ready: a grey scene is enough."
+   },
+   "objectif": {
+    "fr": "Une première scène du jeu dans le projet.",
+    "en": "A first game scene in the project."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-FO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "systeme",
+      "id": "joueur",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un fichier de scène du moteur.",
+    "en": "An engine scene file."
+   },
+   "preuve_type": "scene",
+   "propositions": {
+    "agents": [
+     {
+      "agent": "integrateur-moteur",
+      "mission": {
+       "fr": "Crée le projet moteur et une scène grise qui se lance sans erreur.",
+       "en": "Create the engine project and a grey scene that runs without errors."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Lumière, moteur…",
+      "en": "Lights, engine…"
+     },
+     "icone": "cartes/prototype.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-PR-02",
+   "acte": "prototype",
+   "type": "principale",
+   "ordre": 22,
+   "titre": {
+    "fr": "Le verbe principal est jouable",
+    "en": "The core verb is playable"
+   },
+   "pitch": {
+    "fr": "Avant de faire joli, il faut que ce soit amusant.",
+    "en": "Before making it pretty, make it fun."
+   },
+   "objectif": {
+    "fr": "Le premier jalon jouable est rempli aux deux tiers.",
+    "en": "The first playable milestone is two-thirds done."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.jalon_pct",
+      "rang": 1,
+      "op": "ge",
+      "valeur": 66
+     },
+     {
+      "signal": "roadmap.jalons_finis",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Tâches du premier jalon versées.",
+    "en": "First milestone tasks delivered."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "codeur-gameplay",
+      "mission": {
+       "fr": "Rends le verbe principal jouable une minute sans bug bloquant.",
+       "en": "Make the core verb playable for one minute with no blocking bug."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:prototype-fast",
+     "gamedev:input-systems",
+     "gamedev:camera-systems"
+    ],
+    "skills_par_genre": {
+     "plateforme": [
+      "gamedev:platformer"
+     ],
+     "roguelike": [
+      "gamedev:roguelike"
+     ],
+     "rpg": [
+      "gamedev:rpg"
+     ],
+     "fps": [
+      "gamedev:fps-shooter"
+     ],
+     "tower_defense": [
+      "gamedev:tower-defense"
+     ],
+     "cartes": [
+      "gamedev:card-game"
+     ],
+     "visual_novel": [
+      "gamedev:visual-novel"
+     ],
+     "survie": [
+      "gamedev:survival-crafting"
+     ],
+     "puzzle": [
+      "gamedev:puzzle"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Ça bouge !",
+      "en": "It moves!"
+     },
+     "icone": "cartes/manette.svg",
+     "son": "grand"
+    },
+    "decor": "manette_bureau"
+   }
+  },
+  {
+   "id": "Q-PR-03",
+   "acte": "prototype",
+   "type": "principale",
+   "ordre": 24,
+   "titre": {
+    "fr": "Premier test automatique",
+    "en": "First automated test"
+   },
+   "pitch": {
+    "fr": "Un test aujourd'hui, c'est un bug de moins demain.",
+    "en": "One test today is one bug fewer tomorrow."
+   },
+   "objectif": {
+    "fr": "Au moins un test qui passe dans le projet.",
+    "en": "At least one passing test in the project."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "tests",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/test_*.*",
+       "**/*_test.*",
+       "**/*.test.*",
+       "**/tests/**/*.*",
+       "**/Tests/**/*.*"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un fichier de test, ou une tâche « tests » versée.",
+    "en": "A test file, or a delivered \"tests\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "testeur",
+      "mission": {
+       "fr": "Écris les premiers tests du verbe principal et lance-les.",
+       "en": "Write the first tests for the core verb and run them."
+      }
+     }
+    ],
+    "skills": [],
+    "skills_par_moteur": {
+     "godot": [
+      "gamedev:godot-gdscript-headless-testing"
+     ],
+     "unity": [
+      "ecc:csharp-testing"
+     ],
+     "unreal": [
+      "ecc:cpp-testing"
+     ],
+     "bevy": [
+      "ecc:rust-testing"
+     ],
+     "pygame": [
+      "ecc:python-testing"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Filet de sécurité",
+      "en": "Safety net"
+     },
+     "icone": "cartes/valide.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-PR-04",
+   "acte": "prototype",
+   "type": "principale",
+   "ordre": 26,
+   "titre": {
+    "fr": "Fais-le essayer",
+    "en": "Let someone try it"
+   },
+   "pitch": {
+    "fr": "Une version à essayer, c'est la vérité du jeu.",
+    "en": "A playable build is the game's moment of truth."
+   },
+   "objectif": {
+    "fr": "Une première version à essayer, avec son petit guide.",
+    "en": "A first playable build, with a short guide."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "version",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/versions/*.md",
+       "docs/VERSIONS.md",
+       "builds/**/*.*",
+       "build/**/*.*"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une tâche « version » versée, ou un guide dans docs/versions/.",
+    "en": "A delivered \"version\" task, or a guide in docs/versions/."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Premier joueur",
+      "en": "First player"
+     },
+     "icone": "cartes/essai_un.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-SU-01",
+   "acte": "prototype",
+   "type": "secondaire",
+   "soutien": true,
+   "ordre": 27,
+   "titre": {
+    "fr": "Un regard extérieur : l'auditrice",
+    "en": "An outside eye: the auditor"
+   },
+   "pitch": {
+    "fr": "Une version à essayer, plusieurs agents : il est temps qu'on vérifie tout d'un œil neuf.",
+    "en": "A build to try, several agents: time for a fresh pair of eyes on everything."
+   },
+   "objectif": {
+    "fr": "Embaucher l'auditrice : son bureau s'installe dans un coin, le bouton « Audit » rejoint la barre du haut.",
+    "en": "Hire the auditor: her desk goes in a corner, the \"Audit\" button joins the top bar."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "un_de": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-04",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     },
+     {
+      "signal": "equipe",
+      "mesure": "nombre",
+      "op": "ge",
+      "valeur": 3
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "equipe",
+      "poste": "audit",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "L’auditrice active : réglage « auditeur » de la page (son bureau dans le coin, le bouton « Audit »).",
+    "en": "The auditor enabled: the page’s “auditeur” setting (her desk in the corner, the “Audit” button)."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "auditeur",
+      "mission": {
+       "fr": "Audite le projet, les versions et le studio ; liste les corrections à faire, sans rien lancer seul.",
+       "en": "Audit the project, the builds and the studio; list the fixes to make, without launching anything alone."
+      }
+     }
+    ],
+    "skills": [
+     "ecc:code-review",
+     "ecc:verification-loop"
+    ]
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Sous bonne garde",
+      "en": "In good hands"
+     },
+     "icone": "cartes/loupe.svg",
+     "son": "moyen"
+    },
+    "deblocage": {
+     "bouton": "audit",
+     "agent": "auditeur",
+     "bureau": "coin",
+     "reglage": "soutien.auditeur"
+    }
+   }
+  },
+  {
+   "id": "Q-ID-00",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 29,
+   "titre": {
+    "fr": "Habille ton studio avec ton jeu",
+    "en": "Dress your studio with your game"
+   },
+   "pitch": {
+    "fr": "Ton jeu a déjà une identité : le studio peut la porter.",
+    "en": "Your game already has an identity: the studio can wear it."
+   },
+   "objectif": {
+    "fr": "Un da.json validé, tiré de ta DA existante.",
+    "en": "A validated da.json, taken from your existing art direction."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "mode_projet",
+      "op": "eq",
+      "valeur": "adoption"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "un_de": [
+       {
+        "signal": "fichier",
+        "motifs": [
+         "**/{logo,Logo,LOGO}*.{image}"
+        ],
+        "op": "ge",
+        "valeur": 1
+       },
+       {
+        "signal": "fichier",
+        "motifs": [
+         "**/*.{police}"
+        ],
+        "op": "ge",
+        "valeur": 1
+       },
+       {
+        "signal": "fichier",
+        "motifs": [
+         "docs/DA.md",
+         "docs/da/**/*.*"
+        ],
+        "op": "ge",
+        "valeur": 1
+       }
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "da",
+      "champ": "valide_par_utilisateur",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": ".studio/da.json validé.",
+    "en": "A validated .studio/da.json."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "directeur-artistique",
+      "mission": {
+       "fr": "Prépare un brouillon de da.json à partir de la DA existante (palette du logo et des captures, polices trouvées).",
+       "en": "Draft da.json from the existing art direction (palette from the logo and screenshots, fonts found)."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "À ton image",
+      "en": "In your image"
+     },
+     "icone": "cartes/miroir.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-ID-01",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 30,
+   "titre": {
+    "fr": "Planche d'ambiance",
+    "en": "Mood board"
+   },
+   "pitch": {
+    "fr": "Le prototype est jouable : on peut décider à quoi il ressemble.",
+    "en": "The prototype is playable: time to decide what it looks like."
+   },
+   "objectif": {
+    "fr": "Une planche de références (images ou docs/DA.md).",
+    "en": "A reference board (images or docs/DA.md)."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/da/**/*.{image}",
+       "**/{moodboard,planche}*.*",
+       "**/{references,refs}/*.{image}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/DA.md"
+      ],
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "da",
+      "champ": "source",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Images de référence dans docs/da/, ou docs/DA.md.",
+    "en": "Reference images in docs/da/, or docs/DA.md."
+   },
+   "preuve_type": "image",
+   "propositions": {
+    "agents": [
+     {
+      "agent": "directeur-artistique",
+      "mission": {
+       "fr": "Rassemble 8 à 12 références et écris en une page l'intention visuelle du jeu.",
+       "en": "Gather 8 to 12 references and write the game's visual intent on one page."
+      }
+     }
+    ],
+    "skills": [],
+    "tache": {
+     "titre": {
+      "fr": "Planche d'ambiance",
+      "en": "Mood board"
+     },
+     "critere": {
+      "fr": "docs/DA.md et 8 références",
+      "en": "docs/DA.md and 8 references"
+     },
+     "poste": "art-da",
+     "estimation_h": 2,
+     "tags": [
+      "da"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Ça a de la gueule",
+      "en": "Looking sharp"
+     },
+     "icone": "cartes/croquis.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-ID-02",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 32,
+   "titre": {
+    "fr": "Choisis une palette",
+    "en": "Pick a palette"
+   },
+   "pitch": {
+    "fr": "Une palette, et ton studio quitte le gris.",
+    "en": "One palette, and your studio leaves the grey behind."
+   },
+   "objectif": {
+    "fr": "La palette du jeu, par rôles (fond, texte, accent…), validée.",
+    "en": "The game's palette, by role (background, text, accent…), validated."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "da",
+      "champ": "palette",
+      "op": "existe"
+     },
+     {
+      "signal": "da",
+      "champ": "valide_par_utilisateur",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "palette dans .studio/da.json, validée.",
+    "en": "palette in .studio/da.json, validated."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "directeur-artistique",
+      "mission": {
+       "fr": "Propose 3 palettes par rôles (fond, surface, texte, accent, accent 2, succès, alerte, danger), contraste AA.",
+       "en": "Propose 3 role-based palettes (background, surface, text, accent, accent 2, success, warning, danger), AA contrast."
+      }
+     }
+    ],
+    "skills": [],
+    "tache": {
+     "titre": {
+      "fr": "Palette du jeu",
+      "en": "Game palette"
+     },
+     "critere": {
+      "fr": "palette validée dans da.json",
+      "en": "palette validated in da.json"
+     },
+     "poste": "art-da",
+     "estimation_h": 1.5,
+     "tags": [
+      "da",
+      "palette"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Premier coup de peinture",
+      "en": "First coat of paint"
+     },
+     "icone": "cartes/palette.svg",
+     "son": "moyen"
+    },
+    "habillage": 2,
+    "decor": "nuancier"
+   }
+  },
+  {
+   "id": "Q-ID-03",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 34,
+   "titre": {
+    "fr": "Trouve tes polices",
+    "en": "Find your fonts"
+   },
+   "pitch": {
+    "fr": "Deux polices, et tout le studio parle comme ton jeu.",
+    "en": "Two fonts, and the whole studio speaks like your game."
+   },
+   "objectif": {
+    "fr": "Une police de titre et une police d'interface, avec leur licence.",
+    "en": "A title font and a UI font, with their licence."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "da",
+      "champ": "polices.titre",
+      "op": "existe"
+     },
+     {
+      "signal": "da",
+      "champ": "polices.interface",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Deux polices déclarées dans da.json, fichiers dans le projet.",
+    "en": "Two fonts declared in da.json, files in the project."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "graphiste-ui",
+      "mission": {
+       "fr": "Choisis une police de titre et une d'interface (licence libre de préférence), lisibles en petit.",
+       "en": "Choose a title font and a UI font (open licence preferred), readable at small sizes."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:game-ui-ux"
+    ],
+    "tache": {
+     "titre": {
+      "fr": "Polices du jeu",
+      "en": "Game fonts"
+     },
+     "critere": {
+      "fr": "deux polices et leur licence dans da.json",
+      "en": "two fonts and their licence in da.json"
+     },
+     "poste": "art-da",
+     "estimation_h": 1,
+     "tags": [
+      "da",
+      "polices"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Belle lettre",
+      "en": "Fine lettering"
+     },
+     "icone": "cartes/plume_encre.svg",
+     "son": "moyen"
+    },
+    "habillage": 3,
+    "decor": "casse_typo"
+   }
+  },
+  {
+   "id": "Q-ID-04",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 36,
+   "titre": {
+    "fr": "Fais un logo",
+    "en": "Make a logo"
+   },
+   "pitch": {
+    "fr": "Ton jeu a un nom : donne-lui un visage.",
+    "en": "Your game has a name: give it a face."
+   },
+   "objectif": {
+    "fr": "Un logo (et une version icône) déclaré dans da.json.",
+    "en": "A logo (and an icon version) declared in da.json."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-03",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "da",
+      "champ": "logo",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "logo dans da.json, fichier dans le projet.",
+    "en": "logo in da.json, file in the project."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "directeur-artistique",
+      "mission": {
+       "fr": "Dessine le logo du jeu, une version icône carrée et une version sur fond clair.",
+       "en": "Design the game logo, a square icon version and a light-background version."
+      }
+     }
+    ],
+    "skills": [],
+    "tache": {
+     "titre": {
+      "fr": "Logo du jeu",
+      "en": "Game logo"
+     },
+     "critere": {
+      "fr": "logo, icône 512 px, version fond clair",
+      "en": "logo, 512 px icon, light-background version"
+     },
+     "poste": "art-da",
+     "estimation_h": 3,
+     "tags": [
+      "da",
+      "logo"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 200,
+    "succes": {
+     "titre": {
+      "fr": "Une enseigne à ton nom",
+      "en": "Your name on the door"
+     },
+     "icone": "cartes/etiquette_neuve.svg",
+     "son": "grand"
+    },
+    "habillage": 4,
+    "decor": "enseigne"
+   }
+  },
+  {
+   "id": "Q-ID-05",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 38,
+   "titre": {
+    "fr": "Menu principal",
+    "en": "Main menu"
+   },
+   "pitch": {
+    "fr": "La première chose que voit un joueur.",
+    "en": "The first thing a player sees."
+   },
+   "objectif": {
+    "fr": "Un écran titre et un menu principal dans le jeu.",
+    "en": "A title screen and a main menu in the game."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-04",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "menu",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*{menu,Menu,title,Title,titre}*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une scène de menu, ou une tâche « menu » versée.",
+    "en": "A menu scene, or a delivered \"menu\" task."
+   },
+   "preuve_type": "scene",
+   "propositions": {
+    "agents": [
+     {
+      "agent": "graphiste-ui",
+      "mission": {
+       "fr": "Fais l'écran titre et le menu principal avec la palette, les polices et le logo.",
+       "en": "Build the title screen and main menu with the palette, fonts and logo."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:game-ui-ux"
+    ],
+    "skills_par_moteur": {
+     "godot": [
+      "gamedev:godot-ui-control"
+     ],
+     "roblox": [
+      "gamedev:roblox-ui"
+     ]
+    },
+    "tache": {
+     "titre": {
+      "fr": "Menu principal",
+      "en": "Main menu"
+     },
+     "critere": {
+      "fr": "écran titre, Jouer, Options, Quitter",
+      "en": "title screen, Play, Options, Quit"
+     },
+     "poste": "art-da",
+     "estimation_h": 4,
+     "tags": [
+      "ui",
+      "menu"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Appuie sur Start",
+      "en": "Press Start"
+     },
+     "icone": "cartes/menu_moderne.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-ID-06",
+   "acte": "identite",
+   "type": "principale",
+   "ordre": 40,
+   "titre": {
+    "fr": "Bible de style",
+    "en": "Style bible"
+   },
+   "pitch": {
+    "fr": "Tout ce qui viendra ensuite aura le même air de famille.",
+    "en": "Everything that comes next will share the same look."
+   },
+   "objectif": {
+    "fr": "Une bible de style (règles, exemples) et le décor du studio dans da.json.",
+    "en": "A style bible (rules, examples) and the studio decor in da.json."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-05",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/DA.md",
+       "docs/BIBLE*.md",
+       "docs/STYLE*.md"
+      ],
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "da",
+      "champ": "decor",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "docs/DA.md complété, decor dans da.json.",
+    "en": "docs/DA.md completed, decor in da.json."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "directeur-artistique",
+      "mission": {
+       "fr": "Écris la bible de style (formes, couleurs, lumière, UI, à faire / à éviter) et choisis le décor du studio.",
+       "en": "Write the style bible (shapes, colours, light, UI, do / don't) and pick the studio decor."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:create-game-assets"
+    ]
+   },
+   "recompense": {
+    "xp": 200,
+    "succes": {
+     "titre": {
+      "fr": "Le studio est à ton image",
+      "en": "The studio wears your colours"
+     },
+     "icone": "cartes/bibliotheque.svg",
+     "son": "grand"
+    },
+    "habillage": 5,
+    "decor": "affiche_jeu"
+   }
+  },
+  {
+   "id": "Q-ID-07",
+   "acte": "identite",
+   "type": "secondaire",
+   "ordre": 42,
+   "titre": {
+    "fr": "Un HUD lisible",
+    "en": "A readable HUD"
+   },
+   "pitch": {
+    "fr": "Le joueur doit comprendre l'écran en une seconde.",
+    "en": "The player must read the screen in one second."
+   },
+   "objectif": {
+    "fr": "Le HUD du jeu en place.",
+    "en": "The game HUD in place."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "hud",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*{hud,HUD,Hud}*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une scène de HUD, ou une tâche « hud » versée.",
+    "en": "A HUD scene, or a delivered \"hud\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "graphiste-ui",
+      "mission": {
+       "fr": "Fais un HUD lisible au style du jeu.",
+       "en": "Build a readable HUD in the game's style."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:game-ui-ux"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Tout est clair",
+      "en": "Crystal clear"
+     },
+     "icone": "cartes/hud_classique.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-01",
+   "acte": "boucle",
+   "type": "principale",
+   "ordre": 50,
+   "titre": {
+    "fr": "La boucle tient dix minutes",
+    "en": "The loop holds for ten minutes"
+   },
+   "pitch": {
+    "fr": "Jouer, gagner, recommencer : c'est le cœur du jeu.",
+    "en": "Play, win, go again: the heart of the game."
+   },
+   "objectif": {
+    "fr": "Le jalon de la boucle centrale est fini.",
+    "en": "The core loop milestone is done."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.jalon_pct",
+      "rang": 2,
+      "op": "ge",
+      "valeur": 100
+     },
+     {
+      "signal": "roadmap.jalons_finis",
+      "op": "ge",
+      "valeur": 2
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Deuxième jalon terminé dans roadmap.json.",
+    "en": "Second milestone done in roadmap.json."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": [],
+    "skills_par_genre": {
+     "plateforme": [
+      "gamedev:platformer"
+     ],
+     "roguelike": [
+      "gamedev:roguelike"
+     ],
+     "rpg": [
+      "gamedev:rpg"
+     ],
+     "fps": [
+      "gamedev:fps-shooter"
+     ],
+     "tower_defense": [
+      "gamedev:tower-defense"
+     ],
+     "cartes": [
+      "gamedev:card-game"
+     ],
+     "visual_novel": [
+      "gamedev:visual-novel"
+     ],
+     "survie": [
+      "gamedev:survival-crafting"
+     ],
+     "puzzle": [
+      "gamedev:puzzle"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 300,
+    "succes": {
+     "titre": {
+      "fr": "La boucle est bouclée",
+      "en": "Full circle"
+     },
+     "icone": "cartes/boucle.svg",
+     "son": "grand"
+    }
+   }
+  },
+  {
+   "id": "Q-SU-02",
+   "acte": "boucle",
+   "type": "secondaire",
+   "soutien": true,
+   "ordre": 51,
+   "titre": {
+    "fr": "Le bon modèle pour chacun",
+    "en": "The right model for each"
+   },
+   "pitch": {
+    "fr": "Plusieurs agents travaillent en même temps : chacun mérite le modèle qui lui va, sans gaspiller.",
+    "en": "Several agents work at once: each deserves the model that fits, without waste."
+   },
+   "objectif": {
+    "fr": "Embaucher le contrôleur des modèles : le bouton « Le bon modèle pour chacun » rejoint la barre du haut.",
+    "en": "Hire the model controller: the \"The right model for each\" button joins the top bar."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "un_de": [
+     {
+      "signal": "equipe",
+      "mesure": "nombre",
+      "op": "ge",
+      "valeur": 4
+     },
+     {
+      "tous": [
+       {
+        "signal": "quete",
+        "id": "Q-PR-02",
+        "op": "dans",
+        "valeur": [
+         "remplie",
+         "deja_faite"
+        ]
+       },
+       {
+        "signal": "equipe",
+        "mesure": "nombre",
+        "op": "ge",
+        "valeur": 3
+       }
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "equipe",
+      "poste": "modeles",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Le contrôleur des modèles actif : réglage « controle_modeles » de la page.",
+    "en": "The model controller enabled: the page’s “controle_modeles” setting."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "controleur-modeles",
+      "mission": {
+       "fr": "Propose un modèle par agent selon sa tâche et suis la dépense ; rien ne change sans accord.",
+       "en": "Propose a model per agent for its task and track spending; nothing changes without approval."
+      }
+     }
+    ],
+    "skills": [
+     "ecc:cost-tracking"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Bien dosé",
+      "en": "Well balanced"
+     },
+     "icone": "cartes/cible.svg",
+     "son": "moyen"
+    },
+    "deblocage": {
+     "bouton": "modeles",
+     "agent": "controleur-modeles",
+     "bureau": "coin",
+     "reglage": "soutien.controleur-modeles"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-02",
+   "acte": "boucle",
+   "type": "principale",
+   "ordre": 52,
+   "titre": {
+    "fr": "Ne rien perdre",
+    "en": "Lose nothing"
+   },
+   "pitch": {
+    "fr": "Une partie qui ne se sauvegarde pas ne revient pas.",
+    "en": "A run that is not saved does not come back."
+   },
+   "objectif": {
+    "fr": "La sauvegarde du jeu marche.",
+    "en": "Game saving works."
+   },
+   "si": {
+    "un_de": [
+     {
+      "signal": "reponse",
+      "cle": "gameplay.systemes",
+      "op": "contient",
+      "valeur": "sauvegarde"
+     },
+     {
+      "signal": "reponse",
+      "cle": "progression.duree",
+      "op": "ne",
+      "valeur": "moins_2h"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "systeme",
+      "id": "sauvegarde",
+      "op": "existe"
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "sauvegarde",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Code de sauvegarde trouvé, ou tâche « sauvegarde » versée.",
+    "en": "Save code found, or a delivered \"save\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "codeur-gameplay",
+      "mission": {
+       "fr": "Ajoute la sauvegarde et le chargement, avec une version du format.",
+       "en": "Add saving and loading, with a format version."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:save-systems"
+    ]
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Partie sauvegardée",
+      "en": "Game saved"
+     },
+     "icone": "cartes/disquette.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-03",
+   "acte": "boucle",
+   "type": "principale",
+   "ordre": 54,
+   "titre": {
+    "fr": "Premiers sons",
+    "en": "First sounds"
+   },
+   "pitch": {
+    "fr": "Un jeu muet paraît cassé : cinq sons changent tout.",
+    "en": "A silent game feels broken: five sounds change everything."
+   },
+   "objectif": {
+    "fr": "Au moins cinq sons dans le jeu.",
+    "en": "At least five sounds in the game."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*.{audio}"
+      ],
+      "op": "ge",
+      "valeur": 5
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "son",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Cinq fichiers audio dans le projet, ou tâche « son » versée.",
+    "en": "Five audio files in the project, or a delivered \"sound\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "sound-designer",
+      "mission": {
+       "fr": "Fais les cinq sons les plus importants du verbe principal et de l'interface.",
+       "en": "Make the five most important sounds for the core verb and the UI."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:audio-design"
+    ]
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Ça sonne",
+      "en": "Sounds right"
+     },
+     "icone": "cartes/haut_parleur.svg",
+     "son": "moyen"
+    },
+    "decor": "platine"
+   }
+  },
+  {
+   "id": "Q-BO-04",
+   "acte": "boucle",
+   "type": "secondaire",
+   "ordre": 56,
+   "titre": {
+    "fr": "Une musique",
+    "en": "A soundtrack"
+   },
+   "pitch": {
+    "fr": "La musique dit au joueur ce qu'il doit ressentir.",
+    "en": "Music tells the player what to feel."
+   },
+   "objectif": {
+    "fr": "Une première musique dans le jeu.",
+    "en": "A first piece of music in the game."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "son.musique",
+      "op": "ne",
+      "valeur": "aucune"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-03",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "musique",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{music,musique,Music,Musique}/**/*.{audio}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un morceau dans un dossier music/, ou tâche « musique » versée.",
+    "en": "A track in a music/ folder, or a delivered \"music\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "sound-designer",
+      "mission": {
+       "fr": "Compose ou choisis le premier thème, en boucle propre.",
+       "en": "Compose or choose the first theme, looping cleanly."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:audio-design"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "En musique",
+      "en": "To the music"
+     },
+     "icone": "cartes/partition.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-05",
+   "acte": "boucle",
+   "type": "principale",
+   "ordre": 58,
+   "titre": {
+    "fr": "Du jus !",
+    "en": "Add some juice!"
+   },
+   "pitch": {
+    "fr": "Secousses, petits arrêts, particules : le jeu prend vie.",
+    "en": "Shakes, hit-stops, particles: the game comes alive."
+   },
+   "objectif": {
+    "fr": "Une passe de « game feel » sur le verbe principal.",
+    "en": "A game feel pass on the core verb."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-03",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     },
+     {
+      "signal": "roadmap.jalon_pct",
+      "rang": 2,
+      "op": "ge",
+      "valeur": 50
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "feel",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Tâche « feel » versée.",
+    "en": "A delivered \"feel\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "codeur-gameplay",
+      "mission": {
+       "fr": "Fais une passe de game feel (retours visuels et sonores, hit-stop, secousses réglables).",
+       "en": "Do a game feel pass (visual and audio feedback, hit-stop, adjustable shakes)."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:game-feel"
+    ],
+    "tache": {
+     "titre": {
+      "fr": "Passe de game feel",
+      "en": "Game feel pass"
+     },
+     "critere": {
+      "fr": "retours sur chaque action du verbe",
+      "en": "feedback on every core-verb action"
+     },
+     "poste": "code-gameplay",
+     "estimation_h": 3,
+     "tags": [
+      "feel"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Ça claque",
+      "en": "That's punchy"
+     },
+     "icone": "cartes/etincelles.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-06",
+   "acte": "boucle",
+   "type": "secondaire",
+   "ordre": 60,
+   "titre": {
+    "fr": "Des ennemis qui pensent",
+    "en": "Enemies that think"
+   },
+   "pitch": {
+    "fr": "Un adversaire qui réagit rend chaque partie différente.",
+    "en": "An opponent who reacts makes every run different."
+   },
+   "objectif": {
+    "fr": "L'IA des adversaires en place.",
+    "en": "Opponent AI in place."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "gameplay.systemes",
+      "op": "contient",
+      "valeur": "ia_ennemie"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "systeme",
+      "id": "ennemis",
+      "op": "existe"
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "ia",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Code d'ennemis trouvé, ou tâche « ia » versée.",
+    "en": "Enemy code found, or a delivered \"ai\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "programmeur-ia",
+      "mission": {
+       "fr": "Écris l'IA des adversaires (états, perception, poursuite), réglable.",
+       "en": "Write the opponents' AI (states, perception, pursuit), tunable."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Ils arrivent",
+      "en": "Here they come"
+     },
+     "icone": "cartes/robot.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-BO-07",
+   "acte": "boucle",
+   "type": "secondaire",
+   "ordre": 62,
+   "titre": {
+    "fr": "Jouer ensemble",
+    "en": "Play together"
+   },
+   "pitch": {
+    "fr": "Deux joueurs connectés, c'est déjà un autre jeu.",
+    "en": "Two connected players is already another game."
+   },
+   "objectif": {
+    "fr": "Deux joueurs dans la même partie en réseau.",
+    "en": "Two players in the same networked session."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "multijoueur.mode",
+      "op": "pas_dans",
+      "valeur": [
+       "solo"
+      ]
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "systeme",
+      "id": "reseau",
+      "op": "existe"
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "reseau",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Code réseau trouvé, ou tâche « reseau » versée.",
+    "en": "Network code found, or a delivered \"network\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "ingenieur-reseau",
+      "mission": {
+       "fr": "Monte une session à deux joueurs, puis passe la revue de sécurité.",
+       "en": "Set up a two-player session, then run the security review."
+      }
+     }
+    ],
+    "skills": [],
+    "skills_par_moteur": {
+     "godot": [
+      "gamedev:godot-multiplayer"
+     ],
+     "roblox": [
+      "gamedev:roblox-networking"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 200,
+    "succes": {
+     "titre": {
+      "fr": "Connectés",
+      "en": "Connected"
+     },
+     "icone": "cartes/coop_ligne.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-CO-01",
+   "acte": "contenu",
+   "type": "principale",
+   "ordre": 70,
+   "titre": {
+    "fr": "Premier vrai niveau",
+    "en": "First real level"
+   },
+   "pitch": {
+    "fr": "La boucle tient : il lui faut un terrain de jeu.",
+    "en": "The loop holds: it needs a playground."
+   },
+   "objectif": {
+    "fr": "Un niveau complet, du début à la fin.",
+    "en": "One complete level, start to finish."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "niveau",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{levels,niveaux,Levels,Maps,maps,Niveaux}/**/*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une scène dans levels/, ou tâche « niveau » versée.",
+    "en": "A scene in levels/, or a delivered \"level\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "level-designer",
+      "mission": {
+       "fr": "Construis le premier niveau complet : blockout, rythme, puis habillage.",
+       "en": "Build the first complete level: blockout, pacing, then dressing."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:level-design"
+    ]
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Terrain de jeu",
+      "en": "Playground"
+     },
+     "icone": "cartes/carte.svg",
+     "son": "moyen"
+    },
+    "decor": "carte_monde"
+   }
+  },
+  {
+   "id": "Q-CO-02",
+   "acte": "contenu",
+   "type": "principale",
+   "ordre": 72,
+   "titre": {
+    "fr": "Trois niveaux",
+    "en": "Three levels"
+   },
+   "pitch": {
+    "fr": "Trois niveaux, c'est un vrai jeu qui se dessine.",
+    "en": "Three levels: a real game is taking shape."
+   },
+   "objectif": {
+    "fr": "Trois niveaux jouables.",
+    "en": "Three playable levels."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "monde.generation",
+      "op": "ne",
+      "valeur": "procedural"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-CO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "niveau",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 3
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{levels,niveaux,Levels,Maps,maps,Niveaux}/**/*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 3
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Trois scènes de niveau, ou trois tâches « niveau » versées.",
+    "en": "Three level scenes, or three delivered \"level\" tasks."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 200,
+    "succes": {
+     "titre": {
+      "fr": "Le monde s'agrandit",
+      "en": "The world grows"
+     },
+     "icone": "cartes/niveaux.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-CO-03",
+   "acte": "contenu",
+   "type": "secondaire",
+   "ordre": 74,
+   "titre": {
+    "fr": "Faire parler le monde",
+    "en": "Give the world a voice"
+   },
+   "pitch": {
+    "fr": "Ton histoire compte : elle a besoin de mots.",
+    "en": "Your story matters: it needs words."
+   },
+   "objectif": {
+    "fr": "Le système de dialogues et une première scène dialoguée.",
+    "en": "The dialogue system and a first dialogue scene."
+   },
+   "si": {
+    "un_de": [
+     {
+      "signal": "reponse",
+      "cle": "histoire.place",
+      "op": "dans",
+      "valeur": [
+       "importante",
+       "centre"
+      ]
+     },
+     {
+      "signal": "reponse",
+      "cle": "gameplay.systemes",
+      "op": "contient",
+      "valeur": "dialogues"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "systeme",
+      "id": "dialogues",
+      "op": "existe"
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "dialogues",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Code de dialogues trouvé, ou tâche « dialogues » versée.",
+    "en": "Dialogue code found, or a delivered \"dialogue\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "scenariste",
+      "mission": {
+       "fr": "Écris la première scène dialoguée et branche le système de dialogues.",
+       "en": "Write the first dialogue scene and wire up the dialogue system."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Il était une fois",
+      "en": "Once upon a time"
+     },
+     "icone": "cartes/parchemin.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-CO-04",
+   "acte": "contenu",
+   "type": "secondaire",
+   "ordre": 76,
+   "titre": {
+    "fr": "Un monde qui se génère",
+    "en": "A world that builds itself"
+   },
+   "pitch": {
+    "fr": "Chaque partie mérite une nouvelle carte.",
+    "en": "Every run deserves a new map."
+   },
+   "objectif": {
+    "fr": "La génération procédurale en place, avec graine.",
+    "en": "Procedural generation in place, with a seed."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "monde.generation",
+      "op": "dans",
+      "valeur": [
+       "procedural",
+       "mixte"
+      ]
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "systeme",
+      "id": "procedural",
+      "op": "existe"
+     },
+     {
+      "signal": "roadmap.tag",
+      "tag": "niveau",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Code procédural trouvé.",
+    "en": "Procedural code found."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "generateur-monde",
+      "mission": {
+       "fr": "Écris le générateur (graine, contraintes, test de 100 graines).",
+       "en": "Write the generator (seed, constraints, a 100-seed test)."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Jamais deux fois pareil",
+      "en": "Never the same twice"
+     },
+     "icone": "cartes/de.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-CO-05",
+   "acte": "contenu",
+   "type": "secondaire",
+   "ordre": 78,
+   "titre": {
+    "fr": "Parle plusieurs langues",
+    "en": "Speak several languages"
+   },
+   "pitch": {
+    "fr": "Plus de langues, plus de joueurs.",
+    "en": "More languages, more players."
+   },
+   "objectif": {
+    "fr": "Les textes du jeu dans un fichier de traduction, deux langues au moins.",
+    "en": "Game text in a translation file, at least two languages."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "public.langues",
+      "op": "dans",
+      "valeur": [
+       "deux",
+       "plus"
+      ]
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-BO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "localisation",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{locales,locale,i18n,translations,localization,Localization}/**/*.*"
+      ],
+      "op": "ge",
+      "valeur": 2
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Deux fichiers de langue, ou tâche « localisation » versée.",
+    "en": "Two language files, or a delivered \"localization\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "localisation",
+      "mission": {
+       "fr": "Sors tous les textes dans des fichiers de traduction et vérifie qu'aucune clé ne manque.",
+       "en": "Move all text into translation files and check no key is missing."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Polyglotte",
+      "en": "Polyglot"
+     },
+     "icone": "cartes/langues.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FI-01",
+   "acte": "finition",
+   "type": "principale",
+   "ordre": 80,
+   "titre": {
+    "fr": "Écran d'options",
+    "en": "Options screen"
+   },
+   "pitch": {
+    "fr": "Volume, touches, affichage : chacun joue à sa façon.",
+    "en": "Volume, controls, display: everyone plays their way."
+   },
+   "objectif": {
+    "fr": "Un écran d'options qui enregistre ses réglages.",
+    "en": "An options screen that saves its settings."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-ID-05",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     },
+     {
+      "signal": "roadmap.pct",
+      "op": "ge",
+      "valeur": 50
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "options",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*{option,Option,settings,Settings,reglage}*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une scène d'options, ou tâche « options » versée.",
+    "en": "An options scene, or a delivered \"options\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "graphiste-ui",
+      "mission": {
+       "fr": "Fais l'écran d'options (son, touches, affichage) et son enregistrement.",
+       "en": "Build the options screen (sound, controls, display) and its saving."
+      }
+     }
+    ],
+    "skills": [
+     "gamedev:game-ui-ux",
+     "gamedev:input-systems"
+    ]
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "À ta façon",
+      "en": "Your way"
+     },
+     "icone": "cartes/curseurs.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FI-02",
+   "acte": "finition",
+   "type": "principale",
+   "ordre": 82,
+   "titre": {
+    "fr": "Le jeu pour tous",
+    "en": "A game for everyone"
+   },
+   "pitch": {
+    "fr": "Sous-titres, couleurs, difficulté : personne ne reste à la porte.",
+    "en": "Subtitles, colours, difficulty: nobody left at the door."
+   },
+   "objectif": {
+    "fr": "Les options d'accessibilité choisies au questionnaire.",
+    "en": "The accessibility options picked in the questionnaire."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "public.accessibilite",
+      "op": "existe"
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-FI-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "accessibilite",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Tâche « accessibilite » versée.",
+    "en": "A delivered \"accessibility\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "accessibilite",
+      "mission": {
+       "fr": "Mets en place les options d'accessibilité choisies et vérifie-les.",
+       "en": "Implement and check the chosen accessibility options."
+      }
+     }
+    ],
+    "skills": [],
+    "tache": {
+     "titre": {
+      "fr": "Accessibilité",
+      "en": "Accessibility"
+     },
+     "critere": {
+      "fr": "options du questionnaire en place et testées",
+      "en": "questionnaire options in place and tested"
+     },
+     "poste": "qualite-tests",
+     "estimation_h": 4,
+     "tags": [
+      "accessibilite"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Portes ouvertes",
+      "en": "Open doors"
+     },
+     "icone": "cartes/daltonisme.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FI-03",
+   "acte": "finition",
+   "type": "principale",
+   "ordre": 84,
+   "titre": {
+    "fr": "La première minute",
+    "en": "The first minute"
+   },
+   "pitch": {
+    "fr": "Si le joueur ne comprend pas en une minute, il part.",
+    "en": "If players don't get it in a minute, they leave."
+   },
+   "objectif": {
+    "fr": "Un tutoriel ou une première minute guidée.",
+    "en": "A tutorial or a guided first minute."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-CO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "tutoriel",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/*{tutorial,Tutorial,tuto,Tuto}*.{scene}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une scène de tutoriel, ou tâche « tutoriel » versée.",
+    "en": "A tutorial scene, or a delivered \"tutorial\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "level-designer",
+      "mission": {
+       "fr": "Conçois la première minute : apprendre le verbe sans texte si possible.",
+       "en": "Design the first minute: learn the verb without text if possible."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Prise en main",
+      "en": "Getting started"
+     },
+     "icone": "cartes/ampoule.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-SU-03",
+   "acte": "finition",
+   "type": "secondaire",
+   "soutien": true,
+   "ordre": 85,
+   "titre": {
+    "fr": "Un optimiseur dans l'équipe",
+    "en": "An optimizer on the team"
+   },
+   "pitch": {
+    "fr": "Le jeu grossit : quelqu'un doit garder l'œil sur les images par seconde.",
+    "en": "The game is growing: someone must keep an eye on frames per second."
+   },
+   "objectif": {
+    "fr": "Embaucher l'optimiseur : il mesure et propose des gains, jalon après jalon.",
+    "en": "Hire the optimizer: he measures and proposes gains, milestone after milestone."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "un_de": [
+     {
+      "signal": "roadmap.pct",
+      "op": "ge",
+      "valeur": 55
+     },
+     {
+      "signal": "roadmap.jalons_finis",
+      "op": "ge",
+      "valeur": 3
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "equipe",
+      "skill": "gamedev:performance-optimization",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "La recrue « optimiseur » dans .studio/recrues/.",
+    "en": "The \"optimiseur\" recruit in .studio/recrues/."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "optimiseur",
+      "mission": {
+       "fr": "Mesure les performances à chaque version et propose les trois gains les plus rentables.",
+       "en": "Measure performance on every build and propose the three most worthwhile gains."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Toujours fluide",
+      "en": "Always smooth"
+     },
+     "icone": "cartes/chrono.svg",
+     "son": "moyen"
+    },
+    "deblocage": {
+     "agent": "optimiseur",
+     "bureau": "coin",
+     "reglage": "soutien.optimiseur"
+    }
+   }
+  },
+  {
+   "id": "Q-FI-04",
+   "acte": "finition",
+   "type": "principale",
+   "ordre": 86,
+   "titre": {
+    "fr": "Chasse aux ralentissements",
+    "en": "Hunt the slowdowns"
+   },
+   "pitch": {
+    "fr": "Le jeu grossit : mesurons avant que ça rame.",
+    "en": "The game is growing: measure before it stutters."
+   },
+   "objectif": {
+    "fr": "Une mesure de performance et une passe d'optimisation.",
+    "en": "A performance measurement and an optimization pass."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "un_de": [
+       {
+        "signal": "roadmap.pct",
+        "op": "ge",
+        "valeur": 60
+       },
+       {
+        "signal": "roadmap.jalons_finis",
+        "op": "ge",
+        "valeur": 3
+       }
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "perf",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Tâche « perf » versée (avec mesures avant / après).",
+    "en": "A delivered \"perf\" task (with before / after numbers)."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "optimiseur",
+      "mission": {
+       "fr": "Mesure les images par seconde sur la machine cible, trouve les trois pires coûts et corrige-les.",
+       "en": "Measure frame rate on the target machine, find the three worst costs and fix them."
+      }
+     }
+    ],
+    "skills": [],
+    "tache": {
+     "titre": {
+      "fr": "Passe de performance",
+      "en": "Performance pass"
+     },
+     "critere": {
+      "fr": "cible d'images par seconde tenue, mesures écrites",
+      "en": "frame-rate target met, numbers written down"
+     },
+     "poste": "integration-moteur",
+     "estimation_h": 4,
+     "tags": [
+      "perf"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Fluide",
+      "en": "Smooth"
+     },
+     "icone": "cartes/chrono.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-FI-05",
+   "acte": "finition",
+   "type": "principale",
+   "ordre": 88,
+   "titre": {
+    "fr": "Fais jouer quelqu'un d'autre",
+    "en": "Have someone else play"
+   },
+   "pitch": {
+    "fr": "Un regard neuf trouve ce que tu ne vois plus.",
+    "en": "Fresh eyes find what you no longer see."
+   },
+   "objectif": {
+    "fr": "Une séance d'essai notée, avec les retours triés.",
+    "en": "A recorded playtest, with sorted feedback."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-04",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     },
+     {
+      "signal": "roadmap.pct",
+      "op": "ge",
+      "valeur": 50
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "docs/**/*{playtest,retours,feedback,Playtest}*.md"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un compte rendu de séance dans docs/.",
+    "en": "A playtest report in docs/."
+   },
+   "preuve_type": "doc",
+   "propositions": {
+    "agents": [
+     {
+      "agent": "testeur",
+      "mission": {
+       "fr": "Prépare la séance (consignes, questions), puis trie les retours en tâches.",
+       "en": "Prepare the session (instructions, questions), then sort feedback into tasks."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Merci, testeur",
+      "en": "Thanks, tester"
+     },
+     "icone": "cartes/equipe.svg",
+     "son": "moyen"
+    },
+    "decor": "tableau_bugs"
+   }
+  },
+  {
+   "id": "Q-SO-01",
+   "acte": "sortie",
+   "type": "principale",
+   "ordre": 90,
+   "titre": {
+    "fr": "Un export qui marche",
+    "en": "An export that works"
+   },
+   "pitch": {
+    "fr": "Le jeu doit tourner ailleurs que sur ta machine.",
+    "en": "The game must run somewhere other than your machine."
+   },
+   "objectif": {
+    "fr": "Une version exportée qui se lance hors de l'éditeur.",
+    "en": "An exported build that runs outside the editor."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "roadmap.pct",
+      "op": "ge",
+      "valeur": 70
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "export",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "build*/**/*.{exe,pck,apk,aab,zip,app,wasm}",
+       "export*/**/*.{exe,pck,apk,aab,zip,app,wasm}",
+       "dist/**/index.html"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un export dans build/, export/ ou dist/, ou tâche « export » versée.",
+    "en": "An export in build/, export/ or dist/, or a delivered \"export\" task."
+   },
+   "preuve_type": "export",
+   "propositions": {
+    "agents": [
+     {
+      "agent": "editeur",
+      "mission": {
+       "fr": "Fais un export propre pour chaque plateforme cible et vérifie qu'il se lance.",
+       "en": "Make a clean export for each target platform and check it runs."
+      }
+     }
+    ],
+    "skills": [],
+    "skills_par_moteur": {
+     "godot": [
+      "gamedev:godot-export"
+     ],
+     "unity": [
+      "gamedev:unity-build-pipeline"
+     ],
+     "unreal": [
+      "gamedev:unreal-packaging"
+     ]
+    }
+   },
+   "recompense": {
+    "xp": 200,
+    "succes": {
+     "titre": {
+      "fr": "Prêt à partir",
+      "en": "Ready to ship"
+     },
+     "icone": "cartes/boite_grande.svg",
+     "son": "moyen"
+    },
+    "decor": "carton_sortie"
+   }
+  },
+  {
+   "id": "Q-SO-02",
+   "acte": "sortie",
+   "type": "principale",
+   "ordre": 92,
+   "titre": {
+    "fr": "Ta vitrine",
+    "en": "Your storefront"
+   },
+   "pitch": {
+    "fr": "Les joueurs doivent pouvoir trouver ton jeu.",
+    "en": "Players need to be able to find your game."
+   },
+   "objectif": {
+    "fr": "Le texte, les captures et la fiche du magasin prêts (pas publiés).",
+    "en": "Store text, screenshots and page ready (not published)."
+   },
+   "si": {
+    "tous": [
+     {
+      "signal": "reponse",
+      "cle": "monetisation.publication",
+      "op": "pas_dans",
+      "valeur": [
+       "nulle_part"
+      ]
+     }
+    ]
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-SO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "magasin",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{store,magasin,presskit,press}/**/*.*"
+      ],
+      "op": "ge",
+      "valeur": 3
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un dossier store/ ou presskit/, ou tâche « magasin » versée.",
+    "en": "A store/ or presskit/ folder, or a delivered \"store\" task."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "editeur",
+      "mission": {
+       "fr": "Prépare la fiche du magasin (texte court et long, 5 captures, capsule) sans rien publier.",
+       "en": "Prepare the store page (short and long text, 5 screenshots, capsule) without publishing anything."
+      }
+     }
+    ],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "En vitrine",
+      "en": "In the window"
+     },
+     "icone": "cartes/vitrine.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-SO-03",
+   "acte": "sortie",
+   "type": "secondaire",
+   "ordre": 94,
+   "titre": {
+    "fr": "Bande-annonce",
+    "en": "Trailer"
+   },
+   "pitch": {
+    "fr": "Trente secondes pour donner envie.",
+    "en": "Thirty seconds to make them want it."
+   },
+   "objectif": {
+    "fr": "Une bande-annonce courte du jeu.",
+    "en": "A short trailer of the game."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-SO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "roadmap.tag",
+      "tag": "bande_annonce",
+      "mesure": "verse",
+      "op": "ge",
+      "valeur": 1
+     },
+     {
+      "signal": "fichier",
+      "motifs": [
+       "**/{trailer,bande_annonce,presskit,press,store}/**/*.{mp4,webm,mov}"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Une vidéo dans trailer/ ou presskit/.",
+    "en": "A video in trailer/ or presskit/."
+   },
+   "propositions": {
+    "agents": [
+     {
+      "agent": "editeur",
+      "mission": {
+       "fr": "Monte une bande-annonce de 30 à 60 s à partir de captures du jeu.",
+       "en": "Cut a 30-60 s trailer from game footage."
+      }
+     }
+    ],
+    "skills": [
+     "ecc:video-editing"
+    ]
+   },
+   "recompense": {
+    "xp": 150,
+    "succes": {
+     "titre": {
+      "fr": "Moteur, action !",
+      "en": "Roll camera!"
+     },
+     "icone": "cartes/clap.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-SO-04",
+   "acte": "sortie",
+   "type": "principale",
+   "ordre": 96,
+   "titre": {
+    "fr": "Licences en règle",
+    "en": "Licences in order"
+   },
+   "pitch": {
+    "fr": "Polices, sons, images : chaque emprunt a son crédit.",
+    "en": "Fonts, sounds, images: every borrowed asset gets credit."
+   },
+   "objectif": {
+    "fr": "Un fichier de crédits et de licences à jour.",
+    "en": "An up-to-date credits and licences file."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-SO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "fichier",
+      "motifs": [
+       "CREDITS*",
+       "docs/CREDITS*",
+       "docs/LICENCES*",
+       "docs/LICENSES*",
+       "THIRD_PARTY*"
+      ],
+      "op": "ge",
+      "valeur": 1
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "CREDITS ou docs/LICENCES dans le projet.",
+    "en": "CREDITS or docs/LICENSES in the project."
+   },
+   "preuve_type": "doc",
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "Propre et net",
+      "en": "All above board"
+     },
+     "icone": "cartes/balance.svg",
+     "son": "moyen"
+    }
+   }
+  },
+  {
+   "id": "Q-SO-05",
+   "acte": "sortie",
+   "type": "principale",
+   "ordre": 99,
+   "titre": {
+    "fr": "Version 1.0",
+    "en": "Version 1.0"
+   },
+   "pitch": {
+    "fr": "Tout est prêt : il ne manque que le grand jour.",
+    "en": "Everything is ready: only the big day is missing."
+   },
+   "objectif": {
+    "fr": "Un tag 1.0 dans git (la publication reste ta décision).",
+    "en": "A 1.0 tag in git (publishing stays your call)."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-SO-01",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     },
+     {
+      "signal": "quete",
+      "id": "Q-SO-04",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "un_de": [
+     {
+      "signal": "git.tag",
+      "motif": "v1*",
+      "op": "existe"
+     },
+     {
+      "signal": "git.tag",
+      "motif": "1.0*",
+      "op": "existe"
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "Un tag v1.0 (ou 1.0) dans le dépôt.",
+    "en": "A v1.0 (or 1.0) tag in the repository."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 500,
+    "succes": {
+     "titre": {
+      "fr": "Le jeu est fini",
+      "en": "The game is finished"
+     },
+     "icone": "cartes/trophee.svg",
+     "son": "grand"
+    },
+    "decor": "vitrine_trophee",
+    "titre": {
+     "fr": "Chef de studio",
+     "en": "Studio head"
+    }
+   }
+  }
+ ],
+ "deblocages": {
+  "boutons": {
+   "audit": {
+    "libelle": {
+     "fr": "Audit",
+     "en": "Audit"
+    },
+    "agent": "auditeur",
+    "place": "barre_haut",
+    "infobulle": {
+     "fr": "Demande un audit impartial du projet et du studio.",
+     "en": "Ask for an impartial audit of the project and the studio."
+    }
+   },
+   "modeles": {
+    "libelle": {
+     "fr": "Le bon modèle pour chacun",
+     "en": "The right model for each"
+    },
+    "agent": "controleur-modeles",
+    "place": "barre_haut",
+    "infobulle": {
+     "fr": "Choisit le modèle de chaque agent selon sa tâche.",
+     "en": "Picks each agent's model for its task."
+    }
+   }
+  },
+  "regle": {
+   "fr": "Un bouton débloqué n'apparaît que si son agent de soutien est embauché et actif dans les Réglages (soutien.<agent>).",
+   "en": "An unlocked button only shows if its support agent is hired and enabled in Settings (soutien.<agent>)."
+  }
+ }
+}

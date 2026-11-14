@@ -113,6 +113,9 @@ def main():
     if not os.path.isdir(studio):
         return
     texte = masquer(reponse_du_tour(chemin))
+    # réponse sans contenu (un « . », ponctuation seule) : rien à montrer dans le studio
+    if not re.search(r"[A-Za-z0-9À-ÿ]", texte or ""):
+        texte = ""
     if not texte:
         return
     sortie = os.path.join(studio, "journal_assistant.json")

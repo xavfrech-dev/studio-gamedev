@@ -49,6 +49,9 @@ import sys
 import time
 
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sante_machine  # noqa: E402  (Santé du PC : disques, températures, ménage proposé)
 FAITS = ("verse", "ecart")
 ICI = os.path.dirname(os.path.abspath(__file__))
 POIDS_AV = {"verse": 1, "ecart": 1, "pret": 0.7, "en_cours": 0.35, "a_faire": 0}
@@ -141,10 +144,12 @@ def _mem_pct():
 
 def _gpu():
     try:
-        r = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total", "--format=csv,noheader,nounits"],
+        r = subprocess.run(["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu", "--format=csv,noheader,nounits"],
                            capture_output=True, text=True, timeout=5, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-        u, mu, mt = [float(x) for x in r.stdout.strip().splitlines()[0].split(",")]
-        return {"gpu": int(u), "vram_pct": int(round(100 * mu / mt)) if mt else None}
+        v = [x.strip() for x in r.stdout.strip().splitlines()[0].split(",")]
+        u, mu, mt = (float(x) for x in v[:3])
+        tp = int(float(v[3])) if len(v) > 3 and re.match(r"^\d+(\.\d+)?$", v[3]) else None
+        return {"gpu": int(u), "vram_pct": int(round(100 * mu / mt)) if mt else None, "gpu_temp": tp}
     except Exception:
         return {}
 
@@ -163,6 +168,10 @@ def mesures_pc():
     return dict({"cpu": cpu, "memoire_pct": mem, "cpu_sature_min": sum(1 for _, v in _CPU_HIST[-10:] if v >= 92)}, **_GPU["v"])
 
 
+_SAT_DEPUIS = [0]
+SATURATION_TOLEREE_MIN = 15
+
+
 def sante_pc(sy, en=False):
     alertes = []
     if (sy.get("cpu_sature_min") or 0) >= 8:
@@ -175,8 +184,34 @@ def sante_pc(sy, en=False):
     pauses = (["space out heavy tasks; automatic assignments wait until the saturation ends", "one heavy tool (engine, 3D render) at a time"] if en else
               ["espacer les tâches lourdes ; les attributions automatiques attendent la fin de la saturation",
                "un seul outil lourd (moteur, rendu 3D) à la fois"]) if alertes else []
-    return {"sature": bool(alertes), "alertes": alertes, "pauses": pauses, "charge": int(charge)}
+    # Saturation passagère (petites tâches, quelques minutes) : on laisse tourner. Les automatismes ne sont freinés
+    # (« bloquant ») que si le disque est presque plein ou si la saturation dure plus de SATURATION_TOLEREE_MIN minutes.
+    maintenant = time.time()
+    _SAT_DEPUIS[0] = (_SAT_DEPUIS[0] or maintenant) if alertes else 0
+    duree = int((maintenant - _SAT_DEPUIS[0]) / 60) if _SAT_DEPUIS[0] else 0
+    disque = sy.get("disque_libre_go") is not None and sy["disque_libre_go"] < 30
+    bloquant = bool(alertes) and (disque or duree >= SATURATION_TOLEREE_MIN)
+    if alertes and not bloquant:
+        pauses = [f"brief saturation ({duree} min): work goes on; automations slow down only if it lasts over {SATURATION_TOLEREE_MIN} min" if en
+                  else f"saturation passagère ({duree} min) : on laisse tourner ; les automatismes ne ralentissent que si ça dure plus de {SATURATION_TOLEREE_MIN} min"]
+    return {"sature": bool(alertes), "bloquant": bloquant, "sature_depuis_min": duree, "alertes": alertes, "pauses": pauses, "charge": int(charge)}
 
+
+
+def sante_complements(sy, en=False):
+    """Tous les disques, températures, avertissements (non bloquants) : autres disques presque pleins, chauffe."""
+    temps = sy.get("temperatures") or {}
+    av = []
+    for d in sy.get("disques") or []:
+        if not d.get("projet") and (d.get("libre_pct", 100) < 8 or (d.get("libre_go") or 0) < 10):
+            av.append(f"disk {d['lettre']} almost full ({d['libre_go']} GB free)" if en else f"disque {d['lettre']} presque plein ({d['libre_go']} Go libres)")
+        if isinstance(d.get("temp_c"), (int, float)) and d["temp_c"] >= 65:
+            av.append(f"disk {d['lettre']} hot ({d['temp_c']} °C)" if en else f"disque {d['lettre']} chaud ({d['temp_c']} °C)")
+    if isinstance(temps.get("cpu_c"), (int, float)) and temps["cpu_c"] >= 95:
+        av.append(f"CPU hot ({temps['cpu_c']} °C)" if en else f"processeur chaud ({temps['cpu_c']} °C)")
+    if isinstance(sy.get("gpu_temp"), (int, float)) and sy["gpu_temp"] >= 87:
+        av.append(f"GPU hot ({sy['gpu_temp']} °C)" if en else f"carte graphique chaude ({sy['gpu_temp']} °C)")
+    return {"disques": sy.get("disques") or [], "temperatures": temps, "gpu_temp": sy.get("gpu_temp"), "avertissements": av}
 
 
 def dans(p, racine):
@@ -313,6 +348,25 @@ def traduire_sugg(texte):
     return texte
 
 
+# Studios jumeaux (même règle dans les deux) : tant que le % d'un agent monte, sa fin prévue ne recule pas (un agent qui
+# réécrit 5 puis 9 min restantes à 98 % ne fait plus remonter le temps affiché). La fin peut reculer si le % baisse
+# (nouvelle étape), si l'ancienne fin est déjà passée (la barre était « en retard »), ou après 1 h sans recalage.
+_FIN_MEMO = {}
+
+
+def fin_sans_recul(cle, pct, fin_t, maintenant=None, memo=None):
+    memo = _FIN_MEMO if memo is None else memo
+    maintenant = time.time() if maintenant is None else maintenant
+    pct = float(pct) if isinstance(pct, (int, float)) and not isinstance(pct, bool) else None
+    v = memo.get(cle)
+    if (v and pct is not None and v[0] is not None and pct >= v[0] and fin_t > v[1] and v[1] > maintenant
+            and maintenant - v[2] < 3600):
+        memo[cle] = (pct, v[1], v[2])
+        return v[1]
+    memo[cle] = (pct, fin_t, maintenant)
+    return fin_t
+
+
 class Memo:
     """Garde un résultat coûteux quelques secondes (et l'ancienne valeur en cas d'erreur)."""
     def __init__(self):
@@ -345,6 +399,7 @@ class Studio:
         self.mur_iter, self.mur_connus, self.mur_dossiers = {}, {}, {}
         self.depuis = {}
         self.anomalies = {}         # fichier d'agent illisible -> {fichier, raison, vu} : ignoré, signalé
+        self.menage_srv = None      # ménage proposé de Santé du PC (sante_machine.Menage), créé au premier passage
 
     def lire_agent(self, chemin):
         """JSON écrit par un agent : illisible (ou pas un objet) = ignoré et noté dans les anomalies, jamais bloquant."""
@@ -395,8 +450,11 @@ class Studio:
         """Noms des processus en cours (minuscules, sans .exe). Commande fixe, lecture seule."""
         try:
             if os.name == "nt":
-                r = subprocess.run(["tasklist", "/fo", "csv", "/nh"], **SUBPROC)
-                noms = [l.split('","')[0].strip('"') for l in r.stdout.splitlines() if l.startswith('"')]
+                try:
+                    noms = exe_windows()          # lecture directe : rapide même quand la machine est saturée
+                except Exception:
+                    r = subprocess.run(["tasklist", "/fo", "csv", "/nh"], **SUBPROC)
+                    noms = [l.split('","')[0].strip('"') for l in r.stdout.splitlines() if l.startswith('"')]
             else:
                 r = subprocess.run(["ps", "-A", "-o", "args="], **SUBPROC)   # S13 : « comm » coupe les noms à 15 caractères sous Linux
                 noms = [os.path.basename(l.strip().split(" ")[0]) for l in r.stdout.splitlines() if l.strip()]
@@ -416,6 +474,8 @@ class Studio:
             br = g("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
             st = [l[3:] for l in g("status", "--porcelain", "--untracked-files=no").stdout.splitlines() if len(l) > 3]
             lg = g("log", "-8", "--format=%h%x1f%s%x1f%ct").stdout.splitlines()
+            minuit = int(time.mktime(time.localtime()[:3] + (0, 0, 0, 0, 0, -1)))
+            jour = g("rev-list", "--count", f"--since={minuit}", "HEAD").stdout.strip()   # commits du jour (conversations du studio)
         except Exception:
             return None
         commits = []
@@ -423,7 +483,8 @@ class Studio:
             p = l.split("\x1f")
             if len(p) == 3:
                 commits.append({"hash": p[0], "sujet": court(p[1], 120), "h": hm(int(p[2] or 0)), "t": int(p[2] or 0)})
-        return {"branche": br, "sales": len(st), "fichiers_sales": st[:8], "commits": commits}
+        return {"branche": br, "sales": len(st), "fichiers_sales": st[:8], "commits": commits,
+                "commits_jour": int(jour) if jour.isdigit() else None}
 
     def systeme(self, conf):
         try:
@@ -431,7 +492,44 @@ class Studio:
             libre = round(u.free / 1e9, 1)
         except OSError:
             libre = None
-        return dict({"disque_libre_go": libre}, **mesures_pc())
+        # Santé du PC, « vrai agent » (sante_machine.py) : tous les disques fixes et les températures (si activées)
+        try:
+            temps = sante_machine.temperatures(self.f("sante"), self.en())
+        except Exception as e:  # noqa: une source en panne ne coupe pas le reste
+            temps = {"etat": "non_disponible", "message": f"{type(e).__name__} : {e}"[:160], "disques": {}}
+        try:
+            disques = sante_machine.disques(self.projet, temps.get("disques") or {})
+        except Exception:
+            disques = []
+        return dict({"disque_libre_go": libre, "disques": disques, "temperatures": temps}, **mesures_pc())
+
+    # ---------------- ménage proposé (Santé du PC) : analyse, décision sous la cloche, rien sans « Faire ce ménage »
+    def cfg_menage(self, conf):
+        """Dossiers du projet et de ses caches seulement : caches du moteur dans le projet, builds (studio.config.json
+        « dossiers_builds », dans le projet ou --donnees, sinon Builds/Packaged/Saved/StagedBuilds ; jamais Build/, la configuration de plateforme d Unreal), worktrees fusionnés
+        du dépôt du projet, fichiers *.tmp de .studio, corbeille du disque concerné (réglage sante.corbeille, oui par défaut)."""
+        sa = conf.get("sante") if isinstance(conf.get("sante"), dict) else {}
+        seuils = conf.get("seuils") if isinstance(conf.get("seuils"), dict) else {}
+        builds = []
+        for b in (conf.get("dossiers_builds") if isinstance(conf.get("dossiers_builds"), list) else None) or ["Builds", "Packaged", "Saved/StagedBuilds"]:
+            if not isinstance(b, str) or not b.strip():
+                continue
+            p = os.path.realpath(b if os.path.isabs(b) else os.path.join(self.projet, *b.split("/")))
+            if (dans(p, self.projet) or (self.donnees and dans(p, self.donnees))) and p != self.projet and os.path.isdir(p):
+                builds.append(p)
+        return {"projets": [self.projet], "depots": [self.projet] if os.path.exists(os.path.join(self.projet, ".git")) else [],
+                "builds": builds, "temporaires": [(self.dossier, r"\.tmp$")], "corbeille": sa.get("corbeille", True) is not False,
+                "seuil_go": float(sa.get("menage_seuil_go") or seuils.get("menage_go") or 30), "seuil_pct": float(sa.get("menage_seuil_pct") or 8),
+                "min_go": float(sa.get("menage_min_go") or 1), "langue": "en" if self.en() else "fr", "principale": sa.get("branche_principale")}
+
+    def menage(self, conf, sysinfo, ouverts):
+        if self.menage_srv is None:
+            self.menage_srv = sante_machine.Menage(self.f("sante"), self.cfg_menage(conf))
+        else:
+            self.menage_srv.cfg = self.cfg_menage(conf)
+        reps = lire_json(self.f("reponses.json"), [])
+        reps = {x.get("id"): x for x in (reps if isinstance(reps, list) else []) if isinstance(x, dict) and x.get("id")}
+        return self.menage_srv.passer(sysinfo.get("disques") or [], bool(ouverts), reps)
 
     def session_active(self, conf):
         """Âge (min) du journal de session Claude Code le plus récent du projet (lecture de la date seulement)."""
@@ -506,14 +604,19 @@ class Studio:
 
     def messages(self):
         """Fil de la page : les 40 derniers messages de l'utilisateur (demandes_vocales/), pour la vue Conversation."""
-        out = []
-        for f in sorted(glob.glob(self.f("demandes_vocales", "*.json")))[-40:]:
+        def ligne(f):
             d = lire_json(f, None)
             if isinstance(d, dict) and d.get("texte"):
-                out.append({"id": str(d.get("id") or os.path.basename(f)[:-5])[:80], "cible": str(d.get("cible") or "")[:40],
-                            "texte": str(d["texte"])[:600], "cree_le": str(d.get("cree_le") or "")[:19],
-                            "statut": str(d.get("statut") or "nouvelle")[:20], "via": str(d.get("via") or "")[:10]})
-        return out
+                return {"id": str(d.get("id") or os.path.basename(f)[:-5])[:80], "cible": str(d.get("cible") or "")[:40],
+                        "texte": str(d["texte"])[:600], "cree_le": str(d.get("cree_le") or "")[:19],
+                        "statut": str(d.get("statut") or "nouvelle")[:20], "via": str(d.get("via") or "")[:10],
+                        **({"pieces": [os.path.basename(str(x))[:90] for x in d["pieces"][:10]]} if isinstance(d.get("pieces"), list) and d["pieces"] else {})}
+            return None
+        tous = sorted(glob.glob(self.f("demandes_vocales", "*.json")))
+        fil = tous[-40:]
+        # la dernière demande à l'auditeur et au contrôleur des modèles reste connue de la page même hors des 40 derniers
+        avant = [f for c in ("auditeur", "controleur-modeles") for f in [next((x for x in reversed(tous) if x.endswith("_" + c + ".json")), None)] if f and f not in fil]
+        return [x for x in map(ligne, sorted(avant) + fil) if x]
 
     def attentes(self):
         a = lire_json(self.f("attentes.json"), {})
@@ -699,7 +802,7 @@ class Studio:
                 elif lancee:
                     complet = lancee["titre"] or tx("demande lancée", "request started")
                 elif ouvert:
-                    complet = f"{ouvert['nom']} " + tx("ouvert", "open") + (f" : {texte_prog}" if texte_prog and not fini_prog else "")
+                    complet = f"{ouvert['nom']} " + tx("ouvert", "open") + (tx(" : ", ": ") + texte_prog if texte_prog and not fini_prog else "")
                 elif pid == sess_poste:
                     complet = tx("orchestre la session", "runs the session")
                 else:
@@ -710,7 +813,7 @@ class Studio:
                 elif dem:
                     picto, complet = "⏸", tx("attend le lancement : ", "waiting to start: ") + (dem[0]["titre"] or dem[0]["fichier"])
                 elif prog is not None and not fini_prog and texte_prog:
-                    picto, complet = "⏸", tx("en pause", "paused") + f" ({int(prog_age or 0)} min) : {texte_prog}"
+                    picto, complet = "⏸", tx("en pause", "paused") + f" ({int(prog_age or 0)} min)" + tx(" : ", ": ") + texte_prog
                 elif a.get("suite"):
                     picto, complet = "↔", tx("suite : ", "next: ") + court(a["suite"], 100)
                 elif restantes:
@@ -741,6 +844,9 @@ class Studio:
                     q["fin_t"] = int(q["progression_t"] + r_ * 60)
                 elif isinstance(q.get("restant_min"), (int, float)):
                     q["fin_t"] = int(time.time() + q["restant_min"] * 60)
+                if q.get("fin_t"):
+                    q["fin_t"] = fin_sans_recul(pid, q.get("progression"), q["fin_t"])
+                    q["restant_min"] = max(0, int(round((q["fin_t"] - time.time()) / 60)))
             q["fin_de_tache"] = bool(etat == "disponible" and fini_prog and prog_age is not None and prog_age >= CALME_FIN_MIN
                                      and not lancee and not (chaine and chaine.get("poste") == pid))
             if q["fin_de_tache"]:
@@ -863,21 +969,42 @@ class Studio:
                                        "(réembauche possible) ; rien n'est fait sans ta réponse.",
                         "choix": [{"id": "renvoyer", "libelle": "Renvoyer"}, {"id": "garder", "libelle": "Garder"}],
                         "recommande": "garder", "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(q["depuis"] + RENVOI_LIBRE_H * 3600))})
+        try:                                                # Santé du PC : ménage proposé (une décision, sous la cloche)
+            dm = self.menage_srv.decision() if self.menage_srv else None
+            if dm and dm["id"] not in repondues:
+                out.append(dm)
+        except Exception as e:
+            print("erreur décision ménage", repr(e), flush=True)
         chemin = self.f("decisions_studio.json")
         if lire_json(chemin, None) != out:
             ecrire_json(chemin, out, indent=1)
         return out
 
     # ---------------- mur d'images
-    def musiques(self, conf):
-        """Radio du studio : les musiques du jeu de l'utilisateur, copiées dans .studio/musique/ (servies par le serveur).
-        Sources : conf["sources_musique"] (motifs dans le projet, comme sources_images) ; sinon les dossiers « music » ou
-        « musique » des trois premiers niveaux du projet. Rien s'il n'y en a pas. 20 morceaux, 15 Mo chacun au plus."""
-        motifs = [s_.get("motif") for s_ in (conf.get("sources_musique") or []) if isinstance(s_, dict) and isinstance(s_.get("motif"), str)]
+    # ---------------- radio : musiques et ambiances du jeu (lecture seule du projet)
+    AUDIO_EXT = (".ogg", ".mp3", ".wav", ".flac", ".opus")
+
+    def _decouverte_audio(self):
+        """outils/decouverte_audio.py, mis en cache 10 min (parcours borné à 40 000 entrées)."""
+        c = getattr(self, "_decouv_cache", None)
+        if c and time.time() - c[0] < 600:
+            return c[1]
+        try:
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("decouverte_audio", os.path.join(ICI, "outils", "decouverte_audio.py"))
+            mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+            r = mod.decouvrir(self.projet)
+        except Exception as e:  # noqa: la radio n'empêche jamais l'état
+            print("découverte audio", repr(e), flush=True)
+            r = ([], [])
+        self._decouv_cache = (time.time(), r)
+        return r
+
+    def _sources_audio(self, conf, cle, i_decouv):
+        motifs = [s_.get("motif") for s_ in (conf.get(cle) or []) if isinstance(s_, dict) and isinstance(s_.get("motif"), str)]
         if not motifs:
-            motifs = [f"{p}[Mm]usi[cq]*/{e}" for p in ("", "*/", "*/*/") for e in ("*.ogg", "*.mp3")]
-        dossier = self.f("musique")
-        trouves = {}
+            return self._decouverte_audio()[i_decouv]
+        trouves = set()
         for m in motifs:
             if "{{" in m:
                 continue
@@ -885,39 +1012,81 @@ class Studio:
             if not motif:
                 continue
             try:
-                fichiers = glob.glob(motif, recursive=True)[:200]
+                fichiers = glob.glob(motif, recursive=True)[:400]
             except Exception:
                 continue
             for p in fichiers:
-                ext = os.path.splitext(p)[1].lower()
-                try:                                          # F37 : un lien cassé ne coupe plus toute la radio
-                    if ext in (".ogg", ".mp3", ".wav") and dans(os.path.realpath(p), racine) and 0 < os.path.getsize(p) <= 15 * 1024 * 1024:
-                        trouves[p] = ext
+                try:
+                    if p.lower().endswith(self.AUDIO_EXT) and dans(os.path.realpath(p), racine):
+                        trouves.add(p)
                 except OSError:
                     continue
-        if not trouves:
-            return []
-        os.makedirs(dossier, exist_ok=True)
-        out, garder = [], set()
-        for p, ext in sorted(trouves.items())[:20]:
-            nom = re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(p))[0])[:52]
-            nom = (nom + ext) if nom + ext not in garder else f"{nom}_{len(garder)}{ext}"   # F37 : deux theme.ogg ne s'écrasent plus
-            dst = os.path.join(dossier, nom)
+        return sorted(trouves)
+
+    def _remplir_audio(self, genre, dossier, sources, encoder, max_copie, max_n):
+        """Copie (ou encode avec ffmpeg) les sources dans .studio/<dossier>/, toujours en tâche de fond ; rend la liste prête."""
+        dest = self.f(dossier)
+        def nom_de(p, ext):
+            return re.sub(r"[^A-Za-z0-9_-]+", "_", os.path.splitext(os.path.basename(p))[0])[:60] + ext
+        def remplir():
             try:
-                if not os.path.exists(dst) or os.path.getsize(dst) != os.path.getsize(p):
-                    shutil.copyfile(p, dst + ".tmp")
-                    os.replace(dst + ".tmp", dst)
-            except OSError:
-                continue
-            garder.add(nom)
-            out.append("musique/" + nom)
-        for f in os.listdir(dossier):          # seul le dossier musique/ est nettoyé
-            if f not in garder:
-                try:
-                    os.remove(os.path.join(dossier, f))
-                except OSError:
-                    pass
-        return out
+                os.makedirs(dest, exist_ok=True)
+                ff, garder, n = shutil.which("ffmpeg"), set(), 0
+                for p in sources[:max_n]:
+                    ext = os.path.splitext(p)[1].lower()
+                    try:
+                        taille = os.path.getsize(p)
+                    except OSError:
+                        continue
+                    direct = ext in (".ogg", ".mp3") and taille <= max_copie and not (encoder and ff)
+                    nom = nom_de(p, ext if direct or not ff else ".ogg")
+                    if nom in garder:
+                        nom = nom_de(p, "")[:52] + f"_{len(garder)}" + os.path.splitext(nom)[1]
+                    garder.add(nom); dst = os.path.join(dest, nom)
+                    if os.path.exists(dst) and (not direct or os.path.getsize(dst) == taille):
+                        continue
+                    if ff and not direct:
+                        args = [ff, "-v", "error", "-y", "-i", p] + (["-ac", "1", "-ar", "32000", "-q:a", "1"] if encoder else ["-ar", "44100", "-q:a", "4"]) + ["-c:a", "libvorbis", "-f", "ogg", dst + ".part"]
+                        try:
+                            subprocess.run(args, timeout=240, creationflags=(0x08000000 | 0x00004000) if os.name == "nt" else 0)
+                        except Exception:
+                            continue
+                    elif taille <= max_copie:
+                        shutil.copyfile(p, dst + ".part")
+                    if os.path.exists(dst + ".part"):
+                        os.replace(dst + ".part", dst); n += 1
+                for f in os.listdir(dest):            # seul ce dossier est nettoyé : un morceau retiré du projet disparaît
+                    if f not in garder and not f.endswith(".part"):
+                        try:
+                            os.remove(os.path.join(dest, f))
+                        except OSError:
+                            pass
+            except Exception as e:  # noqa: un fichier illisible ne coupe pas la radio
+                print(genre, repr(e), flush=True)
+            finally:
+                setattr(self, "_en_cours_" + genre, False)
+        if sources and not getattr(self, "_en_cours_" + genre, False) and time.time() - getattr(self, "_fait_" + genre, 0) > 60:
+            setattr(self, "_en_cours_" + genre, True); setattr(self, "_fait_" + genre, time.time())
+            import threading
+            threading.Thread(target=remplir, daemon=False).start()   # jamais dans le passage : le premier etat.json n'attend pas ffmpeg ;
+            # pas « daemon » : avec --une-fois, le processus finit les copies après avoir écrit etat.json
+        if not os.path.isdir(dest):
+            return []
+        return sorted(dossier + "/" + f for f in os.listdir(dest) if f.lower().endswith(self.AUDIO_EXT))[:max_n]
+
+    def musiques(self, conf):
+        """Radio du studio : TOUTES les musiques du jeu (conf["sources_musique"] ; sinon découverte automatique,
+        outils/decouverte_audio.py : MUS_/music_/bgm_/ost_… ou dossiers music/musique/bgm/ost/soundtrack, en .ogg .mp3 .wav
+        .flac .opus), dans .studio/musique/. OGG et MP3 de 15 Mo au plus copiés tels quels ; le reste encodé en OGG avec
+        ffmpeg (sans ffmpeg : copié s'il fait 15 Mo au plus). 200 morceaux au plus, en tâche de fond."""
+        return self._remplir_audio("musiques", "musique", self._sources_audio(conf, "sources_musique", 0), False, 15 * 1024 * 1024, 200)
+
+    def ambiances(self, conf):
+        """Radio du studio : petits passages des ambiances du jeu (conf["sources_ambiance"] ; sinon découverte automatique),
+        dans .studio/ambiance/. Avec ffmpeg : OGG mono 32 kHz léger ; sans ffmpeg : copie des fichiers de 6 Mo au plus.
+        120 au plus, en tâche de fond ; rend tout de suite ce qui est déjà prêt."""
+        mus = set(self._sources_audio(conf, "sources_musique", 0))
+        return self._remplir_audio("ambiances", "ambiance", [p for p in self._sources_audio(conf, "sources_ambiance", 1) if p not in mus], True, 6 * 1024 * 1024, 120)
 
     def images(self, conf):
         """Copie les images récentes de sources_images dans .studio/mur/ (servies par le serveur) ; renvoie la liste."""
@@ -1060,6 +1229,30 @@ class Studio:
                 "dans_min": max(0, int(round((prochain - time.time()) / 60)))}
 
     # ---------------- passage complet
+    def quetes(self, tout=False):
+        """S4 : un passage de quetes.py toutes les 60 s, tout de suite quand la page vient de répondre à une quête ou de changer
+        un réglage des quêtes (mode du style, agents de soutien).
+        Lecture seule hors de .studio/ ; une erreur ne fige jamais l'alimentation."""
+        try:
+            if ICI not in sys.path:
+                sys.path.insert(0, ICI)
+            import quetes
+            ch = self.f("quetes_reponses.json")
+            mt = os.path.getmtime(ch) if os.path.exists(ch) else 0
+            reg = lire_json(self.f("reglages.json"), {})          # mode du style, agents de soutien, quêtes : effet au passage suivant
+            reg = reg if isinstance(reg, dict) else {}
+            mt = (mt, json.dumps({k: v for k, v in reg.items() if k in ("habillage_mode", "auditeur", "controle_modeles", "quetes_actives",
+                                  "quetes_secondaires") or str(k).startswith("soutien.")}, sort_keys=True, default=str))
+            t0, res, mt0 = self.memo.c.get("_quetes", (0, None, 0))
+            if tout or res is None or mt != mt0 or time.time() - t0 >= 60:
+                e = quetes.passe(self.projet)
+                res = {"resume": quetes.resume(e), "xp": int(e.get("xp") or 0)}
+                self.memo.c["_quetes"] = (time.time(), res, mt)
+            return res
+        except Exception as e:
+            print("erreur quêtes", repr(e), flush=True)
+            return (self.memo.c.get("_quetes", (0, None, 0))[1]) or {}
+
     def passer(self, tout=False):
         conf = self.config()
         try:
@@ -1093,6 +1286,11 @@ class Studio:
                 print("erreur analyse", repr(e), flush=True)
         sug = self.memo.c.get("_sugg", (0, []))[1] or []
         sante = sante_pc(sysinfo, self.en())
+        try:
+            sante["menage"] = self.memo("menage", 0 if tout else 15, lambda: self.menage(conf, sysinfo, ouverts))
+        except Exception as e:
+            sante["menage"] = {"statut": "erreur", "erreur": f"{type(e).__name__} : {e}"[:200]}
+        sante.update(sante_complements(sysinfo, self.en()))
         # S37 : fin de tâche, tyrannie et embauche tournent ici, sans aucun onglet ouvert ; la page ne fait plus qu'afficher
         try:
             if self.auto_srv is None:
@@ -1103,14 +1301,17 @@ class Studio:
             autos = self.auto_srv.passer(conf, postes, r, progs, ouverts, chaine, sante)
         except Exception as e:
             autos = {"serveur": False, "erreur": f"{type(e).__name__} : {e}"[:200]}
+        qres = self.quetes(tout) if conf.get("mode") == "travail" else {}
         etat = {
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "sante": sante, "automatismes": autos, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": sysinfo, "sante": sante, "automatismes": autos, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "ambiances": self.memo("ambiances", 600, lambda: self.ambiances(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }
+        if qres:                                            # S4 : quêtes (résumé) ; l'XP des quêtes s'ajoute au niveau (la page l'additionne)
+            etat["quetes"], etat["xp"] = qres.get("resume"), qres.get("xp", 0)
         ecrire_json(self.f("etat.json"), etat)
         return etat
 
@@ -1131,6 +1332,54 @@ def verrou(studio, forcer):
         verrou.pose = True
     else:
         os.utime(v, None)
+
+
+def exe_windows():
+    """Noms des programmes en cours sous Windows, lus directement (Toolhelp32 par ctypes), sans lancer de processus :
+    « tasklist » peut mettre des dizaines de secondes quand la machine est saturée (moteur qui compile, agents)."""
+    import ctypes
+
+    class PE(ctypes.Structure):
+        _fields_ = [("dwSize", ctypes.c_ulong), ("cntUsage", ctypes.c_ulong), ("th32ProcessID", ctypes.c_ulong),
+                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", ctypes.c_ulong), ("cntThreads", ctypes.c_ulong),
+                    ("th32ParentProcessID", ctypes.c_ulong), ("pcPriClassBase", ctypes.c_long), ("dwFlags", ctypes.c_ulong),
+                    ("szExeFile", ctypes.c_wchar * 260)]
+    k = ctypes.windll.kernel32
+    k.CreateToolhelp32Snapshot.restype = ctypes.c_void_p
+    h = k.CreateToolhelp32Snapshot(2, 0)
+    noms = []
+    try:
+        e = PE()
+        e.dwSize = ctypes.sizeof(PE)
+        ok = k.Process32FirstW(ctypes.c_void_p(h), ctypes.byref(e))
+        while ok:
+            noms.append(e.szExeFile)
+            ok = k.Process32NextW(ctypes.c_void_p(h), ctypes.byref(e))
+    finally:
+        k.CloseHandle(ctypes.c_void_p(h))
+    return noms
+
+
+def battement(s, intervalle):
+    """Battement de cœur : tant que l'alimentation vit, etat.json est republié (horodatage à jour, calcul_en_cours)
+    même si un passage dure plus longtemps que prévu (premier passage, machine saturée, git lent). La page n'affiche
+    donc « alimentation figée » que si le processus est vraiment arrêté."""
+    import threading
+
+    def boucle():
+        while True:
+            time.sleep(max(2.0, intervalle / 2))
+            try:
+                chemin = s.f("etat.json")
+                if not os.path.exists(chemin) or time.time() - os.path.getmtime(chemin) < max(10.0, intervalle * 1.5):
+                    continue
+                d = lire_json(chemin, None)
+                if isinstance(d, dict):
+                    d["heure"], d["horodatage"], d["calcul_en_cours"] = time.strftime("%H:%M:%S"), int(time.time()), True
+                    ecrire_json(chemin, d)
+            except Exception as e:
+                print("erreur battement", repr(e), flush=True)
+    threading.Thread(target=boucle, daemon=True).start()
 
 
 def main(argv=None):
@@ -1162,6 +1411,7 @@ def main(argv=None):
         return
     print(f"alimentation du studio : {s.dossier} (toutes les {a.intervalle:g} s)", flush=True)
     fin = time.time() + a.duree_h * 3600 if a.duree_h > 0 else float("inf")
+    battement(s, a.intervalle)
     while time.time() < fin:
         try:
             verrou(s, a.forcer)

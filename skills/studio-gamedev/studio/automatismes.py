@@ -5,11 +5,15 @@ renvoi d'une recrue sans travail), embauche automatique. Mêmes règles que la p
 (etat.json → "automatismes"). Toutes les actions passent par le serveur du studio (routes /api/confier, /api/demande,
 /api/recruter, /api/renvoyer) : il garde les plafonds (6 attributions par heure, une en attente par poste, refus si une tâche
 est en cours). État gardé dans .studio/automatismes.json. Rien ne part si les réglages sont coupés, en pause ou si la
-machine sature. Variable STUDIO_ESSAI_SANS_ENVOI : rien n'est envoyé (essais).
+machine sature. Relecteur autonome : libre, il prend lui-même une relecture utile (commits, branches, tests, tests creux,
+roadmap et doc), une toutes les 20 min au plus ; dernier commit relu dans .studio/relecteur.json. Relecture partagée :
+plus de 60 min prévues → la moitié du lot à un relecteur libre, sinon à un « Relecteur (intérim) » (2 au plus), renvoyé à
+la fin de sa part sauf relecture à faire dans les 30 min. Variable STUDIO_ESSAI_SANS_ENVOI : rien n'est envoyé (essais).
 """
 import json
 import os
 import re
+import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -24,6 +28,24 @@ MOTEUR_RE = re.compile(r"\b(moteur|engine|compil|build|shader)\b", re.I)
 ERREUR_RE = re.compile(r"erreur|error|échec|failed|exception|traceback|crash", re.I)
 FICHIER_RE = re.compile(r"(?:attend|manque|introuvable|absent|missing|waiting for)\w*\s+(?:le |la |les |l'|the )?(?:fichier\s+|file\s+)?[`«\"]?([\w./\\-]+\.(?:json|png|fbx|glb|gltf|tscn|unity|uasset|csv|md|txt|blend|wav|ogg))", re.I)
 NOM_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,39}$")
+# Relecteur autonome : libre (rien à relire, rien en attente) → il prend lui-même une relecture utile, une à la fois,
+# au plus une toutes les 20 min. Priorité : commits récents de la branche principale pas encore relus, branches prêtes
+# à intégrer pas encore relues, tests du projet, tests creux, roadmap et doc face au code. État : .studio/relecteur.json.
+RELECT_ECART_S = 20 * 60
+RELECT_BRANCHE_CALME_S = 30 * 60          # une branche dont le dernier commit a moins de 30 min est encore en travail
+RELECT_BRANCHE_AGE_S = 7 * 86400          # au-delà d'une semaine sans commit : abandonnée, pas « prête »
+RELECT_RE = re.compile(r"relect|relu|relir|revue|review|\bqa\b", re.I)
+RELECT_ROTATION = ("tests", "tests_creux", "doc")
+# Relecture partagée (règle du studio) : une relecture estimée à plus de 60 min (restant_min de sa progression)
+# est coupée en deux ; la moitié va d'abord à un autre relecteur libre, sinon à un « Relecteur (intérim) » embauché pour
+# l'occasion (2 au plus en même temps, 6 partages par heure au plus). À la fin de sa part, l'intérimaire est renvoyé
+# (« mission d'intérim finie »), sauf s'il reste une relecture à faire : on le garde alors 30 min au plus.
+PARTAGE_SEUIL_MIN = 60
+INTERIM_MAX = 2
+PARTAGE_PAR_HEURE = 6
+INTERIM_GARDE_S = 30 * 60
+INTERIM_PREFIXE = "relecteur-interim-"
+ELEMENT_RE = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+(\S.*)$")
 
 TXT = {
     "mission_tache": ("Tâche {id} : {titre}. Critère de fait : {critere}.", "Task {id}: {titre}. Done when: {critere}."),
@@ -42,6 +64,47 @@ TXT = {
     "depuis": (" depuis {m} min", " for {m} min"),
     "renvoi": ("renvoyé par le contremaître : plus de travail pour son poste", "let go by the foreman: no more work for this desk"),
     "role_emb": ("Poste « {n} » : tâches de la roadmap", "Trade “{n}”: roadmap tasks"),
+    "rl_commits_t": ("Relecture des commits {a}..{b} ({n})", "Review of commits {a}..{b} ({n})"),
+    "rl_commits": ("Relis les commits de {br} pas encore relus ({n}) :\n{liste}\nCherche les bugs, les régressions, ce qui manque de test. "
+                   "Pour chaque problème : fichier, ligne, scénario qui casse. Corrige sur une branche à part ce qui est sûr ; rien ne va dans {br} sans tests verts.",
+                   "Review the commits on {br} not reviewed yet ({n}):\n{liste}\nLook for bugs, regressions, missing tests. "
+                   "For each problem: file, line, failing scenario. Fix what is safe on a separate branch; nothing goes into {br} without green tests."),
+    "rl_branche_t": ("Relecture de la branche {b}", "Review of branch {b}"),
+    "rl_branche": ("Relis la branche {b} ({n} commit(s) d'avance sur {br}, prête à intégrer) : diff contre {br}, tests, ce qui casse. "
+                   "Verdict : à verser, à corriger (liste précise) ou à écarter.",
+                   "Review branch {b} ({n} commit(s) ahead of {br}, ready to merge): diff against {br}, tests, what breaks. "
+                   "Verdict: merge, fix (precise list) or drop."),
+    "rl_tests_t": ("Relance des tests du projet", "Re-run of the project tests"),
+    "rl_tests": ("Relance les tests du projet et cherche ce qui casse. Tests sans moteur d'abord ; ceux du moteur seulement s'il est libre "
+                 "et que la chaîne moteur te donne la main, sinon lis le dernier passage archivé. Pour chaque test rouge ou instable : cause et correction proposée.",
+                 "Re-run the project tests and find what breaks. Engine-free tests first; engine tests only if the engine is free "
+                 "and the engine chain hands it over, otherwise read the last archived run. For each red or flaky test: cause and proposed fix."),
+    "rl_creux_t": ("Chasse aux tests creux", "Hunt for hollow tests"),
+    "rl_creux": ("Traque les tests qui ne vérifient rien de réel : appels directs de fonctions internes au lieu des vraies entrées "
+                 "(touches, clics, événements du jeu), assertions toujours vraies, tests sans assertion, valeurs recopiées. "
+                 "Liste-les et propose, sur une branche à part, la version qui passe par les vraies entrées.",
+                 "Hunt for tests that check nothing real: direct calls to internal functions instead of real inputs "
+                 "(keys, clicks, game events), always-true assertions, tests without assertions, copied values. "
+                 "List them and propose, on a separate branch, a version that goes through the real inputs."),
+    "rl_doc_t": ("Roadmap et doc face au code", "Roadmap and docs against the code"),
+    "rl_doc": ("Vérifie que la roadmap et la doc collent au code : tâches marquées faites sans code ni test qui le prouve, "
+               "code versé que la roadmap ne mentionne pas, docs périmées. Liste les écarts et corrige la doc sur une branche à part.",
+               "Check that the roadmap and docs match the code: tasks marked done with no code or test proving it, "
+               "merged code the roadmap does not mention, stale docs. List the gaps and fix the docs on a separate branch."),
+    "rl_fin": ("\nAttribuée automatiquement : le relecteur était libre (rien à relire, rien en attente).",
+               "\nAssigned automatically: the reviewer was free (nothing to review, nothing pending)."),
+    "it_nom": ("Relecteur (intérim) {n}", "Reviewer (temp) {n}"),
+    "it_role": ("Relecteur (intérim) : relecture partagée, renvoyé à la fin de sa part", "Reviewer (temp): shared review, let go when the part is done"),
+    "it_titre": ("Relecture partagée · {n} élément(s) de {de}", "Shared review · {n} item(s) from {de}"),
+    "it_mission": ("Relecture partagée avec {de} (sa relecture était estimée à {m} min). Relis seulement ces éléments ({n}) :\n{liste}\n"
+                   "Pour chaque problème : fichier, ligne, scénario qui casse. Écris ta progression (pct, restant_min) ; à 100 %, ta part est finie.",
+                   "Review shared with {de} (their review was estimated at {m} min). Review only these items ({n}):\n{liste}\n"
+                   "For each problem: file, line, failing scenario. Write your progress (pct, restant_min); at 100 % your part is done."),
+    "it_garde": ("Relecture partagée (estimée à {m} min, plus d'une heure) : {avec} relit {n} élément(s) :\n{liste_av}\nTu gardes seulement :\n{liste}",
+                 "Review shared (estimated at {m} min, over an hour): {avec} reviews {n} item(s):\n{liste_av}\nYou keep only:\n{liste}"),
+    "it_bulle": ("je partage ma relecture avec un intérimaire", "I'm sharing my review with a temp"),
+    "it_bulle_libre": ("je partage ma relecture avec {n}", "I'm sharing my review with {n}"),
+    "it_motif": ("mission d'intérim finie", "temp assignment done"),
 }
 
 
@@ -63,6 +126,11 @@ def ecrire(chemin, donnees):
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(donnees, f, ensure_ascii=False, indent=1)
     os.replace(tmp, chemin)
+
+
+def elements_de(texte):
+    """Éléments d'un lot de relecture : les lignes en liste (« - x », « * x », « 1. x ») d'une mission."""
+    return [m.group(1).strip()[:200] for m in (ELEMENT_RE.match(l) for l in str(texte or "").splitlines()) if m]
 
 
 class Automatismes:
@@ -125,7 +193,7 @@ class Automatismes:
         return c["regl"].get(cle) is True
 
     def actif_tyran(self, c):
-        return c["conf"].get("mode") == "travail" and self.auto(c, "tyrannie_auto") and not c["regl"].get("pause") and not c["sante"].get("sature")
+        return c["conf"].get("mode") == "travail" and self.auto(c, "tyrannie_auto") and not c["regl"].get("pause") and not c["sante"].get("bloquant", c["sante"].get("sature"))
 
     def prog(self, c, pid):
         v = c["progs"].get(pid)
@@ -168,7 +236,7 @@ class Automatismes:
     # ---------- fin de tâche
     def fin_de_tache(self, c, maintenant):
         delai = DELAI_FIN_TYRAN_S if self.actif_tyran(c) else DELAI_FIN_S
-        attribuer = c["conf"].get("mode") == "travail" and self.auto(c, "attribution_auto") and not c["regl"].get("pause") and not c["sante"].get("sature")
+        attribuer = c["conf"].get("mode") == "travail" and self.auto(c, "attribution_auto") and not c["regl"].get("pause") and not c["sante"].get("bloquant", c["sante"].get("sature"))
         ids = {q["id"] for q in c["postes"]}
         for q in c["postes"]:
             cle = f"{q['id']}:{q.get('depuis')}"
@@ -179,9 +247,10 @@ class Automatismes:
                 self.clore(q["id"])
         for pid in [p for p in self.d["fins"] if p not in ids]:
             self.d["fins"].pop(pid, None)
+        interims = (self.d.get("interim") or {}).get("interimaires") or {}
         for pid, f in list(self.d["fins"].items()):
-            if f.get("tente") or not attribuer or maintenant - f["debut"] < delai:
-                continue
+            if f.get("tente") or not attribuer or maintenant - f["debut"] < delai or pid in interims:
+                continue                                  # un intérimaire fini n'est pas réaffecté : partage_relecture le renvoie
             f["tente"] = True
             cand = (self.candidats(c, pid) or [None])[0]
             if not cand:
@@ -258,7 +327,7 @@ class Automatismes:
         m = FICHIER_RE.search(txt)
         if m:
             return {"type": "fichier", "raison": f"waiting for file {m.group(1)}" if en else f"attend le fichier {m.group(1)}", "action": "I ask who should produce it" if en else "je demande qui doit le produire"}
-        if c["sante"].get("sature"):
+        if c["sante"].get("bloquant", c["sante"].get("sature")):
             a = str((c["sante"].get("alertes") or [""])[0])
             return {"type": "machine", "lien": "sante", "raison": ("machine saturated: " if en else "machine saturée : ") + a, "action": "see PC health" if en else "voir Santé du PC"}
         j = [str(x.get("t") or x.get("texte") or "") if isinstance(x, dict) else str(x) for x in (pr.get("journal") or [])[-5:]] + [txt]
@@ -337,7 +406,7 @@ class Automatismes:
     # ---------- embauche automatique : une tâche dont le poste n'a personne → une recrue de ce métier (une par heure)
     def embauche(self, c, maintenant):
         if (c["conf"].get("mode") != "travail" or not (self.auto(c, "embauche_auto") or self.actif_tyran(c)) or c["regl"].get("pause")
-                or c["sante"].get("sature") or len(c["postes"]) >= 12 or maintenant - self.d.get("embauche_t", 0) < 3600):
+                or c["sante"].get("bloquant", c["sante"].get("sature")) or len(c["postes"]) >= 12 or maintenant - self.d.get("embauche_t", 0) < 3600):
             return
         ids = {q["id"] for q in c["postes"]}
         tc = next((t for t in c["taches"] if t.get("statut") == "a_faire" and isinstance(t.get("poste"), str) and NOM_RE.match(t["poste"]) and t["poste"] not in ids), None)
@@ -352,6 +421,252 @@ class Automatismes:
                                           "auto": True, "apparence": "aucune", "couleur": "#%06x" % (zlib.crc32(tc["poste"].encode()) & 0xFFFFFF)})
         self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "embauche", "poste": tc["poste"], "ok": bool(r.get("ok"))})
 
+    # ---------- relecteur autonome : libre → il se trouve lui-même une relecture utile (une à la fois, une toutes les 20 min)
+    def poste_relecteur(self, c):
+        """Poste de relecture : studio.config.json → poste_relecture, sinon le premier poste dont l'id, le nom ou un métier parle de relecture."""
+        ids = [q["id"] for q in c["postes"]]
+        choisi = c["conf"].get("poste_relecture")
+        if isinstance(choisi, str) and choisi in ids:
+            return choisi
+        for q in c["postes"]:
+            ms = " ".join(str(m) for m in (c["metiers"].get(q["id"]) or []))
+            if RELECT_RE.search(f"{q['id']} {q.get('nom') or ''} {ms}"):
+                return q["id"]
+        return None
+
+    def git(self, *a):
+        """git en lecture seule dans le projet ; None si pas de dépôt ou commande en échec."""
+        projet = getattr(self.s, "projet", None)
+        if not projet or not os.path.exists(os.path.join(projet, ".git")):
+            return None
+        env = dict(os.environ, GIT_OPTIONAL_LOCKS="0", GIT_TERMINAL_PROMPT="0",
+                   GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="core.fsmonitor", GIT_CONFIG_VALUE_0="false")
+        try:
+            r = subprocess.run(["git", "-C", projet, *a], env=env, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                               timeout=20, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        except Exception:
+            return None
+        return r.stdout if r.returncode == 0 else None
+
+    def branche_principale(self, c):
+        b = c["conf"].get("branche_principale")
+        essais = ([b] if isinstance(b, str) and re.match(r"^[A-Za-z0-9._][A-Za-z0-9._/-]{0,99}$", b) else []) + ["main", "master"]
+        return next((x for x in essais if self.git("rev-parse", "--verify", "--quiet", x + "^{commit}") is not None), None)
+
+    def relecture_a_faire(self, c, rl, maintenant):
+        """Prochaine relecture utile, par priorité : {genre, tache_id, titre, mission, marque} (jamais None : la rotation finit toujours)."""
+        en = c["en"]
+        br = self.branche_principale(c)
+        if br:
+            # 1. commits de la branche principale pas encore relus (premier passage : les 10 derniers)
+            tete = (self.git("rev-parse", br) or "").strip()
+            dernier = str(rl.get("dernier_commit") or "")
+            if tete and tete != dernier:
+                suite = bool(dernier) and re.match(r"^[0-9a-f]{7,64}$", dernier) and self.git("merge-base", "--is-ancestor", dernier, br) is not None
+                lignes = [l.split("\x1f", 1) for l in (self.git("log", "-n", "30" if suite else "10", "--format=%h%x1f%s", f"{dernier}..{br}" if suite else br) or "").splitlines() if "\x1f" in l]
+                if lignes:
+                    liste = "\n".join(f"- {h} {s[:100]}" for h, s in lignes)
+                    return {"genre": "commits", "tache_id": f"relecture-commits-{tete[:10]}",
+                            "titre": tx("rl_commits_t", en, a=lignes[-1][0], b=lignes[0][0], n=len(lignes)),
+                            "mission": tx("rl_commits", en, br=br, n=len(lignes), liste=liste), "marque": {"dernier_commit": tete}}
+            # 2. branches prêtes à intégrer (d'avance sur la principale, calmes depuis 30 min, actives cette semaine) pas encore relues
+            vues = rl.get("branches") if isinstance(rl.get("branches"), dict) else {}
+            for l in (self.git("for-each-ref", "--sort=-committerdate", "--count=30", "--format=%(refname:short)%1f%(objectname)%1f%(committerdate:unix)", "refs/heads") or "").splitlines():
+                p = l.split("\x1f")
+                if len(p) != 3 or p[0] == br or not p[2].isdigit() or vues.get(p[0]) == p[1]:
+                    continue
+                age = maintenant - int(p[2])
+                if age < RELECT_BRANCHE_CALME_S or age > RELECT_BRANCHE_AGE_S:
+                    continue
+                n = (self.git("rev-list", "--count", f"{br}..{p[1]}") or "").strip()
+                if n.isdigit() and int(n) > 0:
+                    return {"genre": "branche", "tache_id": ("relecture-branche-" + re.sub(r"[^A-Za-z0-9_.-]", ".", p[0]))[:69] + "-" + p[1][:10],
+                            "titre": tx("rl_branche_t", en, b=p[0]), "mission": tx("rl_branche", en, b=p[0], n=int(n), br=br),
+                            "marque": {"branche": [p[0], p[1]]}}
+        # 3 à 5. rotation : tests du projet, tests creux, roadmap et doc ; le plus ancien d'abord (à égalité : cet ordre)
+        rot = rl.get("rotation") if isinstance(rl.get("rotation"), dict) else {}
+        g = min(RELECT_ROTATION, key=lambda x: rot.get(x, 0))
+        cle = {"tests": "rl_tests", "tests_creux": "rl_creux", "doc": "rl_doc"}[g]
+        return {"genre": g, "tache_id": f"relecture-{g}-{time.strftime('%Y%m%d%H%M', time.localtime(maintenant))}",
+                "titre": tx(cle + "_t", en), "mission": tx(cle, en), "marque": {}}
+
+    def relecteur(self, c, maintenant):
+        chemin = self.s.f("relecteur.json")
+        rl = lire(chemin, {})
+        rl = rl if isinstance(rl, dict) else {}
+        pid = self.poste_relecteur(c)
+        res = {"poste": pid, "derniere": rl.get("derniere"), "raison": None, "prochaine_dans_s": None}
+        regl, en = c["regl"], c["en"]
+        q = next((x for x in c["postes"] if x["id"] == pid), None)
+        f = self.d["fins"].get(pid) if pid else None
+        raison = (("no review desk" if en else "aucun poste de relecture") if not q else
+                  ("paused" if en else "en pause (Tout couper)") if c["conf"].get("mode") != "travail" or regl.get("pause") else
+                  ("away mode" if en else "mode absent") if regl.get("mode_absent") else
+                  ("machine saturated" if en else "machine saturée") if c["sante"].get("bloquant", c["sante"].get("sature")) else
+                  ("automatic assignment off" if en else "attribution automatique coupée") if not (self.auto(c, "attribution_auto") or self.auto(c, "tyrannie_auto")) else
+                  ("busy" if en else "occupé") if q.get("etat") != "disponible" or q.get("demandes") else
+                  ("end of task being handled" if en else "fin de tâche en cours") if f and not f.get("tente") and self.auto(c, "attribution_auto") else None)
+        if not raison and maintenant - rl.get("t", 0) < RELECT_ECART_S:
+            res["prochaine_dans_s"] = int(rl.get("t", 0) + RELECT_ECART_S - maintenant)
+            raison = "one every 20 min" if en else "une toutes les 20 min"
+        if raison:
+            res["raison"] = raison
+            return res
+        cand = self.relecture_a_faire(c, rl, maintenant)
+        rl["t"] = int(maintenant)                       # même un refus du serveur compte : jamais de boucle
+        origine = "auto:fin-de-tache" if self.auto(c, "attribution_auto") else "auto:temporaire"
+        r = self.confier(c, pid, dict(cand, mission=cand["mission"] + tx("rl_fin", en)), origine)
+        if r.get("ok"):
+            mq = cand["marque"]
+            if mq.get("dernier_commit"):
+                rl["dernier_commit"] = mq["dernier_commit"]
+            if mq.get("branche"):
+                rl.setdefault("branches", {})[mq["branche"][0]] = mq["branche"][1]
+                rl["branches"] = dict(list(rl["branches"].items())[-200:])
+            if cand["genre"] in RELECT_ROTATION:
+                rl.setdefault("rotation", {})[cand["genre"]] = int(maintenant)
+            rl["derniere"] = {"t": int(maintenant), "genre": cand["genre"], "tache_id": cand["tache_id"], "titre": cand["titre"], "poste": pid,
+                              "elements": elements_de(cand["mission"])[:60]}
+        self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "relecteur", "poste": pid, "titre": cand["titre"], "ok": bool(r.get("ok"))})
+        ecrire(chemin, rl)
+        res.update(derniere=rl.get("derniere"), prochaine_dans_s=RELECT_ECART_S, raison=None if r.get("ok") else str(r.get("erreur") or r.get("code") or "refus"))
+        return res
+
+    # ---------- relecture partagée : plus d'une heure prévue → la moitié à un relecteur libre ou à un intérimaire
+    def relecteurs(self, c):
+        """Postes de relecture : le poste désigné (poste_relecture) et tout poste dont l'id, le nom ou un métier parle de relecture."""
+        out = []
+        for q in c["postes"]:
+            ms = " ".join(str(m) for m in (c["metiers"].get(q["id"]) or []))
+            if q["id"] == c["conf"].get("poste_relecture") or RELECT_RE.search(f"{q['id']} {q.get('nom') or ''} {ms}"):
+                out.append(q)
+        return out
+
+    def lot_relecture(self, c, q, rl):
+        """Ce que le relecteur a devant lui : « lot » ou « restantes » de sa progression, sinon les lignes en liste de sa dernière
+        demande, sinon celles de la dernière relecture que le relecteur autonome lui a confiée."""
+        pr = self.prog(c, q["id"])
+        for k in ("lot", "restantes"):
+            if isinstance(pr.get(k), list) and len(pr[k]) >= 2:
+                return [str(x)[:200] for x in pr[k] if str(x).strip()][:60]
+        dossier = self.s.f("demandes")
+        try:
+            fichiers = sorted((os.path.join(dossier, f) for f in os.listdir(dossier) if f.endswith(".json") and f != "statuts.json"),
+                              key=os.path.getmtime, reverse=True)[:40]
+        except OSError:
+            fichiers = []
+        for f in fichiers:
+            x = lire(f, None)
+            if isinstance(x, dict) and q["id"] in (x.get("nom"), x.get("cible"), x.get("agent")):
+                e = elements_de(x.get("mission") or x.get("texte"))
+                if len(e) >= 2:
+                    return e[:60]
+                break
+        d = rl.get("derniere") if isinstance(rl.get("derniere"), dict) else {}
+        return list(d.get("elements") or [])[:60] if d.get("poste") == q["id"] else []
+
+    def nom_interim(self, c):
+        ids = {q["id"] for q in c["postes"]}
+        for n in range(1, 100):
+            nom = f"{INTERIM_PREFIXE}{n}"
+            if nom not in ids and not any(os.path.exists(self.s.f("recrues", *p, nom + ".json")) for p in ((), ("_anciens",))):
+                return n, nom
+        return None, None
+
+    def partage_relecture(self, c, maintenant):
+        en, st = c["en"], self.d.setdefault("interim", {})
+        for k, v in (("interimaires", {}), ("partages", []), ("lots", {})):
+            st.setdefault(k, v)
+        st["partages"] = [p for p in st["partages"] if maintenant - p.get("t", 0) < 6 * 3600][-20:]
+        par_id = {q["id"]: q for q in c["postes"]}
+        journal = self.d.setdefault("journal", [])
+        rels = self.relecteurs(c)
+        # relecture encore à faire (dans les 30 min) : tâche de relecture pas encore prise, ou relecteur au-delà d'une heure
+        a_faire = any(t.get("statut") == "a_faire" and t["id"] not in c["deja"] and (RELECT_RE.search(str(t.get("metier") or ""))
+                      or t.get("poste") in {q["id"] for q in rels}) for t in c["taches"]) or any(
+            q["id"] not in st["interimaires"] and isinstance(q.get("restant_min"), (int, float)) and q["restant_min"] > PARTAGE_SEUIL_MIN
+            and st["lots"].get(q["id"]) is None for q in rels)
+        # 1. fin de part : renvoi de l'intérimaire (sauf relecture à faire : gardé 30 min au plus)
+        for nom, it in list(st["interimaires"].items()):
+            q = par_id.get(nom)
+            if not q:                                           # déjà renvoyé (à la main ou par la tyrannie) ; pas encore vu : on attend
+                if maintenant - it.get("t", 0) > 300 and not os.path.exists(self.s.f("recrues", nom + ".json")):
+                    st["interimaires"].pop(nom, None)
+                continue
+            if q.get("etat") in ("travaille", "bloque"):
+                it["a_travaille"] = True
+            if not it.get("a_travaille") or q.get("etat") not in ("disponible", "fini") or q.get("demandes"):
+                continue
+            it.setdefault("fini_t", int(maintenant))
+            if (a_faire and maintenant - it["fini_t"] < INTERIM_GARDE_S) or maintenant - it.get("essai_renvoi", 0) < 300:
+                continue
+            it["essai_renvoi"] = int(maintenant)
+            r = self.poster("/api/renvoyer", {"nom": nom, "motif": tx("it_motif", en)})
+            journal.append({"t": int(maintenant), "type": "renvoi_interim", "poste": nom, "ok": bool(r.get("ok"))})
+            if r.get("ok"):
+                st["interimaires"].pop(nom, None)
+                self.d["renvois"] = (self.d["renvois"] + [{"t": int(maintenant), "nom": nom, "nom_affiche": q.get("nom") or nom,
+                                                           "role": tx("it_motif", en)}])[-20:]
+        # 2. partage
+        actif = (c["conf"].get("mode") == "travail" and not c["regl"].get("pause") and not c["sante"].get("bloquant", c["sante"].get("sature"))
+                 and any(self.auto(c, k) for k in ("attribution_auto", "tyrannie_auto", "embauche_auto")))
+        if not actif:
+            return {"interimaires": sorted(st["interimaires"]), "partages": st["partages"][-5:]}
+        rl = lire(self.s.f("relecteur.json"), {})
+        rl = rl if isinstance(rl, dict) else {}
+        for q in rels:
+            pid, reste = q["id"], q.get("restant_min")
+            if pid in st["interimaires"] or pid.startswith(INTERIM_PREFIXE) or not isinstance(reste, (int, float)) or reste <= PARTAGE_SEUIL_MIN:
+                if isinstance(reste, (int, float)) and reste <= PARTAGE_SEUIL_MIN:
+                    st["lots"].pop(pid, None)                   # retombé sous l'heure : un prochain gros lot pourra être partagé
+                continue
+            lot = self.lot_relecture(c, q, rl)
+            import zlib
+            cle = f"{len(lot)}:{zlib.crc32(chr(10).join(lot).encode('utf-8')):08x}"     # stable d'un lancement à l'autre
+            if len(lot) < 2 or st["lots"].get(pid) == cle:
+                continue
+            if sum(1 for p in st["partages"] if maintenant - p["t"] < 3600) >= PARTAGE_PAR_HEURE:
+                break
+            garde, part = lot[:len(lot) // 2], lot[len(lot) // 2:]
+            de = q.get("nom") or pid
+            mission = tx("it_mission", en, de=de, m=int(reste), n=len(part), liste="\n".join(f"- {x}" for x in part))
+            titre = tx("it_titre", en, n=len(part), de=de)
+            tid = f"relecture-partagee-{pid}-{cle.split(':')[1]}"[:80]
+            libre = next((x for x in rels if x["id"] != pid and x.get("etat") == "disponible" and not x.get("demandes")), None)
+            if libre:
+                avec = libre.get("nom") or libre["id"]
+                origine = "auto:fin-de-tache" if self.auto(c, "attribution_auto") else "auto:temporaire"
+                r = self.confier(c, libre["id"], {"tache_id": tid, "mission": mission, "titre": titre}, origine)
+                bulle = tx("it_bulle_libre", en, n=avec)
+                if r.get("ok") and libre["id"] in st["interimaires"]:
+                    st["interimaires"][libre["id"]].update(elements=part, pour=pid, a_travaille=False)   # intérimaire gardé : nouvelle part
+                    st["interimaires"][libre["id"]].pop("fini_t", None)
+            else:
+                if len(st["interimaires"]) >= INTERIM_MAX or len(c["postes"]) >= 12:
+                    st["lots"][pid] = cle
+                    journal.append({"t": int(maintenant), "type": "partage", "poste": pid, "ok": False,
+                                    "refus": f"{INTERIM_MAX} intérimaires au plus" if len(st["interimaires"]) >= INTERIM_MAX else "12 bureaux"})
+                    continue
+                n, nom = self.nom_interim(c)
+                if not nom:
+                    continue
+                avec, bulle = tx("it_nom", en, n=n), tx("it_bulle", en)
+                r =self.poster("/api/recruter", {"nom": nom, "nom_affiche": avec, "role": tx("it_role", en), "mission": mission[:3900],
+                                                  "lancer": True, "apparence": "aucune", "couleur": "#%06x" % (zlib.crc32(nom.encode()) & 0xFFFFFF)})
+                if r.get("ok"):
+                    self.poster("/api/agent", {"id": nom, "metiers": ["relecture"]})
+                    st["interimaires"][nom] = {"t": int(maintenant), "pour": pid, "elements": part, "a_travaille": False}
+                journal.append({"t": int(maintenant), "type": "embauche_interim", "poste": nom, "pour": pid, "ok": bool(r.get("ok"))})
+            st["lots"][pid] = cle                               # même un refus compte : jamais de boucle sur le même lot
+            if r.get("ok"):
+                self.poster("/api/demande", {"cible": pid, "texte": tx("it_garde", en, m=int(reste), avec=avec, n=len(part),
+                                                                        liste_av="\n".join(f"- {x}" for x in part),
+                                                                        liste="\n".join(f"- {x}" for x in garde))[:1990], "via": "ecrit"})
+                st["partages"].append({"t": int(maintenant), "poste": pid, "avec": avec, "n": len(part), "garde": len(garde), "bulle": bulle})
+            journal.append({"t": int(maintenant), "type": "partage", "poste": pid, "avec": avec, "n": len(part), "ok": bool(r.get("ok")),
+                            "refus": r.get("erreur")})
+        return {"interimaires": sorted(st["interimaires"]), "partages": st["partages"][-5:]}
+
     # ---------- un passage (toutes les 10 s ; la tyrannie toutes les 60 s)
     def passer(self, conf, postes, r, progs, ouverts, chaine, sante):
         maintenant = time.time()
@@ -364,6 +679,14 @@ class Automatismes:
                 self.d["dernier"] = self.tyrannie(c, maintenant)
             elif not self.actif_tyran(c):
                 self.d["dernier"] = dict(self.d.get("dernier") or {}, active=False)
+            try:
+                self.d["relecteur"] = self.relecteur(c, maintenant)
+            except Exception as e:                              # le relecteur autonome ne fige jamais les autres automatismes
+                self.d["relecteur"] = {"raison": f"{type(e).__name__} : {e}"[:200]}
+            try:
+                self.d["partage"] = self.partage_relecture(c, maintenant)
+            except Exception as e:                              # la relecture partagée ne fige jamais les autres automatismes
+                self.d["partage"] = {"erreur": f"{type(e).__name__} : {e}"[:200]}
         except Exception as e:                                  # un automatisme en panne ne fige jamais l'alimentation
             self.d["erreur"] = f"{type(e).__name__} : {e}"[:200]
         self.d["journal"] = (self.d.get("journal") or [])[-40:]
@@ -372,4 +695,6 @@ class Automatismes:
         return {"serveur": True, "tyrannie": dern, "fins": {k: {"debut": int(v["debut"]), "fini": v.get("fini", "")} for k, v in self.d["fins"].items()},
                 "temporaires": {k: v for k, v in self.d["temporaires"].items() if maintenant - v.get("t", 0) < 6 * 3600},
                 "renvois": [x for x in self.d["renvois"] if maintenant - x["t"] < 600], "remonter": [x["decision"] for x in dern.get("diagnostics") or [] if x.get("decision")],
-                "erreur": self.d.get("erreur")}
+                "relecteur": self.d.get("relecteur") or {}, "erreur": self.d.get("erreur"),
+                "partages": [x for x in ((self.d.get("interim") or {}).get("partages") or []) if maintenant - x.get("t", 0) < 600],
+                "interimaires": sorted((self.d.get("interim") or {}).get("interimaires") or {})}
