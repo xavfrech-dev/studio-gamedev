@@ -111,7 +111,7 @@ Claude ne crée de fichiers que dans `.studio/` (ignoré par git). Avant de te r
 
 ## Nouveautés
 
-La 0.5 apporte les quêtes et l'XP, la cloche (décisions, accords de dépense, actions de ta main), le bouton « Je m'absente », la radio du studio, la santé du PC avec un ménage proposé, la relecture partagée, l'hôte du studio et le plan de restructuration de l'équipe. La 0.5.1 (version actuelle) fait continuer le studio pendant ton absence (avec « Décidé à ta place » au retour), ajoute « Toute l'équipe », les propositions à un clic de l'assistant et une écriture plus sûre des fichiers du studio. Le détail de chaque version est dans le [CHANGELOG](CHANGELOG.md).
+La 0.5 apporte les quêtes et l'XP, la cloche (décisions, accords de dépense, actions de ta main), le bouton « Je m'absente », la radio du studio, la santé du PC avec un ménage proposé, la relecture partagée, l'hôte du studio et le plan de restructuration de l'équipe. La 0.5.1 fait continuer le studio pendant ton absence (avec « Décidé à ta place » au retour), ajoute « Toute l'équipe », les propositions à un clic de l'assistant et une écriture plus sûre des fichiers du studio. La 0.5.2 (version actuelle) est une version de correctifs : un agent renvoyé ne remplace plus jamais un agent actif. Le détail de chaque version est dans le [CHANGELOG](CHANGELOG.md).
 
 ## Sur ton téléphone
 

@@ -587,10 +587,17 @@ def cmd_fonctions(d, port):
             echec("renvoi : archives absentes")
         if "renfort-essai" in (lire(os.path.join(st, "recrues", "index.json"), []) or []) or "renfort-essai" not in (lire(os.path.join(st, "recrues", "_anciens", "index.json"), []) or []):
             echec("renvoi : index non mis à jour")
+        # une fiche rangée garde-t-elle le name: d'un agent actif ? Claude Code peut la relire : « ancien-<nom> » obligatoire
+        nom_fiche = lambda ch: next((l.split(":", 1)[1].strip() for l in (jsonio.lire_texte(ch, "") or "").splitlines() if l.startswith("name:")), "")
+        if nom_fiche(os.path.join(st, "anciens", "agents", "renfort-essai.md")) != "ancien-renfort-essai":
+            echec(f"renvoi : name de la fiche rangée = {nom_fiche(os.path.join(st, 'anciens', 'agents', 'renfort-essai.md'))!r} (attendu ancien-renfort-essai)")
         api("/api/reembaucher", {"nom": "renfort-essai"})
         if not os.path.isfile(agent) or (lire(os.path.join(st, "recrues", "renfort-essai.json"), {}) or {}).get("lancer") is not False:
             echec("réembauche : agent ou fiche absents (lancer doit valoir false)")
-        ok("renvoi : refusé avec une tâche en cours (409) et pour un poste de base (403), archivage sans rien effacer, réembauche")
+        if nom_fiche(agent) != "renfort-essai":
+            echec(f"réembauche : name = {nom_fiche(agent)!r} (attendu renfort-essai)")
+        ok("renvoi : refusé avec une tâche en cours (409) et pour un poste de base (403), archivage sans rien effacer "
+           "(name: ancien-renfort-essai), réembauche (name: renfort-essai)")
 
         # embauche automatique : coupée par défaut, puis une par heure ; jamais un ancien renvoyé
         emb = {"nom": "metier-essai", "nom_affiche": "Métier", "role": "Poste « métier »", "mission": "- J2-01 : essai", "auto": True}
@@ -704,6 +711,8 @@ def cmd_fonctions(d, port):
             echec("appliquer : renommage absent")
         if os.path.isfile(orph) or not os.path.isfile(os.path.join(st, "anciens", "agents", "vieux-essai.md")):
             echec("appliquer : fiche orpheline pas rangée dans anciens/agents")
+        if nom_fiche(os.path.join(st, "anciens", "agents", "vieux-essai.md")) != "ancien-vieux-essai":
+            echec("appliquer : fiche rangée sans name: ancien-vieux-essai")
         if not os.path.isfile(os.path.join(st, "recrues", "bruiteur.json")) or p2["statut"] != "en_cours":
             echec(f"appliquer : agent en plein travail renvoyé, ou statut {p2['statut']}")
         if len(lire(os.path.join(st, "restructuration_journal.json"), []) or []) < 4:

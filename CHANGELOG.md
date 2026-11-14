@@ -4,6 +4,14 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 
 ## [Non publié]
 
+## [0.5.2] - 2026-11-14
+
+Version de correctifs.
+
+### Corrigé
+- **Fiche d'agent rangée qui remplaçait un agent actif.** Claude Code lit aussi les sous-dossiers du dossier des agents : une fiche rangée avec le même `name:` qu'un agent actif pouvait prendre sa place (il reprenait alors la mission figée de l'ancien). Désormais, toute fiche qui part dans les anciens (renvoi, plan de restructuration, fiche rangée) prend `name: ancien-<nom>` ; la réembauche remet `name: <nom>`. Une seule fonction, `jsonio.nom_fiche_archive`, utilisée par `/api/renvoyer`, `/api/reembaucher` et le rangement du plan (`serveur_studio.py`) ; seul l'en-tête de la fiche est touché (fins de ligne et guillemets gardés). « Toute l'équipe » affiche ces fiches sans le préfixe. Essai : `essai_complet.py` vérifie `name: ancien-renfort-essai` après le renvoi, `name: renfort-essai` après la réembauche et `name: ancien-vieux-essai` pour la fiche rangée par le plan.
+- `cloche.py decider` accepte aussi une décision au statut `en_attente` (pas seulement `ouverte`).
+
 ## [0.5.1] - 2026-11-14
 
 Version de correctifs et de fiabilité : le studio continue vraiment pendant l'absence, l'assistant propose au lieu d'attendre, les fichiers d'état s'écrivent sans risque. Toujours rien de dépensé, supprimé ni publié sans l'accord de l'utilisateur.

@@ -111,7 +111,7 @@ Claude only creates files in `.studio/` (ignored by git). Before handing back, i
 
 ## What's new
 
-0.5 brings quests and XP, the bell (decisions, spending approvals, things for you to do by hand), the « Je m'absente » (I'm away) button, the studio radio, PC health with a proposed cleanup, shared review, the studio host and the team restructuring plan. 0.5.1 (current version) keeps the studio working while you are away (with « Décidé à ta place », decided for you, when you come back), adds the Whole team view, one-click proposals from the assistant and safer writing of the studio files. Every version is detailed in the [CHANGELOG](CHANGELOG.md).
+0.5 brings quests and XP, the bell (decisions, spending approvals, things for you to do by hand), the « Je m'absente » (I'm away) button, the studio radio, PC health with a proposed cleanup, shared review, the studio host and the team restructuring plan. 0.5.1 keeps the studio working while you are away (with « Décidé à ta place », decided for you, when you come back), adds the Whole team view, one-click proposals from the assistant and safer writing of the studio files. 0.5.2 (current version) is a bug-fix release: a let-go agent never takes the place of an active one. Every version is detailed in the [CHANGELOG](CHANGELOG.md).
 
 ## On your phone
 

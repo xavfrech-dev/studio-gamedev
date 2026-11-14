@@ -1919,7 +1919,8 @@ def route_agent(d):
 def route_renvoyer(d):
     """Renvoi d'une recrue (jamais un poste de la config) : rien n'est effacé. La fiche va dans recrues/_anciens/,
     la définition d'agent (seulement si elle porte la marque des recrues) dans .studio/anciens/agents/ : hors du
-    dossier des agents, elle n'est plus chargée ; « réembaucher » remet tout en place."""
+    dossier des agents, elle n'est plus chargée ; « réembaucher » remet tout en place. Son « name: » devient
+    « ancien-<nom> » (jsonio.nom_fiche_archive) : même relue par Claude Code, elle ne remplace jamais un agent actif."""
     conf = conf_studio()
     nom = texte(d, "nom", 40, True).lower()
     if nom in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
@@ -1953,6 +1954,7 @@ def route_renvoyer(d):
         if marque:
             os.makedirs(os.path.join(Etat.studio, "anciens", "agents"), exist_ok=True)
             os.replace(agent, os.path.join(Etat.studio, "anciens", "agents", nom + ".md"))
+            jsonio.nom_fiche_archive(os.path.join(Etat.studio, "anciens", "agents", nom + ".md"))   # name: ancien-<nom>
     index_noms(os.path.join(Etat.studio, "recrues", "index.json"), retirer=nom)
     index_noms(os.path.join(Etat.studio, "recrues", "_anciens", "index.json"), ajouter=nom)
     return {"ok": True, "renvoye": nom}
@@ -1978,6 +1980,7 @@ def route_reembaucher(d):
     if os.path.isfile(anc_a):
         os.makedirs(os.path.dirname(agent), exist_ok=True)
         os.replace(anc_a, agent)
+        jsonio.nom_fiche_archive(agent, archiver=False)   # name: ancien-<nom> redevient name: <nom>
     index_noms(os.path.join(Etat.studio, "recrues", "index.json"), ajouter=nom)
     index_noms(os.path.join(Etat.studio, "recrues", "_anciens", "index.json"), retirer=nom)
     return {"ok": True, "reembauche": nom, "fiche": fiche}
@@ -2120,6 +2123,7 @@ def _restru_ops(conf):
                 dst = f"{base}_{k}.md"
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         os.replace(src, dst)
+        jsonio.nom_fiche_archive(dst)                     # name: ancien-<nom> : jamais confondue avec un agent actif
         return True, None
     return {"renvoyer": lambda i, motif: appel(route_renvoyer, {"nom": i, "motif": motif[:200]}),
             "renommer": lambda i, nom: appel(route_agent, {"id": i, "nom_affiche": nom[:40]}),

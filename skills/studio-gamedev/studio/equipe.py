@@ -287,7 +287,7 @@ def construire(agents, dossier, *, postes_etat=(), modeles=None, dossiers_agents
         anc = anc if isinstance(anc, dict) else {}
         sil = e["silence_s"]
         etat = "attente" if sil is None or sil >= SILENCE_S else "travail"
-        membres.append({"id": e["run"] + ":" + e["agent_id"], "cle": ty, "nom": bureau or anc.get("nom_affiche") or fm.get("name") or ty or tx("agent sans nom", "unnamed agent"),
+        membres.append({"id": e["run"] + ":" + e["agent_id"], "cle": ty, "nom": bureau or anc.get("nom_affiche") or jsonio.nom_sans_ancien(fm.get("name")) or ty or tx("agent sans nom", "unnamed agent"),
                         "groupe": "chaines", "genre": "chaine", "metier": tx("à son bureau aussi", "also at a desk") if bureau else tx("sans bureau", "no desk"),
                         "role": str(fm.get("description") or "")[:200], "etat": etat, "etat_lib": etat_lib(etat)
                         + ("" if sil is not None else tx(" (en file)", " (queued)")) + (tx(f" (rien écrit depuis {int(sil // 60)} min)", f" (silent for {int(sil // 60)} min)") if sil is not None and sil >= SILENCE_S else ""),
@@ -366,7 +366,7 @@ def construire(agents, dossier, *, postes_etat=(), modeles=None, dossiers_agents
                 depuis = iso(os.path.getmtime(os.path.join(dos, f)))
             except OSError:
                 depuis = ""
-            membres.append({"id": "rangee:" + n, "cle": n, "nom": fm.get("name") or n, "groupe": "anciens", "genre": "ancien", "metier": "",
+            membres.append({"id": "rangee:" + n, "cle": n, "nom": jsonio.nom_sans_ancien(fm.get("name")) or n, "groupe": "anciens", "genre": "ancien", "metier": "",
                             "role": str(fm.get("description") or "")[:200], "etat": "fini", "etat_lib": tx("fiche rangée", "file stored"),
                             "tache": "", "depuis": depuis, "progression": None, "modele": fm.get("model") or "", "effort": fm.get("effort") or "",
                             "session": False, "protege": False, "occupe": "", "chaine": "", "actions": {}})
