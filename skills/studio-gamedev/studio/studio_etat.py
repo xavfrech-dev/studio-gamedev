@@ -842,6 +842,11 @@ class Studio:
             a = att.get(pid) or {}
             ouvert = next((o for o in ouverts if o["poste"] == pid), None)
             lancee = next((d for d in dem if d["statut"].startswith("lanc")), None)
+            # tâche du moment d'une recrue : la mission d'embauche n'est pas sa tâche du moment (une recrue affichait
+            # « traiter une demande » d'il y a deux jours) : la barre en cours d'abord, sinon « embauché pour : … »
+            embauche = p["genre"] == "recrue"
+            mission_txt = tx("embauché pour : ", "hired for: ") + court(p.get("mission"), 100) if embauche and p.get("mission") else ""
+            est_embauche = lambda d: embauche and (d.get("type") == "recrutement" or (p.get("mission") and court(d.get("titre"), 100) == court(p.get("mission"), 100)))
             # état
             if (isinstance(prog, dict) and prog.get("bloque")) or statut.startswith("bloq"):
                 etat = "bloque"
@@ -869,12 +874,15 @@ class Studio:
             if isinstance(prog, dict):
                 vu = [x for x in (prog.get("etape"), prog.get("texte")) if x]
                 texte_prog = court(next((x for x in vu if re.search(r"\b[A-Z]\d+-\d+\b", str(x))), vu[0] if vu else ""), 120)
+            barre = texte_prog if texte_prog and not fini_prog else ""   # la barre en cours, même un peu ancienne
             if etat == "bloque":
                 picto, complet = "⛔", tx("bloqué : ", "blocked: ") + (texte_prog or court(st.get("texte"), 100) or tx("raison à voir", "reason to check"))
             elif etat == "travaille":
                 picto = "▶"
                 if frais and texte_prog and not fini_prog:
                     complet = texte_prog
+                elif lancee and est_embauche(lancee):
+                    complet = barre or mission_txt or lancee["titre"] or tx("demande lancée", "request started")
                 elif lancee:
                     complet = lancee["titre"] or tx("demande lancée", "request started")
                 elif ouvert:
@@ -886,6 +894,10 @@ class Studio:
             elif etat in ("attend", "fini"):
                 if a.get("attente"):
                     picto, complet = "⏸", tx("attend ", "waiting for ") + court(a["attente"], 100)
+                elif dem and est_embauche(dem[0]) and barre:
+                    picto, complet = "⏸", tx("en pause", "paused") + f" ({int(prog_age or 0)} min)" + tx(" : ", ": ") + barre
+                elif dem and est_embauche(dem[0]) and mission_txt:
+                    picto, complet = "⏸", tx("attend le lancement : ", "waiting to start: ") + mission_txt
                 elif dem:
                     picto, complet = "⏸", tx("attend le lancement : ", "waiting to start: ") + (dem[0]["titre"] or dem[0]["fichier"])
                 elif prog is not None and not fini_prog and texte_prog:
@@ -904,6 +916,8 @@ class Studio:
                  "skills": p.get("skills") or [], "genre": p["genre"], "etat": etat, "occupe": etat == "travaille", "actif": etat == "travaille",
                  "progression": prog_aff, "progression_source": src, "restant_min": restant_de(prog) if etat in ("travaille", "bloque") else None,
                  "texte": texte_prog or court(st.get("texte"), 120), "tache": complet, "restantes": restantes[:12],
+                 # tâche du moment (fiche, notification « a fini ») : la barre en cours, sinon la ligne ; « embauché pour : … » si rien
+                 "tache_moment": barre or (complet if etat in ("travaille", "bloque") else "") or (texte_prog if fini_prog else "") or mission_txt,
                  "demandes": [{"fichier": d["fichier"], "titre": d["titre"], "statut": d["statut"], "tache_id": d["tache_id"],
                                "origine": d["origine"]} for d in dem][:6],
                  "ligne": {"picto": picto, "texte": court(complet, 40), "complet": court(complet, 200)}}

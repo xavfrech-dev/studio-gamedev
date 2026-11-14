@@ -1737,14 +1737,24 @@ function nouvelleTxt(e) {
 }
 function duree(min) { if (min == null) return '?'; min = Math.round(min); if (min < 1) return '<1 min'; if (min < 60) return min + ' min'; const h = Math.floor(min / 60), m = min % 60; return h + ' h' + (m ? ' ' + String(m).padStart(2, '0') : ''); }
 let ETATS_PREC = LS.get('etats_postes', {});
+// « a fini » une seule fois par poste et par tâche (12 h) : une barre qui oscille (deux sources, la chaîne et l'agent) ou un état
+// qui repasse par « au travail » ne refait plus la notification en boucle ; les clés de plus de 24 h sont oubliées
+function finiUneFois(p, e) {
+  const ep = etatFrais() ? ETAT.postes.find(x => x && x.id === p.id) : null;
+  const cle = p.id + '|' + String((ep && (ep.tache_moment || ep.texte)) || e.texte || ''), vus = LS.get('fini_vus', {}) || {}, n = Date.now();
+  if (vus[cle] && n - vus[cle] < 12 * 3600e3) return false;
+  vus[cle] = n; for (const k of Object.keys(vus)) if (!(n - vus[k] < 24 * 3600e3)) delete vus[k];
+  LS.set('fini_vus', vus); return true;
+}
+window.__finiUneFois = finiUneFois;   // essais
 function verifierPostes() {
   const neu = {};
   for (const p of postes()) {
     const e = etatPoste(p); neu[p.id] = e.etat; const a = ETATS_PREC[p.id];
     if (a && a !== e.etat && ONGLET.meneur) {   // M14 : deux onglets : seul l'onglet meneur notifie (l'autre la reçoit par l'historique partagé)
       if (e.etat === 'bloque') Notifs.ajouter({ id: 'bloque-' + p.id + '-' + Date.now(), type: 'alerte', titre: nomPoste(p) + ' ' + t('est_bloque'), ligne: e.texte, cible: { poste: p.id } });
-      else if (e.etat === 'disponible' && a === 'travaille') Notifs.ajouter({ id: 'dispo-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('est_dispo'), ligne: e.texte, cible: { poste: p.id } });
-      else if (e.etat === 'fini' && a === 'travaille') Notifs.ajouter({ id: 'fini-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('a_fini'), ligne: e.texte, cible: { poste: p.id } });
+      else if (e.etat === 'disponible' && a === 'travaille' && finiUneFois(p, e)) Notifs.ajouter({ id: 'dispo-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('est_dispo'), ligne: e.texte, cible: { poste: p.id } });
+      else if (e.etat === 'fini' && a === 'travaille' && finiUneFois(p, e)) Notifs.ajouter({ id: 'fini-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('a_fini'), ligne: e.texte, cible: { poste: p.id } });
     }
   }
   ETATS_PREC = neu; LS.set('etats_postes', neu);
