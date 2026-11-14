@@ -1741,7 +1741,9 @@ let ETATS_PREC = LS.get('etats_postes', {});
 // qui repasse par « au travail » ne refait plus la notification en boucle ; les clés de plus de 24 h sont oubliées
 function finiUneFois(p, e) {
   const ep = etatFrais() ? ETAT.postes.find(x => x && x.id === p.id) : null;
-  const cle = p.id + '|' + String((ep && (ep.tache_moment || ep.texte)) || e.texte || ''), vus = LS.get('fini_vus', {}) || {}, n = Date.now();
+  const tache = String((ep && (ep.tache_moment || ep.texte)) || e.texte || '').trim();
+  if (!tache) return true;   // tâche inconnue : on notifie (sinon une clé vide bloquerait toutes les fins du poste 12 h)
+  const cle = p.id + '|' + tache, vus = LS.get('fini_vus', {}) || {}, n = Date.now();
   if (vus[cle] && n - vus[cle] < 12 * 3600e3) return false;
   vus[cle] = n; for (const k of Object.keys(vus)) if (!(n - vus[k] < 24 * 3600e3)) delete vus[k];
   LS.set('fini_vus', vus); return true;
