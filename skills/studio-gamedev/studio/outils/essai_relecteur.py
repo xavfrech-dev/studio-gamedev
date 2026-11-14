@@ -3,11 +3,12 @@ les envois prévus sont lus dans .studio/automatismes.json. Un dépôt git jetab
 
 Règle : quand le relecteur est libre (rien à relire, rien en attente), il prend lui-même une relecture utile, par priorité :
 commits de la branche principale pas encore relus, branches prêtes à intégrer pas encore relues, puis en rotation : tests du
-projet, tests creux, roadmap et doc. Une à la fois, une toutes les 20 min au plus ; rien en pause, en mode absent, machine
-bloquante ou attribution coupée.
+projet, tests creux, roadmap et doc. Une à la fois, une toutes les 20 min au plus ; rien en pause, machine bloquante ou
+attribution coupée. Le mode absent ne l'arrête pas : le studio continue pendant l'absence (lot E de l'autonomie).
 
 python -I -B essai_relecteur.py
 """
+import argparse
 import json
 import os
 import shutil
@@ -67,7 +68,8 @@ def commit(projet, nom, age_s=0):
     git(projet, "commit", "-q", "-m", f"Ajout de {nom}", age_s=age_s)
 
 
-def main():
+def main(argv=None):
+    argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args(argv)   # M25 : --help n'essaie rien
     racine = tempfile.mkdtemp(prefix="essai_relecteur_")
     projet = os.path.join(racine, "projet")
     os.makedirs(projet)
@@ -141,12 +143,11 @@ def main():
         m = envois()[-1]["corps"]
         assert m["tache_id"].startswith("relecture-commits-") and "Ajout de d.txt" in m["mission"] and "a2.txt" not in m["mission"], m
         ok += 1
-        # 6. rien quand il n'est pas libre, en pause, en mode absent, machine bloquante, attribution coupée
+        # 6. rien quand il n'est pas libre, en pause, machine bloquante, attribution coupée
         n = len(envois())
         cas = [({"attribution_auto": True}, postes("travaille"), {}, "occupé"),
                ({"attribution_auto": True}, postes(demandes=[{"titre": "relire X", "statut": "nouvelle"}]), {}, "occupé"),
                ({"attribution_auto": True, "pause": True}, postes(), {}, "pause"),
-               ({"attribution_auto": True, "mode_absent": True}, postes(), {}, "absent"),
                ({"attribution_auto": True}, postes(), {"bloquant": True}, "saturée"),
                ({}, postes(), {}, "coupée")]
         for regl, pp, sante, mot in cas:
@@ -156,6 +157,13 @@ def main():
             assert len(envois()) == n and mot in (r["relecteur"]["raison"] or ""), (mot, r["relecteur"])
         r = a.passer(dict(conf, mode="accueil"), postes(), None, {}, [], None, {})
         assert len(envois()) == n
+        ok += 1
+        # 6 bis. mode absent : le relecteur continue (le studio continue pendant l'absence)
+        ecrire(st.f("reglages.json"), {"attribution_auto": True, "mode_absent": True})
+        reculer()
+        r = a.passer(conf, postes(), None, {}, [], None, {})
+        assert len(envois()) == n + 1 and not r["relecteur"]["raison"], r["relecteur"]
+        n = len(envois())
         ok += 1
         # 7. tyrannie seule : même circuit, origine « auto:temporaire » (celle que le serveur permet sans attribution automatique)
         ecrire(st.f("reglages.json"), {"tyrannie_auto": True})
@@ -196,7 +204,7 @@ def main():
         ok += 1
     finally:
         shutil.rmtree(racine, ignore_errors=True)
-    print(f"ESSAI DU RELECTEUR AUTONOME RÉUSSI ({ok}/9)")
+    print(f"ESSAI DU RELECTEUR AUTONOME RÉUSSI ({ok}/10)")
 
 
 if __name__ == "__main__":

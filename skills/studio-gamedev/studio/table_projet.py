@@ -26,6 +26,7 @@ import unicodedata
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ICI)
+import jsonio  # noqa: E402  (C4)
 import style_paliers  # noqa: E402
 
 FAITS = ("verse", "ecart")
@@ -110,11 +111,7 @@ def lire(ch, n=40000):
 
 
 def lire_json(ch, defaut):
-    try:
-        with open(ch, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:  # noqa
-        return defaut
+    return jsonio.lire(ch, defaut)
 
 
 def donnees(projet):
@@ -324,10 +321,7 @@ def calculer(projet):
 
 def ecrire(projet, res):
     ch = os.path.join(projet, ".studio", "table_projet.json")
-    os.makedirs(os.path.dirname(ch), exist_ok=True)
-    with open(ch + ".tmp", "w", encoding="utf-8", newline="\n") as f:
-        json.dump(res, f, ensure_ascii=False, indent=1)
-    os.replace(ch + ".tmp", ch)
+    jsonio.ecrire(ch, res, newline="\n")
 
 
 def main(argv=None):

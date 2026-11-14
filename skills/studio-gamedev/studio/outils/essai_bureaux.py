@@ -16,6 +16,7 @@ Sortie : « OK » ou la liste des chevauchements ; code de retour 1 en cas d'éc
 Les tables d'emprise décrivent le décor ; le contrôle sur l'image réellement dessinée (chaque boîte et chaque tapis
 relevés pendant le dessin, étiquettes des postes comprises) se fait dans le navigateur : window.__bureauxEssai().
 """
+import argparse
 import json
 import os
 import re
@@ -68,10 +69,13 @@ def cercle_touche(cx, cy, r, b):
     return dx * dx + dy * dy < r * r
 
 
-def main():
+def main(argv=None):
     global STUDIO, BUREAU
-    if len(sys.argv) > 2 and sys.argv[1] == "--studio":   # autre copie du studio (comparaison)
-        STUDIO = sys.argv[2]
+    a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    a.add_argument("--studio", help="autre copie du studio (comparaison)")
+    a = a.parse_args(argv)
+    if a.studio:
+        STUDIO = a.studio
     plan = bloc(os.path.join(STUDIO, "studio.html"), "PLAN-DEBUT", "PLAN-FIN")
     slots = tableau(plan, "SLOTS")
     page = tableau(plan, "EMPRISES_PAGE")

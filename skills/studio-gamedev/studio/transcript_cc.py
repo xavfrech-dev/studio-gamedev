@@ -22,7 +22,7 @@ def slug(projet):
 def session_active(dossier):
     """Le transcript le plus récent du dossier de projets de Claude Code (fichiers du niveau 1 seulement)."""
     try:
-        fichiers = [f for f in glob.glob(os.path.join(dossier, "*.jsonl")) if os.path.isfile(f)]
+        fichiers = [f for f in glob.glob(os.path.join(glob.escape(dossier), "*.jsonl")) if os.path.isfile(f)]   # M9 : crochets
         return max(fichiers, key=os.path.getmtime) if fichiers else None
     except OSError:
         return None
@@ -71,6 +71,8 @@ def lire(chemin, depuis=None):
     out = []
     for l in lignes:
         if b'"type":"user"' not in l and b'"type":"assistant"' not in l and b'"type": "user"' not in l and b'"type": "assistant"' not in l:
+            continue
+        if b'"type":"tool_result"' in l and b'"type":"text"' not in l:   # O14 : résultat d'outil seul, jamais affiché
             continue
         try:
             d = json.loads(l.decode("utf-8", "replace"))

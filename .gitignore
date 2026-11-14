@@ -1,3 +1,4 @@
+# Jamais publiés : bytecode, fichiers temporaires, essais, données d’un studio local
 __pycache__/
 *.pyc
 *.tmp
@@ -7,3 +8,6 @@ essai_skill/
 essai_adoption/
 .DS_Store
 Thumbs.db
+*.orig
+*.bak
+*.part

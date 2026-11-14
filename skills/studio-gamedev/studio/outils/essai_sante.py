@@ -205,9 +205,30 @@ def main():
         json.dump({"etat": "refuse", "t": int(time.time())}, open(os.path.join(sante, "temperatures_activation.json"), "w"))
         t = S.temperatures(sante, fichier=tf)
         verifie(t["etat"] == "refuse", "activation refusée : état « refuse »")
+        json.dump({"etat": "echec", "cause": "windows_refuse", "etape": "tache", "message": "Accès refusé"},
+                  open(os.path.join(sante, "temperatures_activation.json"), "w", encoding="utf-8"))
+        t = S.temperatures(sante, fichier=tf)
+        j = S.jauges(temps=t)
+        verifie(t["etat"] == "pas_active" and j["cause"] == "Windows a refusé" and "Accès refusé" in j["message"] and j["activer"],
+                "échec : cause en clair (« Windows a refusé ») sur la fiche, bouton « Activer » reproposé")
         os.remove(os.path.join(sante, "temperatures_activation.json"))
         t = S.temperatures(sante, fichier=os.path.join(base, "absent.json"))
         verifie(t["etat"] == "pas_active" and t["activable"], "pas activé : bouton « Activer » proposé")
+        try:                                                  # script absent : échec écrit en clair, rien n'est lancé
+            S.lancer_activation("installer", sante, os.path.join(base, "absent.ps1"))
+            verifie(False, "script absent : refus attendu")
+        except FileNotFoundError:
+            a = json.load(open(os.path.join(sante, "temperatures_activation.json"), encoding="utf-8"))
+            verifie(a["etat"] == "echec" and a["cause"] == "script_absent", "script absent : « script d'activation absent » écrit")
+            os.remove(os.path.join(sante, "temperatures_activation.json"))
+        # script réel en essai à sec : sans élévation, rien de modifié, tâche validée par le planificateur sans être créée
+        jr = os.path.join(base, "journal.json")
+        r = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+                            os.path.join(ICI, "temperatures_windows.ps1"), "-Action", "Installer", "-Journal", jr, "-EssaiASec"],
+                           capture_output=True, text=True, timeout=120, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        jj = json.load(open(jr, encoding="utf-8-sig")) if os.path.exists(jr) else {}
+        verifie(r.returncode == 0 and jj.get("ok") is True and jj.get("etape") == "fini",
+                f"temperatures_windows.ps1 -EssaiASec : relevé et tâche valides (code {r.returncode}, {jj.get('message') or r.stderr[-200:]})")
     else:
         t = S.temperatures(sante)
         verifie(t["etat"] in ("active", "non_disponible"), f"hors Windows : {t['etat']} sans planter")

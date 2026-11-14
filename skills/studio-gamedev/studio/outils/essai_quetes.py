@@ -12,6 +12,7 @@ aucun fichier existant touché), table du bureau (thème du projet, détail par 
 Usage : python -I -B essai_quetes.py [--garder]      code 0 = tout vert
 Les projets d'essai sont créés dans un dossier temporaire, effacé à la fin (sauf --garder).
 """
+import argparse
 import importlib.util
 import json
 import os
@@ -32,6 +33,7 @@ for _flux in (sys.stdout, sys.stderr):
         _flux.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
         pass
+import hote  # noqa: E402
 import quetes  # noqa: E402
 import style_paliers  # noqa: E402
 import table_projet  # noqa: E402
@@ -221,6 +223,8 @@ def actions(d, rm):
         "Q-ID-04": logo,
         "Q-ID-05": lambda: ecrire(os.path.join(d, "scenes/ui/menu_principal.tscn"), "[gd_scene format=3]\n"),
         "Q-ID-06": decor,
+        "Q-SU-04": lambda: hote.enregistrer(d, {"nom": "Lou", "allure": "petite", "couleurs": "foret", "coin": "coeur", "ton": "chaleureux",
+                                                "activites": ["boisson", "lit", "tournee"], "objets": ["tapis", "lampe"]}),
         "Q-ID-07": lambda: ecrire(os.path.join(d, "scenes/ui/hud.tscn"), "[gd_scene format=3]\n"),
         "Q-BO-01": lambda: rm.verser_jalon("J2"),
         "Q-BO-02": lambda: ecrire(os.path.join(d, "scripts/sauvegarde.gd"), "func save_game():\n\tvar f = ConfigFile.new()\n\tf.save(\"user://s.cfg\")\n"),
@@ -296,8 +300,11 @@ def essai_partie(base):
             if q["statut"] == "proposee":
                 agents = [a["agent"] for a in q["propositions"]["agents"]]
                 r = quetes.repondre(d, k, "accepter", agents, maintenant=t, catalogue=CAT)
-                dem = lire_json(os.path.join(d, ".studio", r["demande"]))
-                demandes_ok &= dem["type"] == "quete" and dem["lancer"] is False and all(c["lancer"] is False for c in dem["recruter"])
+                if r.get("ouvre"):                       # quête jouée dans la page (l'hôte) : aucune demande pour l'assistant
+                    demandes_ok &= "demande" not in r and r["ouvre"] == "hote"
+                else:
+                    dem = lire_json(os.path.join(d, ".studio", r["demande"]))
+                    demandes_ok &= dem["type"] == "quete" and dem["lancer"] is False and all(c["lancer"] is False for c in dem["recruter"])
                 for c in r["recruter"]:
                     recruter_comme_le_serveur(d, c)
                     accepte_agents += 1
@@ -725,8 +732,44 @@ def essai_serveur(base):
         print("  (node absent : syntaxe du module non vérifiée)")
 
 
-def main():
-    garder = "--garder" in sys.argv
+def essai_500_reponses(base):
+    """G2 : passé 500 réponses (liste coupée à 500), une nouvelle réponse s'applique encore ; un fichier abîmé est mis de côté."""
+    print("Réponses aux quêtes : au-delà de 500, fichier abîmé")
+    d = os.path.join(base, "q500")
+    st = os.path.join(d, ".studio")
+    os.makedirs(st, exist_ok=True)
+    ids = [k for k in CAT["_par_id"]][:2]
+    etat = {"quetes": {k: {"statut": "proposee"} for k in ids}, "suivie": None, "reponses_lues": 500}
+    anciennes = [{"id": "inconnue", "action": "suivre", "t": int(T0) - 7200} for _ in range(500)]   # format ancien : sans « n »
+    ecrire_json(os.path.join(st, "quetes_reponses.json"), anciennes)
+    quetes.appliquer_reponses(d, etat, CAT, T0, [])
+    ok(etat.get("suivie") is None and etat.get("reponse_n") == 500, f"500 réponses anciennes déjà lues : rien d'appliqué (curseur {etat.get('reponse_n')})")
+    for i, k in enumerate(ids):
+        ecrire_json(os.path.join(st, "quetes_etat.json"), etat)
+        try:
+            r = quetes.repondre(d, k, "suivre", maintenant=T0 + 60 * (i + 1), catalogue=CAT)["reponse"]
+        except quetes.Refus as e:
+            ok(False, f"réponse n° {501 + i} refusée : {e}")
+            return
+        liste = lire_json(os.path.join(st, "quetes_reponses.json"), [])
+        quetes.appliquer_reponses(d, etat, CAT, T0 + 60 * (i + 1), [])
+        ok(len(liste) == 500 and r.get("n") == 501 + i and etat.get("suivie") == k,
+           f"réponse n° {501 + i} appliquée alors que la liste reste à {len(liste)} (suivie : {etat.get('suivie')})")
+    ecrire(os.path.join(st, "quetes_reponses.json"), '[{"id": "abîmé"')
+    ecrire_json(os.path.join(st, "quetes_etat.json"), etat)
+    try:
+        quetes.repondre(d, ids[0], "suivre", maintenant=T0 + 600, catalogue=CAT)
+        repris = True
+    except quetes.Refus:
+        repris = False
+    copies = [f for f in os.listdir(st) if f.startswith("quetes_reponses.corrompu-")]
+    ok(repris and len(copies) == 1, f"quetes_reponses.json abîmé : mis de côté ({copies}), la réponse est quand même enregistrée")
+
+
+def main(argv=None):
+    a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    a.add_argument("--garder", action="store_true", help="garder le dossier temporaire")
+    garder = a.parse_args(argv).garder
     base = tempfile.mkdtemp(prefix="essai_quetes_")
     print(f"Essai des quêtes : {base}")
     debut = time.time()
@@ -740,6 +783,7 @@ def main():
         essai_table(base)
         essai_perf(base)
         essai_serveur(base)
+        essai_500_reponses(base)
     finally:
         if not garder:
             reessai = lambda f, p, _e: (os.chmod(p, 0o700), f(p))  # noqa: E731  fichiers en lecture seule de .git sous Windows

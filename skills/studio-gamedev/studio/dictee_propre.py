@@ -101,8 +101,8 @@ def _cle(x):
 
 
 def corriger_vocabulaire(texte, vocabulaire):
-    """Mots du projet écrits au son par Whisper, remis à l'orthographe du vocabulaire : « Deepwood » → « DEEPWOODS »,
-    « Elevants Labs » → « ElevenLabs », « grimbour » → « Grimbourg ». Seulement les noms propres (au moins une
+    """Mots du projet écrits au son par Whisper, remis à l'orthographe du vocabulaire : « Stonefield » → « STONEFIELDS »,
+    « Elevants Labs » → « ElevenLabs », « valbour » → « Valbourg ». Seulement les noms propres (au moins une
     majuscule) ; à l'identique (casse près) sous 7 lettres, à 75 % près au-delà, même première lettre : « clause » ne
     devient jamais « Claude »."""
     termes = [t.strip() for t in (vocabulaire if isinstance(vocabulaire, (list, tuple)) else str(vocabulaire or "").split(","))]
@@ -132,7 +132,7 @@ def corriger_vocabulaire(texte, vocabulaire):
                     bon = True
                 elif len(ct) >= 7 and k[0] == ct[0] and abs(len(k) - len(ct)) <= 2:
                     bon = _distance(k, ct) <= max(1, int(len(ct) * 0.25 + 0.5))
-                elif len(ct) >= 6 and k == ct[:-1] and ct.endswith("s"):    # pluriel perdu : « Deepwood »
+                elif len(ct) >= 6 and k == ct[:-1] and ct.endswith("s"):    # pluriel perdu : « Stonefield »
                     bon = True
                 else:
                     bon = False
@@ -151,6 +151,12 @@ def corriger_vocabulaire(texte, vocabulaire):
 
 
 if __name__ == "__main__":          # essai : le cas réel du 13/11
+    import sys
+    for _flux in (sys.stdout, sys.stderr):             # G16 : sortie en UTF-8, même redirigée (Windows, cp1252)
+        try:
+            _flux.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     cas = "faut faut que faut que tu de de faire de faire une de faire une version portable"
     attendu = "faut que tu de faire une version portable"
     assert propre(cas) == attendu, propre(cas)
@@ -169,10 +175,10 @@ if __name__ == "__main__":          # essai : le cas réel du 13/11
     assert not est_hallucination("Sous-titrage du tutoriel à revoir, la fin est coupée.")
     assert est_hallucination("Sous-titrage ST' 501") and est_hallucination("Sous-titres réalisés par la communauté d'Amara.org")
     assert est_hallucination("Merci d'avoir regardé !") and est_hallucination("Sous-titrage Société Radio-Canada")
-    v = "DEEPWOODS, Godot, Unreal, Tripo, Nanite, ElevenLabs, Grimbourg, Claude, tour de garde, studio."
-    assert corriger_vocabulaire("la faune de Deepwood.", v) == "la faune de DEEPWOODS."
+    v = "STONEFIELDS, Godot, Unreal, Tripo, Nanite, ElevenLabs, Valbourg, Claude, tour de garde, studio."
+    assert corriger_vocabulaire("la faune de Stonefield.", v) == "la faune de STONEFIELDS."
     assert corriger_vocabulaire("avec Elevants Labs pour", v) == "avec ElevenLabs pour"
-    assert corriger_vocabulaire("près du grimbour.", v) == "près du Grimbourg."
+    assert corriger_vocabulaire("près du valbour.", v) == "près du Valbourg."
     assert corriger_vocabulaire("une clause du contrat, tripot et nanny", v) == "une clause du contrat, tripot et nanny"
     assert corriger_vocabulaire("les rochers Megascans en Nanite", "Megascans, Nanite") == "les rochers Megascans en Nanite"
     print("dictée propre : 19/19")

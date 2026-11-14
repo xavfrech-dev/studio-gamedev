@@ -54,5 +54,10 @@ def decouvrir(racine, niveaux=6, max_entrees=40000):
     return sorted(set(musiques)), sorted(set(ambiances))
 
 if __name__ == '__main__':
+    for _flux in (sys.stdout, sys.stderr):                 # G16 : sortie en UTF-8, même redirigée (Windows, cp1252)
+        try:
+            _flux.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
     m, a = decouvrir(sys.argv[1] if len(sys.argv) > 1 else '.')
     print(json.dumps({'musiques': m, 'ambiances': a}, ensure_ascii=False, indent=1))

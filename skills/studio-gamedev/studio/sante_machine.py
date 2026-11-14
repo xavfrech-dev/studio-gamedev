@@ -18,8 +18,12 @@
      Lignes possibles : fichiers temporaires du projet et de l'outil, caches régénérables du moteur (Unreal : DerivedDataCache,
      Intermediate, Saved/ShaderDebugInfo, Saved/Logs, Saved/Crashes ; Godot : .godot/imported, .godot/shader_cache ;
      Unity : Library, Temp, Logs, obj ; cache DDC partagé d'Unreal), vieilles builds (les 2 dernières gardées), worktrees git
-     dont la branche est déjà fusionnée et propres (git worktree remove, sans --force ; la branche reste), corbeille du disque.
+     dont la branche est déjà fusionnée et propres (git worktree remove, sans --force ; la branche reste). La corbeille du
+     disque (TOUTE la corbeille, fichiers jetés hors du projet compris) n'est proposée que si cfg « corbeille » vaut
+     exactement "toute" : exclue par défaut (un simple True ne suffit pas), en attendant la décision de l'utilisateur.
      Caches du moteur ignorés tant que le moteur est ouvert ; tout ce qui a bougé depuis 2 h est ignoré.
+     Une proposition a au plus MAX_LIGNES lignes : les lignes montrées sont exactement les lignes exécutées.
+     Un ménage « en_cours » sans fil vivant (plantage pendant le nettoyage) passe à « interrompue », noté au journal.
 """
 import hashlib
 import json
@@ -31,6 +35,10 @@ import sys
 import threading
 import time
 
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique communes)
+
 GO = 2 ** 30
 TACHE_WINDOWS = "Studio gamedev - temperatures"
 SUBPROC = {"capture_output": True, "text": True, "timeout": 60, "encoding": "utf-8", "errors": "replace",
@@ -38,28 +46,16 @@ SUBPROC = {"capture_output": True, "text": True, "timeout": 60, "encoding": "utf
 RECENT_S = 2 * 3600             # ce qui a bougé depuis 2 h n'est jamais proposé (build en cours, worktree en usage)
 BUDGET_TAILLE_S = 60            # temps maximal pour mesurer les tailles d'une analyse (le reste est « au moins »)
 REPORT_S = 12 * 3600            # « Pas maintenant » : plus de proposition pendant 12 h
+MAX_LIGNES = 40                 # lignes d'une proposition : toutes montrées, toutes exécutées, jamais davantage
+WORKTREES_CACHE_S = 600         # liste des worktrees gardée 10 min (ou jusqu'à un changement dans .git)
 
 
 def _lire(chemin, defaut):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)
 
 
 def _ecrire(chemin, donnees):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    tmp = f"{chemin}.{os.getpid()}.{threading.get_ident()}.tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=1)
-    for essai in range(5):
-        try:
-            os.replace(tmp, chemin)
-            return
-        except PermissionError:
-            time.sleep(0.1 * (essai + 1))
-    os.replace(tmp, chemin)
+    jsonio.ecrire(chemin, donnees)
 
 
 def _norm(p):
@@ -117,10 +113,16 @@ def _points_montage():
     return out
 
 
+_DISQUES_VUS = {}                # {point: dernière mesure} : un disque déjà vu qui manque ou échoue reste, marqué « injoignable »
+
+
 def disques(projet=None, temps=None):
-    """[{lettre, point, nom, total_go, libre_go, libre_pct, utilise_pct, temp_c, projet}] ; temps : {lettre ou point: °C}."""
+    """[{lettre, point, nom, total_go, libre_go, libre_pct, utilise_pct, temp_c, projet, injoignable}] ; temps : {lettre ou point: °C}.
+    Un disque fixe vu lors d'un passage précédent qui disparaît ou dont la lecture échoue reste dans la liste avec
+    injoignable=True, ses dernières valeurs connues et « injoignable_depuis » (jamais une disparition silencieuse)."""
     temps = temps or {}
     out = []
+    lus = set()
     try:
         points = _points_montage()
     except Exception:
@@ -132,12 +134,23 @@ def disques(projet=None, temps=None):
             continue
         if not u.total:
             continue
+        lus.add(point)
         lettre = point[0].upper() if os.name == "nt" else point
         t = temps.get(lettre)
-        out.append({"lettre": lettre, "point": point, "nom": nom, "total_go": round(u.total / GO, 1), "libre_go": round(u.free / GO, 1),
-                    "libre_pct": round(100 * u.free / u.total), "utilise_pct": round(100 - 100 * u.free / u.total),
-                    "temp_c": t if isinstance(t, (int, float)) else None,
-                    "projet": bool(projet) and disque_de(projet, [{"point": point}]) is not None})
+        d = {"lettre": lettre, "point": point, "nom": nom, "total_go": round(u.total / GO, 1), "libre_go": round(u.free / GO, 1),
+             "libre_pct": round(100 * u.free / u.total), "utilise_pct": round(100 - 100 * u.free / u.total),
+             "temp_c": t if isinstance(t, (int, float)) else None,
+             "projet": bool(projet) and disque_de(projet, [{"point": point}]) is not None, "injoignable": False}
+        _DISQUES_VUS[point] = dict(d)
+        out.append(d)
+    for point, vu in list(_DISQUES_VUS.items()):
+        if point in lus:
+            continue
+        d = dict(vu, injoignable=True, temp_c=None)
+        d.setdefault("injoignable_depuis", time.strftime("%Y-%m-%dT%H:%M:%S"))
+        _DISQUES_VUS[point] = dict(d)
+        d["projet"] = bool(projet) and disque_de(projet, [{"point": point}]) is not None
+        out.append(d)
     # sous Linux, plusieurs points peuvent mener au même disque : un seul « projet », le plus précis
     if projet and sum(1 for d in out if d["projet"]) > 1:
         meilleur = disque_de(projet, out)
@@ -261,6 +274,7 @@ def temperatures(dossier_sante, en=False, fichier=None):
                             "Windows asks for “Yes” (account control window): answer it to enable.")
     elif etat_act == "refuse":
         res["etat"] = "refuse"
+        res["cause"] = texte_cause("refuse", en)
         res["message"] = tx("activation refusée (« Non » à Windows) : rien n'a été installé. Le bouton « Activer » la repropose.",
                             "enabling refused (“No” to Windows): nothing was installed. The “Enable” button offers it again.")
     elif etat_act in ("active", "en_attente_oui") and isinstance(d, dict):
@@ -269,51 +283,213 @@ def temperatures(dossier_sante, en=False, fichier=None):
                             "the scheduled task has not written the reading for over 10 min (uninstall then enable again).")
     elif etat_act == "echec":
         res["etat"] = "pas_active"
-        res["message"] = tx(f"échec de l'activation : {act.get('message') or 'inconnu'}", f"enabling failed: {act.get('message') or 'unknown'}")
+        if act.get("cause"):
+            res["cause"] = texte_cause(act.get("cause"), en)
+            detail = act.get("message") or ""
+            res["message"] = tx(f"échec de l'activation : {res['cause']}" + (f" ({detail})" if detail else "") + ". Le bouton « Activer » réessaie.",
+                                f"enabling failed: {res['cause']}" + (f" ({detail})" if detail else "") + ". The “Enable” button tries again.")
+        else:   # résultat écrit par une version précédente (sans cause) : on le dit au lieu d'un « code 1 » muet
+            res["cause"] = tx("échec sans détail (ancienne version du script, corrigée depuis)", "failure without detail (older script version, fixed since)")
+            res["message"] = tx(f"échec de l'activation ({act.get('message') or 'inconnu'}) avec l'ancienne version du script : "
+                                "le bouton « Activer » relance la version corrigée.",
+                                f"enabling failed ({act.get('message') or 'unknown'}) with the older script: the “Enable” button runs the fixed one.")
     else:
         res["message"] = tx("Windows ne donne les températures qu'avec les droits d'administrateur : bouton « Activer » (un « Oui » à Windows, une fois).",
                             "Windows gives temperatures only with administrator rights: “Enable” button (one “Yes” to Windows, once).")
     return res
 
 
+CAUSES = {   # cause écrite dans temperatures_activation.json -> texte montré sur la fiche
+    "windows_refuse": ("Windows a refusé", "Windows refused"),
+    "refuse": ("« Non » répondu à Windows : rien n'a été installé", "“No” answered to Windows: nothing was installed"),
+    "droits_absents": ("PowerShell n'a pas reçu les droits d'administrateur", "PowerShell did not get administrator rights"),
+    "elevation_impossible": ("Windows n'a pas pu lancer PowerShell en administrateur", "Windows could not start PowerShell as administrator"),
+    "script_absent": ("script d'activation absent", "enabling script missing"),
+    "powershell_absent": ("PowerShell introuvable", "PowerShell not found"),
+    "dossier": ("dossier %ProgramData%\\StudioGamedev impossible à préparer", "could not prepare the %ProgramData%\\StudioGamedev folder"),
+    "releve": ("script de relevé impossible à écrire", "could not write the reading script"),
+    "tache_planifiee": ("le planificateur de tâches a refusé la tâche", "the Task Scheduler rejected the task"),
+    "premier_releve": ("tâche créée mais le premier relevé a échoué", "task created but the first reading failed"),
+    "pas_de_reponse": ("pas de réponse de Windows en 15 min", "no answer from Windows within 15 min"),
+    "script": ("le script s'est arrêté", "the script stopped"),
+    "inconnue": ("le script s'est arrêté sans dire pourquoi", "the script stopped without saying why"),
+}
+
+
+def texte_cause(cause, en=False):
+    fr, eng = CAUSES.get(cause) or CAUSES["inconnue"]
+    return eng if en else fr
+
+
 def lancer_activation(action, dossier_sante, script, en=False):
     """Appelé par le serveur sur le CLIC de l'utilisateur seulement. action : installer | desinstaller.
     Lance PowerShell non élevé qui demande l'élévation (Start-Process -Verb RunAs) : Windows affiche sa fenêtre « Oui / Non ».
-    Retourne tout de suite ; le résultat (active / refuse / echec / desinstalle) est écrit dans temperatures_activation.json."""
+    Retourne tout de suite ; le résultat (active / refuse / echec / desinstalle) est écrit dans temperatures_activation.json,
+    avec la cause en clair (champ « cause », voir CAUSES) lue dans le journal que le script élevé écrit (temperatures_journal.json)."""
     if os.name != "nt":
         raise RuntimeError("rien à activer hors de Windows (Linux : lecture directe ; macOS : non disponible)")
     if action not in ("installer", "desinstaller"):
         raise ValueError("action : installer ou desinstaller")
-    if not os.path.isfile(script):
-        raise FileNotFoundError(script)
     chemin = os.path.join(dossier_sante, "temperatures_activation.json")
+    journal = os.path.join(dossier_sante, "temperatures_journal.json")
+
+    def resultat(etat, cause=None, message=None, code=None, etape=None):
+        _ecrire(chemin, {"etat": etat, "action": action, "t": int(time.time()), "quand": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                         "cause": cause, "cause_texte": texte_cause(cause) if cause else None, "etape": etape,
+                         "message": message, "code": code})
+
+    if not os.path.isfile(script):
+        resultat("echec", "script_absent", script)
+        raise FileNotFoundError(script)
     ancien = _lire(chemin, {}) or {}
     if ancien.get("etat") == "en_attente_oui" and time.time() - (ancien.get("t") or 0) < 3 * 60:
         return {"ok": True, "deja": True, "etat": "en_attente_oui"}
+    try:
+        os.remove(journal)
+    except OSError:
+        pass
     _ecrire(chemin, {"etat": "en_attente_oui", "action": action, "t": int(time.time()), "quand": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    # chemins entre guillemets (espaces possibles) ; code 1223 = « Non » à Windows ; 2 = élévation impossible ; sinon code du script
     commande = ("$ErrorActionPreference='Stop'; try { $p = Start-Process -FilePath 'powershell.exe' -Verb RunAs -Wait -PassThru -WindowStyle Hidden "
-                "-ArgumentList ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"' + $env:STUDIO_SANTE_PS1 + '\" -Action ' + $env:STUDIO_SANTE_ACTION); "
+                "-ArgumentList ('-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"' + $env:STUDIO_SANTE_PS1 + '\" -Action ' "
+                "+ $env:STUDIO_SANTE_ACTION + ' -Journal \"' + $env:STUDIO_SANTE_JOURNAL + '\"'); "
                 "exit $p.ExitCode } catch { $e = $_.Exception; while ($e) { if ($e.NativeErrorCode -eq 1223) { exit 1223 }; $e = $e.InnerException }; "
                 "if ($_.Exception.Message -match 'annul|cancel') { exit 1223 }; [Console]::Error.WriteLine($_.Exception.Message); exit 2 }")
-    env = dict(os.environ, STUDIO_SANTE_PS1=os.path.abspath(script), STUDIO_SANTE_ACTION="Installer" if action == "installer" else "Desinstaller")
+    env = dict(os.environ, STUDIO_SANTE_PS1=os.path.abspath(script), STUDIO_SANTE_JOURNAL=os.path.abspath(journal),
+               STUDIO_SANTE_ACTION="Installer" if action == "installer" else "Desinstaller")
 
     def attendre():
+        cause = None
         try:
             r = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", commande], env=env,
                                **dict(SUBPROC, timeout=15 * 60))
             code, err = r.returncode, (r.stderr or "").strip()[-300:]
+        except FileNotFoundError as e:
+            code, err, cause = -1, str(e), "powershell_absent"
+        except subprocess.TimeoutExpired:
+            code, err, cause = -1, None, "pas_de_reponse"
         except Exception as e:  # noqa
             code, err = -1, f"{type(e).__name__} : {e}"
+        j = _lire(journal, None)
+        j = j if isinstance(j, dict) else {}
         if code == 0:
-            etat = "active" if action == "installer" else "desinstalle"
-            msg = None
+            resultat("active" if action == "installer" else "desinstalle", message=j.get("message"), code=0, etape=j.get("etape"))
         elif code == 1223:
-            etat, msg = "refuse", None
+            resultat("refuse", "refuse", code=1223)
+        elif code == 2:
+            resultat("echec", "elevation_impossible", err or None, code)
         else:
-            etat, msg = "echec", err or f"code {code}"
-        _ecrire(chemin, {"etat": etat, "action": action, "t": int(time.time()), "quand": time.strftime("%Y-%m-%dT%H:%M:%S"), "message": msg, "code": code})
+            resultat("echec", cause or j.get("cause") or "inconnue", j.get("message") or err or f"code {code}", code, j.get("etape"))
     threading.Thread(target=attendre, daemon=True).start()
     return {"ok": True, "etat": "en_attente_oui"}
+
+
+# ------------------------------------------------------------------ 2 bis) fiche de l'agent : une jauge par compteur
+# Chaque disque a sa jauge (occupation, et sa température quand on peut la lire), comme processeur, mémoire et carte
+# graphique ; puis les températures des éléments du PC (processeur, carte graphique, carte mère, capteurs Linux).
+# Une température illisible reste affichée (« non lisible sans droits ») au lieu de disparaître. Rien n'est élevé ici.
+_MODELES = {"t": 0, "v": {}, "fil": None}
+
+
+def modeles_disques():
+    """{lettre: modèle du disque physique} sous Windows (Get-Partition + Get-PhysicalDisk, sans droits d'administrateur).
+    Rend le cache tout de suite ; relu en tâche de fond au plus toutes les 10 min : la page n'attend jamais PowerShell."""
+    if os.name != "nt":
+        return {}
+    fil = _MODELES["fil"]
+    if time.time() - _MODELES["t"] > 600 and not (fil and fil.is_alive()):
+        _MODELES["t"] = time.time()
+
+        def lire():
+            cmd = ("$m=@{}; Get-PhysicalDisk | ForEach-Object { $m[[string]$_.DeviceId]=$_.FriendlyName }; "
+                   "Get-Partition | Where-Object DriveLetter | ForEach-Object { '{0}|{1}' -f $_.DriveLetter,$m[[string]$_.DiskNumber] }")
+            try:
+                r = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", cmd], capture_output=True,
+                                   text=True, timeout=40, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                v = {}
+                for ligne in (r.stdout or "").splitlines():
+                    a, _, b = ligne.strip().partition("|")
+                    if a and b.strip():
+                        v[a.upper()[:1]] = b.strip()[:60]
+                if v:
+                    _MODELES["v"] = v
+            except (OSError, subprocess.SubprocessError, ValueError):
+                pass
+        _MODELES["fil"] = threading.Thread(target=lire, daemon=True)
+        _MODELES["fil"].start()
+    return dict(_MODELES["v"])
+
+
+def jauges(cpu=None, mem_pct=None, gpu=None, vram_pct=None, gpu_temp=None, disques=None, temps=None, en=False):
+    """{charge: [...], disques: [...], temperatures: [...], activer: bool, message}. Chaque jauge :
+    {cle, titre, valeur, pct (0-100 ou None), note, alerte, lisible, temp, temp_pct, temp_lisible}."""
+    tx = (lambda fr, en_: en_ if en else fr)
+    temps = temps if isinstance(temps, dict) else {}
+    etat_t = temps.get("etat") or "pas_active"
+    sans_droits = os.name == "nt" and etat_t != "active"
+    illisible = tx("non lisible sans droits", "not readable without admin rights") if sans_droits else tx("non disponible", "not available")
+
+    def borne(v):
+        return None if not isinstance(v, (int, float)) else max(0, min(100, int(round(v))))
+
+    def jauge(cle, titre, valeur, pct=None, note=None, alerte=False, lisible=True, **extra):
+        return dict({"cle": cle, "titre": titre, "valeur": valeur, "pct": borne(pct), "note": note, "alerte": bool(alerte), "lisible": lisible}, **extra)
+
+    def temp(cle, titre, c, seuil, note=None, note_illisible=None):
+        if isinstance(c, (int, float)):
+            return jauge(cle, titre, f"{int(round(c))} °C", c, note, c >= seuil)
+        return jauge(cle, titre, "—", None, note_illisible or illisible, False, False)
+
+    charge = [jauge("cpu", tx("processeur", "CPU"), f"{cpu} %" if cpu is not None else "—", cpu, None, (cpu or 0) >= 92),
+              jauge("memoire", tx("mémoire", "memory"), f"{mem_pct} %" if mem_pct is not None else "—", mem_pct, None, (mem_pct or 0) > 90)]
+    if gpu is not None:
+        charge.append(jauge("gpu", tx("carte graphique", "GPU"), f"{gpu} %", gpu,
+                            tx(f"mémoire vidéo {vram_pct} %", f"video memory {vram_pct} %") if vram_pct is not None else None, gpu >= 97))
+    modeles = modeles_disques()
+    sortie_d = []
+    for d in disques or []:
+        if not isinstance(d, dict) or not d.get("lettre"):
+            continue
+        l = str(d["lettre"])
+        nom_l = l + (":" if os.name == "nt" and len(l) == 1 else "")
+        libre, total = d.get("libre_go"), d.get("total_go")
+        occ = None if d.get("libre_pct") is None else 100 - int(d["libre_pct"])
+        nom = " · ".join(x for x in (str(d.get("nom") or "").strip(), modeles.get(l.upper()[:1]) if len(l) == 1 else None) if x)
+        t = d.get("temp_c")
+        if not isinstance(t, (int, float)):
+            t = (temps.get("disques") or {}).get(l.upper()[:1]) if len(l) == 1 else None
+        lisible_t = isinstance(t, (int, float))
+        if not lisible_t and etat_t == "active" and os.name == "nt":
+            t_txt = tx("température : Windows ne la donne pas pour ce disque", "temperature: Windows does not report it for this disk")
+        else:
+            t_txt = (f"{int(round(t))} °C" if lisible_t else tx("température : ", "temperature: ") + illisible)
+        if d.get("injoignable"):
+            sortie_d.append(jauge("disque-" + l, tx("disque ", "disk ") + nom_l, tx("injoignable", "unreachable"), None,
+                                  " · ".join(x for x in (nom, tx(f"plus lu depuis {d.get('injoignable_depuis') or '?'} (dernière mesure : {libre} Go libres)",
+                                                                 f"not read since {d.get('injoignable_depuis') or '?'} (last reading: {libre} GB free)")) if x),
+                                  True, False, temp=tx("température : disque injoignable", "temperature: disk unreachable"), temp_pct=None,
+                                  temp_lisible=False, projet=bool(d.get("projet")), injoignable=True))
+            continue
+        sortie_d.append(jauge("disque-" + l, tx("disque ", "disk ") + nom_l, tx(f"{libre} Go libres", f"{libre} GB free") if libre is not None else "—", occ,
+                              " · ".join(x for x in (nom, tx(f"occupé à {occ} % de {total} Go", f"{occ} % used of {total} GB") if occ is not None else None) if x),
+                              (occ or 0) >= 92 or (lisible_t and t >= 65), True,
+                              temp=t_txt, temp_pct=borne(t) if lisible_t else None, temp_lisible=lisible_t, projet=bool(d.get("projet"))))
+    tl = [temp("t-cpu", tx("température processeur", "CPU temperature"), temps.get("cpu_c"), 95,
+               temps.get("cpu_note") if temps.get("cpu_c") is not None else None,
+               temps.get("cpu_note") if temps.get("cpu_note") and not sans_droits else None),
+          temp("t-gpu", tx("température carte graphique", "GPU temperature"), gpu_temp, 87, "nvidia-smi",
+               tx("non disponible (pas de carte NVIDIA lue)", "not available (no NVIDIA card read)"))]
+    if temps.get("cpu_source") == "acpi" and temps.get("cpu_c") is not None:
+        tl.append(temp("t-cm", tx("température carte mère", "motherboard temperature"), temps["cpu_c"], 90, tx("zone thermique ACPI", "ACPI thermal zone")))
+    else:
+        tl.append(temp("t-cm", tx("température carte mère", "motherboard temperature"), None, 90, None,
+                       None if sans_droits else tx("non disponible sur cette machine", "not available on this machine")))
+    for a in temps.get("autres") or []:
+        if isinstance(a, dict):
+            tl.append(temp("t-" + str(a.get("capteur")), str(a.get("capteur")), a.get("temp_c"), 70))
+    return {"charge": charge, "disques": sortie_d, "temperatures": tl,
+            "activer": bool(temps.get("activable")) and etat_t in ("pas_active", "refuse", "en_panne"),
+            "etat_temperatures": etat_t, "message": temps.get("message"), "cause": temps.get("cause")}
 
 
 # ------------------------------------------------------------------ 3) ménage proposé
@@ -524,6 +700,11 @@ class Menage:
         self.f_etat = os.path.join(dossier_sante, "menage_etat.json")
         self.f_journal = os.path.join(dossier_sante, "menage_journal.json")
         self.f_demande = os.path.join(dossier_sante, "analyser.demande")
+        self._wt_cache = {}       # {(dépôt, fusion): (t, signature, liste)} : git n'est plus lancé toutes les 15 s
+
+    def corbeille_permise(self):
+        """TOUTE la corbeille du disque : seulement si cfg « corbeille » vaut exactement "toute" (exclue par défaut)."""
+        return self.cfg.get("corbeille") == "toute"
 
     def en(self):
         return str(self.cfg.get("langue") or "fr").lower().startswith("en")
@@ -544,8 +725,31 @@ class Menage:
                 return b
         return None
 
-    def worktrees(self, depot):
-        """[{chemin, branche, fusionnee, propre, verrouille, recent, admin}] (hors worktree principal)."""
+    def _wt_signature(self, depot):
+        """Change quand un worktree est ajouté ou retiré (.git/worktrees) ou qu'une branche bouge (refs/heads, packed-refs)."""
+        sig = []
+        g = os.path.join(depot, ".git")
+        for f in (os.path.join(g, "worktrees"), os.path.join(g, "refs", "heads"), os.path.join(g, "packed-refs"), g):
+            try:
+                sig.append(os.stat(f).st_mtime_ns)
+            except OSError:
+                sig.append(None)
+        return tuple(sig)
+
+    def worktrees(self, depot, frais=False, fusion=True):
+        """[{chemin, branche, fusionnee, verrouille, prunable, principale}] (hors worktree principal).
+        Gardé WORKTREES_CACHE_S secondes tant que la signature de .git ne change pas ; frais=True relit git (analyse, exécution).
+        fusion=False ne lance ni « rev-parse » ni « branch --merged » (fusionnee=False) : assez pour lister les chemins."""
+        cle = (_norm(depot) if depot else "", bool(fusion))
+        sig = self._wt_signature(depot) if depot else None
+        c = self._wt_cache.get(cle)
+        if not frais and c and time.time() - c[0] < WORKTREES_CACHE_S and c[1] == sig:
+            return [dict(w) for w in c[2]]
+        out = self._worktrees_git(depot, fusion)
+        self._wt_cache[cle] = (time.time(), sig, [dict(w) for w in out])
+        return out
+
+    def _worktrees_git(self, depot, fusion):
         r = self._git(depot, "worktree", "list", "--porcelain")
         if r.returncode:
             return []
@@ -560,7 +764,7 @@ class Menage:
             cur[k] = v or True
         if cur:
             blocs.append(cur)
-        princ = self.principale(depot)
+        princ = self.principale(depot) if fusion else None
         fusionnees = set()
         if princ:
             m = self._git(depot, "branch", "--merged", princ, "--format=%(refname:short)")
@@ -597,7 +801,7 @@ class Menage:
         r = [p for p in (self.cfg.get("projets") or []) + (self.cfg.get("builds") or []) if p]
         r += [d for d, _ in self.cfg.get("temporaires") or []]
         for depot in self.cfg.get("depots") or []:
-            r += [w["chemin"] for w in self.worktrees(depot)]
+            r += [w["chemin"] for w in self.worktrees(depot, frais=True, fusion=False)]
         if self.cfg.get("caches_partages", True):
             for p in self.cfg.get("projets") or []:
                 r += [c for c, *_ in caches_partages(moteur_du(p))]
@@ -615,7 +819,7 @@ class Menage:
         if os.sep + ".git" + os.sep in n + os.sep and type_ != "worktree":
             return False
         if type_ == "worktree":
-            return any(n == _norm(w["chemin"]) for d in self.cfg.get("depots") or [] for w in self.worktrees(d))
+            return any(n == _norm(w["chemin"]) for d in self.cfg.get("depots") or [] for w in self.worktrees(d, frais=True, fusion=False))
         return any(dans(chemin, r) for r in self.racines())
 
     # ---------------- analyse
@@ -705,7 +909,7 @@ class Menage:
                                                      "old build (the 2 latest are kept; rebuildable from the repository)"))
         # worktrees dont la branche est fusionnée
         for depot in self.cfg.get("depots") or []:
-            for w in self.worktrees(depot):
+            for w in self.worktrees(depot, frais=True):
                 p = w["chemin"]
                 if not w["fusionnee"] or w["verrouille"] or not os.path.isdir(p) or not sur_disque_bas(p):
                     continue
@@ -719,13 +923,15 @@ class Menage:
                                                         f"worktree of “{w['branche']}”, already merged into {w['principale']} (the branch stays; its ignored files, Saved and caches, go with it)"),
                        extra={"depot": depot, "branche": w["branche"]})
         # corbeille
-        if self.cfg.get("corbeille", True):
+        if self.corbeille_permise():
             for d in tous:
                 octets, n = corbeille_taille(d.get("point"))
                 if octets >= 64 * 1024 * 1024:
                     lignes.append({"type": "corbeille", "chemin": self.tx(f"Corbeille de {d.get('lettre')}", f"Recycle bin of {d.get('lettre')}"),
                                    "point": d.get("point"), "octets": octets, "taille_go": round(octets / GO, 2), "complet": True, "risque": "élevé" if not self.en() else "high",
-                                   "detail": self.tx(f"{n} élément(s) supprimé(s) : effacement définitif", f"{n} deleted item(s): permanent"), "disque": d.get("lettre")})
+                                   "detail": self.tx(f"TOUTE la corbeille du disque : {n} élément(s), y compris des fichiers jetés hors du projet ; effacement définitif",
+                                                     f"the WHOLE recycle bin of the disk: {n} item(s), including files thrown away outside the project; permanent"),
+                                   "disque": d.get("lettre")})
         lignes.sort(key=lambda x: -x["octets"])
         for i, l in enumerate(lignes, 1):
             l["n"] = i
@@ -736,6 +942,7 @@ class Menage:
         """Retourne ce que l'état montre (etat.sante.menage)."""
         seuil_go = float(self.cfg.get("seuil_go") or 30)
         seuil_pct = float(self.cfg.get("seuil_pct") or 8)
+        liste_disques = [d for d in liste_disques or [] if isinstance(d, dict) and not d.get("injoignable")]
         concernes = []
         for p in self.racines_surveillees():
             d = disque_de(p, liste_disques)
@@ -746,6 +953,10 @@ class Menage:
         prop = _lire(self.f_prop, None)
         demande = os.path.exists(self.f_demande)
         maintenant = time.time()
+        # 0) ménage « en_cours » sans fil vivant : le studio (ou le PC) s'est arrêté pendant le nettoyage
+        if isinstance(prop, dict) and prop.get("statut") == "en_cours" and not (self.fil is not None and self.fil.is_alive()):
+            prop = self._interrompre(prop)
+            etat = _lire(self.f_etat, {}) or {}
         # 1) réponse à la proposition ouverte
         if isinstance(prop, dict) and prop.get("statut") == "ouverte":
             r = (reponses or {}).get(prop["id"])
@@ -780,11 +991,29 @@ class Menage:
                 self.fil.start()
         return self.resume(bas, seuil_go)
 
+    def _interrompre(self, prop):
+        """Ménage resté « en_cours » sans fil : « interrompue », noté au journal ; une nouvelle analyse redevient possible."""
+        prop["statut"], prop["interrompu_le"] = "interrompue", time.strftime("%Y-%m-%dT%H:%M:%S")
+        faites = sum(1 for l in prop.get("lignes") or [] if "resultat" in l)
+        journal = _lire(self.f_journal, [])
+        journal = journal if isinstance(journal, list) else []
+        journal.append({"quand": prop["interrompu_le"], "decision": prop.get("id"), "type": "interruption", "chemin": "",
+                        "resultat": self.tx("ménage interrompu (studio ou PC arrêté pendant le nettoyage) ; nouvelle analyse si le disque reste bas",
+                                            "cleanup interrupted (studio or PC stopped during it); new analysis if the disk stays low"),
+                        "efface": False, "lignes_notees": faites})
+        _ecrire(self.f_prop, prop)
+        _ecrire(self.f_journal, journal[-300:])
+        etat = _lire(self.f_etat, {}) or {}
+        etat["analyse_t"] = 0
+        etat["analyse_en_cours"] = False
+        _ecrire(self.f_etat, etat)
+        return prop
+
     def racines_surveillees(self):
         r = list(self.cfg.get("projets") or []) + list(self.cfg.get("builds") or []) + list(self.cfg.get("depots") or [])
         for depot in self.cfg.get("depots") or []:
             try:
-                r += [w["chemin"] for w in self.worktrees(depot)]
+                r += [w["chemin"] for w in self.worktrees(depot, fusion=False)]
             except Exception:
                 pass
         return [x for x in r if x]
@@ -796,9 +1025,14 @@ class Menage:
             lignes, ignores = [], [{"chemin": "", "raison": f"{type(e).__name__} : {e}"[:200]}]
         etat = _lire(self.f_etat, {}) or {}
         etat["analyse_en_cours"] = False
+        ecartees = lignes[MAX_LIGNES:]        # les plus petites (lignes triées par taille) : proposées à l'analyse suivante
+        lignes = lignes[:MAX_LIGNES]
+        if ecartees:
+            ignores = [{"chemin": "", "raison": self.tx(f"{len(ecartees)} petite(s) ligne(s) au-delà de {MAX_LIGNES} : à la prochaine analyse",
+                                                        f"{len(ecartees)} small line(s) beyond {MAX_LIGNES}: next analysis")}] + ignores
         total = sum(l["octets"] for l in lignes)
         etat["derniere_analyse"] = {"quand": time.strftime("%Y-%m-%dT%H:%M:%S"), "total_go": round(total / GO, 1), "nb_lignes": len(lignes),
-                                    "ignores": ignores[:20]}
+                                    "nb_ecartees": len(ecartees), "ignores": ignores[:20]}
         min_go = float(self.cfg.get("min_go") or 1)
         if lignes and total / GO >= min_go:
             ident = f"{self.cfg.get('prefixe_id') or 'menage'}-" + time.strftime("%Y%m%d-%H%M") + "-" + hashlib.sha1(
@@ -821,7 +1055,7 @@ class Menage:
         journal = _lire(self.f_journal, [])
         journal = journal if isinstance(journal, list) else []
         libere = 0
-        for l in prop.get("lignes") or []:
+        for l in (prop.get("lignes") or [])[:MAX_LIGNES]:     # exactement les lignes montrées (resume, decision)
             res, ok = self._executer_ligne(l, moteur_ouvert)
             libere += l.get("octets", 0) if ok else 0
             l["resultat"] = res
@@ -839,7 +1073,7 @@ class Menage:
         type_, chemin = l.get("type"), l.get("chemin") or ""
         try:
             if type_ == "corbeille":
-                if not self.cfg.get("corbeille", True):
+                if not self.corbeille_permise():
                     return tx("ignoré : corbeille non permise", "skipped: recycle bin not allowed"), False
                 vider_corbeille(l.get("point"))
                 return tx("corbeille vidée", "recycle bin emptied"), True
@@ -902,6 +1136,8 @@ class Menage:
             statut = "propose"
         elif isinstance(prop, dict) and prop.get("statut") == "en_cours":
             statut = "en_cours"
+        elif isinstance(prop, dict) and prop.get("statut") == "interrompue" and time.time() - _iso_t(prop.get("interrompu_le")) < 6 * 3600:
+            statut = "interrompu"
         elif (etat.get("reporte_jusqu") or 0) > time.time():
             statut = "reporte"
         elif isinstance(prop, dict) and prop.get("statut") == "faite" and time.time() - _iso_t(prop.get("fait_le")) < 6 * 3600:
@@ -910,9 +1146,9 @@ class Menage:
                "derniere_analyse": etat.get("derniere_analyse"), "reporte_jusqu": etat.get("reporte_jusqu"),
                "journal": (journal if isinstance(journal, list) else [])[-8:]}
         if isinstance(prop, dict):
-            out["proposition"] = {k: prop.get(k) for k in ("id", "statut", "cree_le", "total_go", "disques", "fait_le", "libere_go")}
+            out["proposition"] = {k: prop.get(k) for k in ("id", "statut", "cree_le", "total_go", "disques", "fait_le", "libere_go", "interrompu_le")}
             out["proposition"]["lignes"] = [{k: l.get(k) for k in ("n", "type", "chemin", "taille_go", "complet", "risque", "detail", "disque", "resultat")}
-                                            for l in (prop.get("lignes") or [])[:40]]
+                                            for l in (prop.get("lignes") or [])[:MAX_LIGNES]]
         return out
 
     def decision(self):
@@ -922,21 +1158,40 @@ class Menage:
             return None
         tx = self.tx
         lettres = ", ".join(str(d.get("lettre")) + (":" if os.name == "nt" and len(str(d.get("lettre"))) == 1 else "") for d in prop.get("disques") or [])
-        lignes = [{k: l.get(k) for k in ("n", "type", "chemin", "taille_go", "complet", "risque", "detail")} for l in prop["lignes"][:40]]
+        montrees = (prop.get("lignes") or [])[:MAX_LIGNES]
+        lignes = [{k: l.get(k) for k in ("n", "type", "chemin", "taille_go", "complet", "risque", "detail")} for l in montrees]
         resume = "; ".join(f"{l['n']}. {l['chemin']} : {l['taille_go']:g} Go ({l['risque']})" for l in lignes[:8])
-        titre = tx(f"Faire de la place sur {lettres} (≈ {prop['total_go']:g} Go) ?", f"Free up space on {lettres} (≈ {prop['total_go']:g} GB)?")
-        explication = tx(f"L'agent Santé du PC a trouvé {len(lignes)} élément(s) effaçable(s) dans le projet et ses caches : {resume}. "
+        total_go = prop["total_go"] if len(prop.get("lignes") or []) <= MAX_LIGNES else round(sum(l.get("octets") or 0 for l in montrees) / GO, 1)
+        titre = tx(f"Faire de la place sur {lettres} (≈ {total_go:g} Go) ?", f"Free up space on {lettres} (≈ {total_go:g} GB)?")
+        corb = ", ".join(str(l.get("disque") or l.get("point") or "?") for l in montrees if l.get("type") == "corbeille")
+        nb_projet = sum(1 for l in lignes if l.get("type") != "corbeille")
+        explication = tx(f"L'agent Santé du PC a trouvé {nb_projet} élément(s) effaçable(s) dans le projet et ses caches : {resume}. "
+                         + (f"Il propose aussi de vider TOUTE la corbeille de {corb} (y compris des fichiers jetés hors du projet ; définitif). " if corb else "")
+                         + f"« Faire ce ménage » traite exactement ces {len(lignes)} ligne(s), pas une de plus. "
                          "Rien n'est effacé sans ton clic ; tout est noté dans le journal du ménage.",
-                         f"The PC Health agent found {len(lignes)} removable item(s) in the project and its caches: {resume}. "
+                         f"The PC Health agent found {nb_projet} removable item(s) in the project and its caches: {resume}. "
+                         + (f"It also offers to empty the WHOLE recycle bin of {corb} (including files thrown away outside the project; permanent). " if corb else "")
+                         + f"“Do this cleanup” handles exactly these {len(lignes)} line(s), no more. "
                          "Nothing is deleted without your click; everything is logged.")
-        choix = [{"id": "faire", "libelle": tx("Faire ce ménage", "Do this cleanup"), "detail": tx(f"libère ≈ {prop['total_go']:g} Go", f"frees ≈ {prop['total_go']:g} GB")},
+        choix = [{"id": "faire", "libelle": tx("Faire ce ménage", "Do this cleanup"), "detail": tx(f"libère ≈ {total_go:g} Go", f"frees ≈ {total_go:g} GB")},
                  {"id": "plus_tard", "libelle": tx("Pas maintenant", "Not now"), "detail": tx("plus de proposition pendant 12 h", "no new proposal for 12 h")}]
         return {"id": prop["id"], "type": "menage", "origine": "sante-pc", "titre": titre, "question": titre, "explication": explication, "contexte": explication,
                 "choix": choix, "options": choix, "recommande": "faire", "cree_le": prop.get("cree_le"), "statut": "ouverte",
-                "lignes": lignes, "total_go": prop["total_go"], "poste": "sante"}
+                "lignes": lignes, "total_go": total_go, "poste": "sante"}
 
 
 def _iso_t(s):
+    """Secondes depuis l'époque. Date avec fuseau (« Z », « +01:00 ») : lue avec son fuseau ; sans fuseau : heure locale."""
+    try:
+        from datetime import datetime
+        t = str(s).strip()
+        if t.endswith(("Z", "z")):
+            t = t[:-1] + "+00:00"          # Python 3.10 : fromisoformat ne lit pas « Z »
+        d = datetime.fromisoformat(t)
+        if d.tzinfo is not None:
+            return d.timestamp()
+    except Exception:
+        pass
     try:
         return time.mktime(time.strptime(str(s)[:19], "%Y-%m-%dT%H:%M:%S"))
     except Exception:

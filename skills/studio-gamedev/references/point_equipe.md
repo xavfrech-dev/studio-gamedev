@@ -32,6 +32,15 @@ dans « Réglages », ou en disant « point d'équipe » / `/point-equipe`. « T
 6. **Lis les réponses** : `reponses.json`, `demandes_vocales/`, `demandes/` ; traite-les comme des messages de l'utilisateur.
 7. **Lance les demandes en attente** déjà acceptées (statut `en attente` avec accord), dans les limites de `agents_max`, sans lancer
    le moteur en double ; montre chaque lancement dans la conversation.
+8. **Assistant actif** (aussi hors absence) : les suggestions `urgent` et `conseil` de `suggestions.json` et les tâches prêtes de
+   `taches_disponibles.json` deviennent **au plus 3 propositions à un clic**, chacune avec sa raison :
+   `python -I -B <skill>/studio/outils/cloche.py --projet <projet> proposer --id <id de la suggestion> --titre "…" --raison "…" [--poste p] [--origine suggestion:<id>] [--action "…"]`.
+   « Faire » (★) vaut accord : lance sans reposer la question (mêmes vérifications, `agents_max`). « Plus tard » : `proposer`
+   refuse la même proposition pendant 2 h. Une dépense n'est jamais une proposition (`cloche.py depense`, sans étoile).
+9. **Petites décisions prises seul, notées** : `cloche.py --projet <projet> note --genre ordre|relance|roadmap|reversible --titre "…" --raison "…"`.
+   Liste blanche seulement : ordre des tâches prêtes, relance d'un agent figé, statut de roadmap prouvé par un commit, choix réversible
+   sans coût. `note` refuse (code 3) ce qui dépense, supprime, publie, touche le système ou un compte. Le rapport les liste sous
+   « Décidé seul » (titre, raison).
 
 ## La petite blague
 
@@ -41,7 +50,8 @@ sur un pays, une langue ou un accent). Elle se coupe avec `"blague": false` dans
 ## Mode nuit (`mode_absent: true`)
 
 Le point est écrit dans `rapport_assistant.json` avec `"empile": true` et n'est pas annoncé dans la conversation.
-Au retour de l'utilisateur, le studio montre « Pendant ton absence » ; reprends alors les points empilés en un seul résumé.
+Pendant une absence, le travail continue (`references/absence.md`) : chaque point empilé liste aussi ce que tu as « décidé à ta place » depuis le précédent.
+Au retour de l'utilisateur, le studio montre « Pendant ton absence » ; reprends alors les points empilés en un seul résumé, qui commence par « Décidé à ta place » (titre, choix, raison) puis ce qui t'attend (réservé : dépense, suppression, publication, système, compte).
 
 ## Arrêt (« stop point d'équipe »)
 
@@ -50,6 +60,6 @@ dans `reglages.json`. Confirme en une ligne.
 
 ## Règles
 
-- Le point ne lance aucun chantier nouveau, ne lance pas le moteur et ne touche pas aux branches en cours.
+- Le point ne lance aucun chantier nouveau, ne lance pas le moteur et ne touche pas aux branches en cours. Il propose (étape 8) ; il lance seulement ce qui a déjà un accord (« Faire », demande `auto:` permise par les réglages, accord dans la conversation).
 - Ne jamais dire qu'une chose est finie sans l'avoir vue (commit, journal, rapport d'agent).
 - Ne jamais afficher ni écrire de clé d'API.

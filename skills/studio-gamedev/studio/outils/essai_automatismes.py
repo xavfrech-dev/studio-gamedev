@@ -1,13 +1,20 @@
 """Essai des automatismes côté serveur (S37), sans navigateur ni serveur : rien n'est envoyé (STUDIO_ESSAI_SANS_ENVOI),
 les envois prévus sont lus dans .studio/automatismes.json.
 
-python -I -B essai_automatismes.py
+python -I -B essai_automatismes.py [--garder]      (--garder : le dossier temporaire n'est pas effacé)
 """
+import argparse
 import json
 import os
+import shutil
 import sys
 import tempfile
 import time
+for _flux in (sys.stdout, sys.stderr):                 # G16 : sortie en UTF-8, même redirigée (Windows, cp1252)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(ICI))
@@ -35,8 +42,21 @@ def ecrire(chemin, d):
         json.dump(d, f, ensure_ascii=False)
 
 
-def main():
+def main(argv=None):
+    a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    a.add_argument("--garder", action="store_true", help="garder le dossier temporaire")
+    garder = a.parse_args(argv).garder
     d = tempfile.mkdtemp(prefix="essai_auto_")
+    try:
+        essai(d)
+    finally:                                            # M24 : plus de dossier laissé dans le Temp
+        if garder:
+            print(f"dossier gardé : {d}")
+        else:
+            shutil.rmtree(d, ignore_errors=True)
+
+
+def essai(d):
     st = FauxStudio(d)
     conf = {"mode": "travail", "langue": "fr", "postes": [{"id": "code"}, {"id": "art"}, {"id": "son"}], "moteur": {"nom": "Godot"}}
     ecrire(st.f("taches_disponibles.json"), {"taches": [
@@ -78,8 +98,10 @@ def main():
     a.passer(conf, p, None, {}, [], None, {})
     e = envois()
     assert len(e) == 1 and e[0]["route"] == "/api/confier" and e[0]["corps"]["tache_id"] == "J1-03" and e[0]["corps"]["origine"] == "auto:fin-de-tache", e
-    a.passer(conf, p, None, {}, [], None, {})
+    r = a.passer(conf, p, None, {}, [], None, {})
     assert len(envois()) == 1, "une seule fois"
+    # lot E : l'attribution faite sans onglet ouvert reste dans etat.json → automatismes.historique (résumé du retour)
+    assert any(x["type"] == "attribution" and x["poste"] == "son" and "Liste des sons" in x["titre"] for x in r["historique"]), r["historique"]
     ok += 1
     # 3. tyrannie : diagnostic (décision pour « art »), rôle temporaire sans moteur, demandes à l'assistant, plus rien une minute après
     ecrire(st.f("reglages.json"), {"tyrannie_auto": True})
@@ -122,6 +144,7 @@ def main():
     assert not [x for x in envois() if x["route"] == "/api/renvoyer"] and "renfort" in a.d["sans_metier"]
     a.tyrannie(c, 10000.0 + 1801)
     assert [x for x in a.d["essai_envois"] if x["route"] == "/api/renvoyer"], a.d["essai_envois"]
+    assert [x for x in a.historique(10000.0 + 1900) if x["type"] == "renvoi" and x["poste"] == "renfort"], a.historique(10000.0 + 1900)   # lot E
     ok += 1
     # 6. embauche : une tâche dont le poste n'a personne → une recrue, une par heure
     ecrire(st.f("reglages.json"), {"embauche_auto": True})
@@ -135,7 +158,110 @@ def main():
     rec = [x for x in a.d["essai_envois"] if x["route"] == "/api/recruter"]
     assert len(rec) == 1 and rec[0]["corps"]["nom"] == "niveaux", rec
     ok += 1
-    print(f"ESSAI DES AUTOMATISMES CÔTÉ SERVEUR RÉUSSI ({ok}/6)")
+    ok += essai_serveur_arrete(st, conf, postes)
+    print(f"ESSAI DES AUTOMATISMES CÔTÉ SERVEUR RÉUSSI ({ok}/7)")
+
+
+def essai_serveur_arrete(st, conf, postes):
+    """7. A1/A2 : serveur absent, puis fermé, puis 429, puis 200, puis 403 : l'attribution n'est jamais perdue ; l'erreur s'efface."""
+    import http.server
+    import socket
+    import threading
+    os.environ.pop("STUDIO_ESSAI_SANS_ENVOI", None)
+    try:
+        ecrire(st.f("reglages.json"), {"attribution_auto": True})
+        ecrire(st.f("taches_disponibles.json"), {"taches": [
+            {"id": "J1-03", "titre": "Liste des sons", "critere": "écrite", "statut": "a_faire", "poste": "son", "pour": ["son"], "moteur": False, "sans_moteur": True}]})
+        if os.path.exists(st.f("serveur.json")):
+            os.remove(st.f("serveur.json"))
+        if os.path.exists(st.f("automatismes.json")):
+            os.remove(st.f("automatismes.json"))
+        a = A.Automatismes(st)
+        p = postes(son={"etat": "disponible", "progression": 100, "fin_de_tache": True, "calme_min": 12, "fini": "Ambiances"})
+        a.passer(conf, p, None, {}, [], None, {})
+        a.d["fins"]["son"]["debut"] -= 200
+        a.d["erreur"] = "URLError : panne d'avant"
+
+        def passage():
+            if "son" in a.d["fins"]:
+                a.d["fins"]["son"]["reessai"] = 0          # le délai de nouvel essai est passé
+            return a.passer(conf, p, None, {}, [], None, {})
+
+        # a) pas de serveur.json : rien ne lève, la fin reste ouverte, l'erreur d'avant est effacée
+        r = passage()
+        f = a.d["fins"].get("son")
+        assert f and not f.get("tente") and f["attribuee"]["code"] == 0 and r["erreur"] is None, (f, r)
+        assert not any(x.startswith("son:") for x in a.d["traites"]), a.d["traites"]
+        assert f["reessai"] > time.time() + 30, "nouvel essai dans 60 s, pas tout de suite"
+        # b) port fermé (serveur arrêté) : idem, plusieurs passages, une seule ligne au journal
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        ecrire(st.f("serveur.json"), {"port": port})
+        passage()
+        passage()
+        f = a.d["fins"].get("son")
+        assert f and not f.get("tente") and f["attribuee"]["code"] == 0 and f["essais"] == 3, f
+        assert len([x for x in a.d["journal"] if x.get("type") == "attribution"]) == 1, a.d["journal"]
+        # c) le serveur rouvre et répond 429 (plafond), puis 200
+        reponse = {"code": 429, "corps": {"ok": False, "erreur": "« son » a déjà une attribution automatique en attente"}}
+        recus = []
+        qui = {"projet": os.path.join(os.path.dirname(st.dossier), "autre-projet")}   # G4 : d'abord un autre projet sur ce port
+
+        class Faux(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):                              # /api/qui : quel projet sert ce port ?
+                b = json.dumps(dict(qui, ok=True)).encode("utf-8")
+                self.send_response(200 if self.path == "/api/qui" else 404)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(b)))
+                self.end_headers()
+                self.wfile.write(b)
+
+            def do_POST(self):
+                n = int(self.headers.get("Content-Length") or 0)
+                recus.append((self.path, json.loads(self.rfile.read(n) or b"{}")))
+                b = json.dumps(reponse["corps"]).encode("utf-8")
+                self.send_response(reponse["code"])
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(b)))
+                self.end_headers()
+                self.wfile.write(b)
+
+            def log_message(self, *x):
+                pass
+
+        srv = http.server.HTTPServer(("127.0.0.1", port), Faux)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            # G4 : le port sert un autre projet : rien n'est envoyé, la fin reste ouverte
+            passage()
+            f = a.d["fins"].get("son")
+            assert not recus and f and not f.get("tente") and f["attribuee"]["code"] == 0, (recus, f)
+            qui["projet"] = os.path.dirname(st.dossier)
+            passage()
+            f = a.d["fins"].get("son")
+            assert recus and f and not f.get("tente") and f["attribuee"]["code"] == 429 and f["reessai"] > time.time() + 200, (recus, f)
+            reponse.update(code=200, corps={"ok": True, "demande": "demandes/x.json", "agent": "son"})
+            r = passage()
+            assert "son" not in a.d["fins"] and any(x.startswith("son:") for x in a.d["traites"]), a.d["fins"]
+            assert recus[-1][0] == "/api/confier" and recus[-1][1]["tache_id"] == "J1-03" and r["erreur"] is None, recus
+            assert a.d["journal"][-1]["ok"] is True, a.d["journal"]
+            # d) 403 (attribution coupée côté serveur) : refus net, traité une fois, plus d'essai
+            a.d["traites"] = ["son:1000"]
+            a.d["confiees"] = []
+            a.d["fins"]["son"] = {"cle": "son:2000", "debut": time.time() - 200, "fini": "x"}
+            reponse.update(code=403, corps={"ok": False, "erreur": "attribution automatique coupée"})
+            n = len(recus)
+            passage()
+            passage()
+            assert "son" not in a.d["fins"] and len(recus) == n + 1 and a.d["journal"][-1]["code"] == 403, (a.d["fins"], recus[n:])
+        finally:
+            srv.shutdown()
+            srv.server_close()
+    finally:
+        os.environ["STUDIO_ESSAI_SANS_ENVOI"] = "1"
+    return 1
 
 
 if __name__ == "__main__":

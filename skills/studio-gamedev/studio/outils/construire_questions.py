@@ -21,6 +21,9 @@ sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skil
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 STUDIO = os.path.dirname(ICI)
+if STUDIO not in sys.path:
+    sys.path.insert(0, STUDIO)
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py)
 
 
 def O(id, illus, fr, en, dfr="", den="", vfr=(), ven=(), si=None):
@@ -1011,9 +1014,7 @@ if __name__ == "__main__":
         sys.exit(1)
     for lg in ("fr", "en"):
         p = os.path.join(STUDIO, "questions.%s.json" % lg)
-        with open(p, "w", encoding="utf-8", newline="\n") as f:
-            json.dump(construire(lg), f, ensure_ascii=False, indent=1)
-            f.write("\n")
+        jsonio.ecrire_texte(p, json.dumps(construire(lg), ensure_ascii=False, indent=1) + "\n", newline="\n")
     n_r = sum(1 for q in Q_ if q["rapide"])
     print("%d questions (%d en mode rapide), %d options, %d illustrations"
           % (len(Q_), n_r, sum(len(q["options"]) for q in Q_), len(illustrations())))

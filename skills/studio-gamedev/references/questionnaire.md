@@ -505,9 +505,6 @@ Copié tel quel dans le dossier du studio ; le studio le relit à chaque rafraî
     "tics": [],
     "langue": "fr",
     "frequence_rapport_min": 120,
-    "rapport_fin_de_jalon": true,
-    "analyse_continue": true,
-    "vie_dans_le_studio": true,
     "voix_haute": "non"
   },
   "voix": {"micro_actif": true, "langue_reconnaissance": "fr-FR"}

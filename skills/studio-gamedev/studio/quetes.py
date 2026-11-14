@@ -35,12 +35,14 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ICI)
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique communes)
 import style_paliers  # noqa: E402
 import table_projet  # noqa: E402
 
@@ -98,19 +100,77 @@ ecc:rust-testing ecc:python-testing ecc:e2e-testing ecc:security-review ecc:vide
 
 # ------------------------------------------------------------------ outils
 def lire_json(chemin, defaut):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:  # noqa: un fichier fautif ne bloque jamais le studio
-        return defaut
+    return jsonio.lire(chemin, defaut)              # un fichier fautif ne bloque jamais le studio
 
 
 def ecrire_json(chemin, donnees):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, chemin)
+    jsonio.ecrire(chemin, donnees, newline="\n")
+
+
+def lire_protege(chemin, defaut):
+    """Pour un fichier qu'on va réécrire : absent → defaut ; illisible → 3 nouvelles lectures (écriture en cours ?) ;
+    toujours illisible → copie <nom>.corrompu-<date>.json gardée (jamais écrasée), puis defaut. L'historique n'est jamais perdu."""
+    if not os.path.exists(chemin):
+        return defaut
+    for essai in range(4):
+        try:
+            return jsonio.lire_strict(chemin)
+        except FileNotFoundError:
+            return defaut
+        except (OSError, ValueError):
+            time.sleep(.1 * (essai + 1))
+    base, ext = os.path.splitext(chemin)
+    t = time.time()
+    for i in range(50):
+        cible = f"{base}.corrompu-{time.strftime('%Y%m%d-%H%M%S', time.localtime(t))}{'-%d' % i if i else ''}{ext}"
+        if not os.path.exists(cible):
+            try:
+                os.replace(chemin, cible)
+            except OSError:                             # fichier verrouillé : une copie suffit ; sans copie, rien n'est écrasé
+                try:
+                    shutil.copyfile(chemin, cible)
+                except OSError:
+                    break
+            return defaut
+    raise Refus(503, f"{os.path.basename(chemin)} illisible et impossible à mettre de côté : rien n'est écrit")
+
+
+def numero(r, position):
+    """Numéro croissant d'une réponse (champ n) ; une réponse ancienne sans n garde sa position (1, 2, 3…)."""
+    n = r.get("n") if isinstance(r, dict) else None
+    return n if isinstance(n, int) and not isinstance(n, bool) else position + 1
+
+
+def creer_demande(dossier, suffixe, donnees, t):
+    """Demande au nom unique (horodatage, millisecondes + code au hasard) avec son champ id, créée en mode exclusif : jamais
+    d'écrasement, jamais lue à moitié écrite (nom caché .<id>.tmp puis renommage). Même forme que creer_unique du serveur."""
+    os.makedirs(dossier, exist_ok=True)
+    for _ in range(20):
+        ident = time.strftime("%Y%m%d-%H%M%S", time.localtime(t)) + f"-{int(t * 1000) % 1000:03d}{os.urandom(2).hex()}_{suffixe}"
+        chemin = os.path.join(dossier, ident + ".json")
+        if os.path.exists(chemin):
+            continue
+        tmp = os.path.join(dossier, "." + ident + ".tmp")
+        try:
+            with open(tmp, "x", encoding="utf-8", newline="\n") as f:
+                json.dump(dict(donnees, id=ident), f, ensure_ascii=False, indent=1)
+            if os.path.exists(chemin):
+                raise FileExistsError(chemin)
+            os.rename(tmp, chemin)
+            return ident
+        except FileExistsError:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            continue
+        except BaseException:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            raise
+    raise OSError("impossible de créer une demande au nom unique")
 
 
 def iso(t):
@@ -314,7 +374,7 @@ class Contexte:
                 if isinstance(p, dict) and p.get("id"):
                     out.append({"nom": str(p["id"]), "poste": str(p.get("poste") or p.get("metier") or p["id"]),
                                 "skills": [s for s in (p.get("skills") or []) if isinstance(s, str)], "source": "config"})
-            for f in glob.glob(os.path.join(self.st, "recrues", "*.json")):
+            for f in glob.glob(os.path.join(glob.escape(self.st), "recrues", "*.json")):
                 if os.path.basename(f) == "index.json":
                     continue
                 r = lire_json(f, None)
@@ -470,6 +530,10 @@ class Contexte:
         if s == "jours":
             d = iso_vers_t(((self.roadmap or {}).get("rythme") or {}).get("debut"))
             return int((self.t - d) // 86400) if d else 0, None
+        if s == "hote":                                  # hôte du studio créé par l'utilisateur (hote.py, .studio/hote.json)
+            h = lire_json(os.path.join(self.st, "hote.json"), None)
+            v = isinstance(h, dict) and bool(str(h.get("nom") or "").strip()) and isinstance(h.get("activites"), list)
+            return v, ".studio/hote.json" if v else None
         if s == "mur.images":
             e = lire_json(os.path.join(self.st, "etat.json"), {})
             imgs = e.get("images") if isinstance(e, dict) else None
@@ -578,10 +642,20 @@ def appliquer_reponses(projet, etat, cat, t, jalons_finis):
     rep = lire_json(os.path.join(projet, ".studio", "quetes_reponses.json"), [])
     if not isinstance(rep, list):
         return
-    if etat["reponses_lues"] > len(rep):
-        etat["reponses_lues"] = 0
-    for r in rep[etat["reponses_lues"]:]:
-        etat["reponses_lues"] += 1
+    # Curseur = numéro de la dernière réponse appliquée (champ n), plus la position : la liste est coupée à 500 et une
+    # position resterait bloquée à 500 pour toujours. Un état ancien sans « reponse_n » reprend sa position lue.
+    cur = etat.get("reponse_n")
+    if not isinstance(cur, int) or isinstance(cur, bool):
+        cur = etat.get("reponses_lues") if isinstance(etat.get("reponses_lues"), int) else 0
+    nums = [numero(r, i) for i, r in enumerate(rep)]
+    if nums and max(nums) < cur:                        # fichier remis à zéro à la main : tout est relu
+        cur = 0
+    etat["reponse_n"] = etat["reponses_lues"] = cur
+    for n, r in zip(nums, rep):
+        if n <= cur:
+            continue
+        cur = n
+        etat["reponse_n"] = etat["reponses_lues"] = cur
         if not isinstance(r, dict) or r.get("id") not in cat["_par_id"]:
             continue
         q, e = cat["_par_id"][r["id"]], etat["quetes"].setdefault(r["id"], {"statut": "cachee"})
@@ -918,17 +992,25 @@ def repondre(projet, id_, action, agents=None, chemin=None, maintenant=None, cat
         if not ok:
             raise Refus(400, raison)
     ch = os.path.join(st, "quetes_reponses.json")
-    liste = lire_json(ch, [])
+    liste = lire_protege(ch, [])
     liste = liste if isinstance(liste, list) else []
+    for i, x in enumerate(liste):                       # réponses anciennes : leur position devient leur numéro, une fois
+        if isinstance(x, dict) and "n" not in x:
+            x["n"] = numero(x, i)
+    deja = [numero(x, i) for i, x in enumerate(liste)]
+    cur = etat.get("reponse_n") if isinstance(etat, dict) else None
+    cur = cur if isinstance(cur, int) and not isinstance(cur, bool) else (etat.get("reponses_lues") if isinstance(etat, dict) and isinstance(etat.get("reponses_lues"), int) else 0)
     if any(isinstance(r, dict) and r.get("id") == id_ and r.get("action") == action and t - r.get("t", 0) < 60 for r in liste[-20:]):
         raise Refus(409, "doublon (moins de 60 s)")
     proposes = [a["agent"] for a in q["propositions"].get("agents", [])]
     agents = [a for a in (agents if agents is not None else proposes) if a in proposes]
-    r = {"id": id_, "action": action, "agents": agents, "chemin": chemin, "t": int(t), "le": iso(t)}
+    r = {"n": max(deja + [cur]) + 1, "id": id_, "action": action, "agents": agents, "chemin": chemin, "t": int(t), "le": iso(t)}
     liste.append(r)
     ecrire_json(ch, liste[-500:])
     sortie = {"ok": True, "reponse": r}
-    if action == "accepter":
+    if action == "accepter" and q.get("ouvre"):        # quête qui se joue dans la page (créer l'hôte) : aucune demande pour l'assistant
+        sortie.update(ouvre=q["ouvre"], recruter=[], confier=[], activer=[])
+    elif action == "accepter":
         props = (e.get("propositions") or {}).get("agents") or []
         corps = [p.get("corps_recruter") for p in props if p.get("agent") in agents and p.get("action") == "recruter"]
         confier = [{"agent": p["agent"], "confier_a": p.get("confier_a"), "mission": p.get("mission")} for p in props if p.get("agent") in agents and p.get("action") == "confier"]
@@ -938,10 +1020,7 @@ def repondre(projet, id_, action, agents=None, chemin=None, maintenant=None, cat
              "skills": [s["nom"] for s in (e.get("propositions") or {}).get("skills", [])],
              "consigne": {"fr": "Montre la fiche dans la conversation et attends l'accord ; respecte agents_max. Rien n'est lancé seul.",
                           "en": "Show the sheet in the conversation and wait for approval; respect agents_max. Nothing starts on its own."}}
-        dossier = os.path.join(st, "demandes")
-        os.makedirs(dossier, exist_ok=True)
-        nom = time.strftime("%Y%m%d-%H%M%S", time.localtime(t)) + f"_quete_{id_}.json"
-        ecrire_json(os.path.join(dossier, nom), d)
+        nom = creer_demande(os.path.join(st, "demandes"), "quete_" + re.sub(r"[^\w.-]", "_", id_), d, t) + ".json"
         sortie.update(demande="demandes/" + nom, recruter=d["recruter"], confier=confier, activer=activer)
     return sortie
 

@@ -13,7 +13,8 @@ class AudioContext { constructor() { this.sampleRate = 48000; this.state = 'runn
   createMediaStreamSource() { return { connect() {}, disconnect() {} }; }
   createScriptProcessor() { const n = { connect() {}, disconnect() {}, onaudioprocess: null }; noeuds.push(n); return n; }
   createGain() { return { gain: { value: 1 }, connect() {} }; } resume() { return Promise.resolve(); } close() {} }
-const document = { addEventListener() {}, hidden: false };
+const vars = {};   // AN3 : le niveau sonore est écrit en --niv-micro sur la racine de la page
+const document = { addEventListener() {}, hidden: false, documentElement: { style: { setProperty(k, v) { vars[k] = v; } } } };
 const window = { AudioContext };
 const Capture = new Function('navigator', 'window', 'document', 'Voix', page.slice(debut, fin) + '; return Capture;')(navigator, window, document, { actif: () => false });
 const nourrir = s => { const n = noeuds[noeuds.length - 1]; for (let i = 0; i < s * 48000 / 4096; i++) n.onaudioprocess({ inputBuffer: { getChannelData: () => new Float32Array(4096).fill(0.25) } }); };
@@ -27,7 +28,9 @@ const nourrir = s => { const n = noeuds[noeuds.length - 1]; for (let i = 0; i < 
   eq(appels.length, 1, 'clic sans nouvelle ouverture');
   eq(Math.abs(Capture.duree() - 0.8) < 0.1, true, 'tampon de 0,8 s avant le clic');
   nourrir(2);
+  eq(+vars['--niv-micro'] > 0.5, true, 'niveau sonore affiché pendant la dictée (AN3)');
   const a = Capture.terminer();
+  eq(vars['--niv-micro'], '0', 'niveau remis à zéro à la fin');
   eq(Math.abs(a.length / 16000 - 2.8) < 0.2, true, 'audio de la dictée (2,8 s : 0,8 avant + 2 pendant)');
   eq(Math.abs(a[100] - 0.25) < 1e-6, true, 'rééchantillonnage 48 → 16 kHz');
   const w = Capture.wav(a); eq(w.size, 44 + a.length * 2, 'taille du WAV');

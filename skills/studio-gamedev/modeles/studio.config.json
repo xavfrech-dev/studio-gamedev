@@ -13,7 +13,6 @@
   "profil": "profil.json",
   "postes": [],
   "sources_images": [],
-  "libelles_etapes": {},
   "economie": {
     "agents_max": 2,
     "modele_agents": "sonnet",

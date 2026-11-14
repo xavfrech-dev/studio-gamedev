@@ -271,7 +271,8 @@
       opts.langue = String(opts.langue || 'fr').slice(0, 2).toLowerCase();
       await textes();
       squelette(); bouton(); await charger();
-      clearInterval(minuteur); minuteur = setInterval(charger, Math.max(3, opts.periode_s) * 1000);
+      clearInterval(minuteur); minuteur = setInterval(() => { if (!document.hidden || ouvert) charger(); }, Math.max(3, opts.periode_s) * 1000);   // O5 : pause quand l'onglet est caché
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) charger(); });
       return Roadmap;
     },
     // Fin du questionnaire : non sautable, on attend roadmap.json puis « Voici ta roadmap ».

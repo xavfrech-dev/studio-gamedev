@@ -22,7 +22,15 @@ import json
 import os
 import re
 import sys
-import tempfile
+
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py, lecture avec BOM, écriture atomique communes)
+for _flux in (sys.stdout, sys.stderr):                 # G16 : sortie en UTF-8, même redirigée (Windows, cp1252)
+    try:
+        _flux.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
 
 
 def remise(txt):
@@ -82,11 +90,7 @@ def main(argv=None):
         d["usage_supplementaire"] = {"actif": a.supplementaire == "actif"}
         if a.depense:
             d["usage_supplementaire"].update(depense=a.depense, devise=a.devise)
-    os.makedirs(dossier, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=dossier, suffix=".tmp")
-    with os.fdopen(fd, "w", encoding="utf-8") as fh:
-        json.dump(d, fh, ensure_ascii=False, indent=1)
-    os.replace(tmp, cible)   # écriture atomique : le studio ne lit jamais un fichier à moitié écrit
+    jsonio.ecrire(cible, d)   # écriture atomique : le studio ne lit jamais un fichier à moitié écrit
     print(cible)
     return 0
 

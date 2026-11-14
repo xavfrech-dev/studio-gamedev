@@ -25,6 +25,10 @@ import os
 import subprocess
 import sys
 import time
+
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py, lecture avec BOM, écriture atomique communes)
 for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
     try:
         _flux.reconfigure(encoding="utf-8", errors="replace")
@@ -44,17 +48,13 @@ CALME_MAX_S = 15.0
 
 
 def lire_json(chemin, defaut):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except (OSError, ValueError):
-        return defaut
+    return jsonio.lire(chemin, defaut)
 
 
 def empreintes(studio, motifs):
     out = {}
     for m in motifs:
-        for p in glob.glob(os.path.join(studio, *m.split("/"))):
+        for p in glob.glob(os.path.join(glob.escape(studio), *m.split("/"))):   # M9 : projet dans « Mon jeu [v2] »
             rel = os.path.relpath(p, studio).replace("\\", "/")
             if rel in IGNORES or not os.path.isfile(p):
                 continue
@@ -84,11 +84,8 @@ def differences(avant, apres):
 
 
 def ecrire_etat(chemin, donnees):
-    tmp = chemin + ".tmp"
     try:
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(donnees, f)
-        os.replace(tmp, chemin)
+        jsonio.ecrire(chemin, donnees, indent=None, ensure_ascii=True, fsync=False)
     except OSError:
         pass
 

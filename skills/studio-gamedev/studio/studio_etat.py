@@ -46,11 +46,13 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
 if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique communes)
 import sante_machine  # noqa: E402  (Santé du PC : disques, températures, ménage proposé)
 FAITS = ("verse", "ecart")
 ICI = os.path.dirname(os.path.abspath(__file__))
@@ -211,7 +213,12 @@ def sante_complements(sy, en=False):
         av.append(f"CPU hot ({temps['cpu_c']} °C)" if en else f"processeur chaud ({temps['cpu_c']} °C)")
     if isinstance(sy.get("gpu_temp"), (int, float)) and sy["gpu_temp"] >= 87:
         av.append(f"GPU hot ({sy['gpu_temp']} °C)" if en else f"carte graphique chaude ({sy['gpu_temp']} °C)")
-    return {"disques": sy.get("disques") or [], "temperatures": temps, "gpu_temp": sy.get("gpu_temp"), "avertissements": av}
+    try:   # fiche de l'agent : une jauge par disque et par température (sante_machine.jauges, jumeau du studio d'origine)
+        jg = sante_machine.jauges(sy.get("cpu"), sy.get("memoire_pct"), sy.get("gpu"), sy.get("vram_pct"), sy.get("gpu_temp"),
+                                  sy.get("disques") or [], temps, en)
+    except Exception as e:  # noqa: une jauge en panne ne coupe pas le studio
+        jg = {"erreur": f"{type(e).__name__} : {e}"[:200]}
+    return {"disques": sy.get("disques") or [], "temperatures": temps, "gpu_temp": sy.get("gpu_temp"), "avertissements": av, "jauges": jg}
 
 
 def dans(p, racine):
@@ -222,25 +229,16 @@ def dans(p, racine):
 
 def lire_json(chemin, defaut):
     """JSON avec ou sans BOM (certains outils écrivent un BOM UTF-8)."""
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)
+
+
+ECRITURE = threading.RLock()   # M8 : le battement et la boucle principale n'écrivent jamais etat.json en même temps
 
 
 def ecrire_json(chemin, donnees, indent=None):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=indent)
-    for essai in range(5):                       # Windows : la page ou un agent peut tenir le fichier un court instant
-        try:
-            os.replace(tmp, chemin)
-            return
-        except PermissionError:
-            time.sleep(0.1 * (essai + 1))
-    os.replace(tmp, chemin)
+    """jsonio.ecrire : temporaire unique (M8 : propre à chaque fil), fsync, nouveaux essais si Windows tient le fichier,
+    temporaire jamais laissé en cas d'erreur."""
+    jsonio.ecrire(chemin, donnees, indent=indent)
 
 
 def court(texte, n=90):
@@ -261,7 +259,13 @@ def age_min(chemin):
 
 
 def iso_vers_t(s):
-    s = str(s or "")
+    s = str(s or "").strip()
+    if re.search(r"T?\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})$", s):   # M12 : date avec fuseau (…Z, …+01:00) : heure exacte
+        try:
+            import datetime
+            return datetime.datetime.fromisoformat(re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", re.sub(r"Z$", "+00:00", s)).replace(" ", "T", 1)).timestamp()
+        except ValueError:
+            pass
     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M:%S"):
         try:
             return time.mktime(time.strptime(s[:19] if "S" in fmt else s[:16], fmt))
@@ -400,28 +404,67 @@ class Studio:
         self.depuis = {}
         self.anomalies = {}         # fichier d'agent illisible -> {fichier, raison, vu} : ignoré, signalé
         self.menage_srv = None      # ménage proposé de Santé du PC (sante_machine.Menage), créé au premier passage
+        self.lus = {}               # O8 : chemin -> ((date, taille), données) : un fichier inchangé n'est pas relu
+        self.passage_debut = 0.0    # C3 : début du passage en cours (0 : aucun passage en cours)
+        self.passage_fini = 0       # C3 : fin du dernier passage terminé (horodatage)
+        self.dernier_etat = None    # dernier etat.json écrit par la boucle principale (republié par le battement)
+        self._sugg_ecrite = (0, None)
+
+    def lire_cache(self, chemin):
+        """O8 : JSON relu seulement si sa date ou sa taille a changé (copie rendue : l'appelant peut la modifier).
+        FileNotFoundError et erreurs de lecture remontent à l'appelant ; seules les lectures réussies sont gardées."""
+        st = os.stat(chemin)
+        cle = (st.st_mtime_ns, st.st_size)
+        c = self.lus.get(chemin)
+        if c and c[0] == cle:
+            return json.loads(c[1])
+        with open(chemin, encoding="utf-8-sig") as f:      # avec ou sans BOM ; les erreurs remontent (voir plus haut)
+            brut = f.read()
+        d = json.loads(brut)
+        if len(self.lus) > 3000:                            # mémoire bornée (fichiers supprimés entre-temps)
+            self.lus.clear()
+        self.lus[chemin] = (cle, brut)
+        return d
+
+    def lire_json_c(self, chemin, defaut):
+        """lire_json avec le cache O8 (fichiers nombreux et rarement modifiés : demandes de la page)."""
+        try:
+            return self.lire_cache(chemin)
+        except Exception:
+            return defaut
+
+    def anomalie(self, rel, raison):
+        """Fichier illisible noté une fois : « vu » garde la date complète de la PREMIÈRE fois (M11), tant que la raison ne change pas."""
+        a = self.anomalies.get(rel)
+        if a and a.get("raison") == raison:
+            return
+        self.anomalies[rel] = {"fichier": rel, "raison": raison, "vu": time.strftime("%Y-%m-%dT%H:%M:%S")}
 
     def lire_agent(self, chemin):
         """JSON écrit par un agent : illisible (ou pas un objet) = ignoré et noté dans les anomalies, jamais bloquant."""
         rel = os.path.relpath(chemin, self.dossier).replace("\\", "/")
         try:
-            with open(chemin, encoding="utf-8-sig") as f:
-                d = json.load(f)
+            d = self.lire_cache(chemin)
             if not isinstance(d, dict):
                 raise ValueError("objet JSON attendu")
             self.anomalies.pop(rel, None)
             return d
         except FileNotFoundError:
             self.anomalies.pop(rel, None)
+            self.lus.pop(chemin, None)
             return None
         except Exception as e:  # noqa: un fichier fautif ne doit pas arrêter le studio
             if age_min(chemin) is not None and age_min(chemin) < 0.05:
                 return None   # en cours d'écriture : on attend le passage suivant
-            self.anomalies[rel] = {"fichier": rel, "raison": court(f"{type(e).__name__} : {e}", 140), "vu": time.strftime("%H:%M")}
+            self.anomalie(rel, court(f"{type(e).__name__} : {e}", 140))
             return None
 
     def f(self, *p):
         return os.path.join(self.dossier, *p)
+
+    def g(self, *p):
+        """M9 : glob dans .studio/ ; le chemin du projet est échappé (un dossier « Mon jeu [v2] » n'est pas un motif)."""
+        return glob.glob(os.path.join(glob.escape(self.f(*p[:-1])), p[-1]))
 
     # ---------------- configuration
     def config(self):
@@ -507,7 +550,8 @@ class Studio:
     def cfg_menage(self, conf):
         """Dossiers du projet et de ses caches seulement : caches du moteur dans le projet, builds (studio.config.json
         « dossiers_builds », dans le projet ou --donnees, sinon Builds/Packaged/Saved/StagedBuilds ; jamais Build/, la configuration de plateforme d Unreal), worktrees fusionnés
-        du dépôt du projet, fichiers *.tmp de .studio, corbeille du disque concerné (réglage sante.corbeille, oui par défaut)."""
+        du dépôt du projet, fichiers *.tmp de .studio. La corbeille du disque est exclue par défaut : elle n'est proposée
+        que si studio.config.json dit « sante »: {"corbeille": "toute"} (toute la corbeille, fichiers jetés hors du projet compris)."""
         sa = conf.get("sante") if isinstance(conf.get("sante"), dict) else {}
         seuils = conf.get("seuils") if isinstance(conf.get("seuils"), dict) else {}
         builds = []
@@ -518,7 +562,7 @@ class Studio:
             if (dans(p, self.projet) or (self.donnees and dans(p, self.donnees))) and p != self.projet and os.path.isdir(p):
                 builds.append(p)
         return {"projets": [self.projet], "depots": [self.projet] if os.path.exists(os.path.join(self.projet, ".git")) else [],
-                "builds": builds, "temporaires": [(self.dossier, r"\.tmp$")], "corbeille": sa.get("corbeille", True) is not False,
+                "builds": builds, "temporaires": [(self.dossier, r"\.tmp$")], "corbeille": "toute" if sa.get("corbeille") == "toute" else False,
                 "seuil_go": float(sa.get("menage_seuil_go") or seuils.get("menage_go") or 30), "seuil_pct": float(sa.get("menage_seuil_pct") or 8),
                 "min_go": float(sa.get("menage_min_go") or 1), "langue": "en" if self.en() else "fr", "principale": sa.get("branche_principale")}
 
@@ -538,10 +582,41 @@ class Studio:
             code = re.sub(r"[^A-Za-z0-9]", "-", self.projet)
             d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "projects", code)   # S13
         try:
-            fichiers = glob.glob(os.path.join(d, "*.jsonl"))
+            fichiers = glob.glob(os.path.join(glob.escape(d), "*.jsonl"))
             return min((age_min(f) for f in fichiers if age_min(f) is not None), default=None)
         except Exception:
             return None
+
+    def activite_claude(self, conf):
+        """F (assistant actif) : âge (min) de la dernière écriture d'une session Claude du projet, sous-agents compris
+        (une session qui attend un workflow reste « ouverte »). Lecture des dates seulement ; None : aucun journal trouvé."""
+        d = conf.get("dossier_session") or "auto"
+        if d == "auto":
+            code = re.sub(r"[^A-Za-z0-9]", "-", self.projet)
+            d = os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "projects", code)
+        try:
+            fichiers = [(os.path.getmtime(f), f) for f in glob.glob(os.path.join(glob.escape(d), "*.jsonl")) if os.path.isfile(f)]
+        except OSError:
+            return None
+        if not fichiers:
+            return None
+        recent = max(t for t, _ in fichiers)
+        for _, f in sorted(fichiers, reverse=True)[:2]:        # les 2 sessions les plus récentes : leurs sous-agents
+            for base, _dirs, noms in os.walk(os.path.join(f[:-6], "subagents")):
+                for n in noms:
+                    if n.endswith(".jsonl"):
+                        try:
+                            recent = max(recent, os.path.getmtime(os.path.join(base, n)))
+                        except OSError:
+                            pass
+        return max(0.0, (time.time() - recent) / 60)
+
+    @staticmethod
+    def demandes_en_attente(demandes, messages):
+        """F : ce qui attend une session Claude : demandes de la page ou auto: pas encore prises, messages « nouvelle »."""
+        n_dem = sum(1 for d in demandes or [] if d.get("lancer") and not d.get("vu"))
+        n_msg = sum(1 for m in messages or [] if isinstance(m, dict) and m.get("statut") == "nouvelle")
+        return n_dem, n_msg
 
     def roadmap(self):
         r = lire_json(self.f("roadmap.json"), None)
@@ -552,7 +627,7 @@ class Studio:
                 continue
             if not isinstance(j.get("taches"), list):      # F3 : « taches: null » ou un mauvais type ne fige plus l'alimentation
                 if j.get("taches") is not None:
-                    self.anomalies["roadmap.json"] = {"fichier": "roadmap.json", "raison": f"jalon {j.get('id')} : « taches » n'est pas une liste", "vu": time.strftime("%H:%M")}
+                    self.anomalie("roadmap.json", f"jalon {j.get('id')} : « taches » n'est pas une liste")
                 j["taches"] = []
             j["taches"] = [t for t in j["taches"] if isinstance(t, dict) and t.get("id")]
         r["jalons"] = [j for j in r["jalons"] if isinstance(j, dict) and j.get("id")]
@@ -561,7 +636,7 @@ class Studio:
     def progressions(self):
         """{nom de fichier: (données, âge en min)}"""
         out = {}
-        for f in glob.glob(self.f("progression", "*.json")):
+        for f in self.g("progression", "*.json"):
             d = self.lire_agent(f)
             if isinstance(d, dict):
                 out[os.path.basename(f)[:-5]] = (d, age_min(f) or 0)
@@ -569,7 +644,7 @@ class Studio:
 
     def recrues(self):
         out = []
-        for f in sorted(glob.glob(self.f("recrues", "*.json")), key=lambda x: os.path.getmtime(x)):
+        for f in sorted(self.g("recrues", "*.json"), key=lambda x: os.path.getmtime(x)):
             if os.path.basename(f) == "index.json":
                 continue
             r = self.lire_agent(f)
@@ -584,7 +659,7 @@ class Studio:
     def demandes(self, statuts):
         """Demandes confiées à un poste (recrutement, tâche) : [{fichier, poste, titre, lancer, statut, cree_le}]."""
         out = []
-        for f in sorted(glob.glob(self.f("demandes", "*.json"))):
+        for f in sorted(self.g("demandes", "*.json")):
             b = os.path.basename(f)
             if b == "statuts.json":
                 continue
@@ -598,6 +673,7 @@ class Studio:
             statut = str(st.get("statut") or d.get("statut") or ("en attente" if d.get("lancer", True) else "pas lancé")).lower()
             out.append({"fichier": b, "poste": poste, "titre": court(d.get("titre") or d.get("mission") or d.get("role") or d.get("texte") or "", 120),
                         "lancer": d.get("lancer", True) is not False, "statut": statut, "cree_le": str(d.get("cree_le") or ""),
+                        "vu": bool(st.get("statut") or d.get("statut")),   # F : un statut écrit = une session Claude l'a prise
                         "maj": str(st.get("maj") or ""), "type": str(d.get("type") or ""), "origine": str(d.get("origine") or ""),
                         "tache_id": str(d.get("tache_id") or "")})
         return out
@@ -605,14 +681,14 @@ class Studio:
     def messages(self):
         """Fil de la page : les 40 derniers messages de l'utilisateur (demandes_vocales/), pour la vue Conversation."""
         def ligne(f):
-            d = lire_json(f, None)
+            d = self.lire_json_c(f, None)
             if isinstance(d, dict) and d.get("texte"):
                 return {"id": str(d.get("id") or os.path.basename(f)[:-5])[:80], "cible": str(d.get("cible") or "")[:40],
                         "texte": str(d["texte"])[:600], "cree_le": str(d.get("cree_le") or "")[:19],
                         "statut": str(d.get("statut") or "nouvelle")[:20], "via": str(d.get("via") or "")[:10],
                         **({"pieces": [os.path.basename(str(x))[:90] for x in d["pieces"][:10]]} if isinstance(d.get("pieces"), list) and d["pieces"] else {})}
             return None
-        tous = sorted(glob.glob(self.f("demandes_vocales", "*.json")))
+        tous = sorted(self.g("demandes_vocales", "*.json"))
         fil = tous[-40:]
         # la dernière demande à l'auditeur et au contrôleur des modèles reste connue de la page même hors des 40 derniers
         avant = [f for c in ("auditeur", "controleur-modeles") for f in [next((x for x in reversed(tous) if x.endswith("_" + c + ".json")), None)] if f and f not in fil]
@@ -911,7 +987,7 @@ class Studio:
                    a["raison"], "Le réécrire au bon format (JSON objet) ; le studio continue sans lui.")
         for s_ in self.roadmap_en_retard(gitinfo):
             ajoute(*s_)
-        vocales = [lire_json(f, {}) for f in sorted(glob.glob(self.f("demandes_vocales", "*.json")))[-200:]]   # F34 : les 200 plus récentes
+        vocales = [self.lire_json_c(f, {}) for f in sorted(self.g("demandes_vocales", "*.json"))[-200:]]   # F34 : les 200 plus récentes
         vieilles = [v for v in vocales if isinstance(v, dict) and v.get("statut") == "nouvelle" and iso_vers_t(v.get("cree_le")) and time.time() - iso_vers_t(v.get("cree_le")) > 5 * 60]
         if vieilles:
             ajoute("demandes-vocales", "info", f"{len(vieilles)} demande(s) de la page sans réponse", court(vieilles[0].get("texte"), 120),
@@ -964,10 +1040,13 @@ class Studio:
             if ident in repondues:
                 continue
             h = int((time.time() - q["depuis"]) // 3600)
-            out.append({"id": ident, "type": "renvoi", "nom": q["id"], "poste": q["id"], "titre": f"Renvoyer {q['nom']} ?",
-                        "explication": f"Libre depuis {h} h et plus aucune tâche prête pour son poste. Le renvoi archive sa fiche "
-                                       "(réembauche possible) ; rien n'est fait sans ta réponse.",
-                        "choix": [{"id": "renvoyer", "libelle": "Renvoyer"}, {"id": "garder", "libelle": "Garder"}],
+            out.append({"id": ident, "type": "renvoi", "nom": q["id"], "poste": q["id"],      # M7 : textes dans la langue du projet
+                        "titre": self.tx(f"Renvoyer {q['nom']} ?", f"Dismiss {q['nom']}?"),
+                        "explication": self.tx(f"Libre depuis {h} h et plus aucune tâche prête pour son poste. Le renvoi archive sa fiche "
+                                               "(réembauche possible) ; rien n'est fait sans ta réponse.",
+                                               f"Free for {h} h and no task ready for this role any more. Dismissing archives the profile "
+                                               "(can be rehired); nothing happens without your answer."),
+                        "choix": [{"id": "renvoyer", "libelle": self.tx("Renvoyer", "Dismiss")}, {"id": "garder", "libelle": self.tx("Garder", "Keep")}],
                         "recommande": "garder", "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(q["depuis"] + RENVOI_LIBRE_H * 3600))})
         try:                                                # Santé du PC : ménage proposé (une décision, sous la cloche)
             dm = self.menage_srv.decision() if self.menage_srv else None
@@ -975,6 +1054,13 @@ class Studio:
                 out.append(dm)
         except Exception as e:
             print("erreur décision ménage", repr(e), flush=True)
+        try:                                                # plan de restructuration ouvert (bouton de l'équipe) : une décision
+            import restructuration
+            pr = restructuration.plan_ouvert(self.dossier)
+            if pr and pr["id"] not in repondues:
+                out.append(restructuration.decision(pr))
+        except Exception as e:
+            print("erreur plan de restructuration", repr(e), flush=True)
         chemin = self.f("decisions_studio.json")
         if lire_json(chemin, None) != out:
             ecrire_json(chemin, out, indent=1)
@@ -1048,8 +1134,16 @@ class Studio:
                     if ff and not direct:
                         args = [ff, "-v", "error", "-y", "-i", p] + (["-ac", "1", "-ar", "32000", "-q:a", "1"] if encoder else ["-ar", "44100", "-q:a", "4"]) + ["-c:a", "libvorbis", "-f", "ogg", dst + ".part"]
                         try:
-                            subprocess.run(args, timeout=240, creationflags=(0x08000000 | 0x00004000) if os.name == "nt" else 0)
+                            rc = subprocess.run(args, timeout=240, stdin=subprocess.DEVNULL, capture_output=True,
+                                                creationflags=(0x08000000 | 0x00004000) if os.name == "nt" else 0).returncode
                         except Exception:
+                            rc = -1
+                        if rc != 0:                   # M10 : encodage raté : rien n'est publié, le .part est effacé
+                            try:
+                                os.remove(dst + ".part")
+                            except OSError:
+                                pass
+                            garder.discard(nom)
                             continue
                     elif taille <= max_copie:
                         shutil.copyfile(p, dst + ".part")
@@ -1212,7 +1306,7 @@ class Studio:
             fixe.append(x)
         if not dans(os.path.realpath(os.path.join(racine, *fixe)), racine):
             return None, None
-        return racine, os.path.join(racine, *parties)
+        return racine, os.path.join(glob.escape(racine), *parties)   # M9 : racine échappée, seul le motif est un motif
 
     # ---------------- rapport de l'assistant
     def prochain_rapport(self):
@@ -1254,11 +1348,28 @@ class Studio:
             return (self.memo.c.get("_quetes", (0, None, 0))[1]) or {}
 
     def passer(self, tout=False):
+        """Un passage complet. C3 : son début et sa fin sont notés ; le battement ne republie etat.json que pendant un
+        passage jeune (BATTEMENT_MAX_S) : une boucle vraiment figée laisse vieillir etat.json et la veille la relance."""
+        self.passage_debut = time.time()
+        try:
+            return self._passer(tout)
+        finally:
+            self.passage_debut = 0.0
+
+    def ecrire_suggestions(self, sug):
+        """O6 : suggestions.json réécrit seulement si la liste change (ou toutes les 10 min, pour sa date « maj »)."""
+        t, ancienne = self._sugg_ecrite
+        if ancienne == sug and time.time() - t < 600 and os.path.exists(self.f("suggestions.json")):
+            return
+        ecrire_json(self.f("suggestions.json"), {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "suggestions": sug}, indent=1)
+        self._sugg_ecrite = (time.time(), sug)
+
+    def _passer(self, tout=False):
         conf = self.config()
         try:
             r = self.roadmap()
         except Exception as e:                              # une roadmap inattendue ne fige jamais l'alimentation
-            self.anomalies["roadmap.json"] = {"fichier": "roadmap.json", "raison": court(f"{type(e).__name__} : {e}", 140), "vu": time.strftime("%H:%M")}
+            self.anomalie("roadmap.json", court(f"{type(e).__name__} : {e}", 140))
             r = None
         for rel in [k for k in self.anomalies if not os.path.exists(self.f(*k.split("/")))]:
             self.anomalies.pop(rel, None)                   # F16 : le fichier fautif a été supprimé : l'alerte part avec lui
@@ -1278,7 +1389,7 @@ class Studio:
         if tout or time.time() - self.memo.c.get("_sugg", (0, None))[0] > 60:
             try:
                 sug = self.analyser(conf, postes, chaine, ouverts, procs, dispo, gitinfo, sysinfo, demandes)
-                ecrire_json(self.f("suggestions.json"), {"maj": time.strftime("%Y-%m-%dT%H:%M:%S"), "suggestions": sug}, indent=1)
+                self.ecrire_suggestions(sug)
                 self.ecrire_taches(dispo)
                 self.decisions_studio(postes, dispo)
                 self.memo.c["_sugg"] = (time.time(), sug)
@@ -1306,13 +1417,27 @@ class Studio:
             "version": 1, "projet": conf.get("nom_projet") or os.path.basename(self.projet), "heure": time.strftime("%H:%M:%S"),
             "horodatage": int(time.time()), "version1": self.version1(r), "postes": postes, "chaine_active": chaine,
             "outils_lourds": [{"nom": o["nom"], "poste": o["poste"], "ouvert": o in ouverts} for o in self.outils_lourds(conf)],
-            "git": gitinfo, "systeme": sysinfo, "sante": sante, "automatismes": autos, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "ambiances": self.memo("ambiances", 600, lambda: self.ambiances(conf)) or [], "nb_suggestions": len(sug),
+            "git": gitinfo, "systeme": {k: v for k, v in sysinfo.items() if k not in ("disques", "temperatures")},   # O6 : déjà dans « sante »
+            "sante": sante, "automatismes": autos, "images": images, "musiques": self.memo("musiques", 300, lambda: self.musiques(conf)) or [], "ambiances": self.memo("ambiances", 600, lambda: self.ambiances(conf)) or [], "nb_suggestions": len(sug),
             "alertes": [s for s in sug if s["gravite"] == "urgent"][:5], "taches_dispo": len(dispo), "rapport": self.prochain_rapport(),
             "anomalies": list(self.anomalies.values())[:20], "messages": self.memo("messages", 0 if tout else 5, self.messages) or [],
         }
+        try:                                                # F : « aucune session Claude depuis N min : tes demandes attendent »
+            n_dem, n_msg = self.demandes_en_attente(demandes, etat["messages"])
+            seuils = conf.get("seuils") if isinstance(conf.get("seuils"), dict) else {}
+            seuil = float(seuils.get("session_min") or 15)
+            age = self.memo("activite_claude", 30, lambda: self.activite_claude(conf))
+            etat["session"] = {"age_min": None if age is None else round(age, 1), "seuil_min": seuil, "demandes": n_dem, "messages": n_msg,
+                               "absente": (age is None or age >= seuil) and (n_dem + n_msg) > 0}
+        except Exception as e:
+            etat["session"] = {"erreur": f"{type(e).__name__} : {e}"[:160]}
         if qres:                                            # S4 : quêtes (résumé) ; l'XP des quêtes s'ajoute au niveau (la page l'additionne)
             etat["quetes"], etat["xp"] = qres.get("resume"), qres.get("xp", 0)
-        ecrire_json(self.f("etat.json"), etat)
+        fini = int(time.time())
+        etat["passage_fini"] = fini                          # C3 : seule la boucle principale l'écrit ; la veille juge dessus
+        with ECRITURE:
+            ecrire_json(self.f("etat.json"), etat)
+            self.dernier_etat, self.passage_fini = etat, fini
         return etat
 
 
@@ -1360,21 +1485,30 @@ def exe_windows():
     return noms
 
 
+BATTEMENT_MAX_S = 600   # C3 : au-delà, un passage est jugé figé : plus de battement (la veille relance, voir veille_studio.py)
+
+
 def battement(s, intervalle):
-    """Battement de cœur : tant que l'alimentation vit, etat.json est republié (horodatage à jour, calcul_en_cours)
-    même si un passage dure plus longtemps que prévu (premier passage, machine saturée, git lent). La page n'affiche
-    donc « alimentation figée » que si le processus est vraiment arrêté."""
-    import threading
+    """Battement de cœur : pendant un passage plus long que prévu (premier passage, machine saturée, git lent),
+    etat.json est republié (horodatage à jour, calcul_en_cours) pour que la page n'affiche pas « figée » à tort.
+    C3 : seulement pendant les BATTEMENT_MAX_S premières secondes d'un passage. Au-delà, la boucle est figée :
+    etat.json vieillit, la page l'affiche et la veille relance l'alimentation. « passage_fini » n'est jamais avancé ici.
+    M8 : écriture sous le même verrou que la boucle, date du fichier revérifiée juste avant d'écrire."""
 
     def boucle():
         while True:
             time.sleep(max(2.0, intervalle / 2))
             try:
                 chemin = s.f("etat.json")
-                if not os.path.exists(chemin) or time.time() - os.path.getmtime(chemin) < max(10.0, intervalle * 1.5):
+                debut = s.passage_debut
+                if not debut or time.time() - debut > BATTEMENT_MAX_S or not isinstance(s.dernier_etat, dict):
                     continue
-                d = lire_json(chemin, None)
-                if isinstance(d, dict):
+                with ECRITURE:
+                    if not os.path.exists(chemin) or time.time() - os.path.getmtime(chemin) < max(10.0, intervalle * 1.5):
+                        continue
+                    if s.passage_debut != debut:            # le passage vient de finir : etat.json est déjà neuf
+                        continue
+                    d = dict(s.dernier_etat)
                     d["heure"], d["horodatage"], d["calcul_en_cours"] = time.strftime("%H:%M:%S"), int(time.time()), True
                     ecrire_json(chemin, d)
             except Exception as e:
@@ -1400,6 +1534,10 @@ def main(argv=None):
         raise SystemExit(f"pas de dossier .studio dans {s.projet}")
     # reprend les « depuis » du passage précédent (même état = même départ)
     ancien = lire_json(s.f("etat.json"), {})
+    if isinstance(ancien, dict) and ancien:
+        # le battement du premier passage republie l'état précédent, SANS son « passage_fini » (vieux, d'un autre
+        # processus) : sinon la veille (branche « autre alimentation ») jugerait figé un premier passage normal
+        s.dernier_etat = {k: v for k, v in ancien.items() if k != "passage_fini"}
     for q in (ancien.get("postes") if isinstance(ancien, dict) else None) or []:
         if isinstance(q, dict) and q.get("id") and q.get("etat") and isinstance(q.get("depuis"), int):
             s.depuis[q["id"]] = (q["etat"], q["depuis"])

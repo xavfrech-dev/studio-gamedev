@@ -6,11 +6,13 @@
   'use strict';
   let ATLAS = null;
   const imgs = new Map(), lignes = new Map();
+  const CACHE_MAX = 64 * 1024 * 1024; let cacheOctets = 0;   // O10 : toiles teintées gardées jusqu'à 64 Mo environ (4 octets par pixel)
   try {
     fetch('sprites/atlas.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).then(a => {
       if (!a || !a.anims) return; ATLAS = a;
-      // précharge les planches 128 (base et masques) : une animation jamais vue ne retombe pas en dessin vectoriel
-      for (const an of Object.values(a.anims)) for (const n of ['base', 'peau', 'cheveux', 'haut', 'bas', 'chaussures']) if (an.fichiers && an.fichiers[n]) img('sprites/' + an.fichiers[n].replace('{taille}', 128));
+      // O10 : précharge seulement les planches 128 de repos, marche, tape et portrait (base et masques) ; les autres se chargent
+      // à la première demande et, en attendant, dessine() prend une animation proche déjà prête (tape ou repos), jamais le vectoriel
+      for (const an of ['repos', 'marche', 'tape', 'portrait'].map(n => a.anims[n]).filter(Boolean)) for (const n of ['base', 'peau', 'cheveux', 'haut', 'bas', 'chaussures']) if (an.fichiers && an.fichiers[n]) img('sprites/' + an.fichiers[n].replace('{taille}', 128));
     }).catch(() => {});
   } catch (e) { /* pas de fetch : repli vectoriel */ }
   const hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
@@ -47,15 +49,16 @@
     const a = ATLAS.anims[anim]; if (!a) return null;
     const C = couleurs(look), acc = accessoire(look, C);
     const cle = [anim, d, T, C.peau, C.cheveux, C.haut, C.bas, C.chaussures, acc ? acc.join('') : ''].join('|');
-    const deja = lignes.get(cle); if (deja) return deja;
+    const deja = lignes.get(cle); if (deja) { lignes.delete(cle); lignes.set(cle, deja); return deja; }   // la plus récente passe en fin de file
     const f = nom => a.fichiers[nom] && img('sprites/' + a.fichiers[nom].replace('{taille}', T));
     const base = f('base'), m = ['peau', 'cheveux', 'haut', 'bas', 'chaussures'].map(f);
     if (!base || m.some(x => !x)) return null;
     let ab = null, am = null; if (acc) { ab = f('acc_' + acc[0]); am = f('acc_' + acc[0] + '_masque'); if (!ab || !am) return null; }
     const corps = teinter(base, [[m[0], C.peau], [m[1], C.cheveux], [m[2], C.haut], [m[3], C.bas], [m[4], C.chaussures]], d, T, a.images);
     if (acc) corps.getContext('2d').drawImage(teinter(ab, [[am, acc[1]]], d, T, a.images), 0, 0);
-    if (lignes.size > 160) lignes.delete(lignes.keys().next().value);
-    lignes.set(cle, corps); return corps;
+    const oct = corps.width * corps.height * 4;
+    while (lignes.size && (cacheOctets + oct > CACHE_MAX || lignes.size >= 160)) { const k0 = lignes.keys().next().value, v0 = lignes.get(k0); cacheOctets -= v0.width * v0.height * 4; lignes.delete(k0); }
+    lignes.set(cle, corps); cacheOctets += oct; return corps;
   }
   const direction = ang => ((Math.round((ang || 0) / (Math.PI / 4)) % 8) + 8) % 8;
 
@@ -98,6 +101,10 @@
       c.drawImage(pl, f * T, 0, T, T, X - ap[0] / k, Y - ap[1] / k, T / k, T / k);
       const tt = a.ancres_256 && a.ancres_256.tete && a.ancres_256.tete[d] && a.ancres_256.tete[d][f];
       const h = tt ? (224 - tt[1]) / 3.5 * u : 44 * u;
+      // mains du dernier perso dessiné (px écran) : l'hôte du studio y pose ce qu'il tient (tasse, livre, arrosoir…)
+      const md = a.ancres_256 && a.ancres_256.mainD && a.ancres_256.mainD[d] && a.ancres_256.mainD[d][f], mg = a.ancres_256 && a.ancres_256.mainG && a.ancres_256.mainG[d] && a.ancres_256.mainG[d][f];
+      const ecran = m => m ? [X + (m[0] - 128) / 3.5 * u, Y - (224 - m[1]) / 3.5 * u] : null;
+      window.SpritesPerso.dernier = { mainD: ecran(md), mainG: ecran(mg), d, anim: an };
       if (tt) surTete(c, look, X + (tt[0] - 128) / 3.5 * u, Y - h, u * .62, couleurs(look));
       return h;
     },

@@ -4,13 +4,17 @@ Lancer :  python -I -B veille_studio.py --projet <dossier du projet> [--donnees 
 
 Lance studio_etat.py sans limite de durée et le relance :
   - s'il s'arrête (erreur, fermeture) : après 5 s (30 s s'il s'est arrêté 3 fois de suite en moins d'une minute) ;
-  - s'il est figé (etat.json pas réécrit depuis 3 min) : l'arrête et le relance.
+  - s'il est figé : etat.json pas réécrit depuis 3 min (processus arrêté net), ou dernier passage TERMINÉ
+    (champ « passage_fini » d'etat.json) vieux de plus de 11 min alors que le battement republie encore etat.json
+    (boucle principale bloquée) : l'arrête et le relance.
 Si une autre alimentation tient déjà le projet (etat.json frais, verrou d'un autre processus), la veille attend sans
-rien lancer. Une seule veille par projet (.studio/veille_studio.verrou). Journal : .studio/veille_studio.log.
+rien lancer. Une seule veille par projet (.studio/veille_studio.verrou). Journal : .studio/veille_studio.log (1 Mo au plus,
+l'ancien gardé en .log.1).
 Ne concerne pas le serveur web (serveur_studio.py). Aucune commande reçue de la page : la seule commande lancée
 est studio_etat.py du skill, avec des arguments fixes.
 """
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -18,7 +22,22 @@ import time
 
 sys.dont_write_bytecode = True
 ICI = os.path.dirname(os.path.abspath(__file__))
+if ICI not in sys.path:
+    sys.path.insert(0, ICI)
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique communes)
 FIGE_S = 180
+FIGE_PASSAGE_S = 660        # C3 : passage pas fini depuis 11 min (le battement de studio_etat.py s'arrête à 10 min)
+JOURNAL_MAX = 1024 * 1024   # O13 : rotation du journal à 1 Mo
+
+
+def age_passage(chemin):
+    """Âge (s) du dernier passage terminé, d'après « passage_fini » d'etat.json ; None si inconnu (ancienne version,
+    fichier en cours d'écriture) : on juge alors sur la date du fichier seule."""
+    try:
+        t = jsonio.lire_strict(chemin).get("passage_fini")
+        return time.time() - t if isinstance(t, (int, float)) and not isinstance(t, bool) else None
+    except Exception:
+        return None
 
 
 def vivant(pid):
@@ -99,10 +118,7 @@ def verrou_vivant(chemin):
 def ecrire_verrou(chemin):
     """Écrit « pid heure_de_création » d'un coup (fichier temporaire puis remplacement) et l'efface à la sortie."""
     import atexit
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        f.write(f"{os.getpid()} {heure_creation(os.getpid()) or ''}".strip())
-    os.replace(tmp, chemin)
+    jsonio.ecrire_texte(chemin, f"{os.getpid()} {heure_creation(os.getpid()) or ''}".strip())
 
     def effacer():
         try:
@@ -121,6 +137,11 @@ def age_s(chemin):
 
 
 def main(argv=None):
+    for flux in (sys.stdout, sys.stderr):                # G16 : sortie redirigée (cp1252 sous Windows) : jamais de plantage d'accent
+        try:
+            flux.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     ap = argparse.ArgumentParser(description="Veille de l'alimentation du studio : relance studio_etat.py s'il s'arrête ou se fige.")
     ap.add_argument("--projet", required=True)
     ap.add_argument("--donnees", default=None)
@@ -133,6 +154,11 @@ def main(argv=None):
     etat, verrou_alim = os.path.join(studio, "etat.json"), os.path.join(studio, "studio_etat.verrou")
 
     def note(msg):
+        try:
+            if os.path.getsize(journal) > JOURNAL_MAX:     # O13 : le journal ne grossit plus sans fin
+                os.replace(journal, journal + ".1")
+        except OSError:
+            pass
         try:
             with open(journal, "a", encoding="utf-8") as f:
                 f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + msg + "\n")
@@ -151,7 +177,9 @@ def main(argv=None):
     rapides = 0
     while True:
         autre = verrou_vivant(verrou_alim)
-        if autre and (age_s(etat) or 1e9) < FIGE_S:
+        age_e, age_p = age_s(etat), age_passage(etat)
+        fige_autre = (age_e is None or age_e >= FIGE_S) or (age_p is not None and age_p >= FIGE_PASSAGE_S)
+        if autre and not fige_autre:
             time.sleep(15)          # une autre alimentation tient le projet et elle vit : on ne double pas
             continue
         if autre:                   # S35 : une alimentation à nous, vivante mais figée : on l'arrête avant d'en lancer une autre
@@ -167,9 +195,14 @@ def main(argv=None):
         note(f"studio_etat.py lancé (pid {enfant.pid})")
         while enfant.poll() is None:
             time.sleep(15)
-            age = age_s(etat)
-            if age is not None and age > FIGE_S and time.time() - debut > FIGE_S:
+            age, vie = age_s(etat), time.time() - debut
+            if age is not None and age > FIGE_S and vie > FIGE_S:
                 note(f"etat.json figé depuis {int(age)} s : relance")
+                enfant.kill()
+                break
+            age_p = age_passage(etat)                   # C3 : le battement ne masque plus une boucle bloquée
+            if age_p is not None and age_p > FIGE_PASSAGE_S and vie > FIGE_PASSAGE_S:
+                note(f"aucun passage terminé depuis {int(age_p)} s (battement seul) : relance")
                 enfant.kill()
                 break
         enfant.wait()

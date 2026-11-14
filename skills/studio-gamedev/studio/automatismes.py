@@ -10,15 +10,24 @@ roadmap et doc), une toutes les 20 min au plus ; dernier commit relu dans .studi
 plus de 60 min prévues → la moitié du lot à un relecteur libre, sinon à un « Relecteur (intérim) » (2 au plus), renvoyé à
 la fin de sa part sauf relecture à faire dans les 30 min. Variable STUDIO_ESSAI_SANS_ENVOI : rien n'est envoyé (essais).
 """
+import http.client
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
 
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import jsonio                                 # C4 : lecture (BOM) et écriture atomique communes
+
 DELAI_FIN_S, DELAI_FIN_TYRAN_S = 120, 30
+# A1 : attribution de fin de tâche pas aboutie : serveur injoignable → nouvel essai après 60 s ; plafond du serveur (429) → après 5 min
+REESSAI_SERVEUR_S, REESSAI_PLAFOND_S = 60, 300
+QUI_CACHE_S = 30                             # G4 : le port reconnu par /api/qui reste valable 30 s
 TOUR_TYRAN_S = 60
 ECART_DIAG_S = 15 * 60
 RENVOI_S = 30 * 60
@@ -114,18 +123,25 @@ def tx(cle, en, **k):
 
 
 def lire(chemin, defaut):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)
 
 
-def ecrire(chemin, donnees):
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, chemin)
+def ecrire(chemin, donnees, deja=None):
+    """Écrit le JSON ; renvoie le texte écrit. O7 : rien n'est réécrit si le texte est celui d'avant (deja) et que le fichier est là."""
+    texte = json.dumps(donnees, ensure_ascii=False, indent=1)
+    if texte == deja and os.path.exists(chemin):
+        return texte
+    jsonio.ecrire_texte(chemin, texte)
+    return texte
+
+
+def deja_repondue(dec, reps):
+    """Même règle que cloche.deja_repondue : une réponse plus ancienne que la décision (même id reposé) ne la ferme pas."""
+    i = str(dec.get("id"))
+    if i not in reps:
+        return False
+    cree, rep = str(dec.get("cree_le") or ""), reps[i]
+    return not (cree and rep and rep < cree)
 
 
 def elements_de(texte):
@@ -141,6 +157,35 @@ class Automatismes:
         self.d = d if isinstance(d, dict) else {}
         for k, v in (("fins", {}), ("traites", []), ("confiees", []), ("temporaires", {}), ("tyr", {}), ("sans_metier", {}), ("renvois", [])):
             self.d.setdefault(k, v)
+        for f in self.d["fins"].values():    # G5 : ancien drapeau « tentée » gardé dans automatismes.json : la fin redevient ouverte
+            if isinstance(f, dict):
+                f.pop("tente", None)
+        self.ecrit = None                    # O7 : dernier texte écrit dans automatismes.json
+        self.qui = {}                        # G4 : {"port", "t"} du dernier /api/qui qui a reconnu ce projet
+
+    # ---------- G4 : le port de serveur.json sert-il bien ce projet ?
+    def serveur_reconnu(self, port):
+        """True si /api/qui sur ce port répond avec ce projet (gardé 30 s). serveur.json peut rester après un arrêt brutal
+        et un autre projet peut avoir repris le port : on n'y envoie alors rien."""
+        maintenant = time.time()
+        if self.qui.get("port") == port and maintenant - self.qui.get("t", 0) < QUI_CACHE_S:
+            return True
+        self.qui = {}
+        projet = getattr(self.s, "projet", None) or os.path.dirname(os.path.abspath(self.s.dossier))
+        try:
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/qui", timeout=3) as r:
+                q = json.loads(r.read().decode("utf-8"))
+        except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException):
+            return False
+        if not isinstance(q, dict) or not q.get("projet"):
+            return False
+        def memes(x, y):                     # même dossier, même vu par une jonction ou un lien symbolique
+            return (os.path.normcase(os.path.abspath(x)) == os.path.normcase(os.path.abspath(y))
+                    or os.path.normcase(os.path.realpath(x)) == os.path.normcase(os.path.realpath(y)))
+        if not memes(str(q["projet"]), projet):
+            return False
+        self.qui = {"port": port, "t": maintenant}
+        return True
 
     # ---------- envoi au serveur du studio
     def poster(self, route, corps):
@@ -148,20 +193,30 @@ class Automatismes:
             self.d.setdefault("essai_envois", []).append({"route": route, "corps": corps, "t": int(time.time())})
             self.d["essai_envois"] = self.d["essai_envois"][-50:]
             return {"ok": True, "essai": True}
-        port = (lire(self.s.f("serveur.json"), {}) or {}).get("port")
+        # A1 : un serveur arrêté ou absent ne lève jamais : code 0 = « injoignable », l'appelant réessaie au passage suivant
+        try:
+            port = int((lire(self.s.f("serveur.json"), {}) or {}).get("port") or 0)
+        except (TypeError, ValueError, AttributeError):          # serveur.json abîmé (liste, texte, port non numérique)
+            port = 0
         if not port:
-            raise RuntimeError("serveur du studio introuvable (.studio/serveur.json)")
-        base = f"http://127.0.0.1:{int(port)}"
+            return {"ok": False, "code": 0, "erreur": "serveur du studio introuvable (.studio/serveur.json)"}
+        if not self.serveur_reconnu(port):                      # G4 : code 0 = rien d'envoyé, nouvel essai plus tard
+            return {"ok": False, "code": 0, "erreur": f"le port {port} de .studio/serveur.json ne sert pas ce projet (ou ne répond pas)"}
+        base = f"http://127.0.0.1:{port}"
         req = urllib.request.Request(base + route, data=json.dumps(corps).encode("utf-8"), headers={"Content-Type": "application/json", "Origin": base})
         try:
             with urllib.request.urlopen(req, timeout=10) as r:
-                return json.loads(r.read().decode("utf-8"))
+                j = json.loads(r.read().decode("utf-8"))
+            return j if isinstance(j, dict) else {"ok": False, "code": 0, "erreur": "réponse du serveur illisible"}
         except urllib.error.HTTPError as e:
             try:
                 j = json.loads(e.read().decode("utf-8") or "{}")
-            except ValueError:
+            except (ValueError, OSError):
                 j = {}
-            return dict(j, ok=False, code=e.code)
+            return dict(j if isinstance(j, dict) else {}, ok=False, code=e.code)
+        except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException) as e:   # refusé, coupé, délai dépassé, réponse illisible
+            self.qui = {}                                       # G4 : serveur parti ; le port sera revérifié au prochain envoi
+            return {"ok": False, "code": 0, "erreur": f"serveur du studio injoignable ({type(e).__name__})"}
 
     # ---------- données
     def contexte(self, conf, postes, r, progs, ouverts, chaine, sante):
@@ -169,8 +224,9 @@ class Automatismes:
         taches = (lire(self.s.f("taches_disponibles.json"), {}) or {}).get("taches") or []
         decs = lire(self.s.f("decisions.json"), [])
         decs = decs if isinstance(decs, list) else (decs or {}).get("decisions") or []
-        reps = {x.get("id") for x in (lire(self.s.f("reponses.json"), []) or []) if isinstance(x, dict)}
-        ouvertes = [x for x in decs if isinstance(x, dict) and x.get("id") and x["id"] not in reps and (x.get("statut") or "ouverte") in ("ouverte", "en_attente")]
+        rl = lire(self.s.f("reponses.json"), [])
+        reps = {str(x.get("id")): str(x.get("repondu_le") or "") for x in (rl if isinstance(rl, list) else []) if isinstance(x, dict) and x.get("id") not in (None, "")}
+        ouvertes = [x for x in decs if isinstance(x, dict) and x.get("id") and not deja_repondue(x, reps) and (x.get("statut") or "ouverte") in ("ouverte", "en_attente")]
         mp = regl.get("metiers_postes") if isinstance(regl.get("metiers_postes"), dict) else {}
         metiers = {}
         for p in conf.get("postes") or []:
@@ -190,7 +246,12 @@ class Automatismes:
 
     @staticmethod
     def auto(c, cle):
-        return c["regl"].get(cle) is True
+        """G6 : même règle que reglage() du serveur : reglages.json (page), sinon economie de la config, sinon coupé."""
+        v = c["regl"].get(cle)
+        if isinstance(v, bool):
+            return v
+        eco = c["conf"].get("economie") if isinstance(c["conf"].get("economie"), dict) else {}
+        return eco.get(cle) is True
 
     def actif_tyran(self, c):
         return c["conf"].get("mode") == "travail" and self.auto(c, "tyrannie_auto") and not c["regl"].get("pause") and not c["sante"].get("bloquant", c["sante"].get("sature"))
@@ -249,16 +310,32 @@ class Automatismes:
             self.d["fins"].pop(pid, None)
         interims = (self.d.get("interim") or {}).get("interimaires") or {}
         for pid, f in list(self.d["fins"].items()):
-            if f.get("tente") or not attribuer or maintenant - f["debut"] < delai or pid in interims:
+            if (f.get("tente") or not attribuer or maintenant - f["debut"] < delai or pid in interims
+                    or maintenant < f.get("reessai", 0)):
                 continue                                  # un intérimaire fini n'est pas réaffecté : partage_relecture le renvoie
-            f["tente"] = True
-            cand = (self.candidats(c, pid) or [None])[0]
+            # G5 : « tentée » n'est jamais posé avant la réponse du serveur : une panne en cours de route laisse la fin ouverte
+            # S31 : la fin de tâche ne confie jamais d'office une tâche marquée moteur (un seul chantier moteur à la fois :
+            # c'est à l'utilisateur ou au coordinateur de la lancer), même dans le groupe « son métier »
+            cand = next((x for x in self.candidats(c, pid) if x["sans_moteur"]), None)
             if not cand:
                 self.clore(pid)
                 continue
             r = self.confier(c, pid, cand, "auto:fin-de-tache")
-            f["attribuee"] = {"t": int(maintenant), "titre": cand["titre"], "ok": bool(r.get("ok")), "refus": r.get("erreur")}
-            self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "attribution", "poste": pid, "titre": cand["titre"], "ok": bool(r.get("ok"))})
+            code = r.get("code")
+            f["attribuee"] = {"t": int(maintenant), "titre": cand["titre"], "ok": bool(r.get("ok")), "refus": r.get("erreur"), "code": code}
+            if not r.get("ok") and code in (0, 429):
+                # A1 : jamais perdue. 0 = serveur arrêté ou absent ; 429 = plafond (une attribution en attente, N par heure).
+                # La fin reste ouverte et repart plus tard ; clore() ne vient que du succès, d'un refus net ou du poste qui change d'état.
+                f.pop("tente", None)                      # ancien état gardé dans automatismes.json : jamais bloqué
+                f["reessai"] = maintenant + (REESSAI_SERVEUR_S if code == 0 else REESSAI_PLAFOND_S)
+                f["essais"] = f.get("essais", 0) + 1
+                if f["essais"] == 1:                      # une ligne au journal, pas une par essai
+                    self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "attribution", "poste": pid, "titre": cand["titre"],
+                                                             "ok": False, "refus": r.get("erreur"), "code": code, "reessai": True})
+                continue
+            # succès, ou refus net (403 : attribution coupée côté serveur ; 400, 404…) : traité une fois pour toutes
+            self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "attribution", "poste": pid, "titre": cand["titre"], "ok": bool(r.get("ok")),
+                                                     **({} if r.get("ok") else {"refus": r.get("erreur"), "code": code})})
             self.clore(pid)
 
     def clore(self, pid):
@@ -370,7 +447,8 @@ class Automatismes:
             if r.get("ok"):
                 calme = next((q.get("calme_min") for q in c["postes"] if q["id"] == dg["id"]), None)
                 dg["action"] = tx("confie", en) + cand["titre"]
-                dg["bulle"] = (f"{dg['nom']} {tx('attendait', en)} {re.sub(r'^(attend|waiting for)\s*', '', dg['raison'])}"
+                motif = re.sub(r"^(attend|waiting for)\s*", "", dg["raison"])  # hors f-string : Python 3.10/3.11
+                dg["bulle"] = (f"{dg['nom']} {tx('attendait', en)} {motif}"
                                + (tx("depuis", en, m=calme) if calme is not None else "") + f" → {tx('confie', en)}{cand['titre']}")
                 self.d["temporaires"][dg["id"]] = {"t": int(maintenant), "tache": cand["tache_id"], "titre": cand["titre"], "raison": dg["raison"], "origine": origine, "bulle": dg["bulle"]}
         res["diagnostics"] = diag
@@ -409,7 +487,9 @@ class Automatismes:
                 or c["sante"].get("bloquant", c["sante"].get("sature")) or len(c["postes"]) >= 12 or maintenant - self.d.get("embauche_t", 0) < 3600):
             return
         ids = {q["id"] for q in c["postes"]}
-        tc = next((t for t in c["taches"] if t.get("statut") == "a_faire" and isinstance(t.get("poste"), str) and NOM_RE.match(t["poste"]) and t["poste"] not in ids), None)
+        # F39 : une recrue renvoyée (recrues/_anciens) n'est jamais réembauchée d'office : on passe au métier manquant suivant
+        tc = next((t for t in c["taches"] if t.get("statut") == "a_faire" and isinstance(t.get("poste"), str) and NOM_RE.match(t["poste"]) and t["poste"] not in ids
+                   and not os.path.exists(self.s.f("recrues", "_anciens", t["poste"] + ".json"))), None)
         if not tc:
             return
         self.d["embauche_t"] = maintenant
@@ -419,7 +499,11 @@ class Automatismes:
         r = self.poster("/api/recruter", {"nom": tc["poste"], "nom_affiche": nom[:40], "role": tx("role_emb", c["en"], n=nom),
                                           "mission": "\n".join(f"- {t['id']} : {t.get('titre', '')}" + (f" ({t['critere']})" if t.get("critere") else "") for t in lot)[:3900],
                                           "auto": True, "apparence": "aucune", "couleur": "#%06x" % (zlib.crc32(tc["poste"].encode()) & 0xFFFFFF)})
-        self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "embauche", "poste": tc["poste"], "ok": bool(r.get("ok"))})
+        if not r.get("ok") and r.get("code") == 0:      # A1 : serveur injoignable → l'embauche repart dans 60 s, pas dans une heure
+            self.d["embauche_t"] = maintenant - 3600 + REESSAI_SERVEUR_S
+            return
+        self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "embauche", "poste": tc["poste"], "ok": bool(r.get("ok")),
+                                                 **({} if r.get("ok") else {"refus": r.get("erreur"), "code": r.get("code")})})
 
     # ---------- relecteur autonome : libre → il se trouve lui-même une relecture utile (une à la fois, une toutes les 20 min)
     def poste_relecteur(self, c):
@@ -501,7 +585,6 @@ class Automatismes:
         f = self.d["fins"].get(pid) if pid else None
         raison = (("no review desk" if en else "aucun poste de relecture") if not q else
                   ("paused" if en else "en pause (Tout couper)") if c["conf"].get("mode") != "travail" or regl.get("pause") else
-                  ("away mode" if en else "mode absent") if regl.get("mode_absent") else
                   ("machine saturated" if en else "machine saturée") if c["sante"].get("bloquant", c["sante"].get("sature")) else
                   ("automatic assignment off" if en else "attribution automatique coupée") if not (self.auto(c, "attribution_auto") or self.auto(c, "tyrannie_auto")) else
                   ("busy" if en else "occupé") if q.get("etat") != "disponible" or q.get("demandes") else
@@ -516,6 +599,8 @@ class Automatismes:
         rl["t"] = int(maintenant)                       # même un refus du serveur compte : jamais de boucle
         origine = "auto:fin-de-tache" if self.auto(c, "attribution_auto") else "auto:temporaire"
         r = self.confier(c, pid, dict(cand, mission=cand["mission"] + tx("rl_fin", en)), origine)
+        if not r.get("ok") and r.get("code") == 0:      # A1 : serveur injoignable → nouvel essai dans 60 s, pas dans 20 min
+            rl["t"] = int(maintenant - RELECT_ECART_S + REESSAI_SERVEUR_S)
         if r.get("ok"):
             mq = cand["marque"]
             if mq.get("dernier_commit"):
@@ -527,9 +612,13 @@ class Automatismes:
                 rl.setdefault("rotation", {})[cand["genre"]] = int(maintenant)
             rl["derniere"] = {"t": int(maintenant), "genre": cand["genre"], "tache_id": cand["tache_id"], "titre": cand["titre"], "poste": pid,
                               "elements": elements_de(cand["mission"])[:60]}
-        self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "relecteur", "poste": pid, "titre": cand["titre"], "ok": bool(r.get("ok"))})
+        injoignable = not r.get("ok") and r.get("code") == 0
+        dern_rl = next((j for j in reversed(self.d.get("journal") or []) if j.get("type") == "relecteur"), {})
+        if not (injoignable and dern_rl.get("code") == 0):  # serveur arrêté : une ligne au journal, pas une par minute
+            self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "relecteur", "poste": pid, "titre": cand["titre"], "ok": bool(r.get("ok")),
+                                                     **({} if r.get("ok") else {"code": r.get("code")})})
         ecrire(chemin, rl)
-        res.update(derniere=rl.get("derniere"), prochaine_dans_s=RELECT_ECART_S, raison=None if r.get("ok") else str(r.get("erreur") or r.get("code") or "refus"))
+        res.update(derniere=rl.get("derniere"), prochaine_dans_s=REESSAI_SERVEUR_S if injoignable else RELECT_ECART_S, raison=None if r.get("ok") else str(r.get("erreur") or r.get("code") or "refus"))
         return res
 
     # ---------- relecture partagée : plus d'une heure prévue → la moitié à un relecteur libre ou à un intérimaire
@@ -687,14 +776,33 @@ class Automatismes:
                 self.d["partage"] = self.partage_relecture(c, maintenant)
             except Exception as e:                              # la relecture partagée ne fige jamais les autres automatismes
                 self.d["partage"] = {"erreur": f"{type(e).__name__} : {e}"[:200]}
+            try:                                                # plan de restructuration accepté : renvois « après sa tâche »
+                import restructuration                          # (le serveur vérifie la tâche finie et le mode absent)
+                if maintenant - self.d.get("restru_t", 0) >= 120 and any(p.get("statut") == "en_cours" for p in restructuration.plans(self.s.dossier)):
+                    self.d["restru_t"] = int(maintenant)
+                    self.poster("/api/restructuration", {"action": "suite"})
+            except Exception as e:
+                self.d["restru_erreur"] = f"{type(e).__name__} : {e}"[:200]
         except Exception as e:                                  # un automatisme en panne ne fige jamais l'alimentation
             self.d["erreur"] = f"{type(e).__name__} : {e}"[:200]
-        self.d["journal"] = (self.d.get("journal") or [])[-40:]
-        ecrire(self.chemin, self.d)
+        else:                                                   # A2 : un passage sans panne efface l'erreur d'avant
+            self.d.pop("erreur", None)
+        self.d["journal"] = (self.d.get("journal") or [])[-200:]       # lot E : une nuit d'absence tient dans le journal
+        self.ecrit = ecrire(self.chemin, self.d, self.ecrit)     # O7 : pas de réécriture à l'identique
         dern = self.d.get("dernier") or {}
         return {"serveur": True, "tyrannie": dern, "fins": {k: {"debut": int(v["debut"]), "fini": v.get("fini", "")} for k, v in self.d["fins"].items()},
                 "temporaires": {k: v for k, v in self.d["temporaires"].items() if maintenant - v.get("t", 0) < 6 * 3600},
                 "renvois": [x for x in self.d["renvois"] if maintenant - x["t"] < 600], "remonter": [x["decision"] for x in dern.get("diagnostics") or [] if x.get("decision")],
                 "relecteur": self.d.get("relecteur") or {}, "erreur": self.d.get("erreur"),
                 "partages": [x for x in ((self.d.get("interim") or {}).get("partages") or []) if maintenant - x.get("t", 0) < 600],
-                "interimaires": sorted((self.d.get("interim") or {}).get("interimaires") or {})}
+                "interimaires": sorted((self.d.get("interim") or {}).get("interimaires") or {}),
+                "historique": self.historique(maintenant)}
+
+    def historique(self, maintenant):
+        """Lot E : ce que les automatismes ont fait seuls depuis 24 h (attributions, relectures, partages, embauches, renvois),
+        réussi seulement. La page en tire le résumé « Pendant ton absence » même si aucun onglet n'était ouvert."""
+        j = [x for x in (self.d.get("journal") or []) if isinstance(x, dict) and x.get("ok") and maintenant - x.get("t", 0) < 86400]
+        vus = {(x.get("t"), x.get("poste")) for x in j if x.get("type") == "renvoi_interim"}
+        r = [{"t": x["t"], "type": "renvoi", "poste": x.get("nom"), "nom_affiche": x.get("nom_affiche")} for x in self.d.get("renvois") or []
+             if isinstance(x, dict) and maintenant - x.get("t", 0) < 86400 and (x.get("t"), x.get("nom")) not in vus]
+        return sorted(j + r, key=lambda x: x.get("t", 0))[-150:]

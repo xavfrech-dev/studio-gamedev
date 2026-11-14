@@ -8,6 +8,7 @@ sauf s'il reste une relecture à faire : gardé alors 30 min au plus.
 
 python -I -B essai_interim.py
 """
+import argparse
 import json
 import os
 import shutil
@@ -51,7 +52,8 @@ def ecrire(chemin, d):
 LOT = [f"commit a{i} : relire le module {i}" for i in range(8)]
 
 
-def main():
+def main(argv=None):
+    argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args(argv)   # M25 : --help n'essaie rien
     racine = tempfile.mkdtemp(prefix="essai_interim_")
     ok = 0
     try:

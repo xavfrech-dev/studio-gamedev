@@ -28,6 +28,10 @@ import re
 import subprocess
 import sys
 
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py, lecture avec BOM, écriture atomique communes)
+
 sys.dont_write_bytecode = True
 for _flux in (sys.stdout, sys.stderr):
     try:
@@ -107,19 +111,14 @@ def lire_texte(chemin, maxi=MAX_LECTURE):
 
 
 def lire_json(chemin, defaut=None):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)
 
 
 def ecrire(chemin, donnees):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        f.write(donnees if isinstance(donnees, str) else json.dumps(donnees, ensure_ascii=False, indent=1))
-    os.replace(tmp, chemin)
+    if isinstance(donnees, str):
+        jsonio.ecrire_texte(chemin, donnees, newline="\n")
+    else:
+        jsonio.ecrire(chemin, donnees, newline="\n")
 
 
 def dans_projet(projet, chemin):

@@ -12,7 +12,7 @@
 
   // ------------------------------------------------------------------ textes (fr = en, mêmes clés)
   Object.assign(TXT.fr, {
-    quetes: 'Quêtes', a_quetes: 'Journal des quêtes : ce que le studio te propose pour finir le jeu, et ce que ça rapporte',
+    q_hote_creer: 'Créer mon hôte', quetes: 'Quêtes', a_quetes: 'Journal des quêtes : ce que le studio te propose pour finir le jeu, et ce que ça rapporte',
     q_titre: 'Journal des quêtes', q_proposee: 'Nouvelle quête', q_proposees: 'Proposées', q_en_cours: 'En cours', q_remplies: 'Remplies',
     q_verrou: 'À venir', q_arrive_apres: 'arrive après', q_objectif: 'Objectif', q_preuve: 'Comment on saura que c’est fait',
     q_propose: 'Le studio propose', q_recompense: 'Récompense', q_accepter: 'Accepter', q_plus_tard: 'Plus tard', q_refuser: 'Refuser',
@@ -32,7 +32,7 @@
     q_bulle: 'Une quête t’attend', xp_passer: 'Clic pour passer', xp_niveau: 'Niveau {n}', xp_monte: 'Le studio monte d’un niveau', xp_rang: 'rang : {r}', xp_reglage: 'Gains d’XP', xp_complet: 'en grand (milieu de l’écran)', xp_discret: 'discrets (près de la barre)', xp_coupe: 'coupés', q_voir_maquette: 'Voir la maquette en grand', q_ajust: 'Ajustement', q_atelier_actif: 'Style Atelier affiché (référence).'
   });
   Object.assign(TXT.en, {
-    quetes: 'Quests', a_quetes: 'Quest log: what the studio suggests to finish the game, and what it earns you',
+    q_hote_creer: 'Create my host', quetes: 'Quests', a_quetes: 'Quest log: what the studio suggests to finish the game, and what it earns you',
     q_titre: 'Quest log', q_proposee: 'New quest', q_proposees: 'Offered', q_en_cours: 'In progress', q_remplies: 'Completed',
     q_verrou: 'Coming up', q_arrive_apres: 'comes after', q_objectif: 'Goal', q_preuve: 'How we will know it is done',
     q_propose: 'The studio suggests', q_recompense: 'Reward', q_accepter: 'Accept', q_plus_tard: 'Later', q_refuser: 'Decline',
@@ -65,6 +65,7 @@
 #bt-quetes .pastille,.bt-soutien .pastille{background:var(--ocre)}
 #quete-suivie{display:flex;align-items:center;gap:6px;max-width:260px;margin-top:2px;padding:2px 10px;border:1px dashed var(--bord);border-radius:999px;background:transparent;color:#e8dcc2;font:12px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 #quete-suivie[hidden]{display:none}#quete-suivie b{color:#f1d9a4;font-weight:600}
+html[data-theme=clair] #quete-suivie{color:#3b2f22}html[data-theme=clair] #quete-suivie b{color:#6b4a1e}
 .qj-actes{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}.qj-actes button{font-size:12px;padding:4px 10px}.qj-actes button.on{border-color:var(--ocre);box-shadow:inset 0 0 0 1px var(--ocre)}
 .qj-barre{height:6px;border-radius:3px;background:rgba(92,79,63,.18);overflow:hidden;margin:4px 0 10px}.qj-barre i{display:block;height:100%;background:linear-gradient(90deg,#c9953e,#e2b866)}
 .qj h3{font:600 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--encre3);margin:14px 0 6px}
@@ -111,7 +112,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
 @keyframes xfEtincelle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 @keyframes xfPulse{0%{box-shadow:0 0 0 0 rgba(226,184,102,.75)}100%{box-shadow:0 0 0 14px rgba(226,184,102,0)}}
 @media (prefers-reduced-motion:reduce){#xp-fete .xf-carte{animation:none}#xp-fete .xf-e{display:none}#niveau.xp-pulse{animation:none}}
-@media (max-width:760px){#quete-suivie{max-width:60vw}}
+@media (max-width:760px){#quete-suivie{max-width:60vw}body.app #quete-suivie{max-width:36vw;min-width:0}}
 </style>`));
 
   // ------------------------------------------------------------------ barre du haut : Quêtes, Audit et les autres boutons débloqués
@@ -239,6 +240,16 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
     };
     el.querySelectorAll('[data-q]').forEach(b => { b.onclick = () => envoyer(b.dataset.q); });
     el.querySelectorAll('[data-embaucher]').forEach(b => { b.onclick = () => envoyer('accepter', [b.dataset.embaucher]); });
+    // quête qui se joue dans la page (l'hôte du studio, hote.js) : le bouton principal ouvre l'écran de création
+    if (q.ouvre === 'hote' && window.HoteStudio && st !== 'remplie' && st !== 'deja_faite') {
+      let b = el.querySelector('[data-q="accepter"]');
+      if (!b) { b = document.createElement('button'); b.type = 'button'; b.className = 'btp'; el.querySelector('[data-q-res]').before(b); }
+      b.textContent = '★ ' + t('q_hote_creer'); b.dataset.q = 'hote';
+      b.onclick = async () => {
+        if (st === 'proposee' || st === 'plus_tard') { try { await poster('/api/quete', { id, action: 'accepter' }); OPT[id] = 'acceptee'; } catch (err) { /* déjà acceptée */ } }
+        Panneau.fermer(); setTimeout(() => HoteStudio.creer(), 430);
+      };
+    }
   }
   function ouvrirQuete(id) { if (PAR_ID[id] && D.qe) Panneau.remplacer('quete:' + id, el => carteQuete(el, id)); }
   let FILTRE_ACTE = '';

@@ -147,7 +147,8 @@
   "niveau",
   "skill_installe",
   "jours",
-  "mur.images"
+  "mur.images",
+  "hote"
  ],
  "tags_roadmap": [
   "da",
@@ -1846,6 +1847,67 @@
     },
     "habillage": 5,
     "decor": "affiche_jeu"
+   }
+  },
+  {
+   "id": "Q-SU-04",
+   "acte": "identite",
+   "type": "secondaire",
+   "ordre": 41,
+   "ouvre": "hote",
+   "titre": {
+    "fr": "Un hôte pour le studio",
+    "en": "A host for the studio"
+   },
+   "pitch": {
+    "fr": "Le prototype tourne, l’équipe a trouvé son rythme : il manque quelqu’un pour habiter le studio. À toi de l’inventer.",
+    "en": "The prototype runs, the team found its pace: the studio needs someone to live in it. Invent them."
+   },
+   "objectif": {
+    "fr": "Créer l’hôte du studio : son allure, ses couleurs, son coin, ce qu’il fait et sa façon de parler (par des choix, ou en le décrivant en une phrase).",
+    "en": "Create the studio host: look, colours, corner, what they do and how they talk (by picking, or by describing them in one sentence)."
+   },
+   "prerequis": [],
+   "declencheur": {
+    "tous": [
+     {
+      "signal": "quete",
+      "id": "Q-PR-02",
+      "op": "dans",
+      "valeur": [
+       "remplie",
+       "deja_faite"
+      ]
+     }
+    ]
+   },
+   "fini": {
+    "tous": [
+     {
+      "signal": "hote",
+      "op": "eq",
+      "valeur": true
+     }
+    ]
+   },
+   "preuve_attendue": {
+    "fr": "L’hôte installé dans son coin : le fichier .studio/hote.json.",
+    "en": "The host settled in their corner: the .studio/hote.json file."
+   },
+   "propositions": {
+    "agents": [],
+    "skills": []
+   },
+   "recompense": {
+    "xp": 100,
+    "succes": {
+     "titre": {
+      "fr": "La maison a une âme",
+      "en": "The house has a soul"
+     },
+     "icone": "cartes/hote.svg",
+     "son": "moyen"
+    }
    }
   },
   {

@@ -1,0 +1,1384 @@
+{
+ "version": 1,
+ "_lisezmoi": {
+  "fr": "Pièces de l'hôte du studio (studio/hote.py, studio/hote.js). Un hôte est un personnage d'ambiance que l'utilisateur crée lui-même : allure, couleurs, accessoire, coin du studio, 3 ou 4 activités, objets, ton des répliques. La fiche (.studio/hote.json) n'utilise que les identifiants de ce fichier, plus un nom et des répliques libres filtrés. Aucune image n'est générée : le personnage est composé avec les sprites du skill.",
+  "en": "Pieces of the studio host (studio/hote.py, studio/hote.js). A host is an ambient character the user creates: look, colours, accessory, studio corner, 3 or 4 activities, objects, tone of the lines. The sheet (.studio/hote.json) only uses the ids of this file, plus a filtered name and filtered free lines. No image is generated: the character is built from the skill's sprites."
+ },
+ "limites": {
+  "nom_max": 30,
+  "replique_max": 140,
+  "repliques_max_par_cle": 8,
+  "activites_min": 3,
+  "activites_max": 4,
+  "objets_max": 3,
+  "prompt_max": 600
+ },
+ "allures": [
+  {
+   "id": "elancee",
+   "nom": {
+    "fr": "Élancée",
+    "en": "Slender"
+   },
+   "look": {
+    "morphologie": "mince",
+    "peau": "#e0ac69",
+    "cheveux": {
+     "coupe": "longs",
+     "couleur": "#5a3a22"
+    },
+    "tenue": {
+     "style": "chemise",
+     "couleur1": "#6a4a7c",
+     "couleur2": "#e8d9f0"
+    }
+   }
+  },
+  {
+   "id": "ronde",
+   "nom": {
+    "fr": "Toute ronde",
+    "en": "Round and cosy"
+   },
+   "look": {
+    "morphologie": "costaude",
+    "peau": "#c68642",
+    "cheveux": {
+     "coupe": "rase",
+     "couleur": "#1c1c1c"
+    },
+    "tenue": {
+     "style": "sweat",
+     "couleur1": "#c9953e",
+     "couleur2": "#3a3128"
+    }
+   }
+  },
+  {
+   "id": "petite",
+   "nom": {
+    "fr": "Petite et vive",
+    "en": "Small and lively"
+   },
+   "look": {
+    "morphologie": "petite",
+    "peau": "#ffdbac",
+    "cheveux": {
+     "coupe": "boucles",
+     "couleur": "#b55239"
+    },
+    "tenue": {
+     "style": "tablier",
+     "couleur1": "#3f7a52",
+     "couleur2": "#e9c47f"
+    }
+   }
+  },
+  {
+   "id": "sage",
+   "nom": {
+    "fr": "Allure de sage",
+    "en": "Wise look"
+   },
+   "look": {
+    "morphologie": "grande",
+    "peau": "#8d5524",
+    "cheveux": {
+     "coupe": "courts",
+     "couleur": "#8a8a8a"
+    },
+    "tenue": {
+     "style": "robe",
+     "couleur1": "#2b2f45",
+     "couleur2": "#b8c6e8"
+    }
+   }
+  },
+  {
+   "id": "boheme",
+   "nom": {
+    "fr": "Bohème",
+    "en": "Bohemian"
+   },
+   "look": {
+    "morphologie": "moyenne",
+    "peau": "#a8735a",
+    "cheveux": {
+     "coupe": "en_bataille",
+     "couleur": "#d9b56b"
+    },
+    "tenue": {
+     "style": "chemise",
+     "couleur1": "#a8432e",
+     "couleur2": "#f1d9a4"
+    }
+   }
+  },
+  {
+   "id": "classique",
+   "nom": {
+    "fr": "Classique",
+    "en": "Classic"
+   },
+   "look": {
+    "morphologie": "moyenne",
+    "peau": "#f1c27d",
+    "cheveux": {
+     "coupe": "queue",
+     "couleur": "#2b1d14"
+    },
+    "tenue": {
+     "style": "costume",
+     "couleur1": "#2f5f8a",
+     "couleur2": "#f4ecd9"
+    }
+   }
+  }
+ ],
+ "couleurs": [
+  {
+   "id": "foret",
+   "nom": {
+    "fr": "Forêt",
+    "en": "Forest"
+   },
+   "couleur1": "#3f7a52",
+   "couleur2": "#e9c47f"
+  },
+  {
+   "id": "ocean",
+   "nom": {
+    "fr": "Océan",
+    "en": "Ocean"
+   },
+   "couleur1": "#2f5f8a",
+   "couleur2": "#f4ecd9"
+  },
+  {
+   "id": "brique",
+   "nom": {
+    "fr": "Brique",
+    "en": "Brick"
+   },
+   "couleur1": "#a8432e",
+   "couleur2": "#f1d9a4"
+  },
+  {
+   "id": "prune",
+   "nom": {
+    "fr": "Prune",
+    "en": "Plum"
+   },
+   "couleur1": "#6a4a7c",
+   "couleur2": "#e8d9f0"
+  },
+  {
+   "id": "moutarde",
+   "nom": {
+    "fr": "Moutarde",
+    "en": "Mustard"
+   },
+   "couleur1": "#c9953e",
+   "couleur2": "#3a3128"
+  },
+  {
+   "id": "nuit",
+   "nom": {
+    "fr": "Nuit",
+    "en": "Night"
+   },
+   "couleur1": "#2b2f45",
+   "couleur2": "#b8c6e8"
+  }
+ ],
+ "accessoires": [
+  "aucun",
+  "chapeau",
+  "beret",
+  "lunettes",
+  "casque_audio",
+  "casquette",
+  "barbe",
+  "bandeau",
+  "capuche",
+  "couronne"
+ ],
+ "coins": [
+  {
+   "id": "coeur",
+   "nom": {
+    "fr": "Au cœur du studio, devant",
+    "en": "At the heart of the studio, up front"
+   },
+   "r": [
+    7.7,
+    8.8,
+    9.1,
+    9.85
+   ],
+   "siege": [
+    8.45,
+    9.3
+   ],
+   "regard_deg": 45,
+   "table": [
+    8.95,
+    9.0
+   ],
+   "debout": [
+    9.35,
+    9.0
+   ],
+   "places": [
+    [
+     7.92,
+     8.98
+    ],
+    [
+     7.92,
+     9.62
+    ],
+    [
+     8.95,
+     9.65
+    ]
+   ]
+  },
+  {
+   "id": "droite",
+   "nom": {
+    "fr": "Côté droit, au calme",
+    "en": "Right side, a quiet spot"
+   },
+   "r": [
+    14.5,
+    2.15,
+    15.8,
+    3.6
+   ],
+   "siege": [
+    15.0,
+    2.85
+   ],
+   "regard_deg": 45,
+   "table": [
+    15.55,
+    2.5
+   ],
+   "places": [
+    [
+     14.75,
+     2.35
+    ],
+    [
+     15.55,
+     3.35
+    ],
+    [
+     14.75,
+     3.4
+    ]
+   ],
+   "debout": [
+    15.55,
+    2.95
+   ]
+  },
+  {
+   "id": "entree",
+   "nom": {
+    "fr": "Près de l'entrée",
+    "en": "By the entrance"
+   },
+   "r": [
+    0.9,
+    10.7,
+    2.4,
+    11.8
+   ],
+   "siege": [
+    1.72,
+    11.12
+   ],
+   "regard_deg": 45,
+   "table": [
+    2.12,
+    10.9
+   ],
+   "places": [
+    [
+     1.15,
+     10.95
+    ],
+    [
+     1.15,
+     11.58
+    ],
+    [
+     2.2,
+     11.58
+    ]
+   ],
+   "debout": [
+    2.55,
+    10.95
+   ]
+  },
+  {
+   "id": "atelier",
+   "nom": {
+    "fr": "Au fond, à gauche",
+    "en": "Back left"
+   },
+   "r": [
+    1.9,
+    1.25,
+    3.4,
+    2.35
+   ],
+   "siege": [
+    2.72,
+    1.78
+   ],
+   "regard_deg": 45,
+   "table": [
+    3.12,
+    1.5
+   ],
+   "places": [
+    [
+     2.15,
+     1.48
+    ],
+    [
+     2.15,
+     2.12
+    ],
+    [
+     3.18,
+     2.12
+    ]
+   ],
+   "debout": [
+    3.6,
+    1.5
+   ]
+  }
+ ],
+ "objets": [
+  {
+   "id": "tapis",
+   "nom": {
+    "fr": "Un tapis",
+    "en": "A rug"
+   }
+  },
+  {
+   "id": "plante",
+   "nom": {
+    "fr": "Une plante",
+    "en": "A plant"
+   }
+  },
+  {
+   "id": "lampe",
+   "nom": {
+    "fr": "Une lampe",
+    "en": "A lamp"
+   }
+  },
+  {
+   "id": "livres",
+   "nom": {
+    "fr": "Une pile de livres",
+    "en": "A pile of books"
+   }
+  },
+  {
+   "id": "radio",
+   "nom": {
+    "fr": "Une vieille radio",
+    "en": "An old radio"
+   }
+  },
+  {
+   "id": "aquarium",
+   "nom": {
+    "fr": "Un petit aquarium",
+    "en": "A small fish tank"
+   }
+  }
+ ],
+ "activites": [
+  {
+   "id": "boisson",
+   "nom": {
+    "fr": "Sert une boisson chaude",
+    "en": "Serves a hot drink"
+   },
+   "texte": {
+    "fr": "sert une boisson chaude",
+    "en": "serves a hot drink"
+   },
+   "repliques": {
+    "fr": [
+     "Une boisson chaude ? Ça réchauffe les idées.",
+     "Je t’en sers une, doucement.",
+     "Tiens, c’est encore chaud."
+    ],
+    "en": [
+     "A hot drink? It warms up the ideas.",
+     "Let me pour you one, gently.",
+     "Here, it is still warm."
+    ]
+   }
+  },
+  {
+   "id": "arrose",
+   "nom": {
+    "fr": "Arrose les plantes",
+    "en": "Waters the plants"
+   },
+   "texte": {
+    "fr": "arrose les plantes",
+    "en": "waters the plants"
+   },
+   "objet_requis": "plante",
+   "repliques": {
+    "fr": [
+     "Un peu d’eau, et ça repart.",
+     "Les plantes aussi ont droit à leur pause.",
+     "Elle a poussé depuis hier, regarde."
+    ],
+    "en": [
+     "A little water and off it goes.",
+     "Plants deserve a break too.",
+     "It grew since yesterday, look."
+    ]
+   }
+  },
+  {
+   "id": "lit",
+   "nom": {
+    "fr": "Lit dans son fauteuil",
+    "en": "Reads in the armchair"
+   },
+   "texte": {
+    "fr": "lit dans son fauteuil",
+    "en": "reads in the armchair"
+   },
+   "repliques": {
+    "fr": [
+     "Encore un chapitre, et je reviens.",
+     "Ce livre parle de jeux… et de patience.",
+     "Une page à la fois."
+    ],
+    "en": [
+     "One more chapter and I am back.",
+     "This book is about games… and patience.",
+     "One page at a time."
+    ]
+   }
+  },
+  {
+   "id": "fenetre",
+   "nom": {
+    "fr": "Regarde par la fenêtre",
+    "en": "Looks out of the window"
+   },
+   "texte": {
+    "fr": "regarde par la fenêtre",
+    "en": "looks out of the window"
+   },
+   "repliques": {
+    "fr": [
+     "Le ciel change vite aujourd’hui.",
+     "Une minute à la fenêtre, ça repose les yeux.",
+     "Dehors aussi, ça avance."
+    ],
+    "en": [
+     "The sky changes fast today.",
+     "A minute at the window rests the eyes.",
+     "Outside, things move on too."
+    ]
+   }
+  },
+  {
+   "id": "tournee",
+   "nom": {
+    "fr": "Passe voir l’équipe",
+    "en": "Drops by the team"
+   },
+   "texte": {
+    "fr": "passe voir l’équipe",
+    "en": "drops by the team"
+   },
+   "repliques": {
+    "fr": [
+     "Tout va bien de ton côté ?",
+     "Je passe juste dire bonjour.",
+     "Si tu as besoin de quelque chose, je suis dans mon coin."
+    ],
+    "en": [
+     "All good on your side?",
+     "Just dropping by to say hello.",
+     "If you need anything, I am in my corner."
+    ]
+   }
+  },
+  {
+   "id": "musique",
+   "nom": {
+    "fr": "Met un petit air",
+    "en": "Plays a little tune"
+   },
+   "texte": {
+    "fr": "met un petit air",
+    "en": "plays a little tune"
+   },
+   "objet_requis": "radio",
+   "repliques": {
+    "fr": [
+     "Un petit air, tout bas.",
+     "La musique aide à se concentrer.",
+     "Je baisse si ça gêne."
+    ],
+    "en": [
+     "A little tune, very low.",
+     "Music helps focus.",
+     "I will turn it down if it bothers you."
+    ]
+   }
+  },
+  {
+   "id": "range",
+   "nom": {
+    "fr": "Range le studio",
+    "en": "Tidies the studio"
+   },
+   "texte": {
+    "fr": "range le studio",
+    "en": "tidies the studio"
+   },
+   "repliques": {
+    "fr": [
+     "Chaque chose à sa place.",
+     "Un studio rangé, c’est une tête rangée.",
+     "Je range, vous créez."
+    ],
+    "en": [
+     "Everything in its place.",
+     "A tidy studio, a tidy mind.",
+     "I tidy, you create."
+    ]
+   }
+  },
+  {
+   "id": "carnet",
+   "nom": {
+    "fr": "Croque le studio dans un carnet",
+    "en": "Sketches the studio in a notebook"
+   },
+   "texte": {
+    "fr": "croque le studio dans son carnet",
+    "en": "sketches the studio in a notebook"
+   },
+   "repliques": {
+    "fr": [
+     "Je fais un petit croquis du studio.",
+     "Tu bouges pas, je te dessine.",
+     "Ce coin-là ferait un beau décor."
+    ],
+    "en": [
+     "I am doing a little sketch of the studio.",
+     "Hold still, I am drawing you.",
+     "That corner would make a fine set."
+    ]
+   }
+  }
+ ],
+ "tons": [
+  {
+   "id": "chaleureux",
+   "nom": {
+    "fr": "Chaleureux",
+    "en": "Warm"
+   },
+   "exemple": {
+    "fr": "Prends ton temps, on est bien ici.",
+    "en": "Take your time, we are fine here."
+   },
+   "repliques": {
+    "fr": {
+     "coin": [
+      "On est bien, dans ce coin.",
+      "Prends ton temps, on est bien ici.",
+      "Si tu as un coup de mou, viens t’asseoir."
+     ],
+     "spontanees": [
+      "Vous faites du beau travail, tous.",
+      "Une petite pause, ça ne fait pas de mal.",
+      "J’aime l’ambiance du studio aujourd’hui."
+     ],
+     "fini": [
+      "Bravo {nom}, c’est fini ! Je te sers quelque chose ?",
+      "{nom} a fini « {tache} ». Ça se fête."
+     ],
+     "commit": [
+      "Un nouveau commit : « {titre} ». Joli !",
+      "Ça avance, ça avance."
+     ],
+     "decision": [
+      "Une question t’attend sous la cloche, rien ne presse."
+     ],
+     "bloque": [
+      "{nom}, tu bloques ? Viens souffler une minute.",
+      "On va trouver, {nom}."
+     ],
+     "matin": [
+      "Bonjour tout le monde !"
+     ],
+     "soir": [
+      "Il se fait tard, pensez à vous reposer."
+     ]
+    },
+    "en": {
+     "coin": [
+      "It is nice in this corner.",
+      "Take your time, we are fine here.",
+      "Feeling low? Come and sit down."
+     ],
+     "spontanees": [
+      "You are all doing great work.",
+      "A little break never hurts.",
+      "I like the studio mood today."
+     ],
+     "fini": [
+      "Well done {nom}, it is finished! Can I get you something?",
+      "{nom} finished “{tache}”. Worth celebrating."
+     ],
+     "commit": [
+      "A new commit: “{titre}”. Nice!",
+      "Moving on, moving on."
+     ],
+     "decision": [
+      "A question is waiting under the bell, no rush."
+     ],
+     "bloque": [
+      "{nom}, stuck? Come and breathe for a minute.",
+      "We will figure it out, {nom}."
+     ],
+     "matin": [
+      "Good morning everyone!"
+     ],
+     "soir": [
+      "It is getting late, remember to rest."
+     ]
+    }
+   }
+  },
+  {
+   "id": "pince_sans_rire",
+   "nom": {
+    "fr": "Pince-sans-rire",
+    "en": "Deadpan"
+   },
+   "exemple": {
+    "fr": "Encore un bug ? Quelle surprise.",
+    "en": "Another bug? What a surprise."
+   },
+   "repliques": {
+    "fr": {
+     "coin": [
+      "Mon fauteuil et moi, on se comprend.",
+      "Je surveille. Avec les yeux fermés, mais je surveille.",
+      "Rien à signaler. Pour l’instant."
+     ],
+     "spontanees": [
+      "Encore un bug ? Quelle surprise.",
+      "Le studio tourne. Moi aussi, autour de ma tasse.",
+      "Si quelqu’un cherche la motivation, elle est près de la machine à café."
+     ],
+     "fini": [
+      "{nom} a fini. Je note la date, c’est historique.",
+      "« {tache} » : terminé. On est presque inquiets."
+     ],
+     "commit": [
+      "Un commit. « {titre} ». Poétique.",
+      "Encore un commit. Ils se reproduisent."
+     ],
+     "decision": [
+      "Une décision attend. Elle a l’air patiente, mais pas trop."
+     ],
+     "bloque": [
+      "{nom} bloque. Le code a gagné une manche, pas la partie.",
+      "Respire, {nom}. Le bug, lui, ne respire pas."
+     ],
+     "matin": [
+      "Bonjour. Le café est prêt, pas moi."
+     ],
+     "soir": [
+      "Il est tard. Les bugs dorment aussi, normalement."
+     ]
+    },
+    "en": {
+     "coin": [
+      "My armchair and I understand each other.",
+      "I am watching. Eyes closed, but watching.",
+      "Nothing to report. Yet."
+     ],
+     "spontanees": [
+      "Another bug? What a surprise.",
+      "The studio is running. So am I, around my mug.",
+      "If anyone is looking for motivation, it is by the coffee machine."
+     ],
+     "fini": [
+      "{nom} finished. I am writing down the date, it is historic.",
+      "“{tache}”: done. We are almost worried."
+     ],
+     "commit": [
+      "A commit. “{titre}”. Poetic.",
+      "Another commit. They multiply."
+     ],
+     "decision": [
+      "A decision is waiting. It looks patient, but not that patient."
+     ],
+     "bloque": [
+      "{nom} is stuck. The code won a round, not the match.",
+      "Breathe, {nom}. The bug does not breathe."
+     ],
+     "matin": [
+      "Morning. The coffee is ready, I am not."
+     ],
+     "soir": [
+      "It is late. Bugs sleep too, normally."
+     ]
+    }
+   }
+  },
+  {
+   "id": "poetique",
+   "nom": {
+    "fr": "Poétique",
+    "en": "Poetic"
+   },
+   "exemple": {
+    "fr": "Chaque ligne de code est un petit pas dans la forêt.",
+    "en": "Each line of code is a small step into the forest."
+   },
+   "repliques": {
+    "fr": {
+     "coin": [
+      "La lumière tombe bien, dans ce coin.",
+      "Le studio respire doucement.",
+      "J’écoute le bruit des claviers, comme une pluie."
+     ],
+     "spontanees": [
+      "Chaque ligne de code est un petit pas dans la forêt.",
+      "Un jeu, c’est un monde qu’on plie dans une boîte.",
+      "Les idées arrivent comme les oiseaux : sans prévenir."
+     ],
+     "fini": [
+      "{nom} a fini « {tache} » : une pierre de plus au chemin.",
+      "Une tâche se ferme, une autre fleurit."
+     ],
+     "commit": [
+      "« {titre} » : un commit, une trace dans le sable.",
+      "Le dépôt grandit, comme un arbre."
+     ],
+     "decision": [
+      "Une question attend, comme une lettre sur la table."
+     ],
+     "bloque": [
+      "{nom}, même la rivière contourne les pierres.",
+      "Le nœud se défera, {nom}."
+     ],
+     "matin": [
+      "Le matin entre par la fenêtre. Bonjour."
+     ],
+     "soir": [
+      "Le soir tombe sur le studio."
+     ]
+    },
+    "en": {
+     "coin": [
+      "The light falls nicely in this corner.",
+      "The studio breathes softly.",
+      "I listen to the keyboards, like rain."
+     ],
+     "spontanees": [
+      "Each line of code is a small step into the forest.",
+      "A game is a world folded into a box.",
+      "Ideas come like birds: without warning."
+     ],
+     "fini": [
+      "{nom} finished “{tache}”: one more stone on the path.",
+      "One task closes, another blooms."
+     ],
+     "commit": [
+      "“{titre}”: a commit, a trace in the sand.",
+      "The repository grows, like a tree."
+     ],
+     "decision": [
+      "A question is waiting, like a letter on the table."
+     ],
+     "bloque": [
+      "{nom}, even the river goes around stones.",
+      "The knot will come undone, {nom}."
+     ],
+     "matin": [
+      "Morning comes in through the window. Hello."
+     ],
+     "soir": [
+      "Evening falls on the studio."
+     ]
+    }
+   }
+  },
+  {
+   "id": "enthousiaste",
+   "nom": {
+    "fr": "Enthousiaste",
+    "en": "Enthusiastic"
+   },
+   "exemple": {
+    "fr": "Allez, on y croit, ce jeu va être génial !",
+    "en": "Come on, this game is going to be great!"
+   },
+   "repliques": {
+    "fr": {
+     "coin": [
+      "Quelle équipe, franchement !",
+      "J’ai hâte de jouer à ce jeu !",
+      "On est sur la bonne voie, je le sens !"
+     ],
+     "spontanees": [
+      "Allez, on y croit, ce jeu va être génial !",
+      "Qui veut un petit encouragement ? Moi j’en ai plein !",
+      "Ça sent la belle journée de travail !"
+     ],
+     "fini": [
+      "Bravo {nom} ! « {tache} », c’est fait !",
+      "Et de une ! Bien joué, {nom} !"
+     ],
+     "commit": [
+      "Nouveau commit : « {titre} » ! Ça avance !",
+      "Hop, un commit de plus !"
+     ],
+     "decision": [
+      "Une décision attend sous la cloche, à toi de jouer !"
+     ],
+     "bloque": [
+      "Courage {nom}, tu vas y arriver !",
+      "{nom}, une pause et ça repart !"
+     ],
+     "matin": [
+      "Bonjour l’équipe ! Belle journée en vue !"
+     ],
+     "soir": [
+      "Super journée ! Pensez à dormir, quand même."
+     ]
+    },
+    "en": {
+     "coin": [
+      "What a team, honestly!",
+      "I cannot wait to play this game!",
+      "We are on the right track, I can feel it!"
+     ],
+     "spontanees": [
+      "Come on, this game is going to be great!",
+      "Who wants a little cheer? I have plenty!",
+      "Smells like a great working day!"
+     ],
+     "fini": [
+      "Well done {nom}! “{tache}” is done!",
+      "That is one! Nice work, {nom}!"
+     ],
+     "commit": [
+      "New commit: “{titre}”! Moving on!",
+      "Hop, one more commit!"
+     ],
+     "decision": [
+      "A decision is waiting under the bell, your move!"
+     ],
+     "bloque": [
+      "Hang in there {nom}, you will get it!",
+      "{nom}, a short break and off we go!"
+     ],
+     "matin": [
+      "Morning team! Great day ahead!"
+     ],
+     "soir": [
+      "Great day! Remember to sleep, though."
+     ]
+    }
+   }
+  },
+  {
+   "id": "sage",
+   "nom": {
+    "fr": "Sage",
+    "en": "Wise"
+   },
+   "exemple": {
+    "fr": "Lentement, mais sûrement : c’est comme ça qu’on finit un jeu.",
+    "en": "Slowly but surely: that is how games get finished."
+   },
+   "repliques": {
+    "fr": {
+     "coin": [
+      "Une chose à la fois.",
+      "Le calme aussi fait avancer.",
+      "J’observe, et je vois du progrès."
+     ],
+     "spontanees": [
+      "Lentement, mais sûrement : c’est comme ça qu’on finit un jeu.",
+      "Un petit pas chaque jour fait un long chemin.",
+      "Mieux vaut un jeu fini qu’un jeu parfait."
+     ],
+     "fini": [
+      "{nom} a fini « {tache} ». Le travail bien fait se voit.",
+      "Une tâche finie, c’est une tête plus légère."
+     ],
+     "commit": [
+      "« {titre} » : bien. Un pas après l’autre.",
+      "Chaque commit compte."
+     ],
+     "decision": [
+      "Une décision attend : prends le temps qu’il faut."
+     ],
+     "bloque": [
+      "{nom}, quand on bloque, on regarde le problème d’un autre côté.",
+      "Patience, {nom}. La solution vient souvent après une pause."
+     ],
+     "matin": [
+      "Bonjour. Une nouvelle journée, de nouvelles chances."
+     ],
+     "soir": [
+      "Le repos fait partie du travail."
+     ]
+    },
+    "en": {
+     "coin": [
+      "One thing at a time.",
+      "Calm moves things forward too.",
+      "I watch, and I see progress."
+     ],
+     "spontanees": [
+      "Slowly but surely: that is how games get finished.",
+      "A small step each day makes a long road.",
+      "Better a finished game than a perfect one."
+     ],
+     "fini": [
+      "{nom} finished “{tache}”. Good work shows.",
+      "A finished task, a lighter mind."
+     ],
+     "commit": [
+      "“{titre}”: good. One step after another.",
+      "Every commit counts."
+     ],
+     "decision": [
+      "A decision is waiting: take the time you need."
+     ],
+     "bloque": [
+      "{nom}, when stuck, look at the problem from another side.",
+      "Patience, {nom}. The answer often comes after a break."
+     ],
+     "matin": [
+      "Hello. A new day, new chances."
+     ],
+     "soir": [
+      "Rest is part of the work."
+     ]
+    }
+   }
+  }
+ ],
+ "reponses_collegues": {
+  "fr": [
+   "Merci, c’est gentil.",
+   "Avec plaisir !",
+   "Tu tombes bien.",
+   "Merci, je reprends juste après.",
+   "Haha, merci !"
+  ],
+  "en": [
+   "Thanks, that is kind.",
+   "With pleasure!",
+   "Good timing.",
+   "Thanks, back to it right after.",
+   "Haha, thanks!"
+  ]
+ },
+ "parole": {
+  "souvent": 90,
+  "normal": 180,
+  "rarement": 480,
+  "jamais": 0
+ },
+ "filtre": {
+  "_note": {
+   "fr": "Mots refusés dans le prompt, le nom et les répliques de l'hôte : rien de vulgaire, ni drogue ni alcool, rien de dénigrant. Comparaison sans accents ni majuscules, lettres larges, grecques ou cyrilliques ramenées à l'alphabet latin, caractères invisibles ôtés. « mot » : mot entier ; « mot* » : début de mot ; « ~mot » : n'importe où dans le mot (mots composés) ; « deux mots » : expression. « exceptions » (mots innocents, * permis) et « expressions_permises » (tournures innocentes) passent toujours.",
+   "en": "Words refused in the host's prompt, name and lines: nothing vulgar, no drugs or alcohol, nothing demeaning. Compared without accents or case, wide, Greek or Cyrillic letters mapped to Latin, invisible characters removed. \"word\": whole word; \"word*\": word start; \"~word\": anywhere in a word (compounds); \"two words\": phrase. \"exceptions\" (innocent words, * allowed) and \"expressions_permises\" (innocent phrases) always pass."
+  },
+  "vulgaire": [
+   "merde*",
+   "~merde",
+   "emmerd*",
+   "putain*",
+   "~putain",
+   "pute",
+   "putes",
+   "connard*",
+   "~connard",
+   "connasse*",
+   "conne",
+   "con",
+   "cons",
+   "connerie*",
+   "salope*",
+   "salop",
+   "salops",
+   "salopard*",
+   "salaud*",
+   "encul*",
+   "~encul",
+   "nique",
+   "niquer",
+   "niques",
+   "niquez",
+   "nique*",
+   "bite",
+   "bites",
+   "couille*",
+   "chier",
+   "chiant*",
+   "foutre",
+   "bordel*",
+   "batard*",
+   "branl*",
+   "cul",
+   "trou du cul",
+   "trouduc*",
+   "enfoire*",
+   "petasse*",
+   "grognasse*",
+   "fdp",
+   "ntm",
+   "ftg",
+   "fils de pute",
+   "nique ta mere",
+   "ta gueule",
+   "gueule",
+   "fous le camp",
+   "fuck*",
+   "~fuck",
+   "fck*",
+   "fuk",
+   "fuking",
+   "fukin",
+   "shit*",
+   "~shit",
+   "sht",
+   "bitch*",
+   "~bitch",
+   "asshole*",
+   "~asshole",
+   "arsehole*",
+   "bastard*",
+   "dick*",
+   "pussy*",
+   "cunt*",
+   "~cunt",
+   "twat*",
+   "wank*",
+   "bollock*",
+   "crap",
+   "damn*",
+   "jackass*",
+   "dumbass*",
+   "~cocksuck",
+   "whore*",
+   "~whore",
+   "slut*",
+   "wtf",
+   "stfu",
+   "porn*",
+   "porno*",
+   "sexe",
+   "sexy",
+   "nude*",
+   "nu",
+   "nue",
+   "seins",
+   "boobs",
+   "cock",
+   "cocks",
+   "foutu",
+   "foutue",
+   "foutus",
+   "foutues"
+  ],
+  "drogue": [
+   "drogue*",
+   "drug*",
+   "cannabis",
+   "marijuana",
+   "marihuana",
+   "haschich",
+   "haschisch",
+   "hashish",
+   "hasch",
+   "shit",
+   "beuh",
+   "weed",
+   "ganja",
+   "kush",
+   "petard",
+   "cocaine*",
+   "coke",
+   "crack",
+   "heroin",
+   "opium",
+   "opiace*",
+   "opioid*",
+   "fentanyl",
+   "ecstasy",
+   "mdma",
+   "lsd",
+   "ketamine",
+   "meth",
+   "methamphetamine",
+   "amphet*",
+   "dealer*",
+   "dealeur*",
+   "stupefiant*",
+   "narcotique*",
+   "stoned",
+   "stoner*",
+   "defonce*",
+   "spliff",
+   "pills",
+   "junkie*",
+   "toxico*",
+   "shroom*",
+   "hallucinog*",
+   "dope",
+   "un joint",
+   "des joints",
+   "fumer un joint",
+   "rouler un joint",
+   "roll a joint",
+   "rolls a joint",
+   "rolling a joint",
+   "smoke a joint",
+   "smokes a joint",
+   "smoking a joint",
+   "light a joint",
+   "pipe a eau",
+   "chicha",
+   "narguile*",
+   "narghile*",
+   "bong",
+   "clope*",
+   "cigar*",
+   "tabac",
+   "tobacco",
+   "vape*",
+   "vapot*",
+   "fumeur*",
+   "fumeuse*",
+   "fume des",
+   "fumer des",
+   "fume une",
+   "fumer une",
+   "smoker*",
+   "smokes",
+   "smoking",
+   "smoke a",
+   "smoke some",
+   "alcool*",
+   "alcohol*",
+   "ivre",
+   "drunk",
+   "ivrogne*",
+   "saoul*",
+   "soulard*",
+   "pochtron*",
+   "poivrot*",
+   "beuverie*",
+   "picol*",
+   "cuver",
+   "bourre",
+   "une cuite",
+   "sa cuite",
+   "prendre une cuite",
+   "gueule de bois",
+   "hangover",
+   "tipsy",
+   "booze*",
+   "vin",
+   "vins",
+   "pinard",
+   "wine",
+   "wines",
+   "champagne",
+   "rhum",
+   "rhums",
+   "rum",
+   "gin",
+   "vodka*",
+   "whisky*",
+   "whiskey*",
+   "biere*",
+   "beer*",
+   "cidre",
+   "cider",
+   "lager",
+   "tequila*",
+   "cognac*",
+   "pastis",
+   "brandy",
+   "liqueur*",
+   "absinthe",
+   "sangria",
+   "mojito*"
+  ],
+  "denigrant": [
+   "idiot*",
+   "imbecile*",
+   "cretin*",
+   "debile*",
+   "abruti*",
+   "nul",
+   "nulle",
+   "nuls",
+   "nulles",
+   "naze*",
+   "loser*",
+   "looser*",
+   "stupid*",
+   "dumb*",
+   "moron*",
+   "retard",
+   "retarded",
+   "attarde*",
+   "mongol*",
+   "gogol*",
+   "pd",
+   "pede*",
+   "tapette*",
+   "gouine*",
+   "fag*",
+   "~fagg",
+   "negre*",
+   "nigg*",
+   "~nigg",
+   "bougnoul*",
+   "youpin*",
+   "bicot*",
+   "chinetoque*",
+   "pouffiasse*",
+   "boloss*",
+   "bolos",
+   "baltringue*",
+   "cassos",
+   "grosse vache",
+   "gros lard",
+   "fatso",
+   "ugly",
+   "moche*",
+   "laide",
+   "handicape*",
+   "tue-les",
+   "suicide*",
+   "nazi*",
+   "hitler",
+   "tous des nuls",
+   "sale arabe",
+   "sale noir",
+   "sale noire",
+   "sale juif",
+   "sale juive",
+   "sale race"
+  ],
+  "exceptions": [
+   "salopette*",
+   "dickens",
+   "dickinson",
+   "dickson",
+   "dumbbell*",
+   "dumbo",
+   "fagot*",
+   "fagne*",
+   "droguerie*",
+   "droguiste*",
+   "drugstore*",
+   "bitche*",
+   "shitake*",
+   "shiitake*",
+   "scunthorpe",
+   "niggl*",
+   "pedestre*",
+   "pedestrian*",
+   "pedestal*",
+   "branlant*",
+   "branlebas*",
+   "niquel*",
+   "mongolie*",
+   "mongolia*",
+   "pussycat*",
+   "cigale*",
+   "rhume*"
+  ],
+  "expressions_permises": [
+   "nulle part",
+   "nul part",
+   "match nul",
+   "partie nulle",
+   "a la bourre",
+   "bourre de",
+   "bourree de",
+   "a bite",
+   "to bite",
+   "bite to",
+   "bite of",
+   "bite into",
+   "en retard",
+   "du retard",
+   "de retard",
+   "un retard",
+   "le retard",
+   "mon retard",
+   "ton retard",
+   "son retard",
+   "sans retard",
+   "ce retard",
+   "notre retard",
+   "votre retard",
+   "leur retard",
+   "crack the",
+   "crack a",
+   "crack an",
+   "crack open",
+   "crack of",
+   "con carne",
+   "chili con",
+   "con leche",
+   "con queso",
+   "pros and cons",
+   "pros et cons",
+   "pain batard",
+   "tapette a mouches",
+   "tapette a souris",
+   "en smoking",
+   "un smoking",
+   "son smoking",
+   "no smoking",
+   "card dealer",
+   "car dealer",
+   "nikolai gogol",
+   "nicolas gogol"
+  ]
+ }
+}

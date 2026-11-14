@@ -120,7 +120,9 @@ def main():
         return
     sortie = os.path.join(studio, "journal_assistant.json")
     session = str(d.get("session_id") or "")[:8]
-    with Verrou(sortie + ".lock"):
+    with Verrou(sortie + ".lock") as verrou:
+        if verrou.fd is None:      # F36 : verrou non obtenu en 5 s : on n'écrit pas (sinon deux sessions peuvent perdre une réponse)
+            return
         try:
             with open(sortie, encoding="utf-8-sig") as f:
                 liste = json.load(f)
@@ -133,7 +135,9 @@ def main():
         if liste and isinstance(liste[-1], dict) and liste[-1].get("texte") == texte[:12000]:
             return
         premiere = next((l for l in texte.splitlines() if l.strip()), "")[:120]
-        liste.append({"id": time.strftime("%Y%m%d-%H%M%S") + (f"-{session}" if session else ""), "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        # G11 : numéro croissant « n » (la liste est plafonnée à MAX : sa longueur ne dit plus rien des nouvelles réponses)
+        n = max([x["n"] for x in liste if isinstance(x, dict) and isinstance(x.get("n"), int) and not isinstance(x.get("n"), bool)] + [len(liste)]) + 1
+        liste.append({"n": n, "id": time.strftime("%Y%m%d-%H%M%S") + (f"-{session}" if session else ""), "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S"),
                       "titre": premiere.strip("*# _"), "texte": texte[:12000], "source": "crochet"})
         tmp = f"{sortie}.{os.getpid()}.tmp"
         with open(tmp, "w", encoding="utf-8") as f:

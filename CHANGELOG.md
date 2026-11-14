@@ -2,6 +2,46 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+## [0.5.1] - 2026-11-14
+
+Version de correctifs et de fiabilité : le studio continue vraiment pendant l'absence, l'assistant propose au lieu d'attendre, les fichiers d'état s'écrivent sans risque. Toujours rien de dépensé, supprimé ni publié sans l'accord de l'utilisateur.
+
+### Hôte du studio
+- **Hôte** (`studio/hote.py`, `studio/hote.js`, `studio/hote_catalogue.json`, route `/api/hote`) : un personnage d'ambiance que l'utilisateur crée lui-même (quête « Un hôte pour le studio »), par pièces du catalogue ou par un prompt que l'assistant traduit en fiche. Nom et répliques passent par un filtre. Aucune image générée. Essai : `python -I studio/outils/essai_hote.py`.
+
+### Équipe
+- **Toute l'équipe** : un bouton de la barre du haut montre tout le monde (même les agents hors du studio) et gère chaque poste ; noms et recrues à jour tout de suite.
+- **Plan de restructuration** (en haut de la Vue d'ensemble) : inventaire de l'équipe (doublons, agents sans travail, noms pas clairs) et plan de renvois et de renommages sous la cloche ; rien ne change sans « Appliquer le plan », « Défaire ce plan » remet tout.
+- Une tâche moteur n'est plus confiée d'office pendant qu'un autre chantier moteur tourne ; une recrue renvoyée n'est plus réembauchée d'office.
+
+### Absence
+- **« Je m'absente » : le studio continue** (`references/absence.md`, cité par `SKILL.md`, `regles_de_travail.md` et `point_equipe.md`). L'assistant décide à la place de l'utilisateur en suivant la recommandation (★) et note chaque décision (`decide_par: "assistant"`, `raison`, `decide_le`, `en_absence: true`). Il garde pour le retour ce qui dépense, supprime, publie, touche le système ou un compte (`reserve`). L'absence allume pour lui l'enchaînement et l'attribution des tâches prêtes ; elle coupe sons, bulles, notifications et quêtes ; les points sont empilés. Au retour : résumé « Décidé à ta place ».
+- `pause_si_absent_min` ne vaut plus que pour un silence **sans** le bouton : points empilés, aucun chantier nouveau ; ce qui tourne continue. L'ancienne règle « plus de points ni de lancements jusqu'à son retour » est retirée.
+- En mode absent, le relecteur autonome continue (seuls « Tout couper », une machine saturée et l'attribution coupée l'arrêtent).
+- « Pendant ton absence » ajoute « Décidé à ta place » (avec un bouton « Changer » : l'ancien choix est gardé dans `reponse_coordinateur`, `change_par_utilisateur` est noté) et « Lancé par les automatismes (même sans onglet ouvert) », lu dans `etat.json → automatismes.historique` (24 h).
+- Résumé « Pendant ton absence » aussi après une absence lancée ailleurs ou un redémarrage.
+
+### Cloche et assistant actif
+- `cloche.py decider` : le coordinateur peut trancher une décision à la place de l'utilisateur (recommandation ★ par défaut, raison exigée sinon) ; `cloche.py reservees` liste ce qui reste à l'utilisateur. Refus (code 3) de tout ce qui dépense, supprime, publie, touche le système, un compte, ou porte `reserve` / `reserve_utilisateur`.
+- `cloche.py proposer` : une proposition à un clic (« Faire » ★ / « Plus tard »), 3 ouvertes au plus, pas reposée moins de 2 h après « Plus tard ». `cloche.py note` : une petite décision prise seul, notée avec sa raison.
+- Une réponse passe aussi la décision « repondue » dans `decisions.json`.
+- Bandeau « Aucune session Claude depuis N min : tes demandes attendent » (`etat.json → session`, seuil `seuils.session_min`, 15 min par défaut).
+
+### Fiabilité
+- `studio/jsonio.py` : lecture tolérante (BOM, fichier absent) et écriture atomique (temporaire, fsync, remplacement, nouvel essai si Windows tient le fichier) pour tous les fichiers d'état ; le serveur répond 503 si un fichier reste occupé.
+- Automatismes : une attribution n'est jamais perdue quand le serveur est arrêté ; journal gardé sur 200 lignes.
+- Notifications : plus de vieilles notifications rejouées au retour ou sur un nouvel appareil.
+
+### Santé du PC
+- Une jauge par disque et par température dans la fiche ; l'activation des températures marche et dit pourquoi elle échoue.
+- La corbeille est exclue du ménage par défaut ; elle n'est proposée que si `studio.config.json` dit `"sante": {"corbeille": "toute"}`. `sante_auto` ne coupe que l'affichage de l'agent Santé du PC et ses alertes.
+
+### Essais et documentation
+- `python -X utf8 studio/outils/essai_complet.py tout` lance aussi `essai_outils.py` et `essai_compat310.py` (syntaxe Python 3.10) et sort en code 1 au premier rouge.
+- `--reseau` décrit dans `studio/README.md` ; polices aussi en `.woff2`.
+
 ## [0.5.0] - 2026-11-14
 
 Version de fonctions : quêtes et XP, cloche, radio, dictée propre, santé du PC, nouvelle DA (portraits, étiquettes, bulles, décor), relecture partagée et agents de soutien. Rien n'est lancé, dépensé ni effacé sans l'accord de l'utilisateur.

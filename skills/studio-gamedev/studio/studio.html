@@ -77,7 +77,7 @@ body.t-grande #entete,body.t-grande #equipe,body.t-grande #panneau,body.t-grande
 #zoom{position:fixed;right:14px;bottom:14px;z-index:14;display:flex;flex-direction:column;gap:6px}
 #zoom button{width:42px;height:42px;border-radius:10px;border:1px solid rgba(233,210,160,.28);background:rgba(30,25,20,.82);color:#f1d9a4;font:600 18px var(--sans);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.35);cursor:pointer}
 #zoom button:hover{background:rgba(60,50,38,.92)}#zoom button svg{width:16px;height:16px}
-body.questionnaire #indice{display:none}
+body.questionnaire #indice,body.app #indice{display:none}
 #indice{position:fixed;left:16px;bottom:12px;z-index:5;font:12px var(--sans);color:#bfb196;pointer-events:none}
 
 /* ---------- notifications ---------- */
@@ -114,6 +114,22 @@ body.questionnaire #indice{display:none}
 .feuille h3{font:italic 400 17px var(--serif);color:#7a5a2a;margin:18px 0 6px}
 .feuille p{line-height:1.5}
 .discret{color:var(--encre3);font-size:12.5px}
+dl.compteurs{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:8px;margin:0}
+dl.compteurs div{background:linear-gradient(180deg,#fffaf0,#f6ecd6);border:1px solid rgba(92,79,63,.16);border-radius:4px 10px 4px 10px;padding:9px 11px;box-shadow:0 2px 6px rgba(80,60,30,.12)}
+dl.compteurs dt{font-size:11px;color:var(--encre3);margin:0}
+dl.compteurs dd{margin:2px 0 0;font:400 1.35em var(--serif);color:var(--encre);word-break:break-word}
+/* Santé du PC (jumeau du skill) : jauges des compteurs, même carte que dl.compteurs */
+dl.compteurs.jauges-sante{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+dl.jauges-sante dd{font-size:1.2em}
+dl.jauges-sante .jauge{display:block;height:7px;margin:6px 0 3px;border-radius:4px;background:#e3d4b2;box-shadow:inset 0 1px 2px rgba(80,60,30,.25);overflow:hidden}
+dl.jauges-sante .jauge i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#6fae5e,#3f7a52)}
+dl.jauges-sante .chaud .jauge i{background:linear-gradient(90deg,#d9822b,#a8432e)}
+dl.jauges-sante .chaud dd{color:#a8432e}
+dl.jauges-sante .illisible dd{color:var(--encre3)}
+dl.jauges-sante .illisible .jauge{background:repeating-linear-gradient(135deg,#e8dcc2 0 5px,#f3ead6 5px 10px)}
+dl.jauges-sante small{display:block;font-size:11px;line-height:1.3;color:var(--encre3);margin-top:2px;overflow-wrap:anywhere}
+.sante-cause{color:#a8432e;margin:.5em 0 .2em}
+dl.jauges-sante small.illisible{font-style:italic}
 .rangee{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .bts{border:1px solid rgba(92,79,63,.3);background:#fffdf6;border-radius:999px;padding:7px 14px;color:var(--encre)}
 .bts:hover{border-color:var(--ocre)}
@@ -144,7 +160,7 @@ html[data-theme=clair] #zoom button{background:rgba(255,251,242,.92);color:#6b4a
 html[data-theme=clair] #indice{color:#6b5a44}
 html[data-theme=clair] body.app #onglets-app{background:#f4ead6;border-top-color:rgba(92,79,63,.22)}
 html[data-theme=clair] body.app #onglets-app button{color:#5a4a36}html[data-theme=clair] body.app #onglets-app button.actif{color:#8a5b12}
-html[data-theme=clair] #bt-plus-app{background:rgba(255,251,242,.9);color:#3b2f22}
+html[data-theme=clair] body.app #bt-plus-app{background:rgba(255,251,242,.9);color:#3b2f22}
 html[data-theme=clair] #radio-titre{color:rgba(90,74,54,.7);text-shadow:none}
 html[data-theme=clair] #entete{background:linear-gradient(180deg,rgba(247,239,221,.97),rgba(247,239,221,.75) 80%,rgba(247,239,221,0))}
 html[data-theme=clair] #equipe .n{color:#2b241c}html[data-theme=clair] #equipe .e{color:#5a4a36}html[data-theme=clair] #equipe .rt{color:#8a5b12}
@@ -238,6 +254,12 @@ body.app .micro{width:44px;height:44px;min-width:44px;padding:0;justify-content:
 body.questionnaire #scene{max-height:70vh}
 body.questionnaire #entete .outils>*:not(#bt-son):not(#bt-plein):not(#bt-reglages):not(#menu-plus):not(#bt-plus-pc){display:none!important}body.questionnaire #menu-plus>*:not(#bt-plein):not(#bt-reglages){display:none!important}body.app.questionnaire #bt-plus-app{display:none!important}
 body.app.questionnaire #scene{max-height:calc(100dvh - 150px - 64px - env(safe-area-inset-bottom))}
+/* T11 : au téléphone, la pièce n'est plus qu'un bandeau en haut ; la scène des questions prend le reste et s'arrête au-dessus des onglets
+   (le bouton Valider n'est plus caché dessous) ; en fin de chapitre, elle descend 2 s pour montrer la pièce qui grandit */
+body.app.questionnaire #scene{top:max(150px,24dvh);bottom:calc(64px + env(safe-area-inset-bottom));max-height:none;border-radius:16px}
+body.app.questionnaire #sc-corps{flex:1;min-height:0}
+body.app.questionnaire #scene.recompense{transform:translate(-50%,calc(100% - 48px))}
+@media (prefers-reduced-motion:reduce){body.app.questionnaire #scene.recompense{transform:translateX(-50%)}}
 body.app.questionnaire #chapitres{display:none}body.app.questionnaire #chap-prog{display:block}
 body.app.questionnaire #onglets-app button:not([data-onglet=reglages]){display:none}
 body.app.questionnaire #equipe,body.app.questionnaire #micro-zone{display:none}
@@ -585,6 +607,7 @@ body:not(.app) #panneau.conv-app .feuille>.x{position:absolute;top:14px;right:16
 body.app .conv-saisie .cc-boite{border-radius:14px}
 /* Onglet Modèles */
 body:not(.app) #panneau:has(.mod-table) .feuille,body:not(.app) #panneau:has(.aud-per) .feuille{width:min(980px,calc(94vw / var(--k)))}
+body:not(.app) #panneau:has(.eq-liste) .feuille{width:min(1060px,calc(94vw / var(--k)))}
 .mod-table{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:.95em}
 .mod-table th{font:600 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--encre2);text-align:left;padding:6px;border-bottom:1px solid rgba(92,79,63,.3)}
 .mod-table td{padding:8px 6px;border-bottom:1px dotted rgba(92,79,63,.3);vertical-align:middle}
@@ -607,6 +630,13 @@ body:not(.app) #panneau:has(.mod-table) .feuille,body:not(.app) #panneau:has(.au
 .aud-suite{font-size:.8em;color:var(--encre2);font-style:italic}
 .aud-per{display:flex;flex-wrap:wrap;gap:8px 16px;margin:6px 0 10px}.aud-per label{display:inline-flex;align-items:center;gap:6px;cursor:pointer;min-height:32px}
 .aud-per input{width:18px;height:18px}
+
+/* AN3 (T15) : niveau sonore de la dictée : anneau qui grandit avec la voix et petite barre sous le bouton */
+.micro.actif,#gros-micro.actif{box-shadow:0 0 0 calc(var(--niv-micro,0) * 9px) rgba(194,83,60,.38)!important;transition:box-shadow .08s linear}
+.micro.actif::before{content:"";position:absolute;left:9px;right:9px;bottom:-8px;height:3px;border-radius:2px;pointer-events:none;background:linear-gradient(90deg,#e0805f calc(var(--niv-micro,0) * 100%),rgba(120,100,80,.25) 0)}
+@media (prefers-reduced-motion:reduce){.micro.actif,#gros-micro.actif{transition:none}}
+/* S24 : en mode accueil (questionnaire, pas d'équipe ni de roadmap), la barre ne garde que Réglages, Son, Plein écran, Conversation et la voix */
+html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not(#bt-conv):not(#bt-assistant):not(#bt-plus-pc) { display: none !important; }
 </style>
 </head>
 <body>
@@ -620,6 +650,7 @@ body:not(.app) #panneau:has(.mod-table) .feuille,body:not(.app) #panneau:has(.au
   <nav class="outils" aria-label="Outils" data-ta-a="a_outils">
     <button type="button" class="bt" id="bt-jour"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg><span data-t="aujourdhui">Aujourd'hui</span></button>
     <button type="button" class="bt" id="bt-ensemble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg><span data-t="ensemble">Vue d’ensemble</span></button>
+    <button type="button" class="bt" id="bt-equipe" title="Toute l’équipe : tout le monde, même ceux qui travaillent hors du studio (chaînes Claude), et la gestion de chaque poste (nom, métier, modèle, effort, renvoi, réembauche)" data-tt-t="a_toute_equipe"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="5" r="2.2"/><path d="M4 13.5c.4-2.6 1.9-4 4-4s3.6 1.4 4 4"/><circle cx="3" cy="6.5" r="1.6"/><path d="M.8 12.5c.3-1.8 1.1-2.8 2.4-3"/><circle cx="13" cy="6.5" r="1.6"/><path d="M15.2 12.5c-.3-1.8-1.1-2.8-2.4-3"/></svg><span data-t="toute_equipe">Toute l’équipe</span></button>
     <button type="button" class="bt" id="bt-journal"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 2h8l2 2v10H3z"/><path d="M5.5 6h5M5.5 8.5h5M5.5 11h3"/></svg><span data-t="journal">Journal</span></button>
     <button type="button" class="bt" id="bt-optim"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/><circle cx="8" cy="8" r="2.5"/></svg><span data-t="optimiser">Optimiser</span><b class="pastille" id="nb-optim"></b></button>
     <button type="button" class="bt" id="bt-modeles"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M6.5 1.5V4M9.5 1.5V4M6.5 12v2.5M9.5 12v2.5M1.5 6.5H4M1.5 9.5H4M12 6.5h2.5M12 9.5h2.5"/><circle cx="8" cy="8" r="1.4"/></svg><span data-t="modeles">Modèles</span></button>
@@ -661,8 +692,24 @@ body:not(.app) #panneau:has(.mod-table) .feuille,body:not(.app) #panneau:has(.au
 <script src="sprites.js"></script>
 <script src="paliers.js"></script>
 <script src="conversations.js"></script>
+<script src="equipe.js"></script>
 <script>
 'use strict';
+// essais (jumeaux) : data-essai="sans-envoi" coupe TOUT envoi au serveur (POST, PUT, DELETE…), quelle que soit la route (/api/meneur compris) :
+// la page croit que le serveur a dit oui ({ ok: true, essai: 'sans-envoi' }) ; les routes coupées sont comptées dans data-envois-coupes / data-derniere-route-coupee
+// Tests (twins): data-essai="sans-envoi" blocks EVERY request that is not GET/HEAD, whatever the route.
+(() => { const f0 = window.fetch.bind(window);
+  window.fetch = (u, o) => { const m = String((o && o.method) || (u && u.method) || 'GET').toUpperCase(), de = document.documentElement.dataset;
+    if (m === 'GET' || m === 'HEAD' || de.essai !== 'sans-envoi') return f0(u, o);
+    const route = String((u && u.url) || u).replace(/^[a-z]+:\/\/[^/]+/i, ''); de.envoisCoupes = String((+de.envoisCoupes || 0) + 1); de.derniereRouteCoupee = route;
+    const j = /^\/api\/meneur\b/.test(route) ? { ok: true, meneur: true, onglets: 1, essai: 'sans-envoi' } : { ok: true, essai: 'sans-envoi' };
+    return Promise.resolve(new Response(JSON.stringify(j), { status: 200, headers: { 'Content-Type': 'application/json' } })); }; })();
+// écran tactile (jumeaux) : pointeur principal grossier (téléphone, tablette) / touch screen: coarse primary pointer
+const TACTILE = () => { try { return matchMedia('(pointer: coarse)').matches; } catch (e) { return false; } };
+// tutoriel au toucher (jumeaux) : « touche » au lieu de « clic », et l'équipe est en bas / tutorial on touch: "tap" instead of "click"
+const motsTactiles = s => String(s).replace(/^À gauche, ton équipe/, 'En bas, ton équipe').replace(/^On the left, your team/, 'At the bottom, your team').replace(/Un clic ouvre/g, 'Toucher un perso ouvre')
+  .replace(/\bUn clic\b/g, 'Une touche').replace(/d[’']un clic\b/g, 'd’une touche').replace(/\bClique\b/g, 'Touche').replace(/\bclique\b/g, 'touche').replace(/\bclics\b/g, 'touches').replace(/\bclic\b/g, 'touche')
+  .replace(/\bOne click\b/g, 'One tap').replace(/\bwith a click\b/g, 'with a tap').replace(/\bClick\b/g, 'Tap').replace(/\bclick\b/g, 'tap');
 // ====================================================================== outils
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -673,6 +720,13 @@ const LS = {
   set(k, v) { try { localStorage.setItem('studio.' + k, JSON.stringify(v)); } catch (e) { /* stockage indisponible */ } },
   del(k) { try { localStorage.removeItem('studio.' + k); } catch (e) { /* stockage indisponible */ } }
 };
+// notifications : plus vieille que 30 min (ou d'avant le chargement de la page sur un appareil neuf, sans historique) = jamais de son ni
+// de toast ni de bulle ; elle va seulement à l'historique, marquée lue. Le résumé « Pendant ton absence » reste la seule synthèse.
+const NOTIF_CHARGE = Date.now(), NOTIF_NEUF = (() => { try { return localStorage.getItem('studio.notifs') === null; } catch (e) { return true; } })();
+function notifVieille(q) { q = +q || 0; return q > 0 && (Date.now() - q > 30 * 60e3 || (NOTIF_NEUF && q < NOTIF_CHARGE - 5e3)); }
+// « HH:MM » ou « HH:MM:SS » sans date : aujourd'hui, ou hier si l'heure est encore à venir ; sinon date complète
+function quandHeure(h) { const m = /^(\d{1,2}):(\d\d)(?::(\d\d))?$/.exec(String(h || '').trim()); if (!m) { const t = Date.parse(String(h || '')); return Number.isFinite(t) ? t : 0; } const d = new Date(); d.setHours(+m[1], +m[2], +(m[3] || 0), 0); if (d.getTime() > Date.now() + 60e3) d.setDate(d.getDate() - 1); return d.getTime(); }
+window.__notifVieille = notifVieille; window.__quandHeure = quandHeure;   // essais
 try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('studio.dem_') && localStorage.getItem(k) === 'null') localStorage.removeItem(k); } } catch (e) { /* rien */ }   // restes « null » d'avant
 const cheminSur = (p, ext) => typeof p === 'string' && p.length < 200 && !p.includes('..') && !/^[a-z]+:|^\/\//i.test(p) && ext.test(p);
 const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -681,7 +735,7 @@ const erreur = (ou, e) => { window.__erreurs.push(ou + ' : ' + (e && e.message |
 
 // ====================================================================== textes de l'interface
 const TXT = {
-  fr: { pe_morphologie: 'Silhouette', pe_peau: 'Peau', pe_coupe: 'Coupe', pe_cheveux: 'Cheveux', pe_tenue: 'Tenue', pe_couleur1: 'Couleur 1', pe_couleur2: 'Couleur 2', pe_accessoire: 'Accessoire', pe_mince: 'mince', pe_moyenne: 'moyenne', pe_costaude: 'costaude', pe_petite: 'petite', pe_grande: 'grande', pe_courts: 'courts', pe_longs: 'longs', pe_boucles: 'bouclés', pe_en_bataille: 'en bataille', pe_queue: 'queue-de-cheval', pe_rase: 'rasé', pe_aucune: 'aucune', pe_sweat: 'sweat', pe_chemise: 'chemise', pe_bleu_de_travail: 'bleu de travail', pe_heros: 'héros', pe_tablier: 'tablier', pe_costume: 'costume', pe_armure: 'armure', pe_robe: 'robe', pe_aucun: 'aucun', pe_casque: 'casque', pe_casque_audio: 'casque audio', pe_casquette: 'casquette', pe_beret: 'béret', pe_chapeau: 'chapeau', pe_lunettes: 'lunettes', pe_barbe: 'barbe', pe_couronne: 'couronne', pe_bandeau: 'bandeau', pe_capuche: 'capuche', pe_cornes: 'cornes', te_demande: 'te demande', bloque_sur: 'en attendant :', recommande_par: 'la réponse recommandée par l’assistant', theme_t: 'Thème', theme_auto: 'comme le système', theme_clair: 'clair', theme_sombre: 'sombre', aujourdhui: 'Aujourd’hui', de_la_v1: 'de la version 1', jour_avance: 'Ce qui a avancé', jour_attend: 'Ce qui attend', jour_prochaine: 'La prochaine étape', fini_quand: 'Fini quand :', voir_bureau: 'Voir le bureau', o_jour: 'Aujourd’hui', resume_matin: 'Résumé du matin', abs_reponses: 'Réponses de l’assistant', tout_vu: 'Tout est vu', balayage_part: 'part dans 5 s', chap_style: 'Style', studio: 'Studio', ens_sugg: 'Suggestions de l’alimentation', confier_assistant: 'Confier à l’assistant', sugg_envoye: 'Envoyé', autre_reponse: 'Autre réponse…', equipe_avance: 'L’équipe avance.', onglets_nom: 'Onglets du studio', rc_titre: 'Raccourcis clavier', rc_a: 'parler à l’assistant', rc_v: 'dicter dans le dernier champ', rc_espace_k: 'Espace (maintenir)', rc_espace: 'gros micro', rc_echap: 'fermer la fenêtre', rc_aide: 'cette fiche', rc_actifs: 'Les raccourcis à une lettre sont activés (Réglages pour les couper).', rc_coupes: 'Les raccourcis à une lettre sont coupés (Réglages pour les rallumer).', rc_reglage: 'Raccourcis clavier à une lettre (A, V, Espace)', fermer: 'Fermer', grp_auto: 'Automatismes', grp_son: 'Son et notifications', grp_affichage: 'Affichage', n_notifs: '{n} nouvelles notifications', voir_notifs: 'toucher pour les voir', plus_actions: 'Plus d’actions', conv_vide: 'Dis-moi ce que tu veux faire avancer.', sugg_1: 'Fais le point', sugg_2: 'Qu’est-ce qui bloque ?', sugg_3: 'Lance la tâche suivante', ecrire_court: 'Écris à l’assistant…', etat_studio: 'État du studio', serveur_coupe: 'Le studio ne répond plus (ordinateur en veille ou serveur arrêté). Nouvelle tentative toutes les 10 s ; tu peux dire à Claude : relance le studio.', telephone_titre: 'Sur le téléphone', telephone_aide: 'Lance le serveur avec --reseau, ouvre le studio dans le navigateur du téléphone (même Wi-Fi), puis « Ajouter à l’écran d’accueil » (Safari : bouton Partager ; Chrome : menu ⋮). Il s’ouvre alors en plein écran comme une application, avec ses onglets en bas. En http sur le Wi-Fi, l’ajout marche mais sans le mode hors ligne : le cache hors ligne demande une adresse en https (ou l’ordinateur lui-même).', o_equipe: 'Équipe', o_conv: 'Conversation', o_cloche: 'Cloche', o_roadmap: 'Roadmap', o_reglages: 'Réglages', role_temporaire: 'Rôle temporaire (sa tâche d’origine reste réservée)', point_journal: 'Nouveau point (rangé dans le journal : un point est déjà ouvert ou vient d’être lu)', points_anciens: '{n} point(s) plus ancien(s) dans le journal', conv_cc: 'La même conversation que dans Claude Code, lue sur cette machine (jamais envoyée ailleurs). Entrée : envoyer · Maj+Entrée : retour à la ligne.', tout_rallumer: 'Tout rallumer', rallume_ok: 'Tout rallumé : les automatismes reprennent comme avant.', pause_depuis: 'Automatismes en pause depuis', regle: 'réglé', nouvelle: 'dernière nouvelle de l’agent :', il_y_a: 'il y a {m} min', a_l_instant: 'à l’instant', app_aucune: 'aucun', app_casque: 'casque', app_casquette: 'casquette', app_beret: 'béret', app_lunettes: 'lunettes', app_chapeau: 'chapeau', app_casque_audio: 'casque audio', app_barbe: 'barbe', a_bureau: 'Le bureau du studio', a_v1: 'Avancement pondéré de la roadmap', a_niveau: 'Niveau du studio', a_outils: 'Outils', a_couper: 'Tout couper', a_reglages: 'Réglages', a_son: 'Son', a_notifs: 'Notifications', a_equipe: 'L\'équipe', a_fermer: 'Fermer', a_chat: 'Chat', a_micro_t: 'Parler au studio (ou barre d\'espace maintenue). Le micro reste ouvert pendant la dictée et 90 s après. Casque Bluetooth : son micro fait passer le casque en mode « mains libres » : préfère un micro de bureau.', a_micro: 'Parler au studio', a_zoom_t: 'Zoomer (molette)', a_zoom: 'Zoomer', a_dezoom: 'Dézoomer', a_recentrer: 'Recentrer', modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Tâches complexes (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : surveille processeur, mémoire, disque et carte graphique ; retarde les automatismes quand la machine sature', sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Je m’absente', je_suis_la: 'Je suis là', nuit_on: 'Je m’absente : plus aucune notification ; le studio continue, résumé à ton retour', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', quitter_plein: 'Quitter le plein écran', forfait: 'Forfait Claude', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
+  fr: { pe_morphologie: 'Silhouette', pe_peau: 'Peau', pe_coupe: 'Coupe', pe_cheveux: 'Cheveux', pe_tenue: 'Tenue', pe_couleur1: 'Couleur 1', pe_couleur2: 'Couleur 2', pe_accessoire: 'Accessoire', pe_mince: 'mince', pe_moyenne: 'moyenne', pe_costaude: 'costaude', pe_petite: 'petite', pe_grande: 'grande', pe_courts: 'courts', pe_longs: 'longs', pe_boucles: 'bouclés', pe_en_bataille: 'en bataille', pe_queue: 'queue-de-cheval', pe_rase: 'rasé', pe_aucune: 'aucune', pe_sweat: 'sweat', pe_chemise: 'chemise', pe_bleu_de_travail: 'bleu de travail', pe_heros: 'héros', pe_tablier: 'tablier', pe_costume: 'costume', pe_armure: 'armure', pe_robe: 'robe', pe_aucun: 'aucun', pe_casque: 'casque', pe_casque_audio: 'casque audio', pe_casquette: 'casquette', pe_beret: 'béret', pe_chapeau: 'chapeau', pe_lunettes: 'lunettes', pe_barbe: 'barbe', pe_couronne: 'couronne', pe_bandeau: 'bandeau', pe_capuche: 'capuche', pe_cornes: 'cornes', te_demande: 'te demande', bloque_sur: 'en attendant :', recommande_par: 'la réponse recommandée par l’assistant', theme_t: 'Thème', theme_auto: 'comme le système', theme_clair: 'clair', theme_sombre: 'sombre', aujourdhui: 'Aujourd’hui', de_la_v1: 'de la version 1', jour_avance: 'Ce qui a avancé', jour_attend: 'Ce qui attend', jour_prochaine: 'La prochaine étape', fini_quand: 'Fini quand :', voir_bureau: 'Voir le bureau', o_jour: 'Aujourd’hui', resume_matin: 'Résumé du matin', abs_reponses: 'Réponses de l’assistant', tout_vu: 'Tout est vu', balayage_part: 'part dans 5 s', chap_style: 'Style', studio: 'Studio', ens_sugg: 'Suggestions de l’alimentation', confier_assistant: 'Confier à l’assistant', sugg_envoye: 'Envoyé', autre_reponse: 'Autre réponse…', equipe_avance: 'L’équipe avance.', onglets_nom: 'Onglets du studio', rc_titre: 'Raccourcis clavier', rc_a: 'parler à l’assistant', rc_v: 'dicter dans le dernier champ', rc_espace_k: 'Espace (maintenir)', rc_espace: 'gros micro', rc_echap: 'fermer la fenêtre', rc_aide: 'cette fiche', rc_actifs: 'Les raccourcis à une lettre sont activés (Réglages pour les couper).', rc_coupes: 'Les raccourcis à une lettre sont coupés (Réglages pour les rallumer).', rc_reglage: 'Raccourcis clavier à une lettre (A, V, Espace)', fermer: 'Fermer', grp_auto: 'Automatismes', grp_son: 'Son et notifications', grp_affichage: 'Affichage', n_notifs: '{n} nouvelles notifications', voir_notifs: 'toucher pour les voir', plus_actions: 'Plus d’actions', conv_vide: 'Dis-moi ce que tu veux faire avancer.', sugg_1: 'Fais le point', sugg_2: 'Qu’est-ce qui bloque ?', sugg_3: 'Lance la tâche suivante', ecrire_court: 'Écris à l’assistant…', etat_studio: 'État du studio', serveur_coupe: 'Le studio ne répond plus (ordinateur en veille ou serveur arrêté). Nouvelle tentative toutes les 10 s ; tu peux dire à Claude : relance le studio.', telephone_titre: 'Sur le téléphone', telephone_aide: 'Lance le serveur avec --reseau, ouvre le studio dans le navigateur du téléphone (même Wi-Fi), puis « Ajouter à l’écran d’accueil » (Safari : bouton Partager ; Chrome : menu ⋮). Il s’ouvre alors en plein écran comme une application, avec ses onglets en bas. En http sur le Wi-Fi, l’ajout marche mais sans le mode hors ligne : le cache hors ligne demande une adresse en https (ou l’ordinateur lui-même).', o_equipe: 'Équipe', o_conv: 'Conversation', o_cloche: 'Cloche', o_roadmap: 'Roadmap', o_reglages: 'Réglages', role_temporaire: 'Rôle temporaire (sa tâche d’origine reste réservée)', point_journal: 'Nouveau point (rangé dans le journal : un point est déjà ouvert ou vient d’être lu)', points_anciens: '{n} point(s) plus ancien(s) dans le journal', conv_cc: 'La même conversation que dans Claude Code, lue sur cette machine (jamais envoyée ailleurs). Entrée : envoyer · Maj+Entrée : retour à la ligne.', tout_rallumer: 'Tout rallumer', rallume_ok: 'Tout rallumé : les automatismes reprennent comme avant.', pause_depuis: 'Automatismes en pause depuis', regle: 'réglé', nouvelle: 'dernière nouvelle de l’agent :', il_y_a: 'il y a {m} min', a_l_instant: 'à l’instant', app_aucune: 'aucun', app_casque: 'casque', app_casquette: 'casquette', app_beret: 'béret', app_lunettes: 'lunettes', app_chapeau: 'chapeau', app_casque_audio: 'casque audio', app_barbe: 'barbe', a_bureau: 'Le bureau du studio', a_v1: 'Avancement pondéré de la roadmap', a_niveau: 'Niveau du studio', a_outils: 'Outils', a_couper: 'Tout couper', a_reglages: 'Réglages', a_son: 'Son', a_notifs: 'Notifications', a_equipe: 'L\'équipe', a_fermer: 'Fermer', a_chat: 'Chat', a_micro_t: 'Parler au studio (ou barre d\'espace maintenue). Le micro reste ouvert pendant la dictée et 90 s après. Casque Bluetooth : son micro fait passer le casque en mode « mains libres » : préfère un micro de bureau.', a_micro: 'Parler au studio', a_zoom_t: 'Zoomer (molette)', a_zoom: 'Zoomer', a_dezoom: 'Dézoomer', a_recentrer: 'Recentrer', modele_ia: 'Modèle d’IA', modele_aide: 'Le changement vaut pour le prochain lancement de l’agent, pas pour une tâche en cours.', mod_haiku: 'Rapide (Haiku)', mod_sonnet: 'Équilibré (Sonnet)', mod_opus: 'Tâches complexes (Opus)', mod_inherit: 'Comme la session', modele_t: 'modèle', file_moteur: 'file moteur : tout le travail sans moteur est fait, les personnages soufflent', sante_auto: 'Santé du PC : l’agent et ses alertes', sante_auto_tt: "montre ou cache l'agent Santé du PC et ses alertes ; la mesure et les freins restent actifs", sante_titre: 'Santé du PC', tout_va_bien: 'tout va bien', charge: 'charge', blague: 'Petite blague au début du point d’équipe', noms_roles: 'Nom et rôles', nom_affiche: 'Nom affiché', metiers_t: 'Métiers (la tyrannie et l’attribution choisissent les tâches d’après eux)', role_libre: 'Rôle libre', enregistre: 'enregistré ✓', m_code: 'Code', m_relecture: 'Relecture', m_art: 'Art', m_son: 'Son', m_ia: 'IA', m_doc: 'Documentation', m_design: 'Design', m_test: 'Tests', m_moteur: 'Moteur', m_studio: 'Studio (backlog du studio)', repris_du_chat: 'Je reprends les réponses données dans la conversation.', ouvrir_navigateur: 'Ouvrir dans mon navigateur', adresse_copiee: 'Adresse copiée : colle-la dans ton navigateur habituel :', tyrannie_auto: 'Tyrannie : un contremaître remet les inactifs au travail (attribution à 30 s, 6 par heure ; embauche et renvoie lui-même)', contremaitre: 'contremaître', equipe_occupee: 'équipe occupée à', tyr_renvoi: 'Le contremaître a renvoyé {n} : plus de travail en {m}', reintegrer: 'Réintégrer (10 min)', reintegre: 'réintégré', trop_tard: 'Trop tard : passe par « Anciens »', chat: 'Écrire à l’assistant (Entrée : envoyer, Maj+Entrée : retour à la ligne, Échap : fermer)', chat_titre: 'Écrire à l’assistant', chat_ph: 'Ton message… (Entrée : envoyer · Maj+Entrée : retour à la ligne · Échap : fermer)', fermer_b: 'Fermer', envoye: 'envoyé ✓', ordre_defaut: 'ordre par défaut', mode_nuit: 'Je m’absente', je_suis_la: 'Je suis là', nuit_on: 'Je m’absente : plus aucune notification ; le studio continue, résumé à ton retour', absence_titre: 'Pendant ton absence', absence_sous: 'Le studio a continué de tourner ; voici ce qui s’est passé.', abs_fini: 'Ce qui a fini', abs_equipe: 'Agents embauchés ou renvoyés', abs_dec: 'Décisions qui t’attendent', abs_pb: 'Problèmes', abs_decide: 'Décidé à ta place', abs_auto: 'Lancé par les automatismes (même sans onglet ouvert)', abs_embauche: 'Embauche : {n}', abs_renvoi: 'Renvoi : {n}', abs_partage: 'tâche partagée en {n}', abs_change: 'changé par toi', changer: 'Changer', rien: 'Rien.', gros_micro: 'Parler au studio (ou barre d’espace maintenue)', jecoute: 'J’écoute…', ta_demande: 'Ta demande', pour: 'Pour', annuler: 'Annuler', ecrire_ici: 'Écris ta demande ici.', micro_bloque: 'Le navigateur bloque le micro. Clique sur le cadenas à gauche de l’adresse, autorise le micro pour {o}, puis réessaie.', whisper_absent: 'Transcription locale (Whisper) absente : la dictée passe par la reconnaissance vocale du navigateur.', micro_aucun: 'Ni la reconnaissance du navigateur ni la transcription locale ne sont disponibles : écris ta demande.', micro_mode: 'Gros micro', mode_appui: 'appui (clic pour commencer, clic pour finir)', mode_maintien: 'maintien (parler tant que c’est appuyé)', ambiance_niv: 'Ambiance du bureau', amb_coupee: 'coupée', amb_douce: 'douce', amb_vivante: 'vivante', babil_son: 'Babillage des bulles (petits sons quand un perso parle)', etiquettes: 'Étiquettes des persos', etiq_toujours: 'toujours', etiq_survol: 'au survol', etiq_jamais: 'jamais', taille_texte: 'Taille du texte', t_petite: 'petite', t_normale: 'normale', t_grande: 'grande', animations: 'Animations', notif_sys: 'Notifications du système (onglet caché)', notif_sys_ok: 'Notifications du système activées', notif_sys_non: 'Le navigateur refuse les notifications', a_jour: 'à jour', fige_depuis: 'figé depuis', clic_fiche: 'clic : sa fiche', repondre: 'Répondre', repondre_a: 'Répondre à l’assistant', repondre_ph: 'Ta réponse… (touche V pour dicter)', envoyer: 'Envoyer', envoye_ok: 'Envoyé ✓', version: 'Version 1', ensemble: 'Vue d’ensemble', journal: 'Journal', optimiser: 'Optimiser', journal_assistant: 'Journal de l’assistant', personnaliser: 'Personnaliser', tout_couper: 'Tout couper', optim_titre: 'Le studio, en mieux', optim_demande: 'Optimiser le studio : relis le travail en cours et propose des améliorations (fiabilité, vitesse, jetons).', optim_envoyee: 'Optimisation demandée : l’assistant fait le tour du studio.', optim_rien: 'Pas encore de rapport d’optimisation. Clique « Demander une optimisation ».', optim_demander: 'Demander une optimisation', optim_faites: 'Ce qui a été fait', optim_props: 'Propositions', optim_lancer: 'Lancer la sélection', optim_tout: 'Tout cocher', optim_lot: 'Lot d’optimisation à faire', optim_lancees: 'proposition(s) lancée(s)', deja_demande: 'déjà demandé', jassist_rien: 'L’assistant n’a encore rien écrit ici.', journal_rien: 'Rien pour l’instant.', ens_postes: 'Postes', ens_systeme: 'Machine', ens_git: 'Dépôt', perso_maitre: 'Toi', perso_assistant: 'L’assistant', perso_nom: 'Nom', enregistrer: 'Enregistrer', perso_ok: 'Personnage enregistré', volume: 'Volume', notif_duree: 'Durée des notifications', ambiance: 'Ambiance du bureau (clavier)', radio: 'Radio : musiques du jeu', radio_vol: 'Volume de la radio', radio_aucune: 'aucune musique trouvée dans le projet', babil: 'Petites conversations entre les personnages', plein_ecran: 'Plein écran', quitter_plein: 'Quitter le plein écran', forfait: 'Forfait Claude', tuto_relancer: 'Revoir le tutoriel', legende: 'États', enchainement_auto: 'Enchaînement des tâches (le perso prend la suivante de la roadmap)', point_auto: 'Point régulier de l’assistant', optimisation_auto: 'Optimisation automatique', msg_attente: 'en attente de l’assistant depuis', session_absente: 'Aucune session Claude depuis {m} min : tes demandes attendent', session_aucune: 'Aucune session Claude ouverte : tes demandes attendent', session_ouvre: 'ouvre Claude Code dans le projet', session_dem: 'demande(s)', session_msg: 'message(s)', coupe_ok: 'Tous les automatismes sont coupés.', auto_tournent: 'automatisme(s) en marche : clic pour tout couper', tuto_suivant: 'Suivant', tuto_passer: 'Passer', tuto_fin: 'Terminer', tuto_tout: 'Tout activer', tuto_choix: 'Activer ceux que je choisis', tuto_tard: 'Plus tard', tuto_cout: 'Coût estimé', jetons_h: 'jetons par heure (estimation grossière)', decisions: 'Décisions', notifs: 'Notifications', appeler: "Appeler l'assistant", niv: 'niv.', tout_lu: 'tout marquer lu', aucune_notif: 'Rien de neuf.',
     travaille: 'travaille', attend: 'en attente', disponible: 'disponible', fini: 'fini', bloque: 'bloqué', restant: 'reste', etapes: 'Étapes devant lui',
     demander: 'Lui demander…', envoyer: 'Envoyer', dicter: 'Dicter', arreter: 'Arrêter', transmis: 'transmis', ecrire_demande: 'Écris ou dicte ta demande, relis-la, puis envoie.',
     assistant: 'Assistant', passer: 'Je ne sais pas (★)', retour: 'Retour', valider: 'Valider', autre: 'Autre réponse…', recommande: 'recommandé',
@@ -709,11 +763,14 @@ const TXT = {
     mission_tache: 'Tâche {id} : {titre}. Critère de fait : {critere}.', mission_prep: 'Préparer sans moteur (plans, données, tests ; rien n’est versé) la tâche {id} : {titre}. Critère visé : {critere}.',
     renvoyer: 'Renvoyer…', renvoyer_q: 'Renvoyer {n} ?', renvoyer_expl: 'Sa fiche et sa définition d’agent sont archivées (rien n’est effacé) ; tu pourras le réembaucher.', oui_renvoyer: 'Oui, renvoyer', annuler_b: 'Annuler',
     renvoye: 'quitte le studio', anciens: 'Anciens', reembaucher: 'Réembaucher', revient: 'revient au studio', embauche_auto_ok: 'L’assistant a embauché', aucun_ancien: 'Personne pour l’instant.',
+    restru: 'Restructuration', restru_bt: 'Plan de restructuration', restru_tt: 'L’auditeur fait l’inventaire de l’équipe : doublons de métier, agents sans travail, noms pas clairs. Le plan (renvois et renommages, avec leur raison) arrive sous la cloche ; rien ne change sans « Appliquer le plan ». Réversible.',
+    restru_attente: 'plan en préparation…', restru_pret: 'Plan prêt sous la cloche', restru_dernier: 'Dernier plan', restru_defaire: 'Défaire ce plan', restru_defait: 'Plan défait : renvoyés réembauchés, anciens noms remis',
+    restru_st_ouverte: 'en attente de ta réponse', restru_st_en_cours: 'appliqué, renvois après leur tâche en attente', restru_st_appliquee: 'appliqué', restru_st_classe: 'classé (rien fait)', restru_st_a_modifier: 'à refaire par l’auditeur', restru_st_defait: 'défait', restru_st_remplace: 'remplacé',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Les infos du studio datent de {m} min : il continue avec ses propres estimations.', etat_vieux_detail: 'Le programme qui met le studio à jour (veille_studio.py, studio_etat.py) ne répond plus. « Relancer » le redémarre ; tu peux aussi dire à Claude : relance le studio.', relancer_b: 'Relancer', etat_relance: '… relance demandée, les infos reviennent dans quelques secondes.', masquer_30: 'Masquer 30 min', illisible: 'Fichier illisible ignoré',
     cl_bouton: 'Cloche', cl_an_tard: 'Plus tard : « {t} » revient demain.', cl_an_remis: '« {t} » est de retour dans la liste.', cl_an_envoi: '« {c} » : envoi…', cl_an_envoye: '« {c} » : enregistré ({t}).',
     cl_an_confie: 'Confié à l’assistant : {t}.', cl_an_lien: 'Lien ouvert dans un nouvel onglet. Quand c’est fait, réponds ici.', cl_an_echec: 'Pas enregistré ({t}) : {e}. Réessaie, ou confie-le à l’assistant.',
     cl_an_fiche: 'Fiche introuvable : ce poste n’existe plus. Confie-le à l’assistant ou mets-le à plus tard.', cl_confier: 'Confier à l’assistant', cl_confier_t: 'L’assistant s’en occupe (une demande lui est déposée) ; l’élément quitte la liste 24 h', cl_tard: 'Plus tard', cl_tard_t: 'Caché 24 h, puis il revient', cl_accepter: 'J’accepte la dépense', cl_refuser: 'Je refuse', cl_autre: 'Autre réponse…', cl_repondre: 'Répondre', cl_fait: 'C’est fait', cl_lien: 'Ouvrir le lien', cl_appliquer: 'Appliquer', cl_voir_poste: 'Voir sa fiche', cl_bloque_titre: '{nom} est bloqué', cl_msg_sans_reponse: 'Ton message attend une réponse', cl_depuis: 'depuis {m} min', cl_relancer: 'Relancer l’assistant', cl_voir_conv: 'Ouvrir la conversation', cl_agent_attend: '{nom} attend ta réponse', cl_repondre_conv: 'Répondre dans la conversation', cl_maj_titre: 'Le studio a été mis à jour', cl_maj_detail: 'Recharge la page pour avoir la nouvelle version (brouillons et réglages restent).', cl_recharger: 'Recharger maintenant', cl_remettre: 'Remettre dans la liste', cl_recommande: 'recommandé', cl_surtitre: 'Pour toi', cl_titre: 'La cloche', cl_resume_1: 'Une chose t’attend.', cl_resume_n: '{n} choses t’attendent.', cl_vide_titre: 'Rien ne t’attend.', cl_vide_texte: 'L’équipe avance seule ; la cloche sonnera s’il faut ton avis ou ta main.', cl_confies: 'Confiés à l’assistant', cl_confie_etat: 'Confié : l’assistant s’en occupe.', cl_reportes: 'Pour plus tard', cl_reporte_etat: 'Revient dans {h} h.', cl_g_decision: 'Décision', cl_g_depense: 'Accord de dépense', cl_g_afaire: 'À faire de ta main', cl_g_blocage: 'Blocage', cl_g_demande: 'Demande en attente', cl_g_maj: 'Mise à jour', cl_s_fab: 'À ajouter depuis Fab', cl_s_reconnexion: 'Reconnexion à un site', cl_s_ecoute: 'À écouter ou valider en jeu', cl_mission_tete: 'Depuis la cloche, l’utilisateur te confie ({genre}) :', cl_mission_montant: 'Montant :', cl_mission_choix: 'Choix possibles :', cl_mission_fin: 'Tranche au mieux (le choix recommandé sauf contre-indication), règle-le, puis ferme l’élément (decisions.json : statut « repondue » avec la réponse).', cl_mission_depense: 'Ne dépense RIEN sans son accord : cherche une solution gratuite ou déjà payée, sinon repose-lui la question avec le montant exact.', cl_mission_afaire: 'Fais-le sans lui si c’est possible (sans saisir de mot de passe ni payer) ; sinon prépare tout et dis-lui pas à pas quoi faire. Puis passe l’élément à « fait » dans a_faire.json.', cl_cloche_aria: 'Cloche : {n}', cl_rien_aria: 'Cloche : rien ne t’attend', cl_cloche_title: 'La cloche : tout ce qui attend ta réponse ou ta main, avec une issue en un clic pour chacun' },
-  en: { pe_morphologie: 'Build', pe_peau: 'Skin', pe_coupe: 'Haircut', pe_cheveux: 'Hair', pe_tenue: 'Outfit', pe_couleur1: 'Colour 1', pe_couleur2: 'Colour 2', pe_accessoire: 'Accessory', pe_mince: 'slim', pe_moyenne: 'average', pe_costaude: 'stocky', pe_petite: 'short', pe_grande: 'tall', pe_courts: 'short', pe_longs: 'long', pe_boucles: 'curly', pe_en_bataille: 'messy', pe_queue: 'ponytail', pe_rase: 'shaved', pe_aucune: 'none', pe_sweat: 'hoodie', pe_chemise: 'shirt', pe_bleu_de_travail: 'overalls', pe_heros: 'hero', pe_tablier: 'apron', pe_costume: 'suit', pe_armure: 'armour', pe_robe: 'dress', pe_aucun: 'none', pe_casque: 'helmet', pe_casque_audio: 'headphones', pe_casquette: 'cap', pe_beret: 'beret', pe_chapeau: 'hat', pe_lunettes: 'glasses', pe_barbe: 'beard', pe_couronne: 'crown', pe_bandeau: 'headband', pe_capuche: 'hood', pe_cornes: 'horns', te_demande: 'asks you', bloque_sur: 'waiting on:', recommande_par: 'the answer the assistant recommends', theme_t: 'Theme', theme_auto: 'same as the system', theme_clair: 'light', theme_sombre: 'dark', aujourdhui: 'Today', de_la_v1: 'of version 1', jour_avance: 'What moved forward', jour_attend: 'What is waiting', jour_prochaine: 'Next step', fini_quand: 'Done when:', voir_bureau: 'See the office', o_jour: 'Today', resume_matin: 'Morning summary', abs_reponses: 'Assistant replies', tout_vu: 'All seen', balayage_part: 'sent in 5 s', chap_style: 'Style', studio: 'Studio', ens_sugg: 'Suggestions from the feed', confier_assistant: 'Hand to the assistant', sugg_envoye: 'Sent', autre_reponse: 'Another answer…', equipe_avance: 'The team is moving on.', onglets_nom: 'Studio tabs', rc_titre: 'Keyboard shortcuts', rc_a: 'talk to the assistant', rc_v: 'dictate into the last field', rc_espace_k: 'Space (hold)', rc_espace: 'big microphone', rc_echap: 'close the window', rc_aide: 'this sheet', rc_actifs: 'Single-key shortcuts are on (Settings to turn them off).', rc_coupes: 'Single-key shortcuts are off (Settings to turn them on).', rc_reglage: 'Single-key keyboard shortcuts (A, V, Space)', fermer: 'Close', grp_auto: 'Automations', grp_son: 'Sound and notifications', grp_affichage: 'Display', n_notifs: '{n} new notifications', voir_notifs: 'tap to see them', plus_actions: 'More actions', conv_vide: 'Tell me what you want to move forward.', sugg_1: 'Give me a status update', sugg_2: 'What is blocking?', sugg_3: 'Start the next task', ecrire_court: 'Write to the assistant…', etat_studio: 'Studio status', serveur_coupe: 'The studio is not answering (computer asleep or server stopped). Retrying every 10 s; you can tell Claude: restart the studio.', telephone_titre: 'On a phone', telephone_aide: 'Start the server with --reseau, open the studio in the phone browser (same Wi-Fi), then “Add to Home Screen” (Safari: Share button; Chrome: ⋮ menu). It then opens full screen like an app, with its tabs at the bottom. Over http on Wi-Fi, adding works but without offline mode: the offline cache needs an https address (or the computer itself).', o_equipe: 'Team', o_conv: 'Chat', o_cloche: 'Bell', o_roadmap: 'Roadmap', o_reglages: 'Settings', role_temporaire: 'Temporary role (the original task stays reserved)', point_journal: 'New report (kept in the log: a report is already open or was just read)', points_anciens: '{n} older report(s) in the log', conv_cc: 'The same conversation as in Claude Code, read on this machine (never sent anywhere). Enter: send · Shift+Enter: new line.', tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar). The microphone stays open during dictation and 90 s after. Bluetooth headset: its microphone switches the headset to “hands-free” mode: prefer a desk microphone.', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Complex tasks (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: watches CPU, memory, disk and GPU; delays automations when the machine is saturated', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'I’m away', je_suis_la: 'I’m back', nuit_on: 'I’m away: no more notifications; the studio keeps going, summary when you are back', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', quitter_plein: 'Exit full screen', forfait: 'Claude plan', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
+  en: { pe_morphologie: 'Build', pe_peau: 'Skin', pe_coupe: 'Haircut', pe_cheveux: 'Hair', pe_tenue: 'Outfit', pe_couleur1: 'Colour 1', pe_couleur2: 'Colour 2', pe_accessoire: 'Accessory', pe_mince: 'slim', pe_moyenne: 'average', pe_costaude: 'stocky', pe_petite: 'short', pe_grande: 'tall', pe_courts: 'short', pe_longs: 'long', pe_boucles: 'curly', pe_en_bataille: 'messy', pe_queue: 'ponytail', pe_rase: 'shaved', pe_aucune: 'none', pe_sweat: 'hoodie', pe_chemise: 'shirt', pe_bleu_de_travail: 'overalls', pe_heros: 'hero', pe_tablier: 'apron', pe_costume: 'suit', pe_armure: 'armour', pe_robe: 'dress', pe_aucun: 'none', pe_casque: 'helmet', pe_casque_audio: 'headphones', pe_casquette: 'cap', pe_beret: 'beret', pe_chapeau: 'hat', pe_lunettes: 'glasses', pe_barbe: 'beard', pe_couronne: 'crown', pe_bandeau: 'headband', pe_capuche: 'hood', pe_cornes: 'horns', te_demande: 'asks you', bloque_sur: 'waiting on:', recommande_par: 'the answer the assistant recommends', theme_t: 'Theme', theme_auto: 'same as the system', theme_clair: 'light', theme_sombre: 'dark', aujourdhui: 'Today', de_la_v1: 'of version 1', jour_avance: 'What moved forward', jour_attend: 'What is waiting', jour_prochaine: 'Next step', fini_quand: 'Done when:', voir_bureau: 'See the office', o_jour: 'Today', resume_matin: 'Morning summary', abs_reponses: 'Assistant replies', tout_vu: 'All seen', balayage_part: 'sent in 5 s', chap_style: 'Style', studio: 'Studio', ens_sugg: 'Suggestions from the feed', confier_assistant: 'Hand to the assistant', sugg_envoye: 'Sent', autre_reponse: 'Another answer…', equipe_avance: 'The team is moving on.', onglets_nom: 'Studio tabs', rc_titre: 'Keyboard shortcuts', rc_a: 'talk to the assistant', rc_v: 'dictate into the last field', rc_espace_k: 'Space (hold)', rc_espace: 'big microphone', rc_echap: 'close the window', rc_aide: 'this sheet', rc_actifs: 'Single-key shortcuts are on (Settings to turn them off).', rc_coupes: 'Single-key shortcuts are off (Settings to turn them on).', rc_reglage: 'Single-key keyboard shortcuts (A, V, Space)', fermer: 'Close', grp_auto: 'Automations', grp_son: 'Sound and notifications', grp_affichage: 'Display', n_notifs: '{n} new notifications', voir_notifs: 'tap to see them', plus_actions: 'More actions', conv_vide: 'Tell me what you want to move forward.', sugg_1: 'Give me a status update', sugg_2: 'What is blocking?', sugg_3: 'Start the next task', ecrire_court: 'Write to the assistant…', etat_studio: 'Studio status', serveur_coupe: 'The studio is not answering (computer asleep or server stopped). Retrying every 10 s; you can tell Claude: restart the studio.', telephone_titre: 'On a phone', telephone_aide: 'Start the server with --reseau, open the studio in the phone browser (same Wi-Fi), then “Add to Home Screen” (Safari: Share button; Chrome: ⋮ menu). It then opens full screen like an app, with its tabs at the bottom. Over http on Wi-Fi, adding works but without offline mode: the offline cache needs an https address (or the computer itself).', o_equipe: 'Team', o_conv: 'Chat', o_cloche: 'Bell', o_roadmap: 'Roadmap', o_reglages: 'Settings', role_temporaire: 'Temporary role (the original task stays reserved)', point_journal: 'New report (kept in the log: a report is already open or was just read)', points_anciens: '{n} older report(s) in the log', conv_cc: 'The same conversation as in Claude Code, read on this machine (never sent anywhere). Enter: send · Shift+Enter: new line.', tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar). The microphone stays open during dictation and 90 s after. Bluetooth headset: its microphone switches the headset to “hands-free” mode: prefer a desk microphone.', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Complex tasks (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: the agent and its alerts', sante_auto_tt: 'shows or hides the PC health agent and its alerts; measuring and the safety brakes stay on', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'I’m away', je_suis_la: 'I’m back', nuit_on: 'I’m away: no more notifications; the studio keeps going, summary when you are back', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', abs_decide: 'Decided for you', abs_auto: 'Started by the automations (even with no tab open)', abs_embauche: 'Hired: {n}', abs_renvoi: 'Let go: {n}', abs_partage: 'task split in {n}', abs_change: 'changed by you', changer: 'Change', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', quitter_plein: 'Exit full screen', forfait: 'Claude plan', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', session_absente: 'No Claude session for {m} min: your requests are waiting', session_aucune: 'No Claude session open: your requests are waiting', session_ouvre: 'open Claude Code in the project', session_dem: 'request(s)', session_msg: 'message(s)', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
     travaille: 'working', attend: 'waiting', disponible: 'available', fini: 'done', bloque: 'blocked', restant: 'left', etapes: 'Steps ahead',
     demander: 'Ask them…', envoyer: 'Send', dicter: 'Dictate', arreter: 'Stop', transmis: 'sent', ecrire_demande: 'Type or dictate your request, check it, then send.',
     assistant: 'Assistant', passer: "I don't know (★)", retour: 'Back', valider: 'OK', autre: 'Other answer…', recommande: 'recommended',
@@ -741,6 +798,9 @@ const TXT = {
     mission_tache: 'Task {id}: {titre}. Done when: {critere}.', mission_prep: 'Prepare without the engine (plans, data, tests; nothing is merged) task {id}: {titre}. Target: {critere}.',
     renvoyer: 'Let go…', renvoyer_q: 'Let {n} go?', renvoyer_expl: 'Their card and agent definition are archived (nothing is deleted); you can hire them back.', oui_renvoyer: 'Yes, let go', annuler_b: 'Cancel',
     renvoye: 'leaves the studio', anciens: 'Former staff', reembaucher: 'Hire back', revient: 'is back at the studio', embauche_auto_ok: 'The assistant hired', aucun_ancien: 'Nobody yet.',
+    restru: 'Restructuring', restru_bt: 'Restructuring plan', restru_tt: 'The auditor takes stock of the team: duplicate trades, idle agents, unclear names. The plan (let-go and renames, each with its reason) arrives under the bell; nothing changes without “Apply the plan”. Reversible.',
+    restru_attente: 'preparing the plan…', restru_pret: 'Plan ready under the bell', restru_dernier: 'Latest plan', restru_defaire: 'Undo this plan', restru_defait: 'Plan undone: hired back, old names restored',
+    restru_st_ouverte: 'waiting for your answer', restru_st_en_cours: 'applied, let-go after their task pending', restru_st_appliquee: 'applied', restru_st_classe: 'filed (nothing done)', restru_st_a_modifier: 'to be redone by the auditor', restru_st_defait: 'undone', restru_st_remplace: 'replaced',
     decider: 'Decide', ouvrir_cloche: 'Open the bell', rien_cloche: 'No decision waiting.', etat_vieux: 'The studio info is {m} min old: it carries on with its own estimates.', etat_vieux_detail: 'The program that updates the studio (veille_studio.py, studio_etat.py) is not answering. “Restart” starts it again; you can also tell Claude: restart the studio.', relancer_b: 'Restart', etat_relance: '… restart requested, the info will be back in a few seconds.', masquer_30: 'Hide for 30 min', illisible: 'Unreadable file ignored',
     cl_bouton: 'Bell', cl_an_tard: 'Later: “{t}” comes back tomorrow.', cl_an_remis: '“{t}” is back in the list.', cl_an_envoi: '“{c}”: sending…', cl_an_envoye: '“{c}”: saved ({t}).',
     cl_an_confie: 'Handed to the assistant: {t}.', cl_an_lien: 'Link opened in a new tab. When it is done, answer here.', cl_an_echec: 'Not saved ({t}): {e}. Try again, or hand it to the assistant.',
@@ -776,20 +836,34 @@ async function instantane(noms) {
   } catch (e) { if (e && (e.name === 'TypeError' || e.name === 'AbortError')) RESEAU.echec = Date.now(); } finally { clearTimeout(minut); }
 }
 async function lire(nom) {   // revalidation (ETag → 304 si rien n'a changé) et 8 s au plus
+  // M15 : un fichier absent au dernier instantané (moins de 15 s) vaut null sans requête : plus de 404 en continu sur un projet neuf
+  if (Date.now() - INSTANT.t < 15000 && INSTANT.textes[nom] === null && Object.prototype.hasOwnProperty.call(INSTANT.textes, nom)) return null;
   if (Date.now() - INSTANT.t < 5000 && Object.prototype.hasOwnProperty.call(INSTANT.textes, nom)) {
-    const x = INSTANT.textes[nom]; if (x === null) return null; try { return JSON.parse(x); } catch (e) { return null; } }
+    const x = INSTANT.textes[nom]; if (x === null) return null; try { const v = JSON.parse(x); illisible(nom, false); return v; } catch (e) { illisible(nom, true); return null; } }
   const ac = window.AbortController ? new AbortController() : null, minut = ac ? setTimeout(() => ac.abort(), 8000) : 0;
-  try { const r = await fetch(nom, Object.assign({ cache: 'no-cache' }, ac ? { signal: ac.signal } : {})); RESEAU.ok = Date.now(); if (!r.ok) return null; return await r.json(); }
+  try { const r = await fetch(nom, Object.assign({ cache: 'no-cache' }, ac ? { signal: ac.signal } : {})); RESEAU.ok = Date.now(); if (!r.ok) return null; const tx = await r.text(); try { const v = JSON.parse(tx); illisible(nom, false); return v; } catch (e) { illisible(nom, true); return null; } }
   catch (e) { if (e && (e.name === 'TypeError' || e.name === 'AbortError')) RESEAU.echec = Date.now(); return null; } finally { clearTimeout(minut); }
+}
+// S15 : un fichier du studio illisible (JSON cassé) est signalé dans la page, même sans alimentation (pendant le questionnaire) ;
+// deux lectures ratées de suite (un fichier en cours d'écriture ne compte pas), un seul message par fichier et par session
+const ILLISIBLES = {};
+function illisible(nom, ko) {
+  if (!/\.json$/.test(nom)) return; const e = ILLISIBLES[nom] || (ILLISIBLES[nom] = { n: 0, dit: false });
+  if (!ko) { e.n = 0; return; } e.n++;
+  if (e.n >= 2 && !e.dit) { e.dit = true; try { toast(esc(LANGUE === 'fr' ? `Fichier .studio/${nom} illisible : il est ignoré pour l'instant (à réparer, ou demande à l'assistant).` : `File .studio/${nom} is unreadable: it is ignored for now (repair it, or ask the assistant).`), { forcer: true, erreur: true, duree: 12000 }); } catch (x) { /* rien */ } }
 }
 // F10 : le serveur ne répond plus (PC éteint, studio arrêté) : bandeau rouge après 25 s sans réponse, effacé dès qu'il revient
 const RESEAU = { ok: Date.now(), echec: 0 };
 const serveurInjoignable = () => RESEAU.echec > RESEAU.ok && Date.now() - RESEAU.ok > 25000;
 setInterval(() => { try { majBandeauEtat(); } catch (e) { /* rien */ } }, 5000);
+let REGL_T = 0;   // F40 : heure du dernier envoi de réglages ; une relecture lancée avant ne les écrase plus
 async function poster(route, corps) {
+  if (/^\/api\/(reglages|couper)\b/.test(route)) REGL_T = Date.now();
   const r = await fetch(route, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
   const j = await r.json().catch(() => null);
   if (!r.ok || !j || j.ok === false) throw new Error((j && j.erreur) || ('HTTP ' + r.status));
+  // C2 (partie page) : même message envoyé dans la minute : le serveur ne le renvoie pas ; on le dit au lieu de se taire
+  if (j.doublon && /^\/api\/(demande|confier)\b/.test(route)) toast('<b>' + esc(LANGUE === 'fr' ? 'Déjà envoyé' : 'Already sent') + '</b><br>' + esc(LANGUE === 'fr' ? 'Le même message est parti il y a moins d’une minute : il n’est pas renvoyé.' : 'The same message went out less than a minute ago: it is not sent again.'), { forcer: true, seul: true });
   return j;
 }
 function posterFond(route, corps) { return poster(route, corps).catch(e => { toast('<b>' + esc(t('pas_envoye')) + '</b><br>' + esc(e.message), { erreur: true }); throw e; }); }
@@ -808,10 +882,13 @@ const postes = () => {
 const nomPoste = p => String(p.nom || p.id);
 const nomAssistant = () => (PROFIL.assistant && PROFIL.assistant.nom) || t('assistant');
 
-const FICHIERS_CYCLE = ['studio.config.json', 'profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json', 'optimisation.json', 'suggestions.json', 'audit.json', 'a_faire.json'];   // audit.json : vue Audit (absent = null, jamais de 404)
+const FICHIERS_CYCLE = ['studio.config.json', 'profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json', 'optimisation.json', 'suggestions.json', 'audit.json', 'a_faire.json',
+  'cloche_memo.json', 'hote.json', 'hote_proposition.json', 'quetes_etat.json', 'habillage.json', 'table_projet.json'];   // audit.json : vue Audit (absent = null, jamais de 404) ; M15/O5 : cloche, hôte et quêtes passent aussi par l'instantané
 async function chargerTout() {
+  const debutLecture = Date.now();
   await instantane(FICHIERS_CYCLE.concat(postes().map(p => 'progression/' + encodeURIComponent(p.id) + '.json')));
   const conf = await lire('studio.config.json'); if (conf) CONF = conf;
+  { const acc = CONF.mode !== 'travail'; if (document.documentElement.hasAttribute('data-accueil') !== acc) { document.documentElement.toggleAttribute('data-accueil', acc); try { ajusterOutils(); } catch (e) { /* rien */ } } }   // S24
   const lg = String(CONF.langue || (PROFIL.maitre && PROFIL.maitre.langue) || navigator.language || 'fr').slice(0, 2).toLowerCase();   // sinon : langue du navigateur
   if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
   const [prof, etat, st, dec, rdec, rass0, ded, sui, idx, rap, dstu, tdis, regl, jass] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json'].map(lire));
@@ -823,7 +900,7 @@ async function chargerTout() {
   DECISIONS = (Array.isArray(dec) ? dec : []).concat((Array.isArray(dstu) ? dstu : []).filter(x => x && x.id).map(x => Object.assign({}, x, { studio: true })));
   { const af = await lire('a_faire.json'); A_FAIRE = (Array.isArray(af) ? af : (af && Array.isArray(af.a_faire) ? af.a_faire : [])).filter(x => x && typeof x.id === 'string'); }   // cloche : actions de la main de l'utilisateur
   clLireMemo(await lire('cloche_memo.json'));   // cloche : « plus tard » et « confié », communs au PC et au téléphone
-  TACHES = tdis && Array.isArray(tdis.taches) ? tdis.taches.filter(x => x && typeof x.id === 'string') : []; REGLAGES = regl && typeof regl === 'object' ? regl : {};
+  TACHES = tdis && Array.isArray(tdis.taches) ? tdis.taches.filter(x => x && typeof x.id === 'string') : []; if (debutLecture > REGL_T) REGLAGES = regl && typeof regl === 'object' ? regl : {};
   if (ANALYSE === undefined) { if (!INSTANT.absent) { const g = INSTANT.textes; await instantane(['analyse_projet.json']); if (INSTANT.textes !== g) INSTANT.textes = Object.assign({}, g, INSTANT.textes); } ANALYSE = await lire('analyse_projet.json'); }   // par l'instantané : absent = null, pas de 404   // null hors adoption (une seule lecture)
   if (ded) DED = avecProjet(ded); if (sui) SUIVI = sui;
   // recrues : index tenu par le serveur, fiches lues une fois (puis à chaque changement de l'index)
@@ -842,9 +919,11 @@ async function chargerTout() {
   const neu = {}; postes().forEach((p, i) => { if (prog[i]) neu[p.id] = prog[i]; }); PROG = neu;
   if (Array.isArray(rass)) lireReponsesAssistant(rass);
   { const sg = await lire('suggestions.json'); SUGG = sg && Array.isArray(sg.suggestions) ? sg.suggestions.filter(x => x && x.id && x.titre).slice(0, 30) : [];
-    for (const x of SUGG) if (x.gravite === 'urgent') Notifs.ajouter({ id: 'sug:' + x.id + ':' + String(sg.maj || '').slice(0, 13), type: 'alerte', titre: x.titre, ligne: x.action_proposee || x.explication || '', cible: { ensemble: true } }); }   // S36
+    const sv = LS.get('sug_vus', null), svs = new Set(sv || []);
+    for (const x of SUGG) if (x.gravite === 'urgent' && !svs.has(x.id)) { svs.add(x.id); if (sv !== null) Notifs.ajouter({ id: 'sug:' + x.id, type: 'alerte', titre: x.titre, ligne: x.action_proposee || x.explication || '', cible: { ensemble: true }, quand: quandHeure(x.cree_le || x.date_creation || '') }); }
+    LS.set('sug_vus', [...svs].slice(-500)); }   // S36
   majEntete(); verifierDecisions(); verifierPostes(); Quest.suivis(); majOutils(); verifierRapport();
-  try { verifierMessages(); majCouper(); verifierOptim(); Radio.lancer(); const nj = REP_ASSIST.length - +LS.get('jassist_vus', REP_ASSIST.length); $('#nb-jassist').textContent = nj > 0 ? String(nj) : ''; } catch (err) { console.warn('parité', err); }
+  try { verifierMessages(); majCouper(); verifierOptim(); Radio.lancer(); const nj = jassistNeufs(); $('#nb-jassist').textContent = nj > 0 ? String(nj) : ''; } catch (err) { console.warn('parité', err); }
   try { majEquipe(); } catch (err) { console.warn('bandeau du groupe', err); }
   FinTache.verifier(); majBandeauEtat(); Conv.maj(); try { if (window.Quetes) Quetes.maj(); } catch (err) { erreur('quêtes', err); } embaucheAuto().catch(e => erreur('embauche auto', e));
   try { if (window.CONV_STUDIO && CONF.mode === 'travail') CONV_STUDIO.observer(); } catch (err) { erreur('conversations', err); }   // changements depuis le dernier passage
@@ -868,8 +947,11 @@ function majBandeauEtat() {
   b.hidden = !vieux;
   if (vieux) { const m = Math.max(1, Math.round(age / 60)), txt = tf('etat_vieux', { m: m < 5 ? m : m < 60 ? 5 * Math.floor(m / 5) : 60 * Math.floor(m / 60) });
     const z = b.querySelector('[data-txt]'); if (z.textContent !== txt && !/^…/.test(z.textContent)) z.textContent = txt; b.title = t('etat_vieux_detail'); }
-  for (const a of (ETAT && Array.isArray(ETAT.anomalies) ? ETAT.anomalies : []).slice(0, 5)) if (a && a.fichier)
-    Notifs.ajouter({ id: 'anom-' + a.fichier + ':' + a.raison, type: 'alerte', titre: t('illisible'), ligne: String(a.fichier) + ' : ' + String(a.raison || '') });
+  // G10 : une anomalie qui dure n'est signalée qu'une fois, même sortie de l'historique des 80 ; oubliée quand elle disparaît
+  if (ETAT) { const anoms = (Array.isArray(ETAT.anomalies) ? ETAT.anomalies : []).filter(a => a && a.fichier).slice(0, 5), ids = anoms.map(a => 'anom-' + a.fichier + ':' + a.raison);
+    const deja = new Set(LS.get('anom_vues', []) || []), garde = ids.filter(id => deja.has(id));
+    anoms.forEach((a, i) => { if (!deja.has(ids[i])) { Notifs.ajouter({ id: ids[i], type: 'alerte', titre: t('illisible'), ligne: String(a.fichier) + ' : ' + String(a.raison || '') }); garde.push(ids[i]); } });
+    if (garde.length !== deja.size || garde.some(id => !deja.has(id))) LS.set('anom_vues', garde); }
 }
 let CHARGE_UNE_FOIS = false;
 function majOutils() {
@@ -976,19 +1058,28 @@ function toastGroupe(zone, vivants, grp) {
 const Notifs = (() => {
   let liste = LS.get('notifs', []);
   const ICONES = { succes: '★', fait: '✓', decision: '?', alerte: '!', info: 'i' };
-  function sauver() { liste = liste.slice(-80); LS.set('notifs', liste); majPastille(); }
+  // M13 : deux onglets ouverts : on relit et on fusionne avant d'écrire (une notification lue ailleurs reste lue, rien n'est perdu)
+  function sauver() {
+    try { const ailleurs = LS.get('notifs', []); if (Array.isArray(ailleurs) && ailleurs.length) { const parId = new Map(liste.map(x => [x.id, x]));
+      for (const a of ailleurs) { if (!a || !a.id) continue; const x = parId.get(a.id); if (x) { if (a.lu) x.lu = true; } else if (!liste.some(y => y.id === a.id)) liste.push(a); }
+      liste.sort((a, b) => a.t - b.t); } } catch (e) { /* stockage indisponible : on garde la liste de cet onglet */ }
+    liste = liste.slice(-80); LS.set('notifs', liste); majPastille(); }
+  function toutLu() { liste.forEach(x => x.lu = true); sauver(); if (!$('#notifs').hidden) rendre(); }   // G9 : utilisé par « Tout vu » du résumé d'absence
   function majPastille() { const n = liste.filter(x => !x.lu).length; $('#nb-notifs').textContent = n ? String(n) : ''; }
   function ajouter(n, silencieux) {
     if (liste.some(x => x.id === n.id)) return;
-    liste.push(Object.assign({ t: Date.now(), lu: false, type: 'info' }, n)); sauver();
+    const vieille = notifVieille(n.quand);
+    liste.push(Object.assign({ t: Date.now(), lu: false, type: 'info' }, n, n.quand ? { t: Math.min(Date.now(), +n.quand) } : {}, vieille ? { lu: true } : {}));
+    liste.sort((a, b) => a.t - b.t); sauver();   // historique dans l'ordre réel : les 80 gardées sont les plus récentes
     if (!$('#notifs').hidden) rendre();
+    if (vieille) return;
     if (!silencieux && n.type !== 'succes') toast('<b>' + esc(n.titre) + '</b>' + (n.ligne ? '<br>' + esc(n.ligne) : ''));
   }
   function rendre() {
     const el = $('#notifs'), l = liste.slice().reverse();
     el.innerHTML = `<h2>${esc(t('notifs'))}<button type="button" id="nt-lu">${esc(t('tout_lu'))}</button></h2>` +
-      (l.length ? l.map(n => `<button type="button" class="notif t-${esc(n.type)}${n.lu ? '' : ' nonlue'}" data-id="${esc(n.id)}"><span class="ni">${esc(ICONES[n.type] || 'i')}</span><span class="nt"><b>${esc(n.titre)}</b>${n.ligne ? `<small>${esc(n.ligne)}</small>` : ''}</span><time>${esc(new Date(n.t).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }))}</time></button>`).join('') : `<p class="vide">${esc(t('aucune_notif'))}</p>`);
-    el.querySelector('#nt-lu').onclick = () => { liste.forEach(x => x.lu = true); sauver(); rendre(); };
+      (l.length ? l.map(n => `<button type="button" class="notif t-${esc(n.type)}${n.lu ? '' : ' nonlue'}" data-id="${esc(n.id)}"><span class="ni">${esc(ICONES[n.type] || 'i')}</span><span class="nt"><b>${esc(n.titre)}</b>${n.ligne ? `<small>${esc(n.ligne)}</small>` : ''}</span><time>${esc((new Date(n.t).toDateString() === new Date().toDateString() ? '' : new Date(n.t).toLocaleDateString(LANGUE, { day: '2-digit', month: '2-digit' }) + ' ') + new Date(n.t).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }))}</time></button>`).join('') : `<p class="vide">${esc(t('aucune_notif'))}</p>`);
+    el.querySelector('#nt-lu').onclick = () => toutLu();
     el.querySelectorAll('.notif').forEach(b => b.onclick = () => { const n = liste.find(x => x.id === b.dataset.id); if (!n) return; n.lu = true; sauver(); el.hidden = true; agir(n.cible); });
   }
   function agir(c) {
@@ -1000,7 +1091,7 @@ const Notifs = (() => {
     else if (c.ensemble) ouvrirEnsemble();
   }
   majPastille();
-  return { ajouter, rendre, basculer() { const el = $('#notifs'); el.hidden = !el.hidden; if (!el.hidden) rendre(); } };
+  return { ajouter, rendre, toutLu, basculer() { const el = $('#notifs'); el.hidden = !el.hidden; if (!el.hidden) rendre(); } };
 })();
 
 // ====================================================================== panneau central : un seul document à la fois, le reste en file
@@ -1037,7 +1128,7 @@ const Panneau = (() => {
     const b = document.elementsFromPoint(e.clientX, e.clientY).map(x => x.closest && x.closest('#entete button, #entete a')).find(x => x && !x.disabled);
     fermer(); if (b) b.click(); });
   // clic de l'utilisateur dans la barre du haut : remplace le panneau ouvert (la file des panneaux automatiques est gardée)
-  function remplacer(cle, rendu, o = {}) { if (ouvert) { ouvert = null; } montrer(cle, rendu, o); }
+  function remplacer(cle, rendu, o = {}) { if (ouvert) { ouvert = null; try { Voix.arreter(); } catch (e) { /* rien */ } } montrer(cle, rendu, o); }   // M17 : la dictée s'arrête avec le panneau remplacé
   return { montrer, remplacer, fermer, ouvert: () => ouvert };
 })();
 
@@ -1099,9 +1190,11 @@ const decisionsOuvertes = () => { const r = (window.__tyrRemonter ? window.__tyr
 function verifierDecisions() {
   const l = decisionsOuvertes(), b = $('#bt-decisions');
   if (b) majCloche();
-  const vues = new Set(LS.get('decisions_vues', []));
-  for (const d of l) if (!vues.has(d.id)) { vues.add(d.id); Son.cloche(); Notifs.ajouter({ id: 'dec-' + d.id, type: 'decision', titre: t('nouvelle_decision'), ligne: d.titre, cible: { decision: d.id } }); Bureau.dire('assistant', d.titre, 7); }
-  LS.set('decisions_vues', [...vues].slice(-300));
+  const vb = LS.get('decisions_vues', null), vues = new Set(vb || []);
+  for (const d of l) if (!vues.has(d.id)) { vues.add(d.id); const q = Date.parse(String(d.cree_le || '')) || 0, vieille = vb === null || notifVieille(q);
+    if (!vieille) { Son.cloche(); Bureau.dire('assistant', d.titre, 7); }
+    Notifs.ajouter({ id: 'dec-' + d.id, type: 'decision', titre: t('nouvelle_decision'), ligne: d.titre, cible: { decision: d.id }, quand: vieille ? (q || Date.now() - 31 * 60e3) : q }); }
+  LS.set('decisions_vues', [...vues].slice(-1000));
 }
 const boutonsChoix = d => (Array.isArray(d.choix) ? d.choix : []).map(c => { const id = typeof c === 'string' ? c : c.id, lib = typeof c === 'string' ? c : (c.libelle || c.id); return `<button type="button" class="bts${id === d.recommande ? ' rec' : ''}" data-c="${esc(id)}">${id === d.recommande ? '★ ' : ''}${esc(lib)}</button>`; }).join('');
 // Réponse à une décision (panneau, fil de conversation, bulle de la scène). Proposition de renvoi du studio : « renvoyer »
@@ -1118,7 +1211,7 @@ async function repondreDecision(d, choix, libre) {
 function ouvrirDecision(d) {
   Panneau.montrer('dec:' + d.id, el => {
     const qui = d.poste ? postes().find(p => p.id === d.poste) : null, pr = qui ? (PROG[qui.id] || {}) : {}, bloque = qui ? String(pr.etape || pr.texte || '').slice(0, 90) : '';
-    el.innerHTML = `<div class="carte-dec"><div class="surtitre">${qui ? esc(nomPoste(qui) + ' ' + t('te_demande')) : esc(t('decision'))}${bloque ? ` · ${esc(t('bloque_sur'))} ${esc(bloque)}` : ''}</div><h2>${esc(d.titre)}</h2>${d.explication ? `<p>${esc(d.explication)}</p>` : ''}
+    el.innerHTML = `<div class="carte-dec"><div class="surtitre">${qui ? esc(nomPoste(qui) + ' ' + t('te_demande')) : esc(t('decision'))}${bloque ? ` · ${esc(t('bloque_sur'))} ${esc(bloque)}` : ''}</div><h2>${esc(d.titre)}</h2>${d.explication ? `<p${d.type === 'restructuration' ? ' class="detail-plan" style="white-space:pre-line;max-height:50vh;overflow:auto"' : ''}>${esc(d.explication)}</p>` : ''}
       ${d.recommande ? `<p class="discret">★ ${esc(t('recommande_par'))}</p>` : ''}
       <div class="choix-dec" role="group">${boutonsChoix(d)}</div></div>
       <details class="autre-rep"${(Array.isArray(d.choix) ? d.choix : []).length ? '' : ' open'}><summary>${esc(t('autre_reponse'))}</summary>${blocTexte('dec-libre')}</details><p class="discret" id="dec-res"></p>`;
@@ -1129,7 +1222,7 @@ function ouvrirDecision(d) {
     balayage(el, d, choix => {          // le choix part au bout de 5 s, sauf « Annuler »
       const lib = (choix.lib || choix.id), minut = setTimeout(() => repondreDecision(d, choix.id, ''), 5000); Panneau.fermer();
       try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* rien */ }
-      toast(`<b>${esc(lib)}</b><br>${esc(t('balayage_part'))}`, { duree: 5000, seul: true, action: { libelle: t('annuler'), f: () => { clearTimeout(minut); setTimeout(() => ouvrirDecision(d), 300); } } });
+      toast(`<b>${esc(lib)}</b><br>${esc(t('balayage_part'))}`, { duree: 5000, seul: true, forcer: true, action: { libelle: t('annuler'), f: () => { clearTimeout(minut); setTimeout(() => ouvrirDecision(d), 300); } } });
     });
     el.querySelector('[data-envoyer]').onclick = () => envoyer('');
   });
@@ -1469,11 +1562,23 @@ function lierEnvoi(el, cible) {
     catch (e) { /* toast */ } finally { b.disabled = false; }
   };
 }
+// G11 : badge du journal de l'assistant : on retient la dernière réponse vue (id et date), pas une longueur (le journal est plafonné à 60)
+const cleJassist = m => String((m && (m.id || m.cree_le)) || '');
+function jassistVu() { const d = REP_ASSIST[REP_ASSIST.length - 1]; LS.set('jassist_vu', d ? { id: cleJassist(d), t: Date.parse(String(d.cree_le || '')) || 0 } : { id: '', t: 0 }); }
+function jassistNeufs() {
+  let v = LS.get('jassist_vu', null);
+  if (!v || typeof v !== 'object') { jassistVu(); return 0; }   // premier passage (ou ancien compteur) : rien de neuf
+  const i = v.id ? REP_ASSIST.findIndex(m => cleJassist(m) === v.id) : -1;
+  if (i >= 0) return REP_ASSIST.length - 1 - i;
+  return REP_ASSIST.filter(m => (Date.parse(String(m.cree_le || '')) || 0) > (+v.t || 0)).length;
+}
 function lireReponsesAssistant(l) {
   const vus = new Set(LS.get('rep_assist_vues', [])); let neuf = false;
   for (const m of l) {
     if (!m || !m.texte) continue; const id = String(m.id || m.cree_le + m.texte).slice(0, 120); if (vus.has(id)) continue; vus.add(id);
+    if (!Number.isFinite(Date.parse(String(m.cree_le || '')))) continue;   // M19 : réponse sans date valide : marquée vue, jamais rejouée
     if (!REP_ASSIST.length && !LS.get('rep_assist_init', false)) continue; // premier passage : on ne rejoue pas l'historique
+    if (notifVieille(Date.parse(String(m.cree_le || '')))) continue;   // vieille réponse jamais vue (autre appareil, retour d'absence) : lue, sans bulle
     neuf = true; Bureau.dire('assistant', m.texte, 9);
     Notifs.ajouter({ id: 'rep-' + id, type: 'info', titre: t('reponse_assistant'), ligne: String(m.texte).slice(0, 140), cible: { conv: true } });
     Conv.surveiller(id, m);
@@ -1636,7 +1741,7 @@ function verifierPostes() {
   const neu = {};
   for (const p of postes()) {
     const e = etatPoste(p); neu[p.id] = e.etat; const a = ETATS_PREC[p.id];
-    if (a && a !== e.etat) {
+    if (a && a !== e.etat && ONGLET.meneur) {   // M14 : deux onglets : seul l'onglet meneur notifie (l'autre la reçoit par l'historique partagé)
       if (e.etat === 'bloque') Notifs.ajouter({ id: 'bloque-' + p.id + '-' + Date.now(), type: 'alerte', titre: nomPoste(p) + ' ' + t('est_bloque'), ligne: e.texte, cible: { poste: p.id } });
       else if (e.etat === 'disponible' && a === 'travaille') Notifs.ajouter({ id: 'dispo-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('est_dispo'), ligne: e.texte, cible: { poste: p.id } });
       else if (e.etat === 'fini' && a === 'travaille') Notifs.ajouter({ id: 'fini-' + p.id + '-' + Date.now(), type: 'fait', titre: nomPoste(p) + ' ' + t('a_fini'), ligne: e.texte, cible: { poste: p.id } });
@@ -1645,24 +1750,27 @@ function verifierPostes() {
   ETATS_PREC = neu; LS.set('etats_postes', neu);
 }
 // ====================================================================== répondre sous chaque réponse de l'assistant
-const BROUILLONS = LS.get('brouillons_rep', {});
+const BROUILLONS = (() => {   // M18 : brouillons vides retirés, 50 derniers gardés
+  const b = LS.get('brouillons_rep', {}), o = {}; if (!b || typeof b !== 'object') return o;
+  Object.keys(b).filter(k => typeof b[k] === 'string' && b[k].trim()).slice(-50).forEach(k => { o[k] = b[k]; }); return o; })();
+function sauverBrouillons() { Object.keys(BROUILLONS).forEach(x => { if (!String(BROUILLONS[x] || '').trim()) delete BROUILLONS[x]; }); Object.keys(BROUILLONS).slice(0, -50).forEach(x => delete BROUILLONS[x]); LS.set('brouillons_rep', BROUILLONS); }
 function blocRepondre(cle, enReponseA, titre) {
   const id = 'rep-' + String(cle).replace(/[^A-Za-z0-9_-]/g, '_');
   return `<div class="repondre" data-en-reponse="${esc(String(enReponseA || '').replace(/[^A-Za-z0-9_.:+-]/g, '-').slice(0, 120))}"><h3>${esc(titre || t('repondre_a'))}</h3>
     <textarea id="${esc(id)}" maxlength="2000" placeholder="${esc(t('repondre_ph'))}">${esc(BROUILLONS[id] || '')}</textarea>
-    <div class="rangee"><button type="button" class="btp gros-micro-rep" data-micro="#${esc(id)}">🎙 ${esc(t('dicter'))}</button><button type="button" class="btp" data-rep-envoi="${esc(id)}">${esc(t('envoyer'))}</button><span class="discret" data-rep-res="${esc(id)}"></span></div></div>`;
+    <div class="rangee">${boutonMicro('#' + id).replace('bts micro', 'btp micro gros-micro-rep')}<button type="button" class="btp" data-rep-envoi="${esc(id)}">${esc(t('envoyer'))}</button><span class="discret" data-rep-res="${esc(id)}"></span></div></div>`;
 }
-document.addEventListener('input', e => { const x = e.target; if (x.matches && x.matches('.repondre textarea')) { BROUILLONS[x.id] = x.value; LS.set('brouillons_rep', BROUILLONS); } });
+document.addEventListener('input', e => { const x = e.target; if (x.matches && x.matches('.repondre textarea')) { delete BROUILLONS[x.id]; BROUILLONS[x.id] = x.value; sauverBrouillons(); } });
 document.addEventListener('click', async e => {
   const m = e.target.closest('.repondre [data-micro]'); if (m) { const c = document.querySelector(m.dataset.micro); if (c) dicter(c, m); return; }
   const b = e.target.closest('[data-rep-envoi]'); if (!b) return;
   const id = b.dataset.repEnvoi, ta = document.getElementById(id), bloc = b.closest('.repondre'), res = bloc.querySelector('[data-rep-res]'), txt = ta && ta.value.trim();
   if (!txt) { ta && ta.focus(); return; }
   const corps = { cible: 'assistant', texte: txt, via: ta.dataset.via || 'ecrit', en_reponse_a: bloc.dataset.enReponse || '' };
-  ta.value = ''; delete BROUILLONS[id]; LS.set('brouillons_rep', BROUILLONS); res.textContent = t('envoye_ok'); Son.clic();
+  ta.value = ''; delete BROUILLONS[id]; sauverBrouillons(); res.textContent = t('envoye_ok'); Son.clic();
   if (document.documentElement.dataset.essai === 'sans-envoi') { document.documentElement.dataset.dernierEnvoi = JSON.stringify(corps); return; }
   try { const r = await poster('/api/demande', corps); try { Conv.envoye(r.id, 'assistant', txt); } catch (err) {} }
-  catch (err) { res.textContent = err.message; ta.value = txt; BROUILLONS[id] = txt; LS.set('brouillons_rep', BROUILLONS); }
+  catch (err) { res.textContent = err.message; ta.value = txt; BROUILLONS[id] = txt; sauverBrouillons(); }
 });
 window.__repondre = blocRepondre;   // essais
 
@@ -1683,7 +1791,7 @@ function majEquipe() {
   const items = [{ id: '__assistant', nom: nomAssistant(), look: () => lookDe('assistant'), e: { etat: 'travaille', pct: tyr ? occ : null, reste: null, ligne: tyr && Tyrannie.fileMoteur() ? { picto: '⏸', texte: t('file_moteur') } : { picto: '▶', texte: tyr ? `${t('contremaitre')} · ${t('equipe_occupee')} ${occ} %` : travail ? t('au_travail') : t('pose_questions') } }, clic: () => { const b = $('#bt-assistant'); if (b) b.click(); } }]
     .concat(travail && auto('sante_auto') && ETAT && ETAT.sante ? [{ id: '__sante', nom: t('sante_titre'), look: () => ({ peau: '#d7b48f', tenue: { style: 'chemise', couleur1: '#3f7a52', couleur2: '#2b3340' }, accessoire: 'casque_audio' }),
         e: { etat: ETAT.sante.sature ? 'bloque' : 'travaille', pct: ETAT.sante.charge, reste: null, sansReste: true, ligne: ETAT.sante.sature ? { picto: '⚠', texte: ETAT.sante.alertes[0] } : { picto: '▶', texte: t('tout_va_bien') + ' · ' + t('charge') + ' ' + ETAT.sante.charge + ' %' } },
-        clic: () => Panneau.remplacer('sante', el => { el.innerHTML = `<div class="surtitre">${esc(t('sante_titre'))}</div><h2>${esc(t('charge'))} ${ETAT.sante.charge} %</h2>` + (ETAT.sante.alertes.length ? `<ol class="liste-j">${ETAT.sante.alertes.concat(ETAT.sante.pauses).map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p>${esc(t('tout_va_bien'))}</p>`) + `<p class="discret">${esc(Object.entries((ETAT && ETAT.systeme) || {}).filter(([, v]) => typeof v !== 'object' && v !== null).map(([k, v]) => k + ' : ' + v).join(' · '))}</p>`; }) }] : [])
+        clic: () => Panneau.remplacer('sante', el => { el.innerHTML = `<div class="surtitre">${esc(t('sante_titre'))}</div><h2>${esc(t('charge'))} ${ETAT.sante.charge} %</h2>` + (ETAT.sante.alertes.length ? `<ol class="liste-j">${ETAT.sante.alertes.concat(ETAT.sante.pauses).map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p>${esc(t('tout_va_bien'))}</p>`) + ((ETAT.sante.avertissements || []).length ? `<ol class="liste-j">${ETAT.sante.avertissements.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : '') + (ETAT.sante.jauges ? jaugesSanteHtml(ETAT.sante.jauges, LANGUE === 'en') : `<p class="discret">${esc(Object.entries((ETAT && ETAT.systeme) || {}).filter(([, v]) => typeof v !== 'object' && v !== null).map(([k, v]) => k + ' : ' + v).join(' · '))}</p>`); }) }] : [])
     .concat(liste.map(p => ({ id: p.id, nom: nomPoste(p), look: () => lookPoste(p), e: etatPoste(p), clic: () => ficheposte(p) })));
   // une carte par agent : portrait, nom et %, action EN COURS (2 lignes au plus), barre vivante, raison et temps restant (ou depuis quand) ;
   // exactement ce que disent l'étiquette de la scène et son info-bulle (infoAction, texteCarte). Le %, la barre et le temps bougent
@@ -1878,6 +1986,31 @@ function recruter() {
   });
 }
 
+// Plan de restructuration (haut de la Vue d'ensemble, même place que dans le studio jumeau) : le serveur fait l'inventaire de l'équipe et le plan
+// (restructuration.py : doublons de métier, agents sans travail, noms pas clairs, fiches sans poste), le dépose sous la cloche
+// (decisions_studio.json : « Appliquer le plan » / « Modifier » / « Ne rien faire ») et le fait relire par l'auditeur.
+// Rien ne change sans « Appliquer le plan » (réponse traitée par /api/repondre) ; « Défaire ce plan » réembauche et remet les noms.
+const Restru = {
+  async lier(el) {
+    const b = el.querySelector('#bt-restru'), res = el.querySelector('#restru-res'), z = el.querySelector('[data-restru-dernier]'); if (!b) return;
+    b.onclick = async () => {
+      b.disabled = true; res.className = 'discret'; res.textContent = t('restru_attente');
+      try {
+        const r = await poster('/api/restructuration', { action: 'plan' }), d = Object.assign({}, r.decision, { studio: true });
+        DECISIONS = DECISIONS.filter(x => !(x && String(x.id || '').startsWith('restructuration-') && x.studio)).concat([d]);
+        verifierDecisions(); toast('<b>' + esc(t('restru_pret')) + '</b><br>' + esc(r.plan.resume || ''), { duree: 6000 }); Panneau.fermer(); ouvrirDecision(d);   // fermer d'abord : sinon la décision attend dans la file
+      } catch (e) { b.disabled = false; res.className = 'erreur'; res.textContent = e.message; }
+    };
+    const f = await lire('restructuration.json'), p = f && Array.isArray(f.plans) ? f.plans[0] : null; if (!p || !z) return;
+    z.innerHTML = `<p class="discret">${esc(t('restru_dernier'))} (${esc(String(p.cree_le || '').slice(0, 16).replace('T', ' '))}) : ${esc(p.resume || '')} · <b>${esc(t('restru_st_' + p.statut) || p.statut)}</b></p>`
+      + (['en_cours', 'appliquee'].includes(p.statut) ? `<div class="rangee"><button type="button" class="bts" data-restru-defaire>${esc(t('restru_defaire'))}</button></div>` : '');
+    const bd = z.querySelector('[data-restru-defaire]');
+    if (bd) bd.onclick = async () => { bd.disabled = true;
+      try { await poster('/api/restructuration', { action: 'defaire', id: p.id }); toast(esc(t('restru_defait'))); Panneau.fermer(); }
+      catch (e) { bd.disabled = false; toast('<b>' + esc(t('pas_envoye')) + '</b><br>' + esc(e.message), { erreur: true }); } };
+  }
+};
+
 // Anciens (recrues renvoyées, recrues/_anciens/) : « Réembaucher » remet fiche et définition d'agent (rien n'est lancé).
 async function anciens(z) {
   const idx = await lire('recrues/_anciens/index.json'), noms = (Array.isArray(idx) ? idx : []).filter(n => typeof n === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(n)).slice(-20).reverse();
@@ -1907,7 +2040,9 @@ async function embaucheAuto() {
   if (CONF.mode !== 'travail' || !(auto('embauche_auto') || Tyrannie.active()) || machineSaturee() || postes().length >= NB_BUREAUX) return;   // aussi onglet caché : on peut partir et laisser tourner
   if (Date.now() - LS.get('embauche_auto_t', 0) < 3600e3) return;
   const ids = new Set(postes().map(p => p.id));
-  const tc = TACHES.find(x => x.statut === 'a_faire' && typeof x.poste === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(x.poste) && !ids.has(x.poste));
+  // F39 : une recrue renvoyée (recrues/_anciens) n'est jamais réembauchée d'office : on passe au métier manquant suivant
+  const idxA = await lire('recrues/_anciens/index.json'), partis = new Set(Array.isArray(idxA) ? idxA : []);
+  const tc = TACHES.find(x => x.statut === 'a_faire' && typeof x.poste === 'string' && /^[a-z0-9][a-z0-9-]{2,39}$/.test(x.poste) && !ids.has(x.poste) && !partis.has(x.poste));
   if (!tc) return;
   LS.set('embauche_auto_t', Date.now());
   const lot = TACHES.filter(x => x.poste === tc.poste).slice(0, 8), nom = tc.poste.replace(/-/g, ' ').replace(/^./, c => c.toUpperCase());
@@ -1922,11 +2057,12 @@ async function embaucheAuto() {
 function ouvrirReglages() {
   Panneau.remplacer('reglages', el => {
     const f = +(REGLAGES.frequence_rapport_min || (PROFIL.assistant && PROFIL.assistant.frequence_rapport_min) || 120);
-    const coche = k => `<label class="reglage"><input type="checkbox" data-r="${k}"${auto(k) ? ' checked' : ''}> ${esc(t(k))}</label>`;
+    const coche = k => `<label class="reglage"${TXT.fr[k + '_tt'] ? ` title="${esc(t(k + '_tt'))}"` : ''}><input type="checkbox" data-r="${k}"${auto(k) ? ' checked' : ''}> ${esc(t(k))}</label>`;   // infobulle quand le réglage en a une (sante_auto)
     el.innerHTML = `<div class="surtitre">${esc(t('reglages'))}</div><h2>${esc(t('reglages'))}</h2>
       <label class="reglage">${esc(t('frequence'))} <select id="rg-f">${[15, 30, 60, 120].map(x => `<option value="${x}"${x === f ? ' selected' : ''}>${x} min</option>`).join('')}</select></label>
       <h3 class="rg-groupe">${esc(t('grp_auto'))}</h3>${coche('attribution_auto')}${coche('embauche_auto')}${coche('enchainement_auto')}${coche('point_auto')}${coche('optimisation_auto')}<label class="reglage"><input type="checkbox" data-r="controle_modeles"${REGLAGES.controle_modeles === false ? '' : ' checked'}> ${esc(t('ctrl_reglage'))}</label>${coche('tyrannie_auto')}${coche('sante_auto')}<label class="reglage"><input type="checkbox" data-r="blague"${REGLAGES.blague === false ? '' : ' checked'}> ${esc(t('blague'))}</label><p class="discret">${esc(t('auto_eco'))}</p>
       <h3 class="rg-groupe">${esc(t('grp_postes_fac'))}</h3><label class="reglage"><input type="checkbox" data-r="auditeur"${REGLAGES.auditeur === true ? ' checked' : ''}> ${esc(t('aud_reglage'))}</label>
+      <div id="rg-hote"></div>
       <h3 class="rg-groupe">${esc(t('grp_son'))}</h3><label class="reglage">${esc(t('volume'))} <input type="range" id="rg-vol" min="0" max="1" step="0.05" value="${esc(LS.get('son_vol', 1))}"></label>
       <label class="reglage">${esc(t('notif_duree'))} <select id="rg-nd">${[5, 20, 60].map(x => `<option value="${x}"${x === +LS.get('notif_duree', 5) ? ' selected' : ''}>${x} s</option>`).join('')}</select></label>
       <label class="reglage">${esc(t('ambiance_niv'))} <select id="rg-amb">${['coupee', 'douce', 'vivante'].map(v => `<option value="${v}"${(LS.get('ambiance', 'douce') === false ? 'coupee' : LS.get('ambiance', 'douce')) === v ? ' selected' : ''}>${esc(t('amb_' + v))}</option>`).join('')}</select></label>
@@ -1945,6 +2081,7 @@ function ouvrirReglages() {
       <div class="rangee"><button type="button" class="bts" id="rg-plein">${esc(t('plein_ecran'))}</button><button type="button" class="bts" id="rg-tuto">${esc(t('tuto_relancer'))}</button></div>
       <h3>${esc(t('telephone_titre'))}</h3><p class="discret">${esc(t('telephone_aide'))}</p>
       <div class="rangee"><button type="button" class="btp" id="rg-ok">${esc(t('valider'))}</button><span class="discret" data-res></span></div>`;
+    if (window.HoteStudio) { try { HoteStudio.reglages(el.querySelector('#rg-hote')); } catch (e) { erreur('réglages de l’hôte', e); } }
     el.querySelector('#rg-vol').oninput = e => LS.set('son_vol', +e.target.value);
     el.querySelector('#rg-racc').onchange = e => LS.set('raccourcis', !!e.target.checked);
     el.querySelector('#rg-nd').onchange = e => LS.set('notif_duree', +e.target.value);
@@ -2000,8 +2137,9 @@ const FinTache = (() => {
       if (ep.fin_de_tache && ep.etat === 'disponible' && !FIN[ep.id] && !traites.has(cle)) {
         const fini = String(ep.fini || ep.texte || '').slice(0, 120), p = postes().find(x => x.id === ep.id);
         FIN[ep.id] = { debut: Date.now(), cle, fini };
-        Bureau.dire(ep.id, `${t('jai_fini')}${fini ? ' « ' + fini.slice(0, 60) + ' »' : ''}. ${t('quelque_chose')}`, 10);
-        Notifs.ajouter({ id: 'fin-' + cle, type: 'decision', titre: nomPoste(p) + ' · ' + t('fin_tache'), ligne: fini, cible: { poste: ep.id } });
+        const qf = (+ep.depuis || 0) * 1000;
+        if (!notifVieille(qf)) Bureau.dire(ep.id, `${t('jai_fini')}${fini ? ' « ' + fini.slice(0, 60) + ' »' : ''}. ${t('quelque_chose')}`, 10);
+        Notifs.ajouter({ id: 'fin-' + cle, type: 'decision', titre: nomPoste(p) + ' · ' + t('fin_tache'), ligne: fini, cible: { poste: ep.id }, quand: qf });
       } else if (FIN[ep.id] && (!ep.fin_de_tache || ep.etat !== 'disponible')) clore(ep.id);
     }
   }
@@ -2051,7 +2189,7 @@ const FinTache = (() => {
     const n = Date.now();
     for (const pid of Object.keys(FIN)) {
       const f = FIN[pid], delai = Tyrannie.active() ? 30000 : DELAI; if (autosServeur() || f.tente || !auto('attribution_auto') || machineSaturee() || n - f.debut < delai) continue;
-      f.tente = true; const c = candidats(pid)[0];
+      f.tente = true; const c = candidats(pid).find(x => { const tc = TACHES.find(y => y.id === x.tache_id) || {}; return tc.sans_moteur !== false && tc.moteur !== true; });   // S31 : jamais une tâche moteur d'office
       if (!c) { clore(pid); continue; }
       confier(pid, c, 'auto:fin-de-tache').catch(e => { erreur('attribution auto', e); Notifs.ajouter({ id: 'auto-refus-' + pid + '-' + n, type: 'info', titre: t('fin_tache'), ligne: e.message, cible: { poste: pid } }, true); clore(pid); });
     }
@@ -2426,8 +2564,12 @@ const Capture = (() => {
     for (let i = 0; i < n; i++) { const a = Math.floor(i * r), b = Math.min(x.length, Math.max(a + 1, Math.floor((i + 1) * r))); let s = 0; for (let j = a; j < b; j++) s += x[j]; out[i] = s / (b - a); }
     return out;
   }
+  // AN3 (T15) : niveau sonore pendant la dictée, en --niv-micro (0 à 1) sur la page ; l'anneau du bouton suit la voix
+  let niv = 0;
+  function niveau(x) { let e = 0; for (let i = 0; i < x.length; i += 4) e += x[i] * x[i]; const r = Math.sqrt(e / Math.max(1, x.length / 4)); niv = Math.max(r * 9 > 1 ? 1 : r * 9, niv * .6); document.documentElement.style.setProperty('--niv-micro', niv.toFixed(2)); }
+  function nivZero() { niv = 0; document.documentElement.style.setProperty('--niv-micro', '0'); }
   function recevoir(x) {
-    if (enreg) { tampon.push(x); tamponN += x.length; if (tamponN > MAX_S * TAUX && plein) { const f = plein; plein = null; f(); } return; }
+    if (enreg) { niveau(x); tampon.push(x); tamponN += x.length; if (tamponN > MAX_S * TAUX && plein) { const f = plein; plein = null; f(); } return; }
     avant.push(x); avantN += x.length;
     while (avant.length > 1 && avantN - avant[0].length >= AVANT_S * TAUX) avantN -= avant.shift().length;
   }
@@ -2467,14 +2609,14 @@ const Capture = (() => {
     try { const p = navigator.permissions && await navigator.permissions.query({ name: 'microphone' }); if (!p || p.state !== 'granted') return; await ouvrir(); } catch (e) { /* rien */ }
   }
   function fermer() {
-    clearTimeout(minuteur); enreg = false; plein = null;
+    nivZero(); clearTimeout(minuteur); enreg = false; plein = null;
     try { if (noeud) { noeud.onaudioprocess = null; noeud.disconnect(); } if (src) src.disconnect(); } catch (e) { /* rien */ }
     if (flux) flux.getTracks().forEach(t => t.stop());
     try { if (ctx) ctx.close(); } catch (e) { /* rien */ }
     flux = ctx = src = noeud = null; avant = []; avantN = 0;
   }
   function commencer(siPlein) { tampon = avant.slice(); tamponN = avantN; avant = []; avantN = 0; enreg = true; plein = siPlein || null; clearTimeout(minuteur); }
-  function terminer() { enreg = false; plein = null; const a = concat(tampon); tampon = []; tamponN = 0; garder(); return a; }
+  function terminer() { nivZero(); enreg = false; plein = null; const a = concat(tampon); tampon = []; tamponN = 0; garder(); return a; }
   function extrait(a, b) {                          // échantillons [a, b) de la dictée en cours, sans tout recopier
     b = Math.min(b == null ? tamponN : b, tamponN); const o = new Float32Array(Math.max(0, b - a)); let i = 0, p = 0;
     for (const x of tampon) { const d = Math.max(a, i), f = Math.min(b, i + x.length); if (f > d) { o.set(x.subarray(d - i, f - i), p); p += f - d; } i += x.length; if (i >= b) break; }
@@ -2827,8 +2969,9 @@ const Bureau = (() => {
   (function policesEtiquettes() {   // polices libres (SIL OFL, voir polices/) chargées pour le canevas seulement
     try {
       if (!window.FontFace || !document.fonts) return;
-      [['Studio Titre', 'polices/AlegreyaSC-Bold.ttf', { weight: '700' }], ['Studio Texte', 'polices/Alegreyawght.ttf', {}], ['Studio Interface', 'polices/AlegreyaSans-Regular.ttf', {}]].forEach(([n, u, o]) => {
-        const f = new FontFace(n, `url("${u}")`, Object.assign({ display: 'swap' }, o)); document.fonts.add(f);
+      // O11 : sous-ensemble latin en WOFF2 (environ 200 Ko au lieu de 1 Mo) ; le TTF complet reste en repli
+      [['Studio Titre', 'polices/AlegreyaSC-Bold', { weight: '700' }], ['Studio Texte', 'polices/Alegreyawght', {}], ['Studio Interface', 'polices/AlegreyaSans-Regular', {}]].forEach(([n, u, o]) => {
+        const f = new FontFace(n, `url("${u}.woff2") format("woff2"), url("${u}.ttf") format("truetype")`, Object.assign({ display: 'swap' }, o)); document.fonts.add(f);
         f.load().then(() => { _mesures.clear(); POLICES_V++; }).catch(() => {});
       });
     } catch (e) {}
@@ -3331,6 +3474,16 @@ const Bureau = (() => {
     bureau_code(th) { if (postes().length) return; boite(2.2, 10.2, 1.5, .7, 1.4, th.bois); boite(2.6, 10.25, .7, .1, .9, '#2b2f36', 1.4); }
   };
 
+  // outils du dessin prêtés à l'hôte du studio (hote.js) : coordonnées, boîtes, personnage, zones cliquables
+  const OUTILS_HOTE = {
+    iso, boite, poly, mix, cx: () => cx, TW: () => TW, ANIM: () => ANIM, PERSOS, ZONES, PORTE, COINS_LOISIR, S_PERSO,
+    palier: () => (PAL ? PAL.palier() : 1), nuit: () => { const h = heureDuJour(); return h < 6.5 || h > 20; },
+    // un personnage dessiné au sol (gx, gy) dont la tête sert d'ancre à l'étiquette « hote » ; renvoie [x, y, h] (px monde)
+    perso(gx, gy, look, q, vect) { const [x, y] = iso(gx, gy); TETE_DE = 'hote'; EMPR.proprio = 'hote'; try { const h = personnageXY(x, y, look, q, vect); return [x, y, h]; } finally { TETE_DE = null; EMPR.proprio = null; } },
+    // point de visite du bureau d'un poste (là où l'assistant passe le voir) et siège, ou null
+    visite(id) { const l = postes().slice(0, SLOTS.length), i = l.findIndex(p => p.id === id); if (i < 0) return null; const [sx, sy] = SLOTS[placeDe(i)]; return { x: sx + POINTS_BUREAU.visite[0], y: sy + POINTS_BUREAU.visite[1], sx: sx + .55, sy: sy + .47 }; },
+    postes: () => postes().slice(0, SLOTS.length), etat: p => etatPoste(p)
+  };
   function dessiner() {
     const th = theme(); cx.setTransform(1, 0, 0, 1, 0, 0); cx.clearRect(0, 0, cv.width, cv.height);
     cx.setTransform(DPR * CAM.z, 0, 0, DPR * CAM.z, DPR * CAM.tx, DPR * CAM.ty); ZONES.length = 0; for (const k in TETES) delete TETES[k];
@@ -3359,6 +3512,7 @@ const Bureau = (() => {
     postes().slice(0, SLOTS.length).forEach((p, i) => { const [sx, sy] = SLOTS[placeDe(i)]; const e = etatPoste(p); objets.push({ k: sx + sy, f: () => { EMPR.proprio = 'bureau:' + placeDe(i); TETE_DE = p.id; try { posteDessin(p, sx, sy, e, th); } finally { EMPR.proprio = null; TETE_DE = null; } } }); });
     const aud = posteAuditeurScene();
     if (aud) { const [sx, sy] = SLOT_AUDITEUR, e = etatPoste(aud); objets.push({ k: sx + sy, f: () => { EMPR.proprio = 'bureau:auditeur'; TETE_DE = aud.id; try { posteDessin(aud, sx, sy, e, th); } finally { EMPR.proprio = null; TETE_DE = null; } } }); }
+    if (window.HoteStudio) { try { for (const o of HoteStudio.objets(OUTILS_HOTE, th)) objets.push(o); } catch (e) { erreur('hôte du studio', e); } }   // hote.js : son coin, ses objets, lui
     const directionVisible = tout || construit.has('bureau_direction');
     if (directionVisible) objets.push({ k: 12.8 + 2.4, f: () => direction(th) });
     for (const [id, dp] of Object.entries(DEPARTS)) {
@@ -3383,6 +3537,7 @@ const Bureau = (() => {
     });
     if (aud) { const [sx, sy] = SLOT_AUDITEUR, tt = TETES[aud.id] || (() => { const [x, y] = iso(sx + .55, sy + .47); return [x, y - TW * 1.3, TW * 1.3]; })(), [ax, ay] = versEcran(tt[0], tt[1]);
       liste.push({ id: aud.id, p: aud, nom: nomPoste(aud), ax, ay, hp: tt[2] * CAM.z, ia: infoEtiq(aud.id, etatPoste(aud)), bulle: null }); }
+    if (window.HoteStudio && TETES.hote) { const [ax, ay] = versEcran(TETES.hote[0], TETES.hote[1]); const ho = HoteStudio.etiquette(); if (ho) liste.push(Object.assign(ho, { id: 'hote', ax, ay, hp: TETES.hote[2] * CAM.z, bulle: vive(PERSOS.hote) })); }
     if (TETES.maitre) { const [ax, ay] = versEcran(TETES.maitre[0], TETES.maitre[1]); liste.push({ id: 'maitre', nom: (PROFIL.maitre && PROFIL.maitre.nom) || t('perso_maitre'), ax, ay, hp: TETES.maitre[2] * CAM.z, ia: { mode: 'continu', etat: 'regard', picto: 'oeil', texte: motE('regarde'), duree: null }, bulle: null }); }
     if (a.sx != null) { const [ax, ay] = versEcran(a.sx, a.sy + 4); liste.push({ id: 'assistant', nom: nomAssistant(), ax, ay, hp: (a.h || TW * 1.2) * CAM.z, ia: { mode: 'continu', etat: 'continu', picto: 'travaille', texte: motE('orchestre'), duree: null }, bulle: vive(a) }); }
     {   // décisions ouvertes : la bulle « ? » se pose au coin de l'étiquette concernée, qui en tient compte pour sa place
@@ -3401,7 +3556,7 @@ const Bureau = (() => {
       coins[o.id] = r ? versM(r.x1 - 4, r.y0 - 2) : versM(o.ax + 14, o.ay - 4);
       coinsG[o.id] = r ? versM(r.x0 + 4, r.y0 - 2) : versM(o.ax - 14, o.ay - 4);
       if (!r) continue; surEtiq.add(o.id);   // clic sur l'étiquette : la fiche du poste, l'assistant (lui parler) ou toi (personnaliser)
-      const [x0, y0] = versM(r.x0, r.y0), [x1, y1] = versM(r.x1, r.y1), f = o.p ? () => ficheposte(o.p) : o.id === 'assistant' ? () => demander('assistant') : () => ouvrirPersonnaliser('maitre');
+      const [x0, y0] = versM(r.x0, r.y0), [x1, y1] = versM(r.x1, r.y1), f = o.p ? () => ficheposte(o.p) : o.id === 'hote' && window.HoteStudio ? () => HoteStudio.ouvrirFiche() : o.id === 'assistant' ? () => demander('assistant') : () => ouvrirPersonnaliser('maitre');
       ZONES.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, f, p: o.p, sid: o.id, etiq: 1 });
     }
     try { bullesDecision(coins, a, coinsG, surEtiq); } catch (e) { erreur('bulles de décision', e); }
@@ -3745,6 +3900,7 @@ const Quest = (() => {
     posterFond('/api/questionnaire', { chapitres_finis: REP.chapitres_finis }).catch(() => {});
     const c = (QF.chapitres || []).find(x => x.id === ch); if (!c) return;
     Bureau.construire(c.construit || [], true);
+    if (MODE_APP()) { scene.classList.add('recompense'); clearTimeout(finirChapitre.t); finirChapitre.t = setTimeout(() => scene.classList.remove('recompense'), 2000); }   // T11 : la pièce qui grandit, 2 s
     Succes.ajouter({ id: 'chapitre-' + (CONF.nom_projet || '') + '-' + ch, icone: '✎', titre: `${t('chapitre_fini')} : ${c.titre}`, sous: '', taille: 'petit' });
   }
 
@@ -3849,7 +4005,7 @@ const Quest = (() => {
     }
     const val_ = $c('#sc-valider'); if (val_) val_.onclick = async () => {
       Son.clic();
-      if (q.type === 'multi') { if (!choixMulti.size) return; await noter(q, [...choixMulti], { via: 'clic' }); }
+      if (q.type === 'multi') { if (!choixMulti.size) { /* F32 : Valider sans choix le dit, au lieu de ne rien faire */ toast(esc(LANGUE === 'fr' ? 'Choisis au moins une carte (ou « Je ne sais pas »).' : 'Pick at least one card (or “I don’t know”).'), { forcer: true }); try { val_.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(6px)' }, { transform: 'translateX(0)' }], { duration: 240 }); } catch (e) { /* rien */ } return; } await noter(q, [...choixMulti], { via: 'clic' }); }
       else if (q.type === 'curseur') await noter(q, +cur.value, { via: 'clic' });
       else if (q.type === 'personnage') { const qui = ed.dataset.qui, ap = lirePerso(ed); PROFIL[qui] = Object.assign({}, PROFIL[qui], { apparence: ap }); await posterFond('/api/profil', { [qui]: { apparence: ap } }).catch(() => {}); await noter(q, 'choisi', { via: 'clic' }); Bureau.construire(['personnages'], true); }
       else { const v = libre.value.trim(); if (!v && q.passer === false) { libre.focus(); return; } await noter(q, v || null, { via: libre.dataset.via === 'voix' ? 'voix' : 'ecrit', source: v ? 'utilisateur' : 'a_confirmer' }); }
@@ -4096,7 +4252,32 @@ function ouvrirChat() {
 $('#bt-chat').title = t('chat');
 $('#bt-chat').onclick = () => { if ($('#micro-carte').hidden || !$('#chat-texte')) ouvrirChat(); else { $('#micro-carte').hidden = true; $('#micro-carte').innerHTML = ''; } };
 
-function machineSaturee() { return auto('sante_auto') && !!(ETAT && ETAT.sante && ETAT.sante.sature); }
+// Santé du PC (jumeau du skill) : une jauge par compteur, de la même carte que les autres compteurs de la fiche : processeur,
+// mémoire, carte graphique, CHAQUE disque (occupation et sa température si on peut la lire) puis les températures des éléments
+// du PC. Une température illisible reste affichée (« non lisible sans droits »). Le bouton n'élève rien lui-même : c'est le
+// clic de l'utilisateur qui demande au serveur de lancer l'activation, et Windows demande alors « Oui ».
+function jaugesSanteHtml(jg, en) {
+  if (!jg || typeof jg !== 'object') return '';
+  if (jg.erreur) return `<p class="discret">${esc(jg.erreur)}</p>`;
+  const T = en ? { charge: 'Load', disques: 'Disks', temps: 'Temperatures', activer: 'Enable temperatures',
+    aide: 'Adds a Windows scheduled task that reads the sensors (administrator rights): Windows asks “Yes” once, on this PC. Nothing happens without your click.' }
+    : { charge: 'Charge', disques: 'Disques', temps: 'Températures', activer: 'Activer les températures',
+    aide: 'Ajoute une tâche planifiée Windows qui lit les capteurs (droits d’administrateur) : Windows demande « Oui » une fois, sur ce PC. Rien ne se fait sans ton clic.' };
+  const carte = g => `<div class="jg${g.alerte ? ' chaud' : ''}${g.lisible === false ? ' illisible' : ''}" title="${esc([g.titre, g.valeur, g.note, g.temp].filter(Boolean).join(' · '))}"><dt>${esc(g.titre)}</dt><dd>${esc(g.valeur)}</dd><span class="jauge"><i style="width:${g.pct == null ? 0 : +g.pct}%"></i></span>${g.note ? `<small>${esc(g.note)}</small>` : ''}${g.temp ? `<small class="jg-t${g.temp_lisible ? '' : ' illisible'}">${esc(g.temp)}</small>` : ''}</div>`;
+  const bloc = (titre, l) => Array.isArray(l) && l.length ? `<h3>${esc(titre)}</h3><dl class="compteurs jauges-sante">${l.map(carte).join('')}</dl>` : '';
+  return bloc(T.charge, jg.charge) + bloc(T.disques, jg.disques) + bloc(T.temps, jg.temperatures)
+    + (jg.cause ? `<p class="sante-cause"><b>${esc((en ? 'Temperatures not enabled: ' : 'Températures non activées : ') + jg.cause)}</b></p>` : '')
+    + (jg.message ? `<p class="discret">${esc(jg.message)}</p>` : '')
+    + (jg.activer ? `<div class="rangee"><button class="bts petit" data-sante-activer="1">${esc(T.activer)}</button><span class="discret" data-sante-res></span></div><p class="discret">${esc(T.aide)}</p>` : '');
+}
+document.addEventListener('click', async ev => {
+  const b = ev.target && ev.target.closest && ev.target.closest('[data-sante-activer]'); if (!b) return;
+  const res = b.parentNode.querySelector('[data-sante-res]'), en = document.documentElement.lang === 'en';
+  b.disabled = true; if (res) res.textContent = en ? 'Windows asks “Yes”…' : 'Windows demande « Oui »…';
+  try { await poster('/api/sante', { action: 'activer_temperatures', via: 'clic' }); }
+  catch (e) { b.disabled = false; if (res) res.textContent = (en ? 'refused: ' : 'refusé : ') + e.message; }
+});
+function machineSaturee() { return !!(ETAT && ETAT.sante && ETAT.sante.sature); }   // G15 (décision du 14/11) : le frein reste actif ; sante_auto ne règle que l'affichage de l'agent et de ses alertes
 // ====================================================================== tyrannie (réglage tyrannie_auto, coupé par défaut) : l'assistant devient contremaître
 // Inactifs = postes « disponible » ou en fin de tâche (une progression récente < 10 min compte comme occupée). Il va les voir
 // (remontrance courte et drôle), l'attribution de fin de tâche passe à 30 s (6 par heure, revérifié par le serveur), il dépose une
@@ -4168,13 +4349,14 @@ const Tyrannie = (() => {
     if (dg) { try { Bureau.visiter(dg.id, dg.bulle || `${dg.nom} ${FR() ? 'est bloqué' : 'is stuck'} : ${dg.raison} → ${dg.action}`); } catch (e) {} }
     else if (l.length) { const p = l[(Math.random() * l.length) | 0]; try { Bureau.visiter(p.id, pique()); } catch (e) {} }
     for (const x of AUTOS_SRV().partages || []) {                // relecture partagée (> 60 min) : bulle courte du relecteur
-      const cle = 'partage:' + x.poste + ':' + x.t; if (RENVOIS_VUS.has(cle)) continue; RENVOIS_VUS.add(cle); LS.set('tyr_renvois_vus', [...RENVOIS_VUS].slice(-50));
-      try { Bureau.dire(x.poste, x.bulle, 6); } catch (e) {}
+      const cle = 'partage:' + x.poste + ':' + x.t; if (RENVOIS_VUS.has(cle)) continue; RENVOIS_VUS.add(cle); LS.set('tyr_renvois_vus', [...RENVOIS_VUS].slice(-500));
+      if (!notifVieille((+x.t || 0) * 1000)) try { Bureau.dire(x.poste, x.bulle, 6); } catch (e) {}
     }
     for (const x of AUTOS_SRV().renvois || []) {
-      const cle = x.nom + ':' + x.t; if (RENVOIS_VUS.has(cle)) continue; RENVOIS_VUS.add(cle); LS.set('tyr_renvois_vus', [...RENVOIS_VUS].slice(-50));
+      const cle = x.nom + ':' + x.t; if (RENVOIS_VUS.has(cle)) continue; RENVOIS_VUS.add(cle); LS.set('tyr_renvois_vus', [...RENVOIS_VUS].slice(-500));   // 50 : les plus anciens sortaient et revenaient comme neufs
       const msg = t('tyr_renvoi').replace('{n}', x.nom_affiche || x.nom).replace('{m}', x.role || x.nom), t0 = x.t * 1000;
-      Bureau.dire('assistant', msg, 7); Notifs.ajouter({ id: 'tyr-' + cle, type: 'alerte', titre: msg, cible: {} });
+      if (notifVieille(t0)) { Notifs.ajouter({ id: 'tyr-' + cle, type: 'alerte', titre: msg, cible: {}, quand: t0 }); continue; }   // vieux renvoi : historique seul
+      Bureau.dire('assistant', msg, 7); Notifs.ajouter({ id: 'tyr-' + cle, type: 'alerte', titre: msg, cible: {}, quand: t0 });
       toast('<b>' + esc(msg) + '</b>', { duree: Math.max(1000, 600000 - (Date.now() - t0)), action: { libelle: t('reintegrer'), f: () => { if (Date.now() - t0 > 600000) { toast(esc(t('trop_tard'))); return; } poster('/api/reembaucher', { nom: x.nom }).then(() => toast(esc((x.nom_affiche || x.nom) + ' ' + t('reintegre')))).catch(err => toast(esc(err.message), { erreur: true })); } } });
     }
   }
@@ -4256,10 +4438,10 @@ function htmlAujourdhui() {
   const vide = `<p class="discret">${esc(t('rien'))}</p>`;
   return `<div class="carte-jour"><div class="surtitre">${esc(new Date().toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' }))}</div><h2>${esc(t('aujourdhui'))}</h2>
     ${pct !== null ? `<p class="jour-heros"><b>${pct} %</b> ${esc(t('de_la_v1'))}${rm.en_cours ? ' · ' + esc(rm.en_cours.id + ' ' + (rm.en_cours.titre || '')) : ''}</p>` : ''}
-    ${bloc(t('jour_avance'), (avance.length ? `<ul class="liste-j">${avance.map(x => `<li>✓ ${esc(x)}</li>`).join('')}</ul>` : '')
-      + (enCours.length ? `<ul class="liste-j">${enCours.map(x => `<li>▶ <b>${esc(nomPoste(x.p))}</b> · ${esc(x.e.ligne.texte)} · ${Math.round(x.e.pct || 0)} %${x.e.reste != null ? ' · ' + esc(duree(x.e.reste)) : ''}</li>`).join('')}</ul>` : '') || vide)}
-    ${bloc(t('jour_attend'), (decs.length ? decs.map(d => `<div class="rangee"><span style="flex:1">? ${esc(d.titre || d.question || d.id)}</span><button type="button" class="btp" data-jour-dec="${esc(d.id)}">${esc(t('decider'))}</button></div>`).join('') : '')
-      + (diag.length ? `<ul class="liste-j">${diag.map(x => `<li>⛔ <b>${esc(x.nom)}</b> : ${esc(x.raison)}</li>`).join('')}</ul>` : bloq.length ? `<ul class="liste-j">${bloq.map(p => `<li>⛔ ${esc(nomPoste(p))}</li>`).join('')}</ul>` : '') || vide)}
+    ${bloc(t('jour_avance'), (avance.length ? `<ul class="liste-j">${avance.map(x => `<li>${iconeEtat('regle', 14)} ${esc(x)}</li>`).join('')}</ul>` : '')
+      + (enCours.length ? `<ul class="liste-j">${enCours.map(x => `<li>${iconeEtat('travaille', 14)} <b>${esc(nomPoste(x.p))}</b> · ${esc(x.e.ligne.texte)} · ${Math.round(x.e.pct || 0)} %${x.e.reste != null ? ' · ' + esc(duree(x.e.reste)) : ''}</li>`).join('')}</ul>` : '') || vide)}
+    ${bloc(t('jour_attend'), (decs.length ? decs.map(d => `<div class="rangee"><span style="flex:1">${iconeEtat('inconnu', 14)} ${esc(d.titre || d.question || d.id)}</span><button type="button" class="btp" data-jour-dec="${esc(d.id)}">${esc(t('decider'))}</button></div>`).join('') : '')
+      + (diag.length ? `<ul class="liste-j">${diag.map(x => `<li>${iconeEtat('bloque', 14)} <b>${esc(x.nom)}</b> : ${esc(x.raison)}</li>`).join('')}</ul>` : bloq.length ? `<ul class="liste-j">${bloq.map(p => `<li>${iconeEtat('bloque', 14)} ${esc(nomPoste(p))}</li>`).join('')}</ul>` : '') || vide)}
     ${bloc(t('jour_prochaine'), prochaine ? `<p><b>${esc(prochaine.id)}</b> · ${esc(prochaine.titre || '')}${prochaine.critere ? `<br><span class="discret">${esc(t('fini_quand'))} ${esc(prochaine.critere)}</span>` : ''}</p>` : vide)}
     <div class="rangee"><button type="button" class="bts" data-jour-bureau>${esc(t('voir_bureau'))}</button></div></div>`;
 }
@@ -4284,29 +4466,59 @@ function resumeDuMatin() {
 function modeAbsent() { return !!(REGLAGES && REGLAGES.mode_absent); }
 function photoAbsence() { return { t: Date.now(), rm: RM_C ? RM_C.faites : 0, notifs: (LS.get('notifs', []) || []).length }; }
 function rapportAbsence(avant, matin) {
-  const duree_ = duree((Date.now() - avant.t) / 60000), notifs = (LS.get('notifs', []) || []).filter(n => (n.t || 0) > avant.t);
+  // avant.parTemps : pas de photo sur cet appareil (absence lancée ailleurs, navigateur vidé, PC redémarré) : début gardé par le serveur ; durée jusqu'à la fin de l'absence
+  const finAbs = isFinite(Date.parse(avant.fin)) ? Date.parse(avant.fin) : Date.now(), duree_ = duree((finAbs - avant.t) / 60000), notifs = (LS.get('notifs', []) || []).filter(n => (n.t || 0) > avant.t);
   const rmE = window.Roadmap && Roadmap.etat ? Roadmap.etat() : null;
   const verses = rmE ? rmE.jalons.flatMap(j => j.taches).filter(x => x && ['verse', 'ecart'].includes(x.statut) && Date.parse(x.fait_le || '') > avant.t).map(x => `${x.id} · ${x.titre}`) : [];
   const reps = REP_ASSIST.filter(m => Date.parse(m.cree_le || '') > avant.t).map(m => String(m.titre || m.texte || '').split('\n')[0].slice(0, 120));
   const fini = [...new Set(verses.concat(notifs.filter(n => n.type === 'fait' || n.type === 'succes').map(n => n.titre + (n.ligne ? ' · ' + n.ligne : ''))))];
-  const equipe = notifs.filter(n => /embauch|renvoy|hired|let .* go/i.test(n.titre)).map(n => n.titre);
-  const dec = decisionsOuvertes().map(d => d.titre || d.question || d.id), pb = ((ETAT && ETAT.anomalies) || []).map(a => (a.fichier || '') + ' : ' + (a.erreur || a.message || ''))
+  // F43 : filtre sur le type de notification (id), plus sur le texte : embauches, renvois et réembauches à la main comptent aussi
+  // lot E : les automatismes gardent leur historique côté serveur (etat.json → automatismes.historique) : embauches, renvois,
+  // attributions et relectures faites sans onglet ouvert comptent ; les notifications n'ajoutent que ce qui a été fait à la main
+  const H_ = (ETAT && ETAT.automatismes && Array.isArray(ETAT.automatismes.historique)) ? ETAT.automatismes.historique : null;
+  const dansAbs = x => (+x.t || 0) * 1000 > avant.t && (+x.t || 0) * 1000 <= finAbs + 60e3, histo = (H_ || []).filter(x => x && dansAbs(x));
+  const nomId = id => { const p = postes().find(q => q.id === id); return p ? nomPoste(p) : String(id || ''); };
+  const equipe = [...new Set(histo.filter(x => /^(embauche|embauche_interim|renvoi|renvoi_interim)$/.test(x.type)).map(x => t(/^renvoi/.test(x.type) ? 'abs_renvoi' : 'abs_embauche').replace('{n}', x.nom_affiche || nomId(x.poste)))
+    .concat(notifs.filter(n => !(H_ && /^(tyr|emb-auto)-/.test(String(n.id || ''))) && (/^(rec|renvoi|reemb|emb-auto|tyr)-/.test(String(n.id || '')) || /embauch|renvoy|hired|let .* go/i.test(n.titre || ''))).map(n => n.titre)))];
+  const autos = histo.filter(x => /^(attribution|relecteur|partage)$/.test(x.type)).map(x => nomId(x.poste) + ' : ' + (x.titre || t('abs_partage').replace('{n}', x.n || 0)));
+  // lot E : décisions tranchées à sa place (cloche.py decider : decide_par, raison, decide_le) pendant cette absence
+  const libChoix = d => { const c = (Array.isArray(d.choix) ? d.choix : []).find(c => (typeof c === 'string' ? c : c.id) === d.reponse); return c ? (typeof c === 'string' ? c : (c.libelle || c.id)) : String(d.reponse || ''); };
+  const decidees = DECISIONS.filter(d => { if (!d || !d.decide_par) return false; const q = Date.parse(d.decide_le || d.repondue_le || ''); return isFinite(q) && q > avant.t - 60e3 && q <= finAbs + 60e3; });
+  const blocDecide = `<h3>${esc(t('abs_decide'))}</h3>` + (decidees.length ? `<ol class="liste-j">${decidees.map(d => `<li><b>${esc(d.titre || d.question || d.id)}</b> → ${esc(libChoix(d))}${d.raison ? ` <span class="discret">(${esc(d.raison)})</span>` : ''}`
+    + (d.change_par_utilisateur ? ` <span class="discret">· ${esc(t('abs_change'))}</span>` : ` <button type="button" class="bts" data-abs-changer="${esc(d.id)}">${esc(t('changer'))}</button>`) + '</li>').join('')}</ol>` : `<p class="discret">${esc(t('rien'))}</p>`);
+  const dec = decisionsOuvertes().map(d => d.titre || d.question || d.id), pb = ((ETAT && ETAT.anomalies) || []).map(a => (a.fichier || '') + ' : ' + (a.raison || a.erreur || a.message || ''))
     .concat(postes().filter(p => { try { return etatPoste(p).etat === 'bloque'; } catch (e) { return false; } }).map(p => nomPoste(p) + ' : ' + t('bloque')));
   const bloc = (h, l) => `<h3>${esc(h)}</h3>${l.length ? `<ol class="liste-j">${l.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('rien'))}</p>`}`;
   Panneau.remplacer('absence', el => { el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t(matin ? 'resume_matin' : 'absence_titre'))} (${esc(duree_)})</h2><p><i>${esc(t('absence_sous'))}</i></p>`
-    + bloc(t('abs_fini'), fini) + (RM_C && RM_C.faites > avant.rm ? `<p>Roadmap : +${RM_C.faites - avant.rm}</p>` : '') + bloc(t('abs_equipe'), equipe) + bloc(t('abs_dec'), dec) + bloc(t('abs_pb'), pb)
+    + bloc(t('abs_fini'), fini) + (!avant.parTemps && RM_C && RM_C.faites > avant.rm ? `<p>Roadmap : +${RM_C.faites - avant.rm}</p>` : '') + bloc(t('abs_auto'), autos) + bloc(t('abs_equipe'), equipe) + blocDecide + bloc(t('abs_dec'), dec) + bloc(t('abs_pb'), pb)
     + (reps.length ? bloc(t('abs_reponses'), reps) : '') + `<div class="rangee" style="margin-top:12px"><button type="button" class="btp" data-tout-vu>${esc(t('tout_vu'))}</button></div>`;
-    const b = el.querySelector('[data-tout-vu]'); if (b) b.onclick = () => { Panneau.fermer(); try { Notifs.toutLu && Notifs.toutLu(); } catch (e) { /* rien */ } }; }, { large: true });
-  Notifs.ajouter({ id: 'absence-' + Date.now(), type: 'info', titre: t('absence_titre') + ' (' + duree_ + ')', ligne: `${fini.length} · ${equipe.length} · ${dec.length} · ${pb.length}`, cible: {} }, true);
+    const b = el.querySelector('[data-tout-vu]'); if (b) b.onclick = () => { Panneau.fermer(); try { Notifs.toutLu && Notifs.toutLu(); } catch (e) { /* rien */ } };
+    el.querySelectorAll('[data-abs-changer]').forEach(c => c.onclick = () => { const d = DECISIONS.find(x => x.id === c.dataset.absChanger); if (d) { Panneau.fermer(); setTimeout(() => ouvrirDecision(d), 450); } }); }, { large: true });
+  Notifs.ajouter({ id: 'absence-' + Date.now(), type: 'info', titre: t('absence_titre') + ' (' + duree_ + ')', ligne: `${fini.length} · ${autos.length} · ${equipe.length} · ${decidees.length} · ${dec.length} · ${pb.length}`, cible: {} }, true);
+  LS.set('absence_vue', avant.fin || 'local-' + Date.now());
 }
 function majAbsent() { const on = modeAbsent(), b = $('#bt-absent'); if (!b) return; b.classList.toggle('actif', on); const sp = b.querySelector('span'), v = on ? t('je_suis_la') : t('mode_nuit'); if (sp.textContent !== v) sp.textContent = v; if ($('#lune').hidden !== !on) $('#lune').hidden = !on; }
 $('#bt-absent').onclick = async () => {
   const on = !modeAbsent(); Son.clic(); if (on) LS.set('absence_photo', photoAbsence());
   REGLAGES = Object.assign({}, REGLAGES, { mode_absent: on }); majAbsent();
   if (document.documentElement.dataset.essai !== 'sans-envoi') poster('/api/reglages', { mode_absent: on }).catch(e => toast(esc(e.message), { erreur: true, forcer: true }));
-  if (!on) { const a = LS.get('absence_photo', null); LS.del('absence_photo'); if (a) rapportAbsence(a); } else toast('🌙 ' + esc(t('nuit_on')), { forcer: true });
+  if (!on) { const a = LS.get('absence_photo', null); LS.del('absence_photo'); if (a) { a.fin = 'clic-' + Date.now(); rapportAbsence(a); } } else toast('🌙 ' + esc(t('nuit_on')), { forcer: true });
 };
-setInterval(majAbsent, 3000);
+// retour d'absence : avec la photo de cet appareil si elle existe, sinon d'après l'absence gardée par le serveur (début/fin), une seule fois par absence et par appareil, si elle a fini il y a moins de 12 h
+function absenceServeurAMontrer() {
+  const ab = REGLAGES && REGLAGES.absence_derniere; if (!ab || !ab.fin || !ab.debut || modeAbsent()) return null;
+  const fin = Date.parse(ab.fin), debut = Date.parse(ab.debut); if (!isFinite(fin) || !isFinite(debut) || Date.now() - fin > 12 * 3600e3) return null;
+  const vue = String(LS.get('absence_vue', '') || '');
+  if (/^(clic|local)-\d+$/.test(vue) && Math.abs(fin - +vue.split('-')[1]) < 5 * 60e3) { LS.set('absence_vue', ab.fin); return null; }   // déjà montrée au clic « Je suis là »
+  return vue === ab.fin ? null : { t: debut, fin: ab.fin, parTemps: true };
+}
+setInterval(() => {
+  majAbsent(); if (modeAbsent() || !REGLAGES || !ETAT) return;
+  const photo = LS.get('absence_photo', null), ab = REGLAGES.absence_derniere;
+  if (photo && REGLAGES.mode_absent === false) { LS.del('absence_photo'); if (ab && ab.fin) photo.fin = ab.fin; rapportAbsence(photo); return; }
+  const srv = absenceServeurAMontrer(); if (srv) rapportAbsence(srv);
+}, 3000);
+window.__absent = { photo: photoAbsence, rapport: rapportAbsence, serveur: absenceServeurAMontrer };   // essais
 
 // ====================================================================== gros micro (bas de l'écran) : dicter une demande, comme le studio d'origine
 // Mode « appui » : clic pour commencer, clic pour finir ; « maintien » : on parle tant que le bouton est appuyé.
@@ -4320,7 +4532,7 @@ const GrosMicro = (() => {
   function montrerEdition() {
     const c = carte(); c.hidden = false;
     c.innerHTML = `<div class="surtitre">${esc(t('ta_demande'))}</div><textarea id="micro-texte" maxlength="2000" placeholder="${esc(t('ecrire_ici'))}">${esc(texte)}</textarea>
-      <div class="rangee"><button type="button" class="bts micro" data-micro="#micro-texte">🎙 ${esc(t('dicter'))}</button></div>
+      <div class="rangee">${boutonMicro('#micro-texte')}</div>
       <div class="rangee"><label class="discret">${esc(t('pour'))}</label><select id="micro-dest">${dests().map(([v, n]) => `<option value="${esc(v)}">${esc(n)}</option>`).join('')}</select><button type="button" class="btp" id="micro-envoyer">${esc(t('envoyer'))}</button><button type="button" class="bts" id="micro-annuler">${esc(t('annuler'))}</button><span class="discret" id="micro-res"></span></div>`;
     lierMicros(c); const ta = c.querySelector('#micro-texte'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
     c.querySelector('#micro-annuler').onclick = fermer;
@@ -4522,7 +4734,7 @@ window.__bureauxEssai = () => new Promise(fin => Bureau.releve(R => {
 let DERNIER_CHAMP = null;
 document.addEventListener('focusin', e => { if (e.target.matches('textarea, input[type=text]')) DERNIER_CHAMP = e.target; });
 document.addEventListener('keydown', e => {
-  if ((e.key !== 'v' && e.key !== 'V') || e.ctrlKey || e.metaKey || e.altKey || !RACCOURCIS() || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName)) return;
+  if ((e.key !== 'v' && e.key !== 'V') || e.repeat /* S29 : V maintenue ignorée */ || e.ctrlKey || e.metaKey || e.altKey || !RACCOURCIS() || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName)) return;
   const c = DERNIER_CHAMP && DERNIER_CHAMP.isConnected ? DERNIER_CHAMP : null, b = c && c.id && document.querySelector(`[data-micro="#${CSS.escape(c.id)}"]`);
   e.preventDefault(); if (c && b) { c.focus(); dicter(c, b); } else demander('assistant');
 });
@@ -4534,6 +4746,14 @@ function verifierMessages() {
   // sous l'en-tête, et sous le bandeau « données du studio anciennes » s'il est affiché (au téléphone, il cachait son texte et Relancer)
   const basAl = ['#alerte-etat', '#alerte-etat-ancien'].map(s => $(s)).filter(x => x && !x.hidden && x.getClientRects().length).reduce((m, x) => Math.max(m, x.getBoundingClientRect().bottom), 0);
   el.style.setProperty('--haut', Math.max((($('#entete') && $('#entete').offsetHeight) || 70), Math.ceil(basAl)) + 8 + 'px');
+  // F (assistant actif) : aucune session Claude ouverte depuis le seuil alors que des demandes ou des messages attendent : dire pourquoi
+  const se = ETAT && ETAT.session && typeof ETAT.session === 'object' ? ETAT.session : null;
+  if (se && se.absente) {
+    const parts = [(+se.demandes ? se.demandes + ' ' + t('session_dem') : ''), (+se.messages ? se.messages + ' ' + t('session_msg') : '')].filter(Boolean).join(', ');
+    el.textContent = `⏸ ${se.age_min == null ? t('session_aucune') : t('session_absente').replace('{m}', Math.round(se.age_min))}${parts ? ' (' + parts + ')' : ''} · ${t('session_ouvre')}`;
+    el.dataset.genre = 'session'; el.hidden = false; el.onclick = () => Conv.ouvrir(); return;
+  }
+  el.dataset.genre = 'message';
   if (!l.length) { el.hidden = true; return; }
   const m = l[0], min = Math.round((Date.now() - Date.parse(m.cree_le)) / 60000);
   const vu = pjDuTexte(m.texte).trim() || ('📎 ' + ((Array.isArray(m.pieces) && m.pieces.length) || 1));
@@ -4559,12 +4779,13 @@ function coutAutos(choix) {             // estimation grossière, en milliers de
 function ouvrirEnsemble() {
   Panneau.remplacer('ensemble', el => {
     const ps = postes(), sy = (ETAT && ETAT.systeme) || {}, gi = (ETAT && ETAT.git) || {};
-    el.innerHTML = `<div class="surtitre">${esc(CONF.nom_projet || t('studio'))}</div><h2>${esc(t('ensemble'))}</h2><h3>${esc(t('ens_postes'))}</h3>
+    el.innerHTML = `<div class="surtitre">${esc(CONF.nom_projet || t('studio'))}</div><h2>${esc(t('ensemble'))}</h2>
+      <h3>${esc(t('restru'))}</h3><div class="rangee"><button type="button" class="bts" id="bt-restru" title="${esc(t('restru_tt'))}" data-tt-t="restru_tt">${esc(t('restru_bt'))}</button><span class="discret" id="restru-res"></span></div><div data-restru-dernier></div><h3>${esc(t('ens_postes'))}</h3>
       <div data-vif-ensemble>${ensemblePostes()}</div>
       ${SUGG.length ? `<h3>${esc(t('ens_sugg'))}</h3>${SUGG.map((x, i) => `<div class="prop sugg-${esc(x.gravite || 'info')}"><b>${x.gravite === 'urgent' ? '⚠ ' : ''}${esc(x.titre)}</b>${x.explication ? `<br><small>${esc(x.explication)}</small>` : ''}${x.action_proposee ? `<br><small>→ ${esc(x.action_proposee)}</small>` : ''}<div class="rangee"><button type="button" class="bts petit" data-sugg-confier="${i}">${esc(t('confier_assistant'))}</button></div></div>`).join('')}` : ''}
       ${Object.keys(sy).length ? `<h3>${esc(t('ens_systeme'))}</h3><p class="discret">${Object.entries(sy).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}
       ${Object.keys(gi).length ? `<h3>${esc(t('ens_git'))}</h3><p class="discret">${Object.entries(gi).filter(([, v]) => typeof v !== 'object').map(([k, v]) => esc(k) + ' : ' + esc(v)).join(' · ')}</p>` : ''}`;
-    lierEnsemble(el);
+    lierEnsemble(el); Restru.lier(el);
   });
 }
 function ensemblePostes() {
@@ -4580,7 +4801,7 @@ function ouvrirJournal() {
   });
 }
 function ouvrirJournalAssistant() {
-  LS.set('jassist_vus', REP_ASSIST.length); $('#nb-jassist').textContent = '';
+  jassistVu(); $('#nb-jassist').textContent = '';
   Panneau.remplacer('jassist', el => {
     const l = REP_ASSIST.slice().reverse();
     el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('journal_assistant'))}</h2>${l.length ? `<ol class="liste-j">${l.map((m, i) => `<li><time>${esc(String(m.cree_le || '').slice(5, 16).replace('T', ' '))}</time><a href="#" data-i="${i}"><b>${esc(String(m.titre || String(m.texte || '').split('\n')[0]).slice(0, 110))}</b></a><div data-plein="${i}" hidden style="white-space:pre-wrap;margin-top:6px">${esc(String(m.texte || ''))}</div></li>`).join('')}</ol>` : `<p class="discret">${esc(t('jassist_rien'))}</p>`}`;
@@ -4592,7 +4813,7 @@ async function verifierOptim() {
   const o = await lire('optimisation.json'); if (!o || !o.heure) return;
   const neuf = !OPTIM || OPTIM.heure !== o.heure; OPTIM = o;
   const nb = (o.propositions || []).filter(x => x && x.id && !OPTIM_FAIT.has(x.id)).length; $('#nb-optim').textContent = nb ? String(nb) : '';
-  if (neuf && LS.get('optim_vu', '') !== o.heure) { LS.set('optim_vu', o.heure); Notifs.ajouter({ id: 'optim-' + o.heure, type: 'info', titre: t('optim_titre'), ligne: o.resume || '', cible: {} }); }
+  if (neuf && LS.get('optim_vu', '') !== o.heure) { LS.set('optim_vu', o.heure); Notifs.ajouter({ id: 'optim-' + o.heure, type: 'info', titre: t('optim_titre'), ligne: o.resume || '', cible: {}, quand: modeAbsent() ? Date.now() - 31 * 60e3 : quandHeure(o.heure) }); }
 }
 function ouvrirOptimisation() {
   Panneau.remplacer('optim', el => {
@@ -4681,6 +4902,22 @@ Object.assign(TXT.en, {
   pj_max: '{n} attachments at most', pj_max_l: 'per message', pj_type: 'type refused', pj_gros: 'over 20 MB', pj_vide: 'empty file', pj_envoi: 'uploading…', pj_retirer: 'Remove', pj_encours: 'attachments still uploading…', pj_pieces: 'Files…',
   pj_ailleurs: 'To attach a file', pj_manque: 'file not found', dem_vieille: 'no answer since {h}: you can request again', dem_annuler: 'Cancel the request', dem_annulee: 'request cancelled', pj_ailleurs_l: 'open the Conversation, then drop it inside', pj_refuse: 'refused', capture: 'screenshot'
 });
+// Toute l'équipe (equipe.js, jumeau du studio d'origine) : bouton de la barre du haut, textes de la page dans equipe.js
+Object.assign(TXT.fr, { toute_equipe: 'Toute l’équipe', a_toute_equipe: 'Toute l’équipe : tout le monde, même ceux qui travaillent hors du studio (chaînes Claude), et la gestion de chaque poste (nom, métier, modèle, effort, renvoi, réembauche)' });
+Object.assign(TXT.en, { toute_equipe: 'Whole team', a_toute_equipe: 'Whole team: everyone, even those working outside the studio (Claude chains), and managing each desk (name, trade, model, effort, let go, hire back)' });
+const EQ_ENV = {
+  langue: () => (LANGUE === 'en' ? 'en' : 'fr'), par: 'utilisateur', ouvert: () => Panneau.ouvert() === 'equipe',
+  rafraichir: () => { const c = $('#pn-corps'); if (Panneau.ouvert() === 'equipe' && c) refaireVue(c, vEquipe(), lierEquipe); },
+  restruHtml: () => `<div class="rangee"><button type="button" class="bts" id="bt-restru" title="${esc(t('restru_tt'))}" data-tt-t="restru_tt">${esc(t('restru_bt'))}</button><span class="discret" id="restru-res"></span></div><div data-restru-dernier></div>`,
+  restruLier: el => Restru.lier(el), sansEnvoi: () => ESSAI_SANS_ENVOI(), toast: (h, err) => toast(h, err ? { erreur: true } : {}),
+  renommer: (m, nom) => poster('/api/agent', { id: m.id, nom_affiche: nom })
+};
+function ouvrirEquipe() {
+  const rendre = el => { const h = vEquipe(); el.innerHTML = h; el._html = h; lierEquipe(el); };
+  Panneau.remplacer('equipe', rendre);
+  chargerEquipe(true).then(() => { if (Panneau.ouvert() === 'equipe') EQ_ENV.rafraichir(); });
+}
+$('#bt-equipe').onclick = () => ouvrirEquipe();
 $('#bt-modeles').onclick = () => ouvrirModeles();
 $('#bt-audit').onclick = () => ouvrirAudit();
 const ESSAI_SANS_ENVOI = () => document.documentElement.dataset.essai === 'sans-envoi';
@@ -5057,8 +5294,8 @@ const Tuto = (() => {
     const l = ETAPES[LANGUE] || ETAPES.en, b = box(); b.hidden = false;
     if (i < l.length) {
       const [sel, titre, texte0] = l[i];
-      const texte = MODE_APP() ? String(texte0).replace(/^À gauche, ton équipe/, 'En bas, ton équipe').replace(/^On the left, your team/, 'At the bottom, your team').replace(/\bClique\b/g, 'Touche').replace(/\bclique\b/g, 'touche').replace(/\bClick\b/g, 'Tap').replace(/\bclick\b/g, 'tap') : texte0;
-      b.innerHTML = `<div class="pas">${esc(nomAssistant())} · ${i + 1} / ${l.length + 1}</div><h3>${esc(titre)}</h3><p>${esc(texte)}</p><div class="rangee"><button type="button" class="btp" data-s>${esc(t('tuto_suivant'))}</button><button type="button" class="bts" data-p>${esc(t('tuto_passer'))}</button></div>`;
+      const texte = MODE_APP() || TACTILE() ? motsTactiles(texte0) : texte0;   // jumeaux : aussi « Un clic » → « Une touche », « d’un clic », « One click »
+      b.innerHTML = `<div class="pas">${esc(nomAssistant())} · ${i + 1} / ${l.length + 1}</div><h3>${esc(titre)}</h3><p>${esc(texte).replace(/[▶⏸↔☕]/g, c => iconeEtat(c, 14))}</p><div class="rangee"><button type="button" class="btp" data-s>${esc(t('tuto_suivant'))}</button><button type="button" class="bts" data-p>${esc(t('tuto_passer'))}</button></div>`;
       b.querySelector('[data-s]').onclick = () => { Son.clic(); i++; etape(); }; b.querySelector('[data-p]').onclick = () => finir();
       try { Bureau.dire('assistant', titre, 5); } catch (e) {}
       requestAnimationFrame(() => placer(sel)); return;
@@ -5122,7 +5359,14 @@ function ajusterOutils() {
   if (haut()) en.classList.add('serre4');
   fin();
 }
-{ let tA = 0; addEventListener('resize', () => { clearTimeout(tA); tA = setTimeout(ajusterOutils, 120); }); setInterval(() => { try { ajusterOutils(); } catch (e) { /* rien */ } }, 3000); }
+// O12 : plus de mise en page forcée toutes les 3 s : la barre est réajustée quand sa taille ou ses boutons changent (repli : minuterie si pas de ResizeObserver)
+{ let tA = 0; const plusTard = () => { clearTimeout(tA); tA = setTimeout(() => { try { ajusterOutils(); } catch (e) { /* rien */ } }, 120); };
+  addEventListener('resize', plusTard);
+  const nav = $('#entete nav.outils'), en = $('#entete');
+  if (window.ResizeObserver && nav && en) { let w0 = -1; new ResizeObserver(() => { const w = en.clientWidth; if (w !== w0) { w0 = w; plusTard(); } }).observe(en);
+    if (window.MutationObserver) new MutationObserver(m => { if (m.some(x => x.type === 'childList' || x.attributeName === 'hidden')) plusTard(); }).observe(nav, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+    try { document.fonts && document.fonts.ready.then(plusTard); } catch (e) { /* rien */ } }
+  else setInterval(() => { try { ajusterOutils(); } catch (e) { /* rien */ } }, 3000); }
 window.__outilsEssai = () => { ajusterOutils(); const en = $('#entete'), nav = $('#entete nav.outils'), v = [...nav.children].filter(x => x.offsetParent && x.id !== 'menu-plus'); return { classes: en.className, lignes: new Set(v.map(x => x.offsetTop)).size, hauteur: en.offsetHeight, app: document.body.classList.contains('app'), plein: !!document.fullscreenElement }; };   // essais
 // P7 : bascules annoncées (aria-pressed)
 setInterval(() => { try {
@@ -5155,7 +5399,7 @@ document.addEventListener('click', e => { const n = $('#notifs'); if (!n.hidden 
       succes: s => Succes.ajouter({ id: 'rm:' + (s.titre || ''), icone: s.icone, titre: s.titre, sous: s.sous, taille: s.taille, son: s.son, clic: s.clic, cible: { roadmap: true } }),
       relancer: texte => document.documentElement.dataset.essai === 'sans-envoi' ? Promise.resolve() : posterFond('/api/demande', { cible: 'assistant', texte, via: 'ecrit' }) });
     const rb = $('#bt-roadmap'); if (rb) $('.outils').insertBefore(rb, $('#bt-decisions'));
-    { const nav = $('.outils'); ['bt-conv', 'bt-ensemble', 'bt-images', 'bt-journal', 'bt-roadmap', 'bt-decisions', 'bt-assistant', 'bt-optim', 'bt-modeles', 'bt-audit', 'bt-jassist', 'bt-perso', 'bt-recruter', 'bt-rapport', 'bt-notifs', 'bt-reglages', 'bt-plein', 'bt-absent', 'bt-couper', 'bt-son'].forEach(id => { const b = $('#' + id); if (b) nav.appendChild(b); }); hierarchiserOutils(); }
+    { const nav = $('.outils'); ['bt-conv', 'bt-ensemble', 'bt-equipe', 'bt-images', 'bt-journal', 'bt-roadmap', 'bt-decisions', 'bt-assistant', 'bt-optim', 'bt-modeles', 'bt-audit', 'bt-jassist', 'bt-perso', 'bt-recruter', 'bt-rapport', 'bt-notifs', 'bt-reglages', 'bt-plein', 'bt-absent', 'bt-couper', 'bt-son'].forEach(id => { const b = $('#' + id); if (b) nav.appendChild(b); }); hierarchiserOutils(); }
   }
   await Quest.demarrer().catch(e => erreur('questionnaire', e));
   try { ajusterOutils(); majBoutonPlein(); } catch (e) { erreur('barre d’outils', e); }
@@ -5166,5 +5410,6 @@ document.addEventListener('click', e => { const n = $('#notifs'); if (!n.hidden 
 })();
 </script>
 <script src="quetes_page.js"></script>
+<script src="hote.js"></script>
 </body>
 </html>

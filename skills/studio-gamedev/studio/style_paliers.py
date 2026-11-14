@@ -27,6 +27,10 @@ import shutil
 import sys
 import time
 
+if os.path.dirname(os.path.abspath(__file__)) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique communes)
+
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 # Style de référence « Atelier » (jumeau du studio de référence : mêmes valeurs que :root de studio.html)
@@ -157,8 +161,7 @@ def lire_da(projet):
     """(da nettoyé ou None, problèmes). Le nettoyage ne garde que des valeurs sûres."""
     ch = os.path.join(projet, ".studio", "da.json")
     try:
-        with open(ch, encoding="utf-8-sig") as f:
-            brut = json.load(f)
+        brut = jsonio.lire_strict(ch)
     except FileNotFoundError:
         return None, []
     except Exception as e:  # noqa: un da.json fautif ne bloque jamais le studio
@@ -418,22 +421,39 @@ def css(res):
     return "\n".join(l) + "\n"
 
 
+def _lire_texte(ch):
+    try:
+        with open(ch, encoding="utf-8-sig", newline="") as f:
+            return f.read()
+    except (OSError, ValueError):
+        return None
+
+
 def ecrire(projet, res):
-    """Écrit .studio/da/habillage.css et .studio/habillage.json (rien d'autre)."""
+    """Écrit .studio/da/habillage.css et .studio/habillage.json (rien d'autre).
+    O7 : un fichier identique n'est pas réécrit ; habillage.json est comparé sans sa date « maj »."""
     d = os.path.join(projet, ".studio", "da")
     os.makedirs(d, exist_ok=True)
-    with open(os.path.join(d, "habillage.css.tmp"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(res["css"])
-    os.replace(os.path.join(d, "habillage.css.tmp"), os.path.join(d, "habillage.css"))
+    css_ch = os.path.join(d, "habillage.css")
+    if _lire_texte(css_ch) != res["css"]:
+        jsonio.ecrire_texte(css_ch, res["css"], newline="\n")
     sortie = {k: v for k, v in res.items() if k != "css"}
-    sortie["maj"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     ch = os.path.join(projet, ".studio", "habillage.json")
-    with open(ch + ".tmp", "w", encoding="utf-8", newline="\n") as f:
-        json.dump(sortie, f, ensure_ascii=False, indent=1)
-    os.replace(ch + ".tmp", ch)
+    try:
+        ancien = json.loads(_lire_texte(ch) or "null")
+    except ValueError:
+        ancien = None
+    if isinstance(ancien, dict) and {k: v for k, v in ancien.items() if k != "maj"} == sortie:
+        return
+    sortie["maj"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+    jsonio.ecrire(ch, sortie, newline="\n")
 
 
 def main(argv=None):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")   # sortie redirigée sous Windows : accents intacts
+    except Exception:
+        pass
     a = list(sys.argv[1:] if argv is None else argv)
     if not a or a[0].startswith("-"):
         print(__doc__)
@@ -442,8 +462,7 @@ def main(argv=None):
     mode = a[a.index("--mode") + 1] if "--mode" in a else "progressif"
     etat = {}
     try:
-        with open(os.path.join(projet, ".studio", "quetes_etat.json"), encoding="utf-8") as f:
-            etat = {k: v.get("statut") for k, v in json.load(f).get("quetes", {}).items()}
+        etat = {k: v.get("statut") for k, v in jsonio.lire_strict(os.path.join(projet, ".studio", "quetes_etat.json")).get("quetes", {}).items()}
     except Exception:  # noqa
         pass
     res = calculer(projet, etat, mode, copier_fichiers="--ecrire" in a)

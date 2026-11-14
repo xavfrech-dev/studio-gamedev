@@ -40,7 +40,7 @@ for _flux in (sys.stdout, sys.stderr):
         _flux.reconfigure(encoding="utf-8", errors="replace")
     except (AttributeError, ValueError):
         pass
-PORTS_INTERDITS = {8790, 8765, 8766, 8810, 8901, 8902}
+PORTS_INTERDITS = {8790}   # port par défaut du vrai studio ; un port pris est déjà écarté par port_libre()
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 40
 ECHECS = []
 

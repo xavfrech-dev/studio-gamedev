@@ -8,7 +8,8 @@ Usage (Python 3.10+, bibliothèque standard) :
   python -I -B essai_complet.py verser J0 [--dossier D]   passe toutes les tâches du jalon à « verse » (le succès se débloque)
   python -I -B essai_complet.py verifier  [--dossier D]   vérifie roadmap.json (schéma, identifiants, dépendances, boucles)
   python -I -B essai_complet.py serveur   [--dossier D] [--port 8810]   lance serveur_studio.py (premier port libre, jamais 8790)
-  python -I -B essai_complet.py tout      [--dossier D] [--port N]   preparer + remplir + roadmap + verifier, puis « fonctions »
+  python -I -B essai_complet.py tout      [--dossier D] [--port N]   preparer + remplir + roadmap + verifier, puis « fonctions »,
+                                          puis essai_outils.py et essai_compat310.py (un rouge : code 1)
   python -I -B essai_complet.py fonctions [--dossier D] [--port N]   mode travail sans navigateur, serveur sur un port libre :
                                           bulles de décision (décision rattachée à un poste), fil (messages dans etat.json,
                                           demandes au nom unique, doublon 60 s, une optimisation en attente), fin de tâche
@@ -42,6 +43,9 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 STUDIO = os.path.dirname(ICI)
 SKILL = os.path.dirname(STUDIO)
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
+if STUDIO not in sys.path:
+    sys.path.insert(0, STUDIO)
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py, la même écriture que le studio)
 for _flux in (sys.stdout, sys.stderr):   # console Windows sans UTF-8 : « ★ » ne doit pas faire planter --help
     try:
         _flux.reconfigure(encoding="utf-8", errors="replace")
@@ -51,22 +55,30 @@ PORTS_INTERDITS = {8790}   # port par défaut du vrai studio : l'essai ne le pre
 
 
 def ecrire(chemin, donnees):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        if isinstance(donnees, str):
-            f.write(donnees)
-        else:
-            json.dump(donnees, f, ensure_ascii=False, indent=1)
-    os.replace(tmp, chemin)
+    if isinstance(donnees, str):
+        jsonio.ecrire_texte(chemin, donnees)
+    else:
+        jsonio.ecrire(chemin, donnees)
 
 
 def lire(chemin, defaut=None):
-    try:
-        with open(chemin, encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)
+
+
+def essais_annexes():
+    """« tout » lance aussi les essais sans serveur : petits outils (essai_outils.py) et compatibilité 3.10
+    (essai_compat310.py). Un rouge arrête « tout » (code 1)."""
+    rouges = []
+    for nom in ("essai_outils.py", "essai_compat310.py"):
+        print(f"--- {nom}", flush=True)
+        r = subprocess.run([sys.executable, "-I", "-B", "-X", "utf8", os.path.join(ICI, nom)], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=900)
+        sortie = (r.stdout or "") + (r.stderr or "")
+        print(sortie.strip()[-3000:], flush=True)
+        if r.returncode != 0:
+            rouges.append(f"{nom} (code {r.returncode})")
+    if rouges:
+        raise SystemExit("ÉCHEC : " + ", ".join(rouges))
 
 
 def maintenant():
@@ -103,7 +115,10 @@ def preparer(d, port):
     if os.path.basename(os.path.normpath(d)) != "essai_skill":
         raise SystemExit("refus : le dossier d'essai doit s'appeler essai_skill")
     if os.path.isdir(d):
-        shutil.rmtree(d)
+        def _lecture_seule(fn, p, _e):               # Windows : les objets .git sont en lecture seule
+            os.chmod(p, 0o666)
+            fn(p)
+        shutil.rmtree(d, onerror=_lecture_seule)
     st = os.path.join(d, ".studio")
     for sous in ("progression", "demandes", "demandes_vocales", "docs"):
         os.makedirs(os.path.join(st if sous != "docs" else d, sous), exist_ok=True)
@@ -641,6 +656,124 @@ def cmd_fonctions(d, port):
         os.remove(rep_ch)
         api("/api/repondre", {"id": "dec-002", "choix": "automne"})
         ok("décision : réponse refusée (503) sans rien écrire si reponses.json est illisible, puis acceptée")
+
+        # plan de restructuration : plan sous la cloche sans rien appliquer, puis application réversible
+        api("/api/recruter", {"nom": "quest", "nom_affiche": "quest", "role": "Écrit les quêtes du jeu", "mission": "Quêtes.", "lancer": False})
+        api("/api/recruter", {"nom": "bruiteur", "nom_affiche": "Bruiteur", "role": "Bruitages audio du jeu", "mission": "Bruitages.", "lancer": False})
+        ecrire(os.path.join(st, "progression", "bruiteur.json"), {"pct": 50, "texte": "bruitages de la forêt"})   # en plein travail
+        orph = os.path.join(d, ".claude", "agents", "vieux-essai.md")
+        with open(orph, "w", encoding="utf-8") as f:
+            f.write("---\nname: vieux-essai\n---\n<!-- studio-gamedev : recrue -->\nAncien agent.\n")
+        statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
+        for f in os.listdir(os.path.join(st, "demandes")):
+            if f.endswith(("_renfort-essai.json", "_quest.json")):
+                statuts[f] = {"statut": "fini", "maj": maintenant()}
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        e = etat_une_fois()
+        q = poste_de(e, "renfort-essai")
+        q["depuis"] = int(time.time()) - 30 * 3600
+        ecrire(os.path.join(st, "etat.json"), e)
+        nb_dem = len(os.listdir(os.path.join(st, "demandes_vocales")))
+        rp = api("/api/restructuration", {"action": "plan"})
+        plan, dec = rp["plan"], rp["decision"]
+        renv = {r["id"]: r for r in plan["renvois"]}
+        if [c["id"] for c in dec["choix"]] != ["appliquer", "modifier", "rien"] or "renfort-essai" not in renv or not renv.get("bruiteur", {}).get("apres_tache"):
+            echec(f"plan : choix ou renvois inattendus ({[c['id'] for c in dec['choix']]}, {renv})")
+        if not any(r["id"] == "quest" and r["nouveau"] == "Concepteur de quêtes" for r in plan["renommages"]) or not any(r["fichier"] == "vieux-essai.md" for r in plan["ranger"]):
+            echec(f"plan : renommage ou fiche à ranger absents ({plan['renommages']}, {plan['ranger']})")
+        if any(r["id"] in ("direction", "son", "integration-moteur") for r in plan["renvois"]) or "Organigramme" not in dec["explication"]:
+            echec("plan : un poste de base renvoyé, ou détail illisible")
+        if not any(x.get("id") == plan["id"] for x in lire(os.path.join(st, "decisions_studio.json"), []) or []):
+            echec("plan : absent de decisions_studio.json (cloche)")
+        dv = [lire(os.path.join(st, "demandes_vocales", f), {}) for f in os.listdir(os.path.join(st, "demandes_vocales")) if f.endswith(".json")]
+        if len(os.listdir(os.path.join(st, "demandes_vocales"))) <= nb_dem or not any(plan["id"] in str(x.get("texte")) for x in dv):
+            echec("plan : aucune demande de relecture déposée")
+        if not os.path.isfile(os.path.join(st, "recrues", "renfort-essai.json")) or not os.path.isfile(orph) \
+                or (lire(os.path.join(st, "recrues", "quest.json"), {}) or {}).get("nom_affiche") != "quest":
+            echec("plan : quelque chose a été appliqué sans réponse")
+        etat_une_fois()
+        if not any(x.get("id") == plan["id"] for x in lire(os.path.join(st, "decisions_studio.json"), []) or []):
+            echec("plan : la décision disparaît au passage de l'alimentation")
+        ok(f"plan de restructuration : {plan['resume']} ; décision sous la cloche, demande de relecture, rien d'appliqué sans réponse")
+
+        api("/api/repondre", {"id": plan["id"], "choix": "appliquer"})
+        p2 = next(x for x in lire(os.path.join(st, "restructuration.json"))["plans"] if x["id"] == plan["id"])
+        if os.path.isfile(os.path.join(st, "recrues", "renfort-essai.json")) or not os.path.isfile(os.path.join(st, "recrues", "_anciens", "renfort-essai.json")):
+            echec("appliquer : renfort-essai pas renvoyé par la voie habituelle")
+        if (lire(os.path.join(st, "recrues", "quest.json"), {}) or {}).get("nom_affiche") != "Concepteur de quêtes":
+            echec("appliquer : renommage absent")
+        if os.path.isfile(orph) or not os.path.isfile(os.path.join(st, "anciens", "agents", "vieux-essai.md")):
+            echec("appliquer : fiche orpheline pas rangée dans anciens/agents")
+        if not os.path.isfile(os.path.join(st, "recrues", "bruiteur.json")) or p2["statut"] != "en_cours":
+            echec(f"appliquer : agent en plein travail renvoyé, ou statut {p2['statut']}")
+        if len(lire(os.path.join(st, "restructuration_journal.json"), []) or []) < 4:
+            echec("appliquer : journal incomplet")
+        ok("plan appliqué après « Appliquer le plan » : renvoi, renommage, fiche rangée (jamais supprimée), journal ; l'agent occupé attend sa fin de tâche")
+
+        ecrire(os.path.join(st, "progression", "bruiteur.json"), {"pct": 100, "texte": "fini"})
+        vieillir(os.path.join(st, "progression", "bruiteur.json"), 40)
+        for f in os.listdir(os.path.join(st, "demandes")):
+            if f.endswith("_bruiteur.json"):
+                statuts[f] = {"statut": "fini", "maj": maintenant()}
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        api("/api/reglages", {"mode_absent": True})
+        api("/api/restructuration", {"action": "suite"})
+        if not os.path.isfile(os.path.join(st, "recrues", "bruiteur.json")):
+            echec("suite : renvoi appliqué en mode absent")
+        api("/api/reglages", {"mode_absent": False})
+        api("/api/restructuration", {"action": "suite"})
+        p2 = next(x for x in lire(os.path.join(st, "restructuration.json"))["plans"] if x["id"] == plan["id"])
+        if os.path.isfile(os.path.join(st, "recrues", "bruiteur.json")) or p2["statut"] != "appliquee":
+            echec(f"suite : bruiteur pas renvoyé après sa tâche ({p2['statut']})")
+        api("/api/restructuration", {"action": "defaire", "id": plan["id"]})
+        if not os.path.isfile(os.path.join(st, "recrues", "renfort-essai.json")) or not os.path.isfile(os.path.join(st, "recrues", "bruiteur.json")) \
+                or (lire(os.path.join(st, "recrues", "quest.json"), {}) or {}).get("nom_affiche") != "quest":
+            echec("défaire : réembauche ou ancien nom absents")
+        rp = api("/api/restructuration", {"action": "plan"})
+        api("/api/repondre", {"id": rp["plan"]["id"], "choix": "rien"})
+        if next(x for x in lire(os.path.join(st, "restructuration.json"))["plans"] if x["id"] == rp["plan"]["id"])["statut"] != "classe" \
+                or not os.path.isfile(os.path.join(st, "recrues", "renfort-essai.json")):
+            echec("« Ne rien faire » : plan pas classé ou appliqué quand même")
+        ok("plan : renvoi « après sa tâche » gardé en mode absent puis fait au retour, « Défaire » réembauche et remet les noms, « Ne rien faire » ne change rien")
+        # « Toute l'équipe » : tout le monde par groupes (inventaire du plan), barres de chantier archivables, rien de supprimé
+        for f in ("id=\"bt-equipe\"", "<script src=\"equipe.js\"></script>", "const EQ_ENV = {", "function ouvrirEquipe"):
+            if f not in page:
+                echec(f"studio.html : « {f} » absent (bouton « Toute l'équipe »)")
+        eqjs = urllib.request.urlopen(base + "/equipe.js", timeout=5).read().decode("utf-8")
+        for f in ("function vEquipe", "function lierEquipe", "'/api/equipe'", "'/api/renvoyer'", "'/api/reembaucher'", "action: 'archiver'"):
+            if f not in eqjs:
+                echec(f"equipe.js : « {f} » absent")
+        prog = os.path.join(st, "progression")
+        ecrire(os.path.join(prog, "chantier-essai-fini.json"), {"pct": 100, "texte": "chantier fini de l'essai"})
+        ecrire(os.path.join(prog, "chantier-essai-vif.json"), {"pct": 40, "texte": "chantier en cours de l'essai", "source": "chaîne wf_essai"})
+        vieillir(os.path.join(prog, "chantier-essai-fini.json"), 60)
+        with urllib.request.urlopen(base + "/api/equipe", timeout=10) as r:
+            eq = json.loads(r.read().decode("utf-8"))
+        gids = [g["id"] for g in eq.get("groupes") or []]
+        if gids != ["postes", "recrues", "specialistes", "chaines", "fiches", "barres", "anciens"]:
+            echec(f"/api/equipe : groupes {gids}")
+        tous = {m["id"]: m for g in eq["groupes"] for m in g["membres"]}
+        champs = {"nom", "metier", "etat", "etat_lib", "tache", "depuis", "modele", "effort", "actions"}
+        if any(not champs <= set(m) for m in tous.values()) or any(m["etat"] not in ("travail", "libre", "attente", "fini") for m in tous.values()):
+            echec("/api/equipe : un membre sans nom, métier, état, tâche, depuis, modèle, effort ou actions")
+        conf_ids = [p["id"] for p in (lire(os.path.join(st, "studio.config.json"), {}) or {}).get("postes", [])]
+        if not conf_ids or any(i not in tous or tous[i]["groupe"] != "postes" for i in conf_ids):
+            echec("/api/equipe : un poste de la config manque dans « Postes du studio »")
+        if "barre:chantier-essai-fini.json" not in tous or tous["barre:chantier-essai-fini.json"]["actions"].get("archiver") is not True \
+                or tous.get("barre:chantier-essai-vif.json", {}).get("actions", {}).get("archiver") != "apres":
+            echec("/api/equipe : barres de chantier absentes ou action « archiver » fausse (fini : oui ; en cours : après la fin)")
+        api("/api/restructuration", {"action": "archiver", "fichier": "chantier-essai-vif.json"}, 409)
+        api("/api/restructuration", {"action": "archiver", "fichier": "chantier-essai-fini.json"})
+        if os.path.exists(os.path.join(prog, "chantier-essai-fini.json")) or not os.path.isfile(os.path.join(prog, "_archives", "chantier-essai-fini.json")):
+            echec("archiver une barre : pas rangée dans progression/_archives")
+        with urllib.request.urlopen(base + "/api/equipe", timeout=10) as r:
+            eq2 = json.loads(r.read().decode("utf-8"))
+        anc = next(g for g in eq2["groupes"] if g["id"] == "anciens")["membres"]
+        if not any(m["id"] == "archives" for m in anc):
+            echec("/api/equipe : barres archivées absentes des anciens")
+        if any(m["groupe"] == "recrues" and m["actions"].get("renvoyer") not in (True, "apres", "protege") for g in eq["groupes"] for m in g["membres"]):
+            echec("/api/equipe : une recrue sans action « renvoyer » (oui, après sa tâche ou protégé)")
+        ok(f"Toute l'équipe : {eq['resume']} ; 7 groupes, barre finie archivée (jamais supprimée), barre en cours refusée « après la fin du chantier »")
     finally:
         srv.terminate()
         try:
@@ -1012,6 +1145,7 @@ def main():
         remplir(d)
         cmd_roadmap(d)
         cmd_fonctions(d, a.port)
+        essais_annexes()
 
 
 if __name__ == "__main__":

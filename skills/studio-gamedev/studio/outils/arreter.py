@@ -17,6 +17,7 @@ import urllib.request
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(ICI))
 from veille_studio import lire_pid, verrou_vivant, vivant  # noqa: E402
+import jsonio  # noqa: E402  (C4)
 for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
     try:
         _flux.reconfigure(encoding="utf-8", errors="replace")
@@ -58,8 +59,7 @@ def main(argv=None):
             pass
     info = os.path.join(studio, "serveur.json")
     try:
-        with open(info, encoding="utf-8-sig") as h:
-            d = json.load(h)
+        d = jsonio.lire_strict(info)
         port, pid = int(d.get("port") or 0), int(d.get("pid") or 0)
     except (OSError, ValueError, TypeError, AttributeError):
         port = pid = 0

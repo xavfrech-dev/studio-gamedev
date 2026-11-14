@@ -17,6 +17,9 @@ for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, m
         pass
 
 ICI = os.path.dirname(os.path.abspath(__file__))
+if os.path.dirname(ICI) not in sys.path:
+    sys.path.insert(0, os.path.dirname(ICI))
+import jsonio  # noqa: E402  (C4 : studio/jsonio.py)
 MARQUE = "crochet_journal.py"
 
 
@@ -38,8 +41,7 @@ def commande(script):
 def lire(chemin):
     if not os.path.exists(chemin):
         return {}
-    with open(chemin, encoding="utf-8-sig") as f:
-        d = json.load(f)                      # un fichier illisible fait échouer l'installation : on n'écrase rien
+    d = jsonio.lire_strict(chemin)            # un fichier illisible fait échouer l'installation : on n'écrase rien
     if not isinstance(d, dict):
         raise SystemExit("settings.local.json n'est pas un objet JSON : rien n'est modifié")
     return d
@@ -82,10 +84,7 @@ def main():
     os.makedirs(dossier, exist_ok=True)
     if os.path.exists(chemin):
         shutil.copyfile(chemin, chemin + ".bak")
-    tmp = chemin + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(d, f, ensure_ascii=False, indent=2)
-    os.replace(tmp, chemin)
+    jsonio.ecrire(chemin, d, indent=2)
     print(f"{msg} : {chemin}")
 
 

@@ -4,9 +4,13 @@ Lancer :  python -I -B serveur_studio.py --projet <dossier du projet> [--port N]
           (sans --port : celui de <projet>/.studio/studio.config.json, sinon 8790 ; s'il est pris, le premier libre après)
 Ouvrir :  http://127.0.0.1:<port>/studio.html
 
-GET  : sert d'abord <projet>/.studio/ (config, profil, roadmap.json, progression/…), puis les fichiers
-       du skill posés à côté de ce script (studio.html, roadmap.js, roadmap.css, questions.*.json, cartes/).
+GET  : sert d'abord les fichiers du skill posés à côté de ce script (studio.html, roadmap.js, roadmap.css,
+       questions.*.json, cartes/), puis les données de <projet>/.studio/ (config, profil, roadmap.json, progression/…).
+       Le code (.html, .js, .css, manifeste) ne vient JAMAIS de .studio/ (G12 : un dépôt cloné ne remplace pas la page).
        Pas de liste de dossier ; extensions permises seulement ; jamais rien hors de ces deux dossiers.
+       HTTP/1.1 (connexion gardée ; 30 s sans un octet : coupée) ; gzip au-dessus de 1 Ko si le navigateur l'accepte.
+  GET /api/instantane?f=a.json,b.json[&connu=a.json:<marque>,…]  -> {"fichiers", "marques"} ; un fichier dont la marque
+                      envoyée dans « connu » n'a pas changé n'est pas renvoyé (listé dans « inchanges »)
 POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
                       -> .studio/reponses_questionnaire.json (fusion, écriture atomique)
@@ -25,11 +29,16 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/confier        {agent, mission, titre?, tache_id?, origine?}  -> .studio/demandes/<horodatage>_<agent>.json (tâche confiée)
   /api/renvoyer       {nom, motif?}                                -> recrue archivée : .studio/recrues/_anciens/, .studio/anciens/agents/
   /api/reembaucher    {nom}                                        -> remet une recrue archivée dans l'équipe (lancer: false)
+  /api/restructuration {action: plan|appliquer|modifier|rien|defaire|suite, id?, texte?}
+                      -> .studio/restructuration.json (+ _journal), decisions_studio.json, demande à l'auditeur (restructuration.py) ;
+                         applique seulement après « Appliquer le plan » (aussi par /api/repondre), par /api/renvoyer et /api/agent
   /api/recruter       {nom, nom_affiche?, role, mission, poste?, couleur?, apparence?, skills?, lancer?, remplacer?, via?}
                       -> <dossier_agents>/<nom>.md (définition d'agent, dans le projet seulement),
                          .studio/recrues/<nom>.json (+ recrues/index.json), .studio/demandes/<horodatage>_<nom>.json
   /api/sante          {action: activer_temperatures|desinstaller_temperatures (via: clic, depuis le PC)|analyser_menage}
                       -> .studio/sante/ (températures : élévation demandée à Windows sur ce clic seulement)
+  /api/hote           {action: creer (fiche) | prompt (texte, via?) | regler (sons?, parole?) | supprimer | oublier_proposition}
+                      -> .studio/hote.json (hôte du studio, hote.py), demande « hote » pour l'assistant, anciens/hote_*.json
   /api/transcrire     audio brut (webm/ogg/wav, 8 Mo au plus)      -> {"ok", "texte"} ; 501 si faster-whisper absent
 
 Sécurité : écoute 127.0.0.1 seulement ; en-têtes Host et Origin vérifiés (page du même serveur) ;
@@ -42,9 +51,10 @@ au plus une embauche automatique par heure, 12 bureaux. Un renvoi n'efface rien 
 Un recrutement n'exécute rien : il écrit une demande que Claude lit (SKILL.md, « Demandes ») avant de lancer l'agent.
 « remplacer » n'écrase qu'une recrue écrite par ce studio (fiche recrues/<nom>.json + marque dans le fichier),
 jamais un agent écrit à la main ni un lien ; les règles de la config injectées dans l'agent sont bornées (20 × 200 caractères).
-JSON lus avec ou sans BOM.
+JSON lus avec ou sans BOM. Dictée (faster-whisper) chargée au premier usage, libérée après 10 min sans dictée.
 """
 import argparse
+import gzip
 import json
 import os
 import re
@@ -63,6 +73,9 @@ for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, m
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.dont_write_bytecode = True   # jamais de __pycache__ dans le dossier du skill
+if ICI not in sys.path:
+    sys.path.insert(0, ICI)
+import jsonio  # noqa: E402  (C4 : lecture avec BOM, écriture atomique et verrou par fichier, communs à tout le skill)
 PORT_DEFAUT = 8790
 MARQUE_RECRUE = "<!-- studio-gamedev : recrue -->"
 OUTILS_AGENT = "Read, Grep, Glob, Edit, Write, Bash, Skill"
@@ -79,6 +92,12 @@ BROUILLON_RE = re.compile(r"^[a-z0-9]{8,40}$")
 MAX_CORPS = 64 * 1024
 MAX_AUDIO = 8 * 1024 * 1024
 VERROU = threading.Lock()
+PORT_MAX = 65535
+GZIP_MIN = 1024                                                  # O4 : gzip au-dessus de 1 Ko
+TYPES_GZIP = ("text/", "application/json", "application/manifest+json", "image/svg+xml")
+EXT_CODE = {".html", ".js", ".css", ".webmanifest"}                # G12 : servis depuis le dossier du skill seulement
+DECISIONS_GARDE_J = 7                                            # O15 : décisions répondues gardées 7 jours dans decisions.json
+DICTEE_GARDE_S = int(os.environ.get("STUDIO_WHISPER_GARDE_S") or 600)   # O3 : modèle libéré après 10 min sans dictée
 
 EXTENSIONS = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
               ".json": "application/json; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg",
@@ -137,23 +156,10 @@ def maintenant():
 
 
 def ecrire_json(chemin, donnees):
-    os.makedirs(os.path.dirname(chemin), exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(chemin), suffix=".tmp")
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        json.dump(donnees, f, ensure_ascii=False, indent=1)
-    for essai in range(5):                       # Windows : la page ou un agent peut tenir le fichier un court instant
-        try:
-            os.replace(tmp, chemin)
-            return
-        except PermissionError:
-            time.sleep(0.1 * (essai + 1))
+    """jsonio.ecrire (temporaire unique, fsync, nouveaux essais si Windows tient le fichier) ; toujours tenu → 503."""
     try:
-        os.replace(tmp, chemin)
-    except PermissionError:
-        try:
-            os.remove(tmp)
-        except OSError:
-            pass
+        jsonio.ecrire(chemin, donnees)
+    except jsonio.FichierOccupe:
         raise Refus(503, f"fichier occupé ({os.path.basename(chemin)}), réessaie dans un instant")
 
 
@@ -168,8 +174,7 @@ def lire_ou_mettre_de_cote(chemin, defaut):
     erreur = None
     for essai in range(4):
         try:
-            with open(chemin, encoding="utf-8-sig") as f:
-                return json.load(f)
+            return jsonio.lire_strict(chemin)
         except FileNotFoundError:
             return defaut
         except Exception as e:
@@ -177,23 +182,36 @@ def lire_ou_mettre_de_cote(chemin, defaut):
             time.sleep(.15 * (essai + 1))
     base, ext = os.path.splitext(chemin)
     cible = f"{base}.corrompu-{time.strftime('%Y%m%d-%H%M%S')}{ext}"
-    try:
-        if not any(x.get("fichier") == os.path.basename(chemin) and time.time() - x.get("t", 0) < 600 for x in MIS_DE_COTE):
+    recente = next((x for x in reversed(MIS_DE_COTE) if x.get("fichier") == os.path.basename(chemin) and time.time() - x.get("t", 0) < 600), None)
+    copie = recente.get("copie") if recente else None       # M5 : on cite la copie réellement gardée, jamais une copie imaginaire
+    if not recente:
+        try:
             import shutil
             shutil.copyfile(chemin, cible)
-            MIS_DE_COTE.append({"fichier": os.path.basename(chemin), "copie": os.path.basename(cible), "quand": maintenant(), "t": time.time()})
-    except OSError:
-        pass
+            copie = os.path.basename(cible)
+            MIS_DE_COTE.append({"fichier": os.path.basename(chemin), "copie": copie, "quand": maintenant(), "t": time.time()})
+        except OSError as e:
+            sys.stderr.write(f"copie de {os.path.basename(chemin)} impossible : {e!r}\n")
+    sys.stderr.write(f"{os.path.basename(chemin)} illisible ({erreur!r}) : rien n'est écrit\n")
     raise Refus(503, f"{os.path.basename(chemin)} est illisible ({type(erreur).__name__}) : rien n'est écrit pour ne rien perdre. "
-                     f"Une copie est gardée ({os.path.basename(cible)}) ; demande à l'assistant de le réparer.")
+                     + (f"Une copie est gardée ({copie}) ; " if copie else "Aucune copie n'a pu être faite ; ")
+                     + "demande à l'assistant de le réparer.")
 
 
 def lire_json(chemin, defaut):
-    try:
-        with open(chemin, encoding="utf-8-sig") as f:   # avec ou sans BOM
-            return json.load(f)
-    except Exception:
-        return defaut
+    return jsonio.lire(chemin, defaut)                  # avec ou sans BOM
+
+
+def conf_studio():
+    """M2 : studio.config.json, toujours un objet ({} si absente, illisible ou d'un autre type, une liste par exemple)."""
+    c = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) if Etat.studio else {}
+    return c if isinstance(c, dict) else {}
+
+
+def reglages_lus():
+    """reglages.json en lecture seule, toujours un objet."""
+    r = lire_json(os.path.join(Etat.studio, "reglages.json"), {})
+    return r if isinstance(r, dict) else {}
 
 
 def texte(d, cle, maxi, requis=False):
@@ -441,9 +459,7 @@ def ecrire_frontmatter(chemin, modele, effort):
     if effort is not None:
         poser("effort", effort)
     sortie = "---\n" + "\n".join(lignes) + reste
-    with open(chemin + ".tmp", "w", encoding="utf-8", newline="") as f:
-        f.write(sortie.replace("\n", "\r\n") if crlf else sortie)
-    os.replace(chemin + ".tmp", chemin)
+    jsonio.ecrire_texte(chemin, sortie.replace("\n", "\r\n") if crlf else sortie, newline="")
 
 
 def journal_modeles():
@@ -452,7 +468,7 @@ def journal_modeles():
 
 def lire_modeles():
     """Modèle et effort de chaque agent : définitions d'agents du projet (ce que lit Claude Code), recrues, réglages des postes ; journal."""
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) or {}
+    conf = conf_studio()
     agents = dossier_agents(conf)
     fiches = {}
     if os.path.isdir(agents):
@@ -481,7 +497,7 @@ def route_modele(d):
     """Modèle et/ou effort d'un agent : frontmatter de <dossier_agents>/<id>.md s'il existe, fiche du studio
     (recrues/<id>.json, ou reglages.json pour un poste de la config et l'auditeur) et une ligne au journal.
     Vaut pour la prochaine tâche de l'agent (une tâche en cours garde son modèle)."""
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) or {}
+    conf = conf_studio()
     nom = texte(d, "id", 40, True).lower()
     if not CIBLE_RE.match(nom):
         raise Refus(400, "id invalide")
@@ -510,7 +526,8 @@ def route_modele(d):
     md = os.path.join(dossier_agents(conf), nom + ".md")
     a_md = os.path.isfile(md) and not os.path.islink(md)
     chemin_r = os.path.join(Etat.studio, "reglages.json")
-    r = lire_ou_mettre_de_cote(chemin_r, {}) or {}
+    # M5 : une recrue n'a pas besoin de reglages.json (un reglages.json cassé ne la bloque plus) ; un poste, si (écrit plus bas)
+    r = {} if recrue else (lire_ou_mettre_de_cote(chemin_r, {}) or {})
     av_m, av_e = frontmatter(md) if a_md else (None, None)
     fiche = (lire_json(fiche_p, {}) or {}) if recrue else None
     if recrue:
@@ -543,8 +560,13 @@ def route_modele(d):
         r["maj"] = maintenant()
         ecrire_json(chemin_r, r)
     apres = {"modele": modele or av_m, "effort": (effort if effort is not None else av_e) or None}
-    ligne = {"quand": maintenant(), "agent": nom, "avant": {"modele": av_m, "effort": av_e}, "apres": apres, "raison": raison, "par": par,
-             "fiche": chemin_projet(md) if a_md else None}
+    ligne = noter_modele(nom, {"modele": av_m, "effort": av_e}, apres, raison, par, chemin_projet(md) if a_md else None, dem)
+    return {"ok": True, "agent": nom, "avant": ligne["avant"], "apres": apres, "fiche": ligne["fiche"]}
+
+
+def noter_modele(nom, avant, apres, raison, par, fiche, dem=None):
+    """Une ligne au journal des modèles (.studio/modeles_journal.json, 300 lignes) : /api/modele et /api/agent (M6)."""
+    ligne = {"quand": maintenant(), "agent": nom, "avant": avant, "apres": apres, "raison": raison, "par": par, "fiche": fiche}
     if dem:
         ligne["demande"] = dem
     journal = lire_json(journal_modeles(), []) or []
@@ -552,7 +574,7 @@ def route_modele(d):
         journal = []
     journal.append(ligne)
     ecrire_json(journal_modeles(), journal[-300:])
-    return {"ok": True, "agent": nom, "avant": ligne["avant"], "apres": apres, "fiche": ligne["fiche"]}
+    return ligne
 
 
 def chemin_projet(c):
@@ -652,25 +674,78 @@ def reglage(nom):
     r = lire_json(os.path.join(Etat.studio, "reglages.json"), {})
     if isinstance(r, dict) and isinstance(r.get(nom), bool):
         return r[nom]
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     eco = conf.get("economie") if isinstance(conf, dict) and isinstance(conf.get("economie"), dict) else {}
     return eco.get(nom) is True
 
 
 def iso_t(s):
+    """Date ISO -> secondes. M12 : une date avec fuseau (« Z », « +01:00 ») est lue dans son fuseau ; sans fuseau : heure locale."""
+    s = str(s or "").strip()
+    if re.search(r"(Z|[+-]\d\d:?\d\d)$", s[19:]):
+        try:
+            import datetime as _dt
+            return _dt.datetime.fromisoformat(s[:-1] + "+00:00" if s.endswith("Z") else s).timestamp()
+        except (ValueError, OverflowError, OSError):
+            pass
     try:
-        return time.mktime(time.strptime(str(s)[:19], "%Y-%m-%dT%H:%M:%S"))
+        return time.mktime(time.strptime(s[:19], "%Y-%m-%dT%H:%M:%S"))
     except (ValueError, OverflowError):
         return 0
+
+
+_GZ_CACHE = {}               # (chemin, etag) -> corps gzip des fichiers servis (32 au plus)
+_GZ_VERROU = threading.Lock()
+
+
+def compresser(corps, type_, accepte, cle=None):
+    """O4 : corps gzip si le navigateur l'accepte, le type s'y prête et le corps dépasse 1 Ko ; sinon None."""
+    if len(corps) < GZIP_MIN or not type_.startswith(TYPES_GZIP) or "gzip" not in (accepte or "").lower():
+        return None
+    if cle:
+        with _GZ_VERROU:
+            if cle in _GZ_CACHE:
+                return _GZ_CACHE[cle]
+    z = gzip.compress(corps, compresslevel=6, mtime=0)
+    if cle:
+        with _GZ_VERROU:                              # fils parallèles : le cache n'est jamais parcouru pendant un ajout
+            if len(_GZ_CACHE) >= 32:
+                _GZ_CACHE.pop(next(iter(_GZ_CACHE)), None)
+            _GZ_CACHE[cle] = z
+    return z
 
 
 class Studio(SimpleHTTPRequestHandler):
     server_version = "StudioGamedev/1.0"
     sys_version = ""
+    protocol_version = "HTTP/1.1"      # O4 : connexion gardée (chaque réponse porte Content-Length)
+    timeout = 30                       # M3 : 30 s sans un octet (corps incomplet, connexion gardée inactive) : fil libéré
 
-    def log_message(self, fmt, *args):  # discret : seulement les POST et les erreurs
-        if self.command == "POST" or (len(args) > 1 and str(args[1])[:1] == "5"):
+    def log_message(self, fmt, *args):  # discret : seulement les POST et les erreurs ; O13 : jamais /api/meneur (toutes les 10 s)
+        if (self.command == "POST" and not str(getattr(self, "path", "")).startswith("/api/meneur")) or (len(args) > 1 and str(args[1])[:1] == "5"):
             sys.stderr.write("%s %s\n" % (time.strftime("%H:%M:%S"), fmt % args))
+
+    def envoyer(self, code, corps, type_, entetes=(), cache=None):
+        """Réponse complète (Content-Length toujours posé : HTTP/1.1), gzip si possible ; page partie pendant l'envoi : rien."""
+        z = compresser(corps, type_, self.headers.get("Accept-Encoding"), cache)
+        self.send_response(code)
+        self.send_header("Content-Type", type_)
+        if z is not None:
+            corps = z
+            self.send_header("Content-Encoding", "gzip")
+        if type_.startswith(TYPES_GZIP):
+            self.send_header("Vary", "Accept-Encoding")
+        self.send_header("Content-Length", str(len(corps)))
+        for k, v in entetes:
+            self.send_header(k, v)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if self.close_connection:                         # corps de requête laissé dans la connexion : on la ferme et on le dit
+            self.send_header("Connection", "close")
+        self.end_headers()
+        try:
+            self.wfile.write(corps)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            self.close_connection = True
 
     def hotes_permis(self):
         port = self.server.server_address[1]
@@ -710,23 +785,20 @@ class Studio(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def repondre_type(self, code, corps, type_):
-        self.send_response(code)
-        self.send_header("Content-Type", type_)
-        self.send_header("Content-Length", str(len(corps)))
-        self.send_header("Cache-Control", "no-cache")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.end_headers()
-        self.wfile.write(corps)
+        self.envoyer(code, corps, type_, [("Cache-Control", "no-cache")])
 
     def repondre(self, code, donnees):
-        corps = json.dumps(donnees, ensure_ascii=False).encode("utf-8")
+        self.envoyer(code, json.dumps(donnees, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8",
+                     [("Cache-Control", "no-store")])
+
+    def sans_corps(self, code, entetes=()):
+        """304, 302… : aucun corps, Content-Length: 0 (HTTP/1.1 : le navigateur n'attend rien de plus)."""
         self.send_response(code)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(corps)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
+        for k, v in entetes:
+            self.send_header(k, v)
+        if code != 304:
+            self.send_header("Content-Length", "0")
         self.end_headers()
-        self.wfile.write(corps)
 
     # ---------------------------------------------------------------- GET
     def trouver(self, chemin_url):
@@ -739,7 +811,10 @@ class Studio(SimpleHTTPRequestHandler):
             return None
         if ".illisible-" in rel or ".corrompu-" in rel or rel.lower().endswith((".bak", ".tmp")) or rel.startswith(("outils/", "_")):
             return None                                   # copies mises de côté, sauvegardes, temporaires, crochet copié : jamais servis
-        for base in (Etat.studio, ICI):
+        # G12 : le skill d'abord (page, scripts, catalogues, images du studio), puis les données du projet ; le code (.html, .js,
+        # .css, manifeste) n'est jamais servi depuis .studio/ (un dépôt cloné piégé ne remplace pas la page ni le filtre de l'hôte)
+        bases = (Etat.studio,) if piece else (ICI,) if ext in EXT_CODE else (ICI, Etat.studio)
+        for base in bases:
             if not base:
                 continue
             base_r = os.path.realpath(base)
@@ -747,7 +822,7 @@ class Studio(SimpleHTTPRequestHandler):
             if p.startswith(base_r + os.sep) and os.path.isfile(p):
                 # le code du serveur et ses notes ne sont jamais servis depuis le dossier du skill
                 if base == ICI and (rel.startswith("outils/") or ext in (".md",)):
-                    return None
+                    continue
                 if piece:                                 # pièce jointe : jamais depuis le dossier du skill
                     if base != Etat.studio:
                         return None
@@ -762,10 +837,12 @@ class Studio(SimpleHTTPRequestHandler):
             self.repondre(403, {"ok": False, "erreur": "hôte refusé"})
             return
         if urlsplit(self.path).path == "/api/transcrire":   # dictée locale disponible ? (la page choisit Whisper d'emblée)
-            self.repondre(200, {"ok": True, "disponible": whisper_installe(), **_INFOS})
+            if "prechauffer=1" in urlsplit(self.path).query.split("&"):   # O3 : micro ouvert, modèle chargé en fond
+                prechauffer_dictee()
+            self.repondre(200, {"ok": True, "disponible": whisper_installe(), "charge": _MODELE is not None, **_INFOS})
             return
         if urlsplit(self.path).path == "/manifest.webmanifest":   # application installable : nom du projet, icône du studio
-            conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+            conf = conf_studio()
             nom = str(conf.get("nom_projet") or os.path.basename(Etat.projet))[:40]
             lg = str(conf.get("langue") or "fr")[:2]
             self.repondre_type(200, json.dumps({"name": nom + " · Studio", "short_name": "Studio", "start_url": "/studio.html?app=1", "scope": "/",
@@ -780,60 +857,63 @@ class Studio(SimpleHTTPRequestHandler):
                 if ICI not in sys.path:
                     sys.path.insert(0, ICI)
                 import transcript_cc
-                from urllib.parse import parse_qs
                 q = parse_qs(urlsplit(self.path).query)
                 depuis = int(q["depuis"][0]) if q.get("depuis") and q["depuis"][0].isdigit() else None
-                conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+                conf = conf_studio()
                 dos = conf.get("dossier_session") if isinstance(conf.get("dossier_session"), str) and conf.get("dossier_session") not in ("", "auto") else None
                 dos = dos or os.path.join(os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"), "projects", transcript_cc.slug(Etat.projet))   # S13
                 f = transcript_cc.session_active(dos)
+                # O14 : session changée (autre fichier que celui de la page) : lu depuis la fin, jamais à l'ancien offset
+                if depuis is not None and q.get("fichier") and (not f or q["fichier"][0] != os.path.basename(f)):
+                    depuis = None
                 r = transcript_cc.lire(f, depuis)
-                if depuis is not None and r.get("fichier") and q.get("fichier") and q["fichier"][0] != r["fichier"]:
-                    r = transcript_cc.lire(f, None)
                 self.repondre(200, dict(r, ok=True))
             except Exception as e:
                 self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
             return
         if urlsplit(self.path).path == "/api/instantane":   # P6 : tous les JSON d'un cycle en une requête, ETag commun (304 si rien n'a changé)
-            from urllib.parse import parse_qs
-            noms = [n for n in (parse_qs(urlsplit(self.path).query).get("f", [""])[0]).split(",") if n.endswith(".json")][:80]
-            trouves, marques = {}, []
+            q = parse_qs(urlsplit(self.path).query)
+            noms = [n for n in (q.get("f", [""])[0]).split(",") if n.endswith(".json")][:80]
+            connu = {}                                  # O2 : marques déjà reçues par la page (facultatif) : fichiers inchangés non renvoyés
+            for x in (q.get("connu", [""])[0]).split(","):
+                n, _, m = x.rpartition(":")
+                if n and m:
+                    connu[n] = m
+            trouves, marques = {}, {}
             for n in noms:
                 t = self.trouver("/" + n)              # mêmes règles que la lecture d'un fichier seul (jamais les copies mises de côté)
                 if not t:
-                    trouves[n] = None
-                    marques.append(n + ":-")
+                    trouves[n], marques[n] = None, "-"
                     continue
                 try:
                     st = os.stat(t[0])
-                    trouves[n] = t[0]
-                    marques.append(f"{n}:{int(st.st_mtime_ns):x}-{st.st_size:x}")
+                    trouves[n], marques[n] = t[0], f"{int(st.st_mtime_ns):x}-{st.st_size:x}"
                 except OSError:
-                    trouves[n] = None
-                    marques.append(n + ":-")
+                    trouves[n], marques[n] = None, "-"
             import hashlib
-            etag = '"' + hashlib.sha1("|".join(marques).encode("utf-8")).hexdigest()[:20] + '"'
+            etag = '"' + hashlib.sha1(("|".join(f"{n}:{m}" for n, m in marques.items()) + "#" + repr(sorted(connu.items()))).encode("utf-8")).hexdigest()[:20] + '"'
             if self.headers.get("If-None-Match") == etag:
-                self.send_response(304)
-                self.send_header("ETag", etag)
-                self.send_header("Cache-Control", "no-cache")
-                self.end_headers()
+                self.sans_corps(304, [("ETag", etag), ("Cache-Control", "no-cache")])
                 return
-            fichiers = {}
+            fichiers, inchanges = {}, []
             for n, chemin in trouves.items():
-                try:
-                    fichiers[n] = open(chemin, encoding="utf-8").read() if chemin else None
-                except (OSError, UnicodeDecodeError):
+                if n in connu and connu[n] == marques[n] and chemin:
+                    inchanges.append(n)
+                    continue
+                if not chemin:
                     fichiers[n] = None
-            corps = json.dumps({"ok": True, "fichiers": fichiers}, ensure_ascii=False).encode("utf-8")
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(corps)))
-            self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-cache")
-            self.send_header("X-Content-Type-Options", "nosniff")
-            self.end_headers()
-            self.wfile.write(corps)
+                    continue
+                try:
+                    with open(chemin, encoding="utf-8-sig") as h:     # G1 : un BOM (PowerShell) ne rend plus le fichier « illisible »
+                        fichiers[n] = h.read()
+                except (OSError, UnicodeDecodeError) as e:
+                    sys.stderr.write(f"instantané : {n} illisible : {e!r}\n")
+                    fichiers[n] = None
+            rep = {"ok": True, "fichiers": fichiers, "marques": marques}
+            if inchanges:
+                rep["inchanges"] = inchanges
+            self.envoyer(200, json.dumps(rep, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8",
+                         [("ETag", etag), ("Cache-Control", "no-cache")])
             return
         if urlsplit(self.path).path == "/api/modeles":      # onglet « Modèles » : modèle et effort de chaque agent, journal
             try:
@@ -841,13 +921,17 @@ class Studio(SimpleHTTPRequestHandler):
             except Exception as e:
                 self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
             return
+        if urlsplit(self.path).path == "/api/equipe":       # bouton « Toute l'équipe » : tout le monde, même hors du studio (lecture seule)
+            try:
+                self.repondre(200, lire_equipe())
+            except Exception as e:
+                self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
+            return
         if urlsplit(self.path).path == "/api/qui":          # reprise et arrêt : qui sert ce port ?
             self.repondre(200, {"ok": True, "pid": os.getpid(), "projet": Etat.projet, "port": self.server.server_address[1], "mis_de_cote": MIS_DE_COTE[-5:]})
             return
         if urlsplit(self.path).path in ("", "/"):
-            self.send_response(302)
-            self.send_header("Location", "/studio.html")
-            self.end_headers()
+            self.sans_corps(302, [("Location", "/studio.html")])
             return
         trouve = self.trouver(self.path)
         if not trouve:
@@ -860,10 +944,7 @@ class Studio(SimpleHTTPRequestHandler):
         except OSError:
             etag = None
         if etag and self.headers.get("If-None-Match") == etag:
-            self.send_response(304)
-            self.send_header("ETag", etag)
-            self.send_header("Cache-Control", "no-cache")
-            self.end_headers()
+            self.sans_corps(304, [("ETag", etag), ("Cache-Control", "no-cache")])
             return
         try:
             with open(chemin, "rb") as f:
@@ -871,21 +952,15 @@ class Studio(SimpleHTTPRequestHandler):
         except OSError:
             self.repondre(404, {"ok": False, "erreur": "illisible"})
             return
-        self.send_response(200)
-        self.send_header("Content-Type", type_)
-        self.send_header("Content-Length", str(len(corps)))
-        if etag:
-            self.send_header("ETag", etag)
-        self.send_header("Cache-Control", "no-cache" if type_.startswith(("application/json", "text/html", "text/javascript", "text/css")) else "max-age=300")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        self.send_header("Referrer-Policy", "no-referrer")
+        entetes = [("ETag", etag)] if etag else []
+        entetes += [("Cache-Control", "no-cache" if type_.startswith(("application/json", "text/html", "text/javascript", "text/css")) else "max-age=300"),
+                    ("Referrer-Policy", "no-referrer")]
         if type_ == "application/octet-stream":       # pièce jointe sans aperçu possible : téléchargée, jamais ouverte dans la page
-            self.send_header("Content-Disposition", "attachment")
-        self.end_headers()
-        try:
-            self.wfile.write(corps)
-        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
-            pass                                       # page quittée pendant l'envoi (navigation, rechargement) : rien à signaler
+            entetes.append(("Content-Disposition", "attachment"))
+        if type_ == "image/svg+xml":                  # G12 : une image SVG (d'un dépôt cloné) ouverte seule n'exécute aucun script
+            entetes.append(("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox"))
+        # page quittée pendant l'envoi (navigation, rechargement) : rien à signaler (envoyer)
+        self.envoyer(200, corps, type_, entetes, cache=(chemin, etag) if etag and chemin.startswith(ICI) else None)
 
     def do_HEAD(self):
         """Existence d'un fichier servi (le fil vérifie qu'une pièce jointe est toujours là), sans corps ; les routes /api/ : 405."""
@@ -1006,6 +1081,7 @@ class Studio(SimpleHTTPRequestHandler):
 
     # ---------------------------------------------------------------- POST
     def do_POST(self):
+        self._corps_lu = False             # HTTP/1.1 : un corps laissé dans la connexion la ferme (sinon il serait lu comme une requête)
         try:
             if not self.acces_ok():
                 raise Refus(403, "hôte refusé")
@@ -1026,11 +1102,11 @@ class Studio(SimpleHTTPRequestHandler):
                 if not type_.startswith(("audio/", "video/webm", "application/octet-stream")):
                     raise Refus(415, "audio attendu")
                 audio = self.rfile.read(n)
+                self._corps_lu = True
                 direct = "direct=1" in urlsplit(self.path).query.split("&")   # aperçu pendant la dictée
                 self.repondre(200, transcrire(audio, direct=direct))
                 return
             if route == "/api/piece":
-                self._corps_lu = False
                 try:
                     res = self.piece(n)                   # verrou court par brouillon : un envoi lent ne bloque aucune autre route
                 except Refus:
@@ -1043,8 +1119,10 @@ class Studio(SimpleHTTPRequestHandler):
                 raise Refus(415, "JSON attendu")
             if n <= 0 or n > MAX_CORPS:
                 raise Refus(413, "corps vide ou trop gros")
+            brut = self.rfile.read(n)
+            self._corps_lu = len(brut) == n
             try:
-                d = json.loads(self.rfile.read(n).decode("utf-8"))
+                d = json.loads(brut.decode("utf-8"))
             except Exception:
                 raise Refus(400, "JSON invalide")
             if not isinstance(d, dict):
@@ -1055,22 +1133,30 @@ class Studio(SimpleHTTPRequestHandler):
                       "/api/renvoyer": route_renvoyer, "/api/reembaucher": route_reembaucher, "/api/agent": route_agent,
                       "/api/meneur": route_meneur, "/api/quete": route_quete, "/api/sante": route_sante, "/api/modele": route_modele,
                       "/api/piece_retirer": route_piece_retirer, "/api/demande_annuler": route_demande_annuler,
-                      "/api/cloche": route_cloche}.get(route)
+                      "/api/cloche": route_cloche, "/api/hote": route_hote, "/api/restructuration": route_restructuration}.get(route)
             if not action:
                 raise Refus(404, "route inconnue")
             if route == "/api/sante":
                 d["_local"] = self.client_address[0] == "127.0.0.1"      # l'élévation se demande devant le PC, jamais à distance
-            with VERROU:
-                try:
+            try:
+                if route == "/api/meneur":                # O9 : en mémoire, sous son propre verrou : n'attend jamais une écriture
                     rep = action(d)
-                except (TypeError, AttributeError, KeyError) as e:   # F22 / F23 : une valeur du mauvais type → 400, pas 500
-                    sys.stderr.write(f"donnée invalide sur {route} : {e!r}\n")
-                    raise Refus(400, "donnée invalide (type inattendu)")
-                self.repondre(200, rep)
+                else:
+                    with VERROU:
+                        rep = action(d)
+            except (TypeError, AttributeError, KeyError) as e:   # F22 / F23 : une valeur du mauvais type → 400, pas 500
+                import traceback                          # C10 : trace complète au journal (un bug ne se cache plus derrière la saisie)
+                sys.stderr.write(f"donnée invalide ou bogue sur {route} : {e!r}\n{traceback.format_exc()}")
+                raise Refus(400, "donnée invalide (type inattendu) : détail dans le journal du serveur")
+            self.repondre(200, rep)                       # O9 : réponse envoyée hors du verrou
         except Refus as e:
+            if not self._corps_lu:
+                self.close_connection = True
             self.repondre(e.code, {"ok": False, "erreur": refus_langue(str(e))})
         except Exception as e:  # jamais de trace détaillée vers la page
-            sys.stderr.write(f"erreur interne : {e!r}\n")
+            import traceback
+            sys.stderr.write(f"erreur interne : {e!r}\n{traceback.format_exc()}")
+            self.close_connection = True
             self.repondre(500, {"ok": False, "erreur": "erreur interne"})
 
 
@@ -1116,6 +1202,69 @@ def route_quete(d):
             actives.append(cle)
     r.update(embauches=embauches, refus_embauche=refus, actives=actives)
     return r
+
+
+def route_hote(d):
+    """Hôte du studio (quête « Un hôte pour le studio », hote.py). creer : fiche composée dans la page (choix) ou proposée par
+    l'assistant (aperçu accepté) ; prompt : description filtrée puis demande « hote » à l'assistant (il compose la fiche avec les
+    pièces du skill, rien de payant) ; regler : sons et fréquence des répliques ; supprimer : l'hôte part dans .studio/anciens/."""
+    if ICI not in sys.path:
+        sys.path.insert(0, ICI)
+    import hote
+    conf = conf_studio()
+    en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
+    action = texte(d, "action", 24, True)
+    c = hote.chemins(Etat.projet)
+    try:
+        if action == "creer":
+            propre, avert = hote.enregistrer(Etat.projet, d.get("fiche"))
+            return {"ok": True, "hote": propre, "avertissements": avert}
+        if action == "prompt":
+            txt = texte(d, "texte", 600, True)
+            tr = hote.filtrer(txt)
+            if tr:
+                raise Refus(422, hote.message_filtre(tr, en))
+            via = texte(d, "via", 10) or "ecrit"
+            if via not in ("voix", "ecrit"):
+                raise Refus(400, "via : voix ou ecrit")
+            cle = ("hote", " ".join(txt.split()).lower())
+            deja = doublon(cle)
+            if deja:
+                return dict(deja, doublon=True)
+            donnees = {"cible": "hote", "type": "hote", "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}
+            ident = creer_unique(os.path.join(Etat.studio, "demandes_vocales"), "hote", donnees,
+                                 preparer=lambda ident, contenu: dict(contenu, consigne=hote.consigne(Etat.projet, ICI, ident, en)))
+            hote.ecrire_json(c["prop"], {"statut": "en_attente", "demande": ident, "prompt": txt, "le": maintenant()})
+            return doublon(cle, {"ok": True, "id": ident})
+        if action == "regler":
+            return {"ok": True, "hote": hote.regler(Etat.projet, d.get("sons"), d.get("parole"))}
+        if action == "supprimer":
+            dest = hote.supprimer(Etat.projet)
+            return {"ok": True, "range": os.path.relpath(dest, Etat.studio).replace(os.sep, "/")}
+        if action == "oublier_proposition":
+            # Annuler ou Recommencer : la demande « hote » encore en attente est annulée (l'assistant l'ignore, hote.py proposer
+            # ne réécrit plus d'aperçu pour elle) et le même texte peut être renvoyé tout de suite (plus de doublon).
+            prop = hote.lire_json(c["prop"], {}) if os.path.isfile(c["prop"]) else {}
+            ident = str((prop or {}).get("demande") or "")
+            annulee = None
+            if re.match(r"^[A-Za-z0-9_.:+-]{1,120}$", ident):
+                cd = os.path.join(Etat.studio, "demandes_vocales", ident + ".json")
+                x = lire_json(cd, None) if os.path.isfile(cd) else None
+                if isinstance(x, dict) and x.get("cible") == "hote" and str(x.get("statut") or "nouvelle") in ("nouvelle", "prise"):
+                    x["statut"], x["annulee_le"] = "annulee", maintenant()
+                    ecrire_json(cd, x)
+                    annulee = ident
+            for k in [k for k in _RECENTS if isinstance(k, tuple) and k and k[0] == "hote"]:
+                del _RECENTS[k]
+            if os.path.isfile(c["prop"]):                 # M7 : nom libre (deux clics dans la même seconde ne s'écrasent pas)
+                os.replace(c["prop"], hote.nom_archive(c["anciens"], "hote_proposition"))
+            return {"ok": True, "demande_annulee": annulee}
+    except hote.Refus as e:
+        raise Refus(e.code, e.message)
+    except OSError as e:                                  # C6 : disque plein, fichier tenu… : message clair, pas « erreur interne »
+        sys.stderr.write(f"hôte : écriture impossible ({action}) : {e!r}\n")
+        raise Refus(503, f"hôte : écriture impossible ({type(e).__name__}) ; réessaie dans un instant")
+    raise Refus(400, "action : creer, prompt, regler, supprimer ou oublier_proposition")
 
 
 def route_meneur(d):
@@ -1280,7 +1429,7 @@ def route_demande(d):
     dossier_b = os.path.join(dossier_pieces(), "_brouillons", brouillon) if brouillon else None
     if dossier_b and not os.path.isdir(dossier_b):
         raise Refus(410, "pièces jointes introuvables (brouillon expiré) : joins-les de nouveau")
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) or {}
+    conf = conf_studio()
     en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
     txt_ecrit = texte(d, "texte", 2000, not dossier_b)
     txt = txt_ecrit or ("(attachments)" if en else "(pièces jointes)")
@@ -1309,11 +1458,13 @@ def route_demande(d):
     if sujet == "optimisation" and controle_modeles_actif():
         c_o = consigne_optim_modeles(en)                 # complète la consigne déjà posée (auditeur, contrôleur), sans l'écraser
         extra = dict(extra, consigne=(extra["consigne"] + "\n\n" + c_o) if extra.get("consigne") else c_o)
-    cle = ("demande", cible, sujet, " ".join(txt.split()).lower(), brouillon)
+    # C2 : « oui » sous une question puis « oui » sous la suivante ne sont pas un doublon (en_reponse_a dans la clé) ;
+    # une première demande déjà prise ou traitée n'avale plus la seconde
+    cle = ("demande", cible, sujet, " ".join(txt.split()).lower(), brouillon, en_rep)
     deja = doublon(cle)
-    if deja:
-        return dict(deja, doublon=True)
     dossier = os.path.join(Etat.studio, "demandes_vocales")
+    if deja and str((lire_json(os.path.join(dossier, str(deja.get("id")) + ".json"), {}) or {}).get("statut") or "nouvelle") == "nouvelle":
+        return dict(deja, doublon=True)
     if sujet == "optimisation":
         garde_optimisation(dossier)
     donnees = dict({"cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}, **extra)
@@ -1397,7 +1548,7 @@ def garde_optimisation(dossier):
 
 def ids_postes():
     """Postes de la config et recrues."""
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     ids = {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}
     idx = lire_json(os.path.join(Etat.studio, "recrues", "index.json"), [])
     return ids | {x for x in (idx if isinstance(idx, list) else []) if isinstance(x, str)}
@@ -1433,8 +1584,10 @@ Tu es **{{nom_affiche}}**, agent du studio {{nom_projet}} (poste : {{poste}}).
 ## Ton rôle
 {{role}}
 
-## Ta mission
+## Pourquoi tu as été embauché
 {{mission}}
+
+Ce n'est PAS une tâche permanente : à chaque appel, fais UNIQUEMENT la demande qu'on te donne à ce moment-là ; ne reprends jamais de toi-même cette mission d'embauche ni une ancienne tâche (sinon tu tournes en boucle sur un travail déjà fait).
 
 ## Skills à appeler
 {{skills}}
@@ -1495,7 +1648,7 @@ def definition_agent(conf, v):
 
 
 def route_recruter(d):
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     nom = texte(d, "nom", 40, True).lower()
     if not NOM_RE.match(nom) or nom in NOMS_RESERVES:
         raise Refus(400, "nom : 3 à 40 caractères parmi a-z, 0-9 et - (commence par une lettre ou un chiffre)")
@@ -1525,7 +1678,6 @@ def route_recruter(d):
         garde_embauche_auto(conf, nom)
     if not os.path.exists(os.path.join(Etat.studio, "recrues", nom + ".json")) and nb_bureaux(conf) >= NB_BUREAUX:
         raise Refus(409, f"{NB_BUREAUX} bureaux occupés : renvoie une recrue avant d'en embaucher une autre")
-        lancer, remplacer = False, False
     agents = dossier_agents(conf)
     chemin_agent = os.path.join(agents, nom + ".md")
     if os.path.islink(chemin_agent) or (os.path.exists(chemin_agent) and not os.path.isfile(chemin_agent)):
@@ -1542,13 +1694,24 @@ def route_recruter(d):
             raise Refus(409, f"l'agent « {nom} » n'a pas été recruté par le studio (écrit à la main ?) : il n'est jamais remplacé, choisis un autre nom")
     os.makedirs(agents, exist_ok=True)
     v = {"nom": nom, "nom_affiche": affiche, "role": role, "mission": mission, "poste": poste, "skills": skills}
-    with open(chemin_agent + ".tmp", "w", encoding="utf-8", newline="\n") as f:
-        f.write(definition_agent(conf, v))
-    os.replace(chemin_agent + ".tmp", chemin_agent)
     t = maintenant()
     fiche = dict(v, couleur=couleur, apparence=apparence, lancer=lancer, via=via, cree_le=t, origine="auto:embauche" if auto else "page",
                  agent=os.path.relpath(os.path.realpath(chemin_agent), os.path.realpath(Etat.projet)).replace("\\", "/"))   # projet derrière un lien vers un autre disque
-    ecrire_json(os.path.join(Etat.studio, "recrues", nom + ".json"), fiche)
+    # C8 : la fiche d'abord, la définition d'agent ensuite ; un échec défait ce qui vient d'être écrit (une nouvelle tentative
+    # n'est plus refusée « écrit à la main ? »). Un remplacement garde l'ancienne définition jusqu'au bout.
+    fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
+    nouvelle_fiche, nouvel_agent = not os.path.exists(fiche_ch), not os.path.exists(chemin_agent)
+    try:
+        ecrire_json(fiche_ch, fiche)
+        jsonio.ecrire_texte(chemin_agent, definition_agent(conf, v), newline="\n")
+    except BaseException:
+        for ch, neuf in ((chemin_agent + ".tmp", True), (chemin_agent, nouvel_agent), (fiche_ch, nouvelle_fiche)):
+            if neuf:
+                try:
+                    os.remove(ch)
+                except OSError:
+                    pass
+        raise
     idx_ch = os.path.join(Etat.studio, "recrues", "index.json")
     idx = index_lisible(idx_ch)
     idx = [x for x in idx if x != nom][-40:] + [nom]
@@ -1635,10 +1798,10 @@ def route_confier(d):
     return doublon(cle, {"ok": True, "demande": "demandes/" + ident + ".json", "agent": agent})
 
 
-def recrue_occupee(nom):
-    """Raison pour laquelle une recrue ne peut pas partir (tâche en cours), sinon None."""
+def recrue_occupee(nom, ignorer=()):
+    """Raison pour laquelle une recrue ne peut pas partir (tâche en cours), sinon None. ignorer : demandes à ne pas compter."""
     for f, _, st in demandes_du_poste(nom):
-        if not st.startswith(FINIS):
+        if f not in ignorer and not st.startswith(FINIS):
             return f"demande {f} pas finie ({st})"
     ch = os.path.join(Etat.studio, "progression", nom + ".json")
     p = lire_json(ch, None)
@@ -1676,7 +1839,7 @@ def route_agent(d):
     """Fiche d'un agent : nom affiché, métiers (liste) et rôle libre. Recrue : recrues/<nom>.json et sa définition d'agent
     (description, nom, section « Métiers » ; le reste n'est pas touché). Poste de la config : reglages.json
     (noms_postes, roles_postes, metiers_postes). La tyrannie et l'attribution choisissent les tâches d'après ces métiers."""
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     nom = texte(d, "id", 40, True).lower()
     if not ID_RE.match(nom):
         raise Refus(400, "id invalide")
@@ -1691,6 +1854,8 @@ def route_agent(d):
     fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
     if os.path.isfile(fiche_ch):
         fiche = lire_json(fiche_ch, {}) or {}
+        fiche = fiche if isinstance(fiche, dict) else {}
+        av_modele = fiche.get("modele")
         if affiche:
             fiche["nom_affiche"] = affiche
         if role:
@@ -1701,16 +1866,14 @@ def route_agent(d):
             fiche["modele"] = modele
         ecrire_json(fiche_ch, fiche)
         md = os.path.join(dossier_agents(conf), nom + ".md")
-        if os.path.isfile(md):
-            with open(md, encoding="utf-8") as f:
-                t = f.read()
+        a_md = os.path.isfile(md) and not os.path.islink(md)
+        if a_md and (role or metiers is not None):
+            with open(md, encoding="utf-8-sig", newline="") as f:
+                brut = f.read()
+            crlf = "\r\n" in brut                        # M6 : fins de ligne du fichier gardées
+            t = brut.replace("\r\n", "\n")
             if role:
                 t = re.sub(r"(?m)^description: .*$", lambda m: 'description: "' + yaml_chaine(role) + '"', t, count=1)
-            if modele:                                   # frontmatter « model: » (vaut au prochain lancement de l'agent)
-                if re.search(r"(?m)^model: .*$", t.split("\n---", 1)[0]):
-                    t = re.sub(r"(?m)^model: .*$", "model: " + modele, t, count=1)
-                else:
-                    t = re.sub(r"(?m)^(description: .*)$", lambda m: m.group(1) + "\nmodel: " + modele, t, count=1)
             en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
             if role:                                     # F24 : la section du rôle suit aussi (« Ton rôle » / « Your role »)
                 t = re.sub(r"(\n## (?:Ton rôle|Your role)\n).*?(?=\n## |\Z)", lambda m: m.group(1) + role + "\n", t, count=1, flags=re.S)
@@ -1718,9 +1881,13 @@ def route_agent(d):
                 t = re.sub(r"\n## (?:Métiers|Trades)\n.*?(?=\n## |\Z)", "", t, flags=re.S)
                 if metiers:
                     t = t.rstrip("\n") + "\n\n## " + ("Trades" if en else "Métiers") + "\n" + ", ".join(metiers) + "\n"
-            with open(md + ".tmp", "w", encoding="utf-8", newline="\n") as f:
-                f.write(t)
-            os.replace(md + ".tmp", md)
+            jsonio.ecrire_texte(md, t.replace("\n", "\r\n") if crlf else t, newline="")
+        if modele:                                       # M6 : même chemin que /api/modele (frontmatter « model: », journal)
+            av_md = frontmatter(md)[0] if a_md else None
+            if a_md:
+                ecrire_frontmatter(md, modele, None)
+            noter_modele(nom, {"modele": av_md or av_modele, "effort": fiche.get("effort")}, {"modele": modele, "effort": fiche.get("effort")},
+                         "fiche de l'agent", "utilisateur", chemin_projet(md) if a_md else None)
         return {"ok": True, "fiche": fiche}
     if nom not in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
         raise Refus(404, f"agent « {nom} » inconnu")
@@ -1732,10 +1899,20 @@ def route_agent(d):
         r.setdefault("roles_postes", {})[nom] = role
     if metiers is not None:
         r.setdefault("metiers_postes", {})[nom] = metiers
+    av_modele = (r.get("modeles_postes") or {}).get(nom)
     if modele:
         r.setdefault("modeles_postes", {})[nom] = modele
     r["maj"] = maintenant()
     ecrire_json(chemin, r)
+    if modele:                                           # M6 : le journal des modèles suit aussi les postes de la config
+        md = os.path.join(dossier_agents(conf), nom + ".md")
+        a_md = os.path.isfile(md) and not os.path.islink(md)
+        av_md = frontmatter(md)[0] if a_md else None
+        if a_md:
+            ecrire_frontmatter(md, modele, None)
+        e = (r.get("efforts_postes") or {}).get(nom)
+        noter_modele(nom, {"modele": av_md or av_modele, "effort": e}, {"modele": modele, "effort": e}, "fiche de l'agent", "utilisateur",
+                     chemin_projet(md) if a_md else None)
     return {"ok": True}
 
 
@@ -1743,16 +1920,25 @@ def route_renvoyer(d):
     """Renvoi d'une recrue (jamais un poste de la config) : rien n'est effacé. La fiche va dans recrues/_anciens/,
     la définition d'agent (seulement si elle porte la marque des recrues) dans .studio/anciens/agents/ : hors du
     dossier des agents, elle n'est plus chargée ; « réembaucher » remet tout en place."""
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     nom = texte(d, "nom", 40, True).lower()
     if nom in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
         raise Refus(403, "les postes de base du studio ne se renvoient pas")
+    if nom in ("tyrannie", "sante", "coordinateur", "atelier", "chinois", "unreal"):   # agents protégés (« Toute l'équipe », plan)
+        raise Refus(403, f"« {nom} » est un agent protégé : il ne se renvoie pas")
     fiche_ch = os.path.join(Etat.studio, "recrues", nom + ".json")
     if not NOM_RE.match(nom) or nom in NOMS_RESERVES or not os.path.isfile(fiche_ch):
         raise Refus(404, f"recrue « {nom} » inconnue")
-    occupe = recrue_occupee(nom)
+    # F31 : juste après une embauche, la seule demande en cours est souvent la demande de recrutement pas encore
+    # prise par l'assistant : on peut alors renvoyer (erreur de saisie), et cette demande passe « annulée ».
+    en_cours = [(f, x, st) for f, x, st in demandes_du_poste(nom) if not st.startswith(FINIS)]
+    a_annuler = en_cours if en_cours and all(x.get("type") == "recrutement" and st == "nouvelle" for _, x, st in en_cours) else []
+    occupe = recrue_occupee(nom, ignorer={f for f, _, _ in a_annuler})    # M1 : tester d'abord, annuler ensuite
     if occupe:
         raise Refus(409, f"« {nom} » a une tâche en cours : {occupe}")
+    for f, x, _ in a_annuler:
+        x.update(statut="annulee", annulee_le=maintenant(), motif_annulation="recrue renvoyée avant le début")
+        ecrire_json(os.path.join(Etat.studio, "demandes", f), x)
     fiche = lire_json(fiche_ch, {}) or {}
     fiche.update(renvoye_le=maintenant(), motif=texte(d, "motif", 200))
     ecrire_json(os.path.join(Etat.studio, "recrues", "_anciens", nom + ".json"), fiche)
@@ -1773,7 +1959,7 @@ def route_renvoyer(d):
 
 
 def route_reembaucher(d):
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     nom = texte(d, "nom", 40, True).lower()
     anc_f = os.path.join(Etat.studio, "recrues", "_anciens", nom + ".json")
     if not NOM_RE.match(nom) or not os.path.isfile(anc_f):
@@ -1831,7 +2017,8 @@ def memo_cloche(chemin, d, lire, ecrire):
 
 
 def route_cloche(d):
-    return memo_cloche(os.path.join(Etat.studio, "cloche_memo.json"), d, lire_json, ecrire_json)
+    # M4 : un mémo illisible n'est plus remplacé en silence (copie gardée, 503, la page le dit)
+    return memo_cloche(os.path.join(Etat.studio, "cloche_memo.json"), d, lire_ou_mettre_de_cote, ecrire_json)
 
 
 def route_repondre(d):
@@ -1850,7 +2037,236 @@ def route_repondre(d):
     r = {"id": id_, "choix": choix, "texte_libre": libre, "repondu_le": maintenant()}
     reponses.append(r)
     ecrire_json(chemin, reponses[-300:])
+    avert = fermer_decision(id_, choix, libre, r["repondu_le"])
+    if avert:
+        r["avertissement"] = avert
+    if id_.startswith("restructuration-"):             # réponse au plan de restructuration (cloche, fil, bulle) : appliquée ici
+        r["restructuration"] = repondre_restructuration(id_, choix, libre)
     return {"ok": True, "reponse": r}
+
+
+def fermer_decision(id_, choix, libre, quand):
+    """La décision passe « repondue » dans decisions.json (sinon on la croit encore en attente). C5 : fichier illisible gardé
+    de côté (jamais réécrit), TOUS les doublons d'id fermés, échec signalé (texte rendu à la page) au lieu d'être avalé.
+    O15 : les décisions répondues depuis plus de 7 jours partent dans .studio/anciens/decisions_<date>.json."""
+    chd = os.path.join(Etat.studio, "decisions.json")
+    try:
+        dd = lire_ou_mettre_de_cote(chd, None)
+    except Refus as e:
+        return str(e)
+    liste = dd if isinstance(dd, list) else dd.get("decisions") if isinstance(dd, dict) else None
+    if not isinstance(liste, list):
+        return None
+    change = False
+    for x in liste:
+        if isinstance(x, dict) and x.get("id") == id_ and x.get("statut") not in ("repondue", "repondu"):
+            x.update({"statut": "repondue", "reponse": choix or "libre", "repondue_le": quand})
+            if libre:
+                x["reponse_libre"] = libre
+            change = True
+        elif isinstance(x, dict) and x.get("id") == id_ and x.get("decide_par"):
+            # lot E : « Changer » sur une décision tranchée à sa place : sa réponse remplace celle du coordinateur (gardée)
+            x.setdefault("reponse_coordinateur", x.get("reponse"))
+            x.update({"reponse": choix or "libre", "repondue_le": quand, "change_par_utilisateur": quand})
+            if libre:
+                x["reponse_libre"] = libre
+            change = True
+    limite = time.time() - DECISIONS_GARDE_J * 86400
+    vieilles = [x for x in liste if isinstance(x, dict) and x.get("statut") in ("repondue", "repondu")
+                and 0 < iso_t(x.get("repondue_le") or x.get("repondu_le")) < limite]
+    try:
+        if vieilles:
+            sys.path.insert(0, ICI) if ICI not in sys.path else None
+            import hote
+            ecrire_json(hote.nom_archive(os.path.join(Etat.studio, "anciens"), "decisions"), vieilles)   # copie d'abord, puis élagage
+            garde = [x for x in liste if not any(x is v for v in vieilles)]
+            liste[:] = garde
+            change = True
+        if change:
+            ecrire_json(chd, dd)
+    except (OSError, Refus) as e:
+        sys.stderr.write(f"decisions.json : écriture impossible : {e!r}\n")
+        return f"decisions.json : écriture impossible ({type(e).__name__}) ; la réponse est gardée dans reponses.json"
+    return None
+
+
+# ------------------------------------------------------------ plan de restructuration (restructuration.py, commun aux jumeaux)
+def _restru():
+    if ICI not in sys.path:
+        sys.path.insert(0, ICI)
+    import restructuration
+    return restructuration
+
+
+def _restru_ops(conf):
+    """Branchements du plan sur les routes existantes : renvoi, renommage (fiche d'agent), réembauche ; fiches rangées."""
+    def appel(f, d):
+        try:
+            f(d)
+            return True, None
+        except Refus as e:
+            return False, str(e)
+
+    def ranger(fichier):
+        src = os.path.join(dossier_agents(conf), os.path.basename(fichier))
+        if not os.path.isfile(src) or os.path.islink(src):
+            return False, "fiche absente"
+        dst = os.path.join(Etat.studio, "anciens", "agents", os.path.basename(fichier))
+        if os.path.exists(dst):
+            base, k = dst[:-3] + time.strftime("-%Y%m%d-%H%M%S"), 1
+            dst = base + ".md"
+            while os.path.exists(dst):                    # M7 : deux rangements dans la même seconde ne s'écrasent pas
+                k += 1
+                dst = f"{base}_{k}.md"
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        os.replace(src, dst)
+        return True, None
+    return {"renvoyer": lambda i, motif: appel(route_renvoyer, {"nom": i, "motif": motif[:200]}),
+            "renommer": lambda i, nom: appel(route_agent, {"id": i, "nom_affiche": nom[:40]}),
+            "reembaucher": lambda i: appel(route_reembaucher, {"nom": i}),
+            "occupe": lambda i: recrue_occupee(i) or "",
+            "existe": lambda i: os.path.isfile(os.path.join(Etat.studio, "recrues", i + ".json")),
+            "ranger": ranger}
+
+
+def inventaire_equipe(conf):
+    """Tous les agents : postes de la config, recrues (fiches), état vu par l'alimentation (etat.json), fiches d'agent sans poste."""
+    etat = lire_json(os.path.join(Etat.studio, "etat.json"), {}) or {}
+    vus = {q.get("id"): q for q in (etat.get("postes") or []) if isinstance(q, dict) and q.get("id")}
+    r = lire_json(os.path.join(Etat.studio, "reglages.json"), {}) or {}
+    agents = []
+    for p in conf.get("postes") or []:
+        if isinstance(p, dict) and p.get("id"):
+            q = vus.get(p["id"], {})
+            agents.append({"id": p["id"], "nom": (r.get("noms_postes") or {}).get(p["id"]) or q.get("nom") or p.get("nom") or p["id"], "genre": "fixe",
+                           "role": p.get("role", ""), "metiers": (r.get("metiers_postes") or {}).get(p["id"]) or p.get("metiers") or [],
+                           "etat": q.get("etat"), "progression": q.get("progression"), "depuis": q.get("depuis")})
+    ids = {a["id"] for a in agents}
+    for nom in index_lisible(os.path.join(Etat.studio, "recrues", "index.json")) if os.path.isdir(os.path.join(Etat.studio, "recrues")) else []:
+        f = lire_json(os.path.join(Etat.studio, "recrues", nom + ".json"), None)
+        if not isinstance(f, dict) or nom in ids:
+            continue
+        q = vus.get(nom, {})
+        agents.append({"id": nom, "nom": f.get("nom_affiche") or nom, "genre": "recrue", "role": f.get("role", ""), "metiers": f.get("metiers") or [],
+                       "etat": q.get("etat"), "progression": q.get("progression"),
+                       "depuis": q.get("depuis") or iso_t(f.get("reembauche_le") or f.get("cree_le")), "occupe": recrue_occupee(nom) or ""})
+        ids.add(nom)
+    orphelines = []
+    dos = dossier_agents(conf)
+    for f in sorted(os.listdir(dos)) if os.path.isdir(dos) else []:
+        ch = os.path.join(dos, f)
+        if f.endswith(".md") and f[:-3] not in ids and os.path.isfile(ch) and not os.path.islink(ch):
+            try:
+                with open(ch, encoding="utf-8-sig", errors="replace") as x:
+                    if MARQUE_RECRUE in x.read(4096):
+                        orphelines.append(f)
+            except OSError:
+                pass
+    anc = os.path.join(Etat.studio, "recrues", "_anciens")
+    return agents, orphelines, index_lisible(os.path.join(anc, "index.json")) if os.path.isdir(anc) else []
+
+
+def lire_equipe():
+    """« Toute l'équipe » (equipe.py, jumeau du studio d'origine) : l'inventaire du plan (inventaire_equipe) rangé par groupes,
+    plus les agents des chaînes Claude en cours du projet, les fiches d'agent sans bureau (projet, et celles de l'utilisateur
+    en lecture seule), les barres de chantier et les anciens."""
+    if ICI not in sys.path:
+        sys.path.insert(0, ICI)
+    import equipe
+    conf = conf_studio()
+    en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
+    agents, _, _ = inventaire_equipe(conf)
+    etat = lire_json(os.path.join(Etat.studio, "etat.json"), {}) or {}
+    perso = os.path.join(os.path.expanduser("~"), ".claude", "agents")
+    projet_ag, mods = dossier_agents(conf), lire_modeles()
+    return equipe.construire(agents, Etat.studio, postes_etat=etat.get("postes") or [], modeles=mods,
+                             dossiers_agents=[], dossiers_lecture=[projet_ag] + ([perso] if os.path.realpath(perso) != os.path.realpath(projet_ag) else []),
+                             dossier_recrues=os.path.join(Etat.studio, "recrues"),
+                             dossiers_anciens_agents=[os.path.join(Etat.studio, "anciens", "agents")],
+                             workflows=equipe.dossiers_workflows(Etat.projet), anglais=en,
+                             modele_defaut=mods.get("defaut") or "sonnet")
+
+
+def cible_restructuration(regl):
+    """L'auditeur relit le plan s'il est activé, sinon le coordinateur (l'assistant)."""
+    return ({"cible": "auditeur", "perimetre": ["studio"]} if regl.get("auditeur") else {"cible": "assistant"})
+
+
+def route_restructuration(d):
+    """Plan de restructuration (bouton « Plan de restructuration ») : plan → décision sous la cloche (decisions_studio.json)
+    et demande à l'auditeur (au coordinateur s'il est coupé) ; appliquer / modifier / rien / defaire / suite.
+    Rien n'est appliqué sans « Appliquer le plan » ; renvois des agents occupés gardés « après leur tâche »."""
+    rs = _restru()
+    action = texte(d, "action", 20, True)
+    conf = conf_studio()
+    en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
+    regl = lire_json(os.path.join(Etat.studio, "reglages.json"), {}) or {}
+    if action == "archiver":                            # « Toute l'équipe » : une barre de chantier vers progression/_archives (jamais supprimée)
+        ok, err, rel = rs.archiver_barre(Etat.studio, texte(d, "fichier", 90, True))
+        if not ok:
+            raise Refus(409, (f"bar not archived: {err}" + (" (archive it once the work is finished)" if str(err).startswith("en cours") else "")) if en
+                        else f"barre non archivée : {err}" + (" (à archiver après la fin du chantier)" if str(err).startswith("en cours") else ""))
+        return {"ok": True, "archive": rel}
+    if action == "plan":
+        agents, orphelines, anciens = inventaire_equipe(conf)
+        plan = rs.construire_plan(agents, orphelines, anciens, anglais=en)
+        rs.enregistrer(Etat.studio, plan)
+        try:
+            dem = route_demande(dict(cible_restructuration(regl), texte=rs.consigne(plan, en), via="ecrit"))
+        except Refus as e:
+            dem = {"ok": False, "erreur": str(e)}
+        decision_studio_maj(rs)
+        return {"ok": True, "plan": plan, "decision": rs.decision(plan), "demande": dem}
+    ident = texte(d, "id", 80)
+    if action != "suite" and not (ident and ID_RE.match(ident) and rs.plan_par_id(Etat.studio, ident)):
+        raise Refus(404, "plan inconnu")
+    if action == "appliquer":
+        res = rs.appliquer(Etat.studio, ident, _restru_ops(conf))      # un clic de l'utilisateur : il est là
+    elif action == "suite":                                             # renvois « après sa tâche » ; rien en mode absent
+        res = rs.suite(Etat.studio, _restru_ops(conf), absent=regl.get("mode_absent") is True)
+    elif action == "defaire":
+        res = rs.defaire(Etat.studio, ident, _restru_ops(conf))
+    elif action in ("modifier", "rien"):
+        res = {"ok": True, "statut": repondre_restructuration(ident, action, texte(d, "texte", 2000))}
+    else:
+        raise Refus(400, "action : plan, appliquer, modifier, rien, defaire ou suite")
+    decision_studio_maj(rs)
+    return res
+
+
+def repondre_restructuration(ident, choix, libre):
+    """Réponse à la décision du plan : « appliquer », « rien », sinon « Modifier » (ou réponse écrite) → l'auditeur refait le plan."""
+    rs = _restru()
+    if not rs.plan_par_id(Etat.studio, ident):
+        return None
+    conf = conf_studio()
+    en = str(conf.get("langue") or "fr")[:2].lower() != "fr"
+    if choix == "appliquer":
+        plan = rs.appliquer(Etat.studio, ident, _restru_ops(conf)).get("plan")
+    elif choix == "rien":
+        plan = rs.classer(Etat.studio, ident, "classe")
+    else:
+        plan = rs.classer(Etat.studio, ident, "a_modifier", libre)
+        regl = lire_json(os.path.join(Etat.studio, "reglages.json"), {}) or {}
+        txt = (("Change requested by the user: " if en else "Changement demandé par l'utilisateur : ") + (libre or "—") + "\n\n" + rs.consigne(plan, en)
+               + (" Then put the new plan back as \"ouverte\"." if en else " Remets ensuite le plan corrigé en statut « ouverte »."))
+        try:
+            route_demande(dict(cible_restructuration(regl), texte=txt[:2000], via="ecrit"))
+        except Refus:
+            pass
+    decision_studio_maj(rs)
+    return (plan or {}).get("statut")
+
+
+def decision_studio_maj(rs):
+    """Le plan ouvert sous la cloche tout de suite (l'alimentation, studio_etat.py, le reprend ensuite à chaque passage)."""
+    ch = os.path.join(Etat.studio, "decisions_studio.json")
+    l = lire_json(ch, [])
+    l = [x for x in (l if isinstance(l, list) else []) if isinstance(x, dict) and not str(x.get("id", "")).startswith("restructuration-")]
+    p = rs.plan_ouvert(Etat.studio)
+    if p:
+        l.append(rs.decision(p))
+    ecrire_json(ch, l)
 
 
 AUTOS_COUPER = ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "sante_auto")
@@ -1891,11 +2307,11 @@ def route_sante(d):
 def route_relancer(d):
     """Bouton « Relancer » du bandeau : relance l'alimentation du studio par sa veille (rien d'autre n'est lancé)."""
     sys.path.insert(0, ICI) if ICI not in sys.path else None
-    from veille_studio import lire_pid, vivant
+    from veille_studio import verrou_vivant           # G3 : PID vérifié avec son heure de création (jamais un programme étranger)
     verrou = os.path.join(Etat.studio, "veille_studio.verrou")
-    if vivant(lire_pid(verrou)):
-        alim = lire_pid(os.path.join(Etat.studio, "studio_etat.verrou"))
-        if vivant(alim):
+    if verrou_vivant(verrou):
+        alim = verrou_vivant(os.path.join(Etat.studio, "studio_etat.verrou"))
+        if alim:
             try:
                 import signal
                 os.kill(alim, signal.SIGTERM)             # alimentation figée : la veille la relance aussitôt
@@ -1970,12 +2386,17 @@ REFUS_EN = [
     ("^(.+) est illisible \\((.+)\\) : rien n'est écrit pour ne rien perdre\\..*$", '\\1 is unreadable (\\2): nothing is written so nothing is lost.'),
     ('^nom : 3 à 40 caractères.*$', 'name: 3 to 40 characters among a-z, 0-9 and - (starting with a letter or digit)'),
     ('^audio illisible \\((.*)\\)$', 'unreadable audio (\\1)'),
+    ("^je n'ai pas compris l'enregistrement : réessaie$", "I couldn't understand the recording: try again"),
+    ('^dictée : mémoire insuffisante.*$', 'dictation: not enough memory for the transcription model; close a heavy program and try again'),
+    ('^dictée : le modèle de transcription.*$', 'dictation: the transcription model could not be downloaded (connection?); try again in 2 min'),
+    ('^dictée : la carte graphique.*$', 'dictation: the graphics card refused the transcription; try again (the processor will take over)'),
+    ('^dictée : la transcription a échoué.*$', 'dictation: transcription failed; try again, or type your answer'),
     ('^audio vide ou trop long$', 'audio empty or too long'),
     ('^recrue « (.+) » inconnue$', 'unknown recruit “\\1”'),
     ('^ancien « (.+) » inconnu$', 'unknown former member “\\1”'),
     ('^agent « (.+) » inconnu$', 'unknown agent “\\1”'),
     ('^poste inconnu$', 'unknown desk'),
-    ('^donnée invalide \\(type inattendu\\)$', 'invalid data (unexpected type)'),
+    ('^donnée invalide \\(type inattendu\\).*$', 'invalid data (unexpected type): details in the server log'),
     ("^type de fichier refusé.*$", 'file type refused (images, PDF, text, JSON, ZIP, 3D, sound or video)'),
     ('^fichier trop gros \\((\\d+) Mo ; (\\d+) Mo au plus\\)$', 'file too big (\\1 MB; \\2 MB at most)'),
     ('^(\\d+) pièces jointes au plus par message$', 'at most \\1 attachments per message'),
@@ -1997,7 +2418,7 @@ REFUS_EN = [
 
 def refus_langue(msg):
     try:
-        conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {}) if Etat.studio else {}
+        conf = conf_studio()
         if str((conf or {}).get("langue") or "fr")[:2].lower() == "fr":
             return msg
     except Exception:
@@ -2060,6 +2481,7 @@ def route_reglages(d):
 # -------------------------------------------------------------------- transcription locale (facultative)
 _MODELE, _VERROU_MODELE = None, threading.Lock()
 _UNE_TRANSCRIPTION = threading.Semaphore(1)        # une transcription à la fois : la machine ne rame pas pendant le moteur
+_DICTEE = {"vu": 0.0, "gardien": False, "chauffe": False}   # O3 : dernier usage du modèle, fil qui le libère, préchauffe lancée
 
 
 def whisper_installe():
@@ -2079,7 +2501,43 @@ def transcrire(audio, direct=False):
     try:
         return _transcrire(audio, direct)
     finally:
+        _DICTEE["vu"] = time.time()
         _UNE_TRANSCRIPTION.release()
+
+
+def prechauffer_dictee():
+    """O3 : la page ouvre un micro (GET /api/transcrire?prechauffer=1) : modèle chargé en fond s'il est déjà sur le disque."""
+    if _MODELE is not None or _DICTEE["chauffe"] or not whisper_installe():
+        return
+    _DICTEE["chauffe"] = True
+
+    def fil():
+        try:
+            precharger_dictee()
+        finally:
+            _DICTEE["chauffe"] = False
+    threading.Thread(target=fil, daemon=True).start()
+
+
+def gardien_dictee():
+    """O3 : modèle libéré (mémoire graphique rendue à Unreal, Blender…) après DICTEE_GARDE_S sans dictée ; jamais pendant une dictée."""
+    global _MODELE
+    while True:
+        time.sleep(30)
+        if _MODELE is None or time.time() - _DICTEE["vu"] < DICTEE_GARDE_S:
+            continue
+        if not _UNE_TRANSCRIPTION.acquire(timeout=0):
+            continue
+        try:
+            with _VERROU_MODELE:
+                if _MODELE is not None and time.time() - _DICTEE["vu"] >= DICTEE_GARDE_S:
+                    _MODELE = None
+                    _INFOS.pop("chauffe_s", None)
+                    import gc
+                    gc.collect()
+                    sys.stderr.write(f"{time.strftime('%H:%M:%S')} dictée : modèle libéré ({DICTEE_GARDE_S // 60} min sans dictée)\n")
+        finally:
+            _UNE_TRANSCRIPTION.release()
 
 
 def _transcrire(audio, direct=False):
@@ -2090,14 +2548,23 @@ def _transcrire(audio, direct=False):
         raise Refus(501, "transcription locale absente : installe faster-whisper (pip install faster-whisper) "
                          "ou utilise un navigateur avec reconnaissance vocale ; tu peux toujours écrire ta réponse")
     profil = lire_json(os.path.join(Etat.studio, "profil.json"), {})
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    profil = profil if isinstance(profil, dict) else {}
+    conf = conf_studio()
     langue = str(((profil.get("voix") or {}).get("langue_reconnaissance") or conf.get("langue") or "fr"))[:2].lower()   # langue du projet par défaut
     t0 = time.time()
     signal, decodeur, erreurs = decoder(audio)
     if signal is None:
-        raise Refus(422, "audio illisible (" + " ; ".join(erreurs)[:300] + ")")
+        # S16 : message court pour la page ; le détail (ffmpeg, PyAV, versions) va seulement dans le journal du serveur
+        sys.stderr.write("audio illisible : " + " ; ".join(erreurs)[:1000] + "\n")
+        raise Refus(422, "je n'ai pas compris l'enregistrement : réessaie")
     t_decodage = time.time() - t0
-    m = modele(WhisperModel)
+    try:
+        m = modele(WhisperModel)
+    except Refus:
+        raise
+    except Exception as e:     # S30 : téléchargement du modèle, CUDA ou mémoire : un message clair, pas « erreur interne »
+        sys.stderr.write(f"transcription : chargement du modèle impossible : {e!r}\n")
+        raise Refus(503, erreur_dictee(e))
     t1 = time.time()
     invite = vocabulaire(conf)
     try:
@@ -2105,14 +2572,34 @@ def _transcrire(audio, direct=False):
     except RuntimeError as e:
         # bibliothèques CUDA absentes au moment du calcul : on repasse sur le processeur
         if not any(x in str(e).lower() for x in ("cuda", "cublas", "cudnn")):
-            raise
-        m = modele(WhisperModel, forcer_cpu=True)
-        txt = _transcrire_avec(m, signal, langue, invite, direct)
+            sys.stderr.write(f"transcription : {e!r}\n")
+            raise Refus(503, erreur_dictee(e))
+        try:
+            m = modele(WhisperModel, forcer_cpu=True)
+            txt = _transcrire_avec(m, signal, langue, invite, direct)
+        except Exception as e2:
+            sys.stderr.write(f"transcription : échec sur le processeur aussi : {e2!r}\n")
+            raise Refus(503, erreur_dictee(e2))
+    except MemoryError as e:
+        sys.stderr.write(f"transcription : mémoire : {e!r}\n")
+        raise Refus(503, erreur_dictee(e))
     return {"ok": True, "texte": txt[:4000], "decodeur": decodeur, "decodage_s": round(t_decodage, 2),
             "duree_s": round(time.time() - t1, 2), "audio_s": round(len(signal) / 16000, 1), **_INFOS}
 
 
 _INFOS = {}
+
+
+def erreur_dictee(e):
+    """S30 : message court et utile selon la cause (le détail est dans le journal du serveur)."""
+    s = f"{type(e).__name__} {e}".lower()
+    if isinstance(e, MemoryError) or "out of memory" in s or "memory" in s:
+        return "dictée : mémoire insuffisante pour le modèle de transcription ; ferme un programme lourd et réessaie"
+    if any(x in s for x in ("connection", "timeout", "huggingface", "http", "resolve", "download", "urlopen", "ssl")):
+        return "dictée : le modèle de transcription n'a pas pu être téléchargé (connexion ?) ; réessaie dans 2 min"
+    if any(x in s for x in ("cuda", "cublas", "cudnn")):
+        return "dictée : la carte graphique a refusé la transcription ; réessaie (le processeur prendra le relais)"
+    return "dictée : la transcription a échoué ; réessaie, ou écris ta réponse"
 # Phrases que Whisper invente sur du silence (« Sous-titrage ST' 501 ») : dictee_propre.est_hallucination, qui ne jette
 # un segment que s'il EST une de ces phrases (avant : le mot « sous-titrage » seul jetait toute la phrase, B1 du 13/11).
 
@@ -2154,8 +2641,8 @@ def _transcrire_avec(m, signal, langue, invite=None, direct=False):
 
 
 def precharger_dictee():
-    """Modèle de dictée chargé et chauffé dès le démarrage s'il est déjà sur le disque (jamais de téléchargement ici) :
-    le premier clic sur un micro ne paie ni le chargement ni la première passe GPU."""
+    """Modèle de dictée chargé et chauffé s'il est déjà sur le disque (jamais de téléchargement ici). O3 : plus au démarrage
+    (1 Go de mémoire graphique gardé pour rien) ; appelé quand la page ouvre un micro (prechauffer_dictee)."""
     if not whisper_installe():
         return
     try:
@@ -2201,6 +2688,10 @@ def modele(WhisperModel, forcer_cpu=False, local_seulement=False):
                 _MODELE = WhisperModel(nom, device="cpu", compute_type="int8", download_root=racine, local_files_only=local_seulement)
                 _INFOS.update(appareil="cpu")
             _INFOS.update(modele=nom, chargement_s=round(time.time() - t0, 1))
+            _DICTEE["vu"] = time.time()
+            if not _DICTEE["gardien"]:
+                _DICTEE["gardien"] = True
+                threading.Thread(target=gardien_dictee, daemon=True).start()
         return _MODELE
 
 
@@ -2274,7 +2765,7 @@ def serveur_deja_la(studio, projet):
         port = int(d.get("port") or 0)
     except (TypeError, ValueError):
         return 0
-    if not 1024 <= port <= 65535:
+    if not 1024 <= port <= PORT_MAX:
         return 0
     import urllib.request
     try:
@@ -2318,6 +2809,25 @@ def cle_reseau(studio):
     return c
 
 
+def menage_tmp_orphelins(studio):
+    """S14 : un serveur tué pendant une écriture laisse des tmp*.tmp (et des .<id>.tmp de demandes) pour toujours.
+    Au démarrage, on efface ceux de plus d'une minute dans .studio/ et ses sous-dossiers directs."""
+    limite = time.time() - 60
+    for dossier in [studio] + [os.path.join(studio, d) for d in ("demandes", "recrues", "progression", "decisions")]:
+        try:
+            noms = os.listdir(dossier)
+        except OSError:
+            continue
+        for n in noms:
+            ch = os.path.join(dossier, n)
+            if n.endswith(".tmp") and os.path.isfile(ch) and not os.path.islink(ch):
+                try:
+                    if os.path.getmtime(ch) < limite:
+                        os.remove(ch)
+                except OSError:
+                    pass
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Serveur local du studio gamedev (127.0.0.1 seulement).")
     ap.add_argument("--projet", required=True, help="dossier du projet (le studio lit et écrit dans <projet>/.studio)")
@@ -2328,7 +2838,7 @@ def main(argv=None):
     Etat.projet = os.path.abspath(a.projet)
     Etat.studio = os.path.join(Etat.projet, ".studio")
     os.makedirs(Etat.studio, exist_ok=True)
-    conf = lire_json(os.path.join(Etat.studio, "studio.config.json"), {})
+    conf = conf_studio()
     deja = serveur_deja_la(Etat.studio, Etat.projet)
     if deja and (not a.port or a.port == deja):          # reprise : le serveur de ce projet répond déjà, on le réutilise
         print(f"studio sur http://127.0.0.1:{deja}/studio.html (projet : {Etat.projet}) : déjà lancé, réutilisé", flush=True)
@@ -2337,7 +2847,7 @@ def main(argv=None):
         port = int(conf.get("port") or PORT_DEFAUT)
     except (TypeError, ValueError):
         port = PORT_DEFAUT
-    if not 1024 <= port <= 65000:
+    if not 1024 <= port <= PORT_MAX:
         port = PORT_DEFAUT
     if a.port:
         port = a.port
@@ -2348,16 +2858,24 @@ def main(argv=None):
             ancien = int((lire_json(os.path.join(Etat.studio, "serveur.json"), {}) or {}).get("port") or 0)
         except (TypeError, ValueError, AttributeError):
             ancien = 0
-        if 1024 <= ancien <= 65535 and port_libre(ancien):
+        if 1024 <= ancien <= PORT_MAX and port_libre(ancien):
             port = ancien
-        libre = next((p for p in range(port, port + 50) if port_libre(p)), 0)
+        fin = min(port + 50, PORT_MAX + 1)
+        libre = next((p for p in range(port, fin) if port_libre(p)), 0)
         if not libre:
-            raise SystemExit(f"aucun port libre entre {port} et {port + 49} : relance avec --port N")
+            raise SystemExit(f"aucun port libre entre {port} et {fin - 1} : relance avec --port N")
         port = libre
     ThreadingHTTPServer.allow_reuse_address = os.name != "nt"     # Windows : SO_REUSEADDR laisserait un 2e serveur sur le même port
     srv = ThreadingHTTPServer(("127.0.0.1", port), Studio)
     srv.daemon_threads = True
     Etat.port = port
+    info = os.path.join(Etat.studio, "serveur.json")
+    try:                                                  # C9 : juste après la liaison du port (arreter.py et la reprise le trouvent)
+        ecrire_json(info, {"port": port, "pid": os.getpid(), "depuis": maintenant()})
+    except (OSError, Refus) as e:
+        print(f"attention : .studio/serveur.json impossible à écrire ({e}) : arreter.py ne trouvera pas ce serveur "
+              "et une relance en créerait un second ; arrête-le avec Ctrl+C", file=sys.stderr, flush=True)
+    menage_tmp_orphelins(Etat.studio)
     threading.Thread(target=menage_brouillons_fond, daemon=True).start()
     print(f"studio sur http://127.0.0.1:{port}/studio.html (projet : {Etat.projet})", flush=True)
     if a.reseau:
@@ -2372,12 +2890,7 @@ def main(argv=None):
         with open(os.path.join(Etat.studio, "adresse_telephone.txt"), "w", encoding="utf-8") as h:
             h.write(adresse + "\n")
         print(f"réseau de la maison : {ip}:{port}, clé exigée ; adresse du téléphone dans .studio/adresse_telephone.txt", flush=True)
-    threading.Thread(target=precharger_dictee, daemon=True).start()   # dictée prête avant le premier clic
-    info = os.path.join(Etat.studio, "serveur.json")
-    try:
-        ecrire_json(info, {"port": port, "pid": os.getpid(), "depuis": maintenant()})
-    except Exception:
-        pass
+    # O3 : la dictée n'est plus chargée au démarrage (premier micro ouvert ou première dictée ; libérée après 10 min sans usage)
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
