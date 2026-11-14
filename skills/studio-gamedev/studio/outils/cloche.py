@@ -153,7 +153,8 @@ def motif_reserve(dec, choix=None):
 
 
 def ouverte(dec):
-    return str(dec.get("statut") or "ouverte") == "ouverte"
+    # « ouverte » (skill) et « en_attente » (autre studio) : les deux statuts d'une décision qui attend une réponse
+    return str(dec.get("statut") or "ouverte") in ("ouverte", "en_attente")
 
 
 def repondues(racine):
