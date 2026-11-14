@@ -15,7 +15,7 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
                       -> .studio/reponses_questionnaire.json (fusion, écriture atomique)
   /api/profil         {maitre?, assistant?, voix?}                 -> .studio/profil.json (fusion, valeurs bornées)
-  /api/demande        {cible, texte, via, sujet?, en_reponse_a?, brouillon?, perimetre?}  -> .studio/demandes_vocales/<horodatage>_<cible>.json
+  /api/demande        {cible, texte, via, sujet?, en_reponse_a?, brouillon?, perimetre?, origine?: auto:vague.<heure>}  -> .studio/demandes_vocales/<horodatage>_<cible>.json
                       cible : assistant, un poste, controleur-modeles (« Le bon modèle pour chacun ») ou auditeur (si activé) ;
                       brouillon : pièces jointes rangées dans demandes_vocales/pieces/<id du message>/, chemins absolus listés
   /api/piece          corps brut, ?brouillon=<id>&nom=<fichier>    -> demandes_vocales/pieces/_brouillons/<id>/ (20 Mo, 10 fichiers, 60 Mo, types limités)
@@ -1452,6 +1452,9 @@ def route_demande(d):
     sujet = texte(d, "sujet", 20)
     if sujet not in ("", "optimisation"):
         raise Refus(400, "sujet : optimisation ou rien")
+    origine = texte(d, "origine", 40)             # seulement la règle « vague suivante » des automatismes (auto:vague.<heure>)
+    if origine and not re.match(r"^auto:vague\.[0-9-]{1,20}$", origine):
+        raise Refus(400, "origine : auto:vague.<heure> ou rien")
     en_rep = texte(d, "en_reponse_a", 120)       # réponse écrite sous une réponse de l'assistant (id de l'entrée)
     if en_rep and not re.match(r"^[A-Za-z0-9_.:+-]{1,120}$", en_rep):
         raise Refus(400, "en_reponse_a invalide")
@@ -1470,6 +1473,8 @@ def route_demande(d):
     donnees = dict({"cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}, **extra)
     if sujet:
         donnees["sujet"] = sujet
+    if origine:
+        donnees["origine"] = origine
     if en_rep:
         donnees["en_reponse_a"] = en_rep
     pieces = []
