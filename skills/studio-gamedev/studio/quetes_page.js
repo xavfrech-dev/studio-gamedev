@@ -653,7 +653,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       const vieux = $('#xp-fete'); if (vieux) vieux.remove();
       const hote = nouveau(`<div id="xp-fete" class="${m === 'discret' ? 'discret' : ''}" role="status" aria-live="polite"><div class="xf-carte" title="${esc(t('xp_passer'))}"><div class="xf-n">+0</div><div class="xf-xp">XP</div>${rs.length ? `<div class="xf-r">${esc(rs.slice(0, 3).join(' · '))}${rs.length > 3 ? ' …' : ''}</div>` : ''}</div></div>`);
       document.body.appendChild(hote);
-      const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n');
+      const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n'), fmt = v => '+' + v.toLocaleString(LANGUE === 'en' ? 'en-US' : 'fr-FR');   // « +1 840 », comme le studio WILDLANDS
       let fini = false; carte.onclick = () => { fini = true; if (passer) passer(); };
       if (m === 'discret') { const c = cible(); hote.style.setProperty('--cx', c.x + 'px'); hote.style.setProperty('--cy', (c.y + 30) + 'px'); }
       // compteur qui défile jusqu'au nombre, petits tics (babillage)
@@ -663,13 +663,13 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
         let tic = 0;
         const pas = now => {
           const k = duree ? clamp((now - t0) / duree, 0, 1) : 1, v = Math.round(gain * (1 - Math.pow(1 - k, 3)));
-          nb.textContent = '+' + v;
+          nb.textContent = fmt(v);
           if (sonOk() && babil() && m !== 'discret' && k < 1 && now - tic > 70) { tic = now; try { Son.bip(660 + 900 * k, .04, { type: 'triangle', gain: .012 }); } catch (e) { /* rien */ } }
-          if (k < 1 && !fini) requestAnimationFrame(pas); else { nb.textContent = '+' + gain; r(); }
+          if (k < 1 && !fini) requestAnimationFrame(pas); else { nb.textContent = fmt(gain); r(); }
         };
         requestAnimationFrame(pas);
-        passer = () => { nb.textContent = '+' + gain; r(); };      // clic : le compteur saute à la fin
-        setTimeout(() => { nb.textContent = '+' + gain; r(); }, duree + 400);   // page sans images (onglet en arrière-plan) : le compteur finit quand même
+        passer = () => { nb.textContent = fmt(gain); r(); };      // clic : le compteur saute à la fin
+        setTimeout(() => { nb.textContent = fmt(gain); r(); }, duree + 400);   // page sans images (onglet en arrière-plan) : le compteur finit quand même
       });
       if (sonOk()) try { Son.succes('petit'); } catch (e) { /* rien */ }
       if (!fini) await attendre(m === 'discret' ? 1200 : 650);
