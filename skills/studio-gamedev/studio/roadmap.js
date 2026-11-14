@@ -146,7 +146,8 @@
     if (!vus) { gagnes.forEach(celebrer); ecrire(cle, { succes: gagnes.map(s => s.id), niveau: C.niveau }); return; }
     const deja = new Set(vus.succes || []);
     for (const s of gagnes) if (!deja.has(s.id)) { deja.add(s.id); celebrer(s); }
-    if (vus.niveau && C.niveau > vus.niveau) celebrer({ icone: '▲', titre: `${t('niveau')} ${C.niveau}`, description: C.rang, son: 'grand' });
+    const banniereXp = window.Quetes && Quetes.xp && Quetes.xp.mode && Quetes.xp.mode() !== 'coupe';   // 14/11 : bannière de niveau des gains d'XP
+    if (vus.niveau && C.niveau > vus.niveau && !banniereXp) celebrer({ icone: '▲', titre: `${t('niveau')} ${C.niveau}`, description: C.rang, son: 'grand' });
     ecrire(cle, { succes: [...deja], niveau: Math.max(C.niveau, vus.niveau || 0) });
   }
 

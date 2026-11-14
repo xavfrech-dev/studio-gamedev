@@ -29,7 +29,7 @@
     q_soutien_t: 'Agents de soutien', q_actif: 'actif', q_reglages: 'Réglages des quêtes', q_actives: 'quêtes proposées', q_secondaires: 'quêtes secondaires',
     q_table: 'Maquette du projet', q_table_d: 'détail {d}/5', q_audit_envoye: 'Demande d’audit envoyée à {n}.', q_audit_txt: 'Fais un audit impartial du projet, des versions et du studio ; liste les corrections à faire, sans rien lancer seul.',
     q_modeles_txt: 'Vérifie le modèle de chaque agent selon sa tâche et propose les changements, sans rien appliquer seul.',
-    q_bulle: 'Une quête t’attend', xp_passer: 'Clic pour passer', xp_niveau: 'Niveau {n}', xp_monte: 'Le studio monte d’un niveau', xp_rang: 'rang : {r}', xp_reglage: 'Gains d’XP', xp_complet: 'en grand (milieu de l’écran)', xp_discret: 'discrets (près de la barre)', xp_coupe: 'coupés', q_voir_maquette: 'Voir la maquette en grand', q_ajust: 'Ajustement', q_atelier_actif: 'Style Atelier affiché (référence).'
+    q_bulle: 'Une quête t’attend', xp_passer: 'Clic pour passer', xp_niveau: 'Niveau {n}', xp_monte: 'Le studio monte d’un niveau', xp_rang: 'rang : {r}', xp_rang_neuf: 'Nouveau rang du studio', xp_travail: 'travail du studio', xp_tache1: 'tâche finie', xp_taches: '{n} tâches finies', xp_jalon: 'jalon fermé', xp_jalons: '{n} jalons fermés', xp_reglage: 'Gains d’XP', xp_complet: 'en grand (milieu de l’écran)', xp_discret: 'discrets (près de la barre)', xp_coupe: 'coupés', q_voir_maquette: 'Voir la maquette en grand', q_ajust: 'Ajustement', q_atelier_actif: 'Style Atelier affiché (référence).'
   });
   Object.assign(TXT.en, {
     q_hote_creer: 'Create my host', quetes: 'Quests', a_quetes: 'Quest log: what the studio suggests to finish the game, and what it earns you',
@@ -49,7 +49,7 @@
     q_soutien_t: 'Support agents', q_actif: 'on', q_reglages: 'Quest settings', q_actives: 'quests offered', q_secondaires: 'side quests',
     q_table: 'Project model', q_table_d: 'detail {d}/5', q_audit_envoye: 'Audit request sent to {n}.', q_audit_txt: 'Run an impartial audit of the project, the builds and the studio; list the fixes to make, without launching anything alone.',
     q_modeles_txt: 'Check each agent’s model against its task and suggest changes, without applying anything alone.',
-    q_bulle: 'A quest is waiting', xp_passer: 'Click to skip', xp_niveau: 'Level {n}', xp_monte: 'The studio levels up', xp_rang: 'rank: {r}', xp_reglage: 'XP gains', xp_complet: 'big (middle of the screen)', xp_discret: 'subtle (near the bar)', xp_coupe: 'off', q_voir_maquette: 'See the model up close', q_ajust: 'Adjustment', q_atelier_actif: 'Workshop look shown (reference).'
+    q_bulle: 'A quest is waiting', xp_passer: 'Click to skip', xp_niveau: 'Level {n}', xp_monte: 'The studio levels up', xp_rang: 'rank: {r}', xp_rang_neuf: 'New studio rank', xp_travail: 'studio work', xp_tache1: 'task done', xp_taches: '{n} tasks done', xp_jalon: 'milestone closed', xp_jalons: '{n} milestones closed', xp_reglage: 'XP gains', xp_complet: 'big (middle of the screen)', xp_discret: 'subtle (near the bar)', xp_coupe: 'off', q_voir_maquette: 'See the model up close', q_ajust: 'Adjustment', q_atelier_actif: 'Workshop look shown (reference).'
   });
   const L = o => (o && typeof o === 'object') ? (o[LANGUE] || o.fr || o.en || '') : String(o == null ? '' : o);
   const nouveau = (html) => { const d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; };
@@ -101,6 +101,8 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
 #xp-fete .xf-r{max-width:420px;margin-top:4px;font:13px var(--sans);color:#e9dcc0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #xp-fete.niveau .xf-carte{padding:24px 42px 20px;border-width:2px;box-shadow:0 22px 60px rgba(0,0,0,.5),0 0 0 10px rgba(226,184,102,.16),0 0 80px rgba(226,184,102,.35)}
 #xp-fete.niveau .xf-n{font-size:clamp(36px,9vw,64px)}
+#xp-fete.rang .xf-carte{padding:28px 48px 24px;border:2px solid #f1d9a4;background:radial-gradient(120% 120% at 50% 0%,rgba(96,70,32,.97),rgba(26,20,12,.95));box-shadow:0 26px 70px rgba(0,0,0,.55),0 0 0 12px rgba(241,217,164,.2),0 0 140px rgba(241,217,164,.5)}
+#xp-fete .xf-rang{font:italic 400 clamp(26px,7vw,46px)/1.1 var(--serif);color:#fff1cf;text-shadow:0 0 22px rgba(241,217,164,.6);margin-top:6px}
 #xp-fete.sort .xf-carte{transition:opacity .28s,transform .28s;opacity:0;transform:scale(.9)}
 #xp-fete.discret{display:block}#xp-fete.discret .xf-carte{position:fixed;left:var(--cx,50%);top:var(--cy,60px);transform:translateX(-50%);padding:6px 14px;border-radius:999px;gap:0;grid-auto-flow:column;align-items:baseline;column-gap:6px;animation:xfMonte .4s ease-out both}
 #xp-fete.discret .xf-n{font-size:20px}#xp-fete.discret .xf-r{display:none}
@@ -579,9 +581,14 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
   // Toute hausse de l'XP du studio (tâche, quête, jalon, versement : roadmap + etat.json) est fêtée : rebond, compteur,
   // étincelles, petit son (muet et babillage respectés), envol vers la barre de l'en-tête qui se remplit, bannière de niveau.
   // Gains groupés s'ils arrivent ensemble ; jamais bloquant (clic pour passer) ; réglage « Gains d'XP » : complet, discret, coupé.
+  // 14/11 (jumeau du studio WILDLANDS) : rien pour un gain ancien au chargement ni en mode absent (le résumé d'absence donne le total) ;
+  // petits gains cumulés 2,5 s (8 s au plus) ; la barre attend l'arrivée du gain ; passage de rang : bannière plus marquée.
   const Xp = (() => {
     const CLE = 'xp_vu:' + (location.port || ''), file = [], raisons = [];
-    let base = null, minuteur = 0, enCours = false, passer = null;
+    let base = null, minuteur = 0, enCours = false, passer = null, tenuXp = null, debut = 0, absent = 0, rangVu = null, vuRm = null, accT = 0, accJ = 0;
+    const rmCompte = () => (typeof RM_C !== 'undefined' && RM_C) ? { f: +RM_C.faites || 0, j: +RM_C.fermes || 0 } : null;
+    const rangAct = () => (typeof RM_C !== 'undefined' && RM_C && RM_C.rang) || window.PALIER_NOM || '';   // rang de l'XP (Garage, Atelier de quartier…)
+    const absentOn = () => typeof modeAbsent === 'function' && modeAbsent();
     const VUS = new Set(); let vusPret = false;                                // boutons déjà montrés (la bannière de niveau ne montre que les nouveaux)
     const mode = () => { const m = LS.get('xp_fete', 'complet'); return ['complet', 'discret', 'coupe'].includes(m) ? m : 'complet'; };
     const calme = () => (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) || LS.get('anim', true) === false;
@@ -596,16 +603,26 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
     function verifier() {
       const xp = lireXp(); if (xp == null) return;
       if (!vusPret && D.qe) { vusPret = true; ((D.qe.deblocages && D.qe.deblocages.boutons) || []).forEach(b => b && b.id && VUS.add(b.id)); }
-      if (base === null) { const vu = +LS.get(CLE, NaN); base = Number.isFinite(vu) && vu >= 0 && vu <= xp ? vu : xp; LS.set(CLE, base); }
+      const rc = rmCompte(), dT = rc && vuRm ? Math.max(0, rc.f - vuRm.f) : 0, dJ = rc && vuRm ? Math.max(0, rc.j - vuRm.j) : 0; if (rc) vuRm = rc;
+      if (base === null) { base = xp; LS.set(CLE, base); rangVu = rangAct(); return; }   // première lecture : un gain ancien ne s'affiche pas
       if (xp < base) { base = xp; LS.set(CLE, base); return; }        // roadmap réécrite : nouvelle base, rien à fêter
-      if (xp > base) { clearTimeout(minuteur); minuteur = setTimeout(lancer, 700); }   // gains groupés
+      if (xp > base && (absentOn() || mode() === 'coupe')) { if (absentOn()) absent += xp - base; base = xp; LS.set(CLE, base); raisons.splice(0); accT = accJ = 0; rangVu = rangAct(); return; }
+      if (xp > base) {                                                   // gains cumulés quelques secondes ; la barre attend
+        accT += dT; accJ += dJ;
+        if (!debut) { debut = Date.now(); if (!enCours) barre(base, false); }
+        clearTimeout(minuteur); minuteur = setTimeout(lancer, Date.now() - debut > 8000 ? 0 : 2500);
+      }
     }
     function lancer() {
-      const xp = lireXp(); if (xp == null || xp <= base) return;
-      file.push({ de: base, a: xp, raisons: raisons.splice(0) }); base = xp; LS.set(CLE, base); jouer();
+      debut = 0; const xp = lireXp(); if (xp == null || xp <= base) { if (!enCours) libre(); return; }
+      const rs = [accT > 1 ? tf('xp_taches', { n: accT }) : accT ? t('xp_tache1') : '', accJ > 1 ? tf('xp_jalons', { n: accJ }) : accJ ? t('xp_jalon') : ''].filter(Boolean).concat(raisons.splice(0)); accT = accJ = 0;
+      if (!rs.length) rs.push(t('xp_travail'));
+      file.push({ de: base, a: xp, raisons: rs }); base = xp; LS.set(CLE, base); jouer();
     }
+    function libre() { tenuXp = null; try { if (typeof majNiveau === 'function') majNiveau(); } catch (e) { /* rien */ } }
     function barre(xp, doux) {
-      const b = $('#niv-xp'); if (!b) return;
+      tenuXp = xp; const b = $('#niv-xp'); if (!b) return;
+      { const nn = $('#niv-n'); if (nn) nn.textContent = niv(xp); }
       if (!doux) { b.style.transition = 'none'; b.style.width = pct(xp).toFixed(1) + '%'; void b.offsetWidth; b.style.transition = ''; }
       else b.style.width = pct(xp).toFixed(1) + '%';
     }
@@ -627,7 +644,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       enCours = true;
       const g = file.splice(0).reduce((acc, x) => ({ de: Math.min(acc.de, x.de), a: Math.max(acc.a, x.a), raisons: acc.raisons.concat(x.raisons) }), { de: Infinity, a: -Infinity, raisons: [] });
       try { await montrer(g); } catch (e) { erreur('gain d’XP', e); }
-      passer = null; enCours = false; if (file.length) jouer();
+      passer = null; enCours = false; if (file.length) jouer(); else if (!debut) libre();
     }
     async function montrer({ de, a, raisons: rs }) {
       const gain = a - de, nDe = niv(de), nA = niv(a), m = mode();
@@ -672,18 +689,20 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       if (nA > nDe) await niveau(nA, fini);
     }
     async function niveau(n, vite) {
-      const rang = window.PALIER_NOM || (typeof RM_C !== 'undefined' && RM_C && RM_C.rang) || '';
+      const rang = rangAct(), neuf = !!(rang && rangVu && rang !== rangVu); rangVu = rang || rangVu;
       const tous = ((D.qe && D.qe.deblocages && D.qe.deblocages.boutons) || []).filter(b => b && b.id), nouv = tous.filter(b => !VUS.has(b.id)).map(b => L(b.libelle) || b.id);
       tous.forEach(b => VUS.add(b.id));                     // seulement ce qui est arrivé depuis la dernière bannière
       if (mode() === 'discret') { try { Succes.ajouter({ id: 'niveau-' + n, icone: '★', titre: tf('xp_niveau', { n }), sous: rang, taille: 'moyen' }); } catch (e) { /* rien */ } return; }
-      const h = nouveau(`<div id="xp-fete" class="niveau" role="status" aria-live="polite"><div class="xf-carte" title="${esc(t('xp_passer'))}"><div class="xf-sur">${esc(t('xp_monte'))}</div><div class="xf-n">${esc(tf('xp_niveau', { n }))}</div>${rang ? `<div class="xf-r">${esc(tf('xp_rang', { r: rang }))}</div>` : ''}${nouv.length ? `<div class="xf-r">🔓 ${esc(nouv.slice(-2).join(' · '))}</div>` : ''}</div></div>`);
-      document.body.appendChild(h); etincelles(h, 30, true);
-      if (sonOk()) try { Son.succes('grand'); } catch (e) { /* rien */ }
+      const h = nouveau(`<div id="xp-fete" class="niveau${neuf ? ' rang' : ''}" role="status" aria-live="polite"><div class="xf-carte" title="${esc(t('xp_passer'))}"><div class="xf-sur">${esc(t(neuf ? 'xp_rang_neuf' : 'xp_monte'))}</div><div class="xf-n">${esc(tf('xp_niveau', { n }))}</div>${neuf ? `<div class="xf-rang">${esc(rang)}</div>` : rang ? `<div class="xf-r">${esc(tf('xp_rang', { r: rang }))}</div>` : ''}${nouv.length ? `<div class="xf-r">🔓 ${esc(nouv.slice(-2).join(' · '))}</div>` : ''}</div></div>`);
+      document.body.appendChild(h); etincelles(h, neuf ? 48 : 30, true);
+      if (sonOk()) try { Son.succes('grand'); if (neuf) setTimeout(() => { if (sonOk()) Son.succes('moyen'); }, 700); } catch (e) { /* rien */ }
       let fin = false; h.querySelector('.xf-carte').onclick = () => { fin = true; if (passer) passer(); };
-      if (!vite) await attendre(2600);
+      if (!vite) await attendre(neuf ? 3800 : 2600);
       h.classList.add('sort'); await new Promise(r => setTimeout(r, fin || calme() ? 0 : 280)); h.remove();
     }
-    return { verifier, raison, essai: (gain, r) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [] }); jouer(); }, base: () => base };
+    // résumé d'absence : XP gagnée pendant l'absence (photo de départ si elle existe, sinon le cumul vu par cette page)
+    function gainAbsence(avant) { const x = lireXp(), g = avant && avant.xp != null && x != null ? x - avant.xp : absent; absent = 0; return Math.max(0, Math.round(g || 0)); }
+    return { verifier, raison, gainAbsence, mode, tenu: () => tenuXp, essai: (gain, r) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [] }); jouer(); }, base: () => base };
   })();
   window.addEventListener('studio:roadmap', () => setTimeout(() => { try { Xp.verifier(); } catch (e) { /* rien */ } }, 0));
 

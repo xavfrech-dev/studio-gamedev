@@ -4,6 +4,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 
 ## [Non publié]
 
+### Amélioré
+- **Gains d'XP au milieu de l'écran** (jumeau du studio WILDLANDS) : rien pour un gain ancien au chargement ni en mode absent (le résumé « Pendant ton absence » donne le total) ; petits gains cumulés 2,5 s (8 s au plus) avec leur raison (tâches finies, jalons fermés, quête, sinon « travail du studio ») ; la barre d'XP attend l'arrivée du gain ; passage de rang : bannière plus marquée ; plus de bandeau de niveau en double ; réglage « Gains d'XP » aussi dans Réglages.
+
 ## [0.5.2] - 2026-11-14
 
 Version de correctifs.

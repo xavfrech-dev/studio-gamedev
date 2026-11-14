@@ -1169,7 +1169,9 @@ function niveauStudio() {
 }
 function majNiveau() {
   if (!RM_C) return;
-  const { xp, n } = niveauStudio(), seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
+  // gain d'XP en cours d'affichage (quetes_page.js) : la barre attend qu'il arrive au lieu de sauter tout de suite
+  const vrai = niveauStudio(), tenu = window.Quetes && Quetes.xp && Quetes.xp.tenu ? Quetes.xp.tenu() : null;
+  const xp = tenu != null ? Math.min(vrai.xp, tenu) : vrai.xp, n = tenu != null ? Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1 : vrai.n, seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
   const b = $('#niveau'); b.hidden = false;
   $('#niv-n').textContent = n; $('#niv-rang').textContent = window.PALIER_NOM || RM_C.rang || '';   // nom du palier affiché (cohérent avec la pièce)
   $('#niv-xp').style.width = clamp(100 * (xp - seuil(n)) / Math.max(1, seuil(n + 1) - seuil(n)), 0, 100).toFixed(1) + '%';
@@ -2079,6 +2081,7 @@ function ouvrirReglages() {
       <label class="reglage">${esc(t('notif_duree'))} <select id="rg-nd">${[5, 20, 60].map(x => `<option value="${x}"${x === +LS.get('notif_duree', 5) ? ' selected' : ''}>${x} s</option>`).join('')}</select></label>
       <label class="reglage">${esc(t('ambiance_niv'))} <select id="rg-amb">${['coupee', 'douce', 'vivante'].map(v => `<option value="${v}"${(LS.get('ambiance', 'douce') === false ? 'coupee' : LS.get('ambiance', 'douce')) === v ? ' selected' : ''}>${esc(t('amb_' + v))}</option>`).join('')}</select></label>
       <label class="reglage">${esc(t('micro_mode'))} <select id="rg-micro">${['appui', 'maintien'].map(v => `<option value="${v}"${LS.get('micro_mode', 'appui') === v ? ' selected' : ''}>${esc(t('mode_' + v))}</option>`).join('')}</select></label>
+      ${TXT.fr.xp_reglage ? `<label class="reglage">${esc(t('xp_reglage'))} <select id="rg-xp">${['complet', 'discret', 'coupe'].map(v => `<option value="${v}"${LS.get('xp_fete', 'complet') === v ? ' selected' : ''}>${esc(t('xp_' + v))}</option>`).join('')}</select></label>` : ''}
       <label class="reglage"><input type="checkbox" id="rg-bson"${LS.get('babil_son', true) ? ' checked' : ''}> ${esc(t('babil_son'))}</label>
       <h3 class="rg-groupe">${esc(t('grp_affichage'))}</h3><label class="reglage">${esc(t('theme_t'))} <select id="rg-theme">${['auto', 'clair', 'sombre'].map(v => `<option value="${v}"${LS.get('theme', 'auto') === v ? ' selected' : ''}>${esc(t('theme_' + v))}</option>`).join('')}</select></label><label class="reglage">${esc(t('etiquettes'))} <select id="rg-etiq">${['toujours', 'survol', 'jamais'].map(v => `<option value="${v}"${LS.get('etiquettes', 'toujours') === v ? ' selected' : ''}>${esc(t('etiq_' + v))}</option>`).join('')}</select></label>
       <label class="reglage">${esc(t('taille_texte'))} <select id="rg-taille">${['petite', 'normale', 'grande'].map(v => `<option value="${v}"${LS.get('taille_texte', 'normale') === v ? ' selected' : ''}>${esc(t('t_' + v))}</option>`).join('')}</select></label>
@@ -2100,6 +2103,7 @@ function ouvrirReglages() {
     el.querySelector('#rg-amb').onchange = e => LS.set('ambiance', e.target.value);
     el.querySelector('#rg-micro').onchange = e => LS.set('micro_mode', e.target.value);
     el.querySelector('#rg-bson').onchange = e => LS.set('babil_son', e.target.checked);
+    { const x = el.querySelector('#rg-xp'); if (x) x.onchange = e => { LS.set('xp_fete', e.target.value); try { if (e.target.value !== 'coupe' && window.Quetes && Quetes.xp) Quetes.xp.essai(10, t('xp_reglage')); } catch (er) { /* rien */ } }; }
     el.querySelector('#rg-etiq').onchange = e => LS.set('etiquettes', e.target.value);
     el.querySelector('#rg-theme').onchange = e => { LS.set('theme', e.target.value); appliquerThemeUI(); };
     el.querySelector('#rg-taille').onchange = e => { LS.set('taille_texte', e.target.value); appliquerTaille(); };
@@ -4476,7 +4480,7 @@ function resumeDuMatin() {
 
 // ====================================================================== mode nuit / absent : plus aucune notification, le studio continue ; au retour « Pendant ton absence »
 function modeAbsent() { return !!(REGLAGES && REGLAGES.mode_absent); }
-function photoAbsence() { return { t: Date.now(), rm: RM_C ? RM_C.faites : 0, notifs: (LS.get('notifs', []) || []).length }; }
+function photoAbsence() { return { t: Date.now(), xp: (() => { try { return RM_C ? niveauStudio().xp : null; } catch (e) { return null; } })(), rm: RM_C ? RM_C.faites : 0, notifs: (LS.get('notifs', []) || []).length }; }
 function rapportAbsence(avant, matin) {
   // avant.parTemps : pas de photo sur cet appareil (absence lancée ailleurs, navigateur vidé, PC redémarré) : début gardé par le serveur ; durée jusqu'à la fin de l'absence
   const finAbs = isFinite(Date.parse(avant.fin)) ? Date.parse(avant.fin) : Date.now(), duree_ = duree((finAbs - avant.t) / 60000), notifs = (LS.get('notifs', []) || []).filter(n => (n.t || 0) > avant.t);
@@ -4502,7 +4506,7 @@ function rapportAbsence(avant, matin) {
     .concat(postes().filter(p => { try { return etatPoste(p).etat === 'bloque'; } catch (e) { return false; } }).map(p => nomPoste(p) + ' : ' + t('bloque')));
   const bloc = (h, l) => `<h3>${esc(h)}</h3>${l.length ? `<ol class="liste-j">${l.map(x => `<li>${esc(x)}</li>`).join('')}</ol>` : `<p class="discret">${esc(t('rien'))}</p>`}`;
   Panneau.remplacer('absence', el => { el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t(matin ? 'resume_matin' : 'absence_titre'))} (${esc(duree_)})</h2><p><i>${esc(t('absence_sous'))}</i></p>`
-    + bloc(t('abs_fini'), fini) + (!avant.parTemps && RM_C && RM_C.faites > avant.rm ? `<p>Roadmap : +${RM_C.faites - avant.rm}</p>` : '') + bloc(t('abs_auto'), autos) + bloc(t('abs_equipe'), equipe) + blocDecide + bloc(t('abs_dec'), dec) + bloc(t('abs_pb'), pb)
+    + bloc(t('abs_fini'), fini) + (!avant.parTemps && RM_C && RM_C.faites > avant.rm ? `<p>Roadmap : +${RM_C.faites - avant.rm}</p>` : '') + (() => { let g = 0; try { g = window.Quetes && Quetes.xp ? Quetes.xp.gainAbsence(avant) : 0; } catch (e) { /* rien */ } return g > 0 ? `<p>+${g} XP</p>` : ''; })() + bloc(t('abs_auto'), autos) + bloc(t('abs_equipe'), equipe) + blocDecide + bloc(t('abs_dec'), dec) + bloc(t('abs_pb'), pb)
     + (reps.length ? bloc(t('abs_reponses'), reps) : '') + `<div class="rangee" style="margin-top:12px"><button type="button" class="btp" data-tout-vu>${esc(t('tout_vu'))}</button></div>`;
     const b = el.querySelector('[data-tout-vu]'); if (b) b.onclick = () => { Panneau.fermer(); try { Notifs.toutLu && Notifs.toutLu(); } catch (e) { /* rien */ } };
     el.querySelectorAll('[data-abs-changer]').forEach(c => c.onclick = () => { const d = DECISIONS.find(x => x.id === c.dataset.absChanger); if (d) { Panneau.fermer(); setTimeout(() => ouvrirDecision(d), 450); } }); }, { large: true });
