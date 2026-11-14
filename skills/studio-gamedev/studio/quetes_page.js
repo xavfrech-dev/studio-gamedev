@@ -587,7 +587,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
     const CLE = 'xp_vu:' + (location.port || ''), file = [], raisons = [];
     let base = null, minuteur = 0, enCours = false, passer = null, tenuXp = null, debut = 0, absent = 0, rangVu = null, vuRm = null, accT = 0, accJ = 0;
     const rmCompte = () => (typeof RM_C !== 'undefined' && RM_C) ? { f: +RM_C.faites || 0, j: +RM_C.fermes || 0 } : null;
-    const rangAct = () => (typeof RM_C !== 'undefined' && RM_C && RM_C.rang) || window.PALIER_NOM || '';   // rang de l'XP (Garage, Atelier de quartier…)
+    const rangAct = n => (typeof nomPalier === 'function' ? nomPalier(n) : window.PALIER_NOM) || '';   // rang du palier (Garage… Studio AAA), la même source que l'en-tête #niv-rang
     const absentOn = () => typeof modeAbsent === 'function' && modeAbsent();
     const VUS = new Set(); let vusPret = false;                                // boutons déjà montrés (la bannière de niveau ne montre que les nouveaux)
     const mode = () => { const m = LS.get('xp_fete', 'complet'); return ['complet', 'discret', 'coupe'].includes(m) ? m : 'complet'; };
@@ -604,9 +604,9 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       const xp = lireXp(); if (xp == null) return;
       if (!vusPret && D.qe) { vusPret = true; ((D.qe.deblocages && D.qe.deblocages.boutons) || []).forEach(b => b && b.id && VUS.add(b.id)); }
       const rc = rmCompte(), dT = rc && vuRm ? Math.max(0, rc.f - vuRm.f) : 0, dJ = rc && vuRm ? Math.max(0, rc.j - vuRm.j) : 0; if (rc) vuRm = rc;
-      if (base === null) { base = xp; LS.set(CLE, base); rangVu = rangAct(); return; }   // première lecture : un gain ancien ne s'affiche pas
+      if (base === null) { base = xp; LS.set(CLE, base); rangVu = rangAct(niv(xp)); return; }   // première lecture : un gain ancien ne s'affiche pas
       if (xp < base) { base = xp; LS.set(CLE, base); return; }        // roadmap réécrite : nouvelle base, rien à fêter
-      if (xp > base && (absentOn() || mode() === 'coupe')) { if (absentOn()) absent += xp - base; base = xp; LS.set(CLE, base); raisons.splice(0); accT = accJ = 0; rangVu = rangAct(); return; }
+      if (xp > base && (absentOn() || mode() === 'coupe')) { if (absentOn()) absent += xp - base; base = xp; LS.set(CLE, base); raisons.splice(0); accT = accJ = 0; rangVu = rangAct(niv(xp)); return; }
       if (xp > base) {                                                   // gains cumulés quelques secondes ; la barre attend
         accT += dT; accJ += dJ;
         if (!debut) { debut = Date.now(); if (!enCours) barre(base, false); }
@@ -689,7 +689,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       if (nA > nDe) await niveau(nA, fini);
     }
     async function niveau(n, vite) {
-      const rang = rangAct(), neuf = !!(rang && rangVu && rang !== rangVu); rangVu = rang || rangVu;
+      const rang = rangAct(n), neuf = !!(rang && rangVu && rang !== rangVu); rangVu = rang || rangVu;
       const tous = ((D.qe && D.qe.deblocages && D.qe.deblocages.boutons) || []).filter(b => b && b.id), nouv = tous.filter(b => !VUS.has(b.id)).map(b => L(b.libelle) || b.id);
       tous.forEach(b => VUS.add(b.id));                     // seulement ce qui est arrivé depuis la dernière bannière
       if (mode() === 'discret') { try { Succes.ajouter({ id: 'niveau-' + n, icone: '★', titre: tf('xp_niveau', { n }), sous: rang, taille: 'moyen' }); } catch (e) { /* rien */ } return; }

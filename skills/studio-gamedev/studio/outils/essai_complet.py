@@ -438,6 +438,57 @@ def cmd_serveur(d, port, intervalle):
         alim.terminate()
 
 
+# ---------------------------------------------------------------------------- rang du studio (en-tête et bannière d'XP)
+# L'en-tête (#niv-rang, majNiveau de studio.html) et la bannière de montée de niveau et de passage de rang (rangAct de
+# quetes_page.js, texte de .xf-rang) tirent le nom du palier d'une seule source (paliers.js NOMS), en FR et en EN.
+# Les vraies fonctions de la page sont exécutées sous node (vm), sans navigateur.
+JS_RANG = r"""
+'use strict';
+const fs = require('fs'), path = require('path'), vm = require('vm');
+const dos = process.argv[1], html = fs.readFileSync(path.join(dos, 'studio.html'), 'utf8'), qp = fs.readFileSync(path.join(dos, 'quetes_page.js'), 'utf8');
+const fonction = (src, nom) => {
+  const i = src.indexOf('function ' + nom + '('); if (i < 0) throw new Error('studio.html : function ' + nom + ' absente');
+  const l1 = src.slice(i, src.indexOf('\n', i)); if (l1.trim().endsWith('}')) return l1;   // fonction d'une ligne
+  return src.slice(i, src.indexOf('\n}\n', i) + 2);
+};
+const ligne = (src, debut) => { const i = src.indexOf(debut); if (i < 0) throw new Error('quetes_page.js : « ' + debut + ' » absent'); return src.slice(i, src.indexOf('\n', i)); };
+const el = {}, $ = s => (el[s] = el[s] || { textContent: '', style: {}, hidden: true, title: '' });
+const ctx = { window: {}, console, location: { search: '' }, URLSearchParams, $, clamp: (v, a, b) => Math.min(b, Math.max(a, v)) };
+vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(path.join(dos, 'paliers.js'), 'utf8'), ctx);
+ctx.Paliers = ctx.window.Paliers;
+if (/RM_C\.rang/.test(fonction(html, 'majNiveau')) || /RM_C\.rang/.test(ligne(qp, 'const rangAct = n =>'))) { console.log('ÉCART : RM_C.rang encore lu par l\'en-tête ou la bannière'); process.exit(1); }
+vm.runInContext(['niveauStudio', 'palierDe', 'nomPalier', 'majNiveau'].map(n => fonction(html, n)).join('\n') + '\n'
+  + 'var RM_C = null, ETAT = null, CONF = { mode: "travail" }, REP = { etat: "termine" }, LANGUE = "fr";\n'
+  + ligne(qp, 'const niv = xp =>') + '\n' + ligne(qp, 'const rangAct = n =>') + '\nthis.niv = niv; this.rangAct = rangAct;', ctx);
+const ecarts = [], vus = new Set();
+for (const langue of ['fr', 'en']) for (const [xp, pct] of [[0, 0], [2000, 20], [9000, 40], [26000, 70], [70000, 95], [70000, 10]]) {
+  vm.runInContext(`LANGUE = ${JSON.stringify(langue)}; RM_C = { xp: ${xp}, pct: ${pct}, finie: false, rang: 'Atelier de quartier' }; ETAT = { xp: 0 };`, ctx);
+  vm.runInContext('majNiveau()', ctx);
+  const n = +el['#niv-n'].textContent, entete = el['#niv-rang'].textContent, p = ctx.Paliers.calculer({ mode: 'travail', niveau: n, pct });
+  const attendu = ctx.Paliers.NOMS[langue][p - 1], banniere = ctx.rangAct(ctx.niv(xp));
+  vus.add(entete);
+  if (!entete || entete !== attendu || banniere !== entete) ecarts.push(`${langue} xp ${xp} pct ${pct} : en-tête « ${entete} », palier « ${attendu} », bannière « ${banniere} »`);
+}
+if (vus.size < 8) ecarts.push('trop peu de paliers parcourus : ' + [...vus].join(', '));
+console.log(ecarts.length ? 'ÉCART\n' + ecarts.join('\n') : 'ok ' + [...vus].join(', '));
+process.exit(ecarts.length ? 1 : 0);
+"""
+
+
+def controle_rang(ok, echec):
+    """Le texte de #niv-rang égale le nom du palier courant (FR et EN) et celui de la bannière d'XP."""
+    node = shutil.which("node")
+    if not node:
+        print("  (node absent : contrôle du rang de l'en-tête sauté)", flush=True)
+        return
+    r = subprocess.run([node, "-e", JS_RANG, STUDIO], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
+    sortie = ((r.stdout or "") + (r.stderr or "")).strip()
+    if r.returncode != 0 or not sortie.startswith("ok"):
+        echec("rang de l'en-tête : " + sortie[-1500:])
+    ok("rang de l'en-tête (#niv-rang) = nom du palier courant (paliers.js, FR et EN) = rang de la bannière d'XP, jamais RM_C.rang (" + sortie[3:] + ")")
+
+
 # ---------------------------------------------------------------------------- fonctions du mode travail (sans navigateur)
 def cmd_fonctions(d, port):
     """Bulles de décision, fil de conversation, fin de tâche, renvoi et réembauche, embauche automatique, garde-fous :
@@ -511,6 +562,7 @@ def cmd_fonctions(d, port):
             if f not in page:
                 echec(f"studio.html : « {f} » absent")
         ok("page servie : bulles de décision, conversation, fin de tâche, renvoi, réglages, embauche auto, bandeau d'état")
+        controle_rang(ok, echec)
 
         # fil : demandes au nom unique, jamais écrasées ; même texte en moins de 60 s = une seule demande
         r1 = api("/api/demande", {"cible": "assistant", "texte": "Ajoute un écran titre.", "via": "ecrit"})
@@ -553,6 +605,24 @@ def cmd_fonctions(d, port):
         t_fichier = int(os.path.getmtime(prog))
         if not q or q.get("progression_t") != t_fichier or q.get("fin_t") != t_fichier + 600:
             echec(f"temps réel : progression_t / fin_t absents ou faux ({q and {k: q.get(k) for k in ('progression_t', 'fin_t', 'progression')}})")
+        # tâche du moment d'une recrue : sa barre, jamais la mission d'embauche (même si la demande d'embauche reste « lancé »)
+        if q.get("tache_moment") != "Ambiances de nuit":
+            echec(f"tâche du moment : barre attendue, pas {q.get('tache_moment')!r}")
+        statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
+        statuts["renfort-essai"] = {"statut": "lancé", "maj": maintenant()}   # demande d'embauche jamais close
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        vieillir(prog, 40)                                                     # barre moins fraîche, toujours à 40 %
+        q = poste_de(etat_une_fois(), "renfort-essai")
+        lg = (q or {}).get("ligne") or {}
+        if not q or "Tâches sans moteur" in str(lg.get("complet")) or "Ambiances de nuit" not in str(lg.get("complet")) or q.get("tache_moment") != "Ambiances de nuit":
+            echec(f"tâche du moment : la mission d'embauche passe pour la tâche en cours ({lg}, {q and q.get('tache_moment')!r})")
+        ecrire(prog, {"pct": 100, "texte": "Liste des sons écrite"})
+        q = poste_de(etat_une_fois(), "renfort-essai")
+        if not q or q.get("tache_moment") not in ("embauché pour : Tâches sans moteur.", "Liste des sons écrite"):
+            echec(f"tâche du moment : « embauché pour : … » ou la barre finie attendus, pas {q and q.get('tache_moment')!r}")
+        statuts["renfort-essai"] = {"statut": "pas lancé", "maj": maintenant()}
+        ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
+        ok("tâche du moment d'une recrue : sa barre en cours, sinon « embauché pour : <mission> » ; la demande d'embauche restée ouverte ne la remplace pas")
         ecrire(prog, {"pct": 100, "texte": "Liste des sons écrite"})   # on remet la recrue libre pour la suite de l'essai
         vieillir(prog, 10)
         ok("temps réel : etat.json donne l'heure de la dernière nouvelle de l'agent et sa fin prévue (barre interpolée dans la page)")

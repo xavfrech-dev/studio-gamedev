@@ -48,7 +48,7 @@ button{cursor:pointer}
 @keyframes sonne{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}40%{transform:rotate(-12deg)}60%{transform:rotate(8deg)}}
 #niveau{display:flex;flex-direction:column;gap:3px;min-width:150px;padding:6px 14px;border:1px solid var(--bord);border-radius:14px;background:rgba(255,250,235,.05);color:#e8dcc2;font:13px var(--serif);cursor:pointer;text-align:left}
 #niveau b{color:#f1d9a4;font-size:17px}
-#niveau .rang{font-style:italic;color:#e2b866}
+#niveau .rang{font:italic calc(15px * var(--ui, 1)) var(--serif);color:#e2b866}
 #niveau .xpm{height:7px;border-radius:3px;background:#3a3128;overflow:hidden}
 #niveau .xpm i{display:block;height:100%;width:0;background:linear-gradient(90deg,#c9953e,#f1d9a4);transition:width .8s}
 
@@ -1167,13 +1167,24 @@ function niveauStudio() {
   const xp = (RM_C && RM_C.xp || 0) + (ETAT && Number.isFinite(+ETAT.xp) ? +ETAT.xp : 0);
   return { xp, n: Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1 };
 }
+// Rang du studio : UNE seule source, les paliers (paliers.js, NOMS : Garage… Studio AAA). L'en-tête (#niv-rang), la bannière
+// de montée de niveau et de passage de rang (quetes_page.js) et la pièce le tirent d'ici, jamais RM_C.rang (rangs de la roadmap).
+// Studio rank: ONE source, the tiers (paliers.js NOMS); header, XP banner and room all read it here.
+function palierDe(n) {
+  if (typeof Paliers === 'undefined') return 0;
+  const tout = CONF.mode === 'travail' || REP.etat === 'termine';
+  const force = (+window.__palierForce || 0) || +(new URLSearchParams(location.search).get('palier')) || +CONF.palier || 0;
+  return Paliers.calculer({ force, mode: tout ? 'travail' : 'accueil', niveau: n || niveauStudio().n, pct: RM_C ? RM_C.pct : 0, finie: RM_C && RM_C.finie });
+}
+function nomPalier(n) { const p = palierDe(n); return p ? (Paliers.NOMS[LANGUE === 'en' ? 'en' : 'fr'] || Paliers.NOMS.fr)[p - 1] || '' : ''; }
+window.nomPalier = nomPalier;
 function majNiveau() {
   if (!RM_C) return;
   // gain d'XP en cours d'affichage (quetes_page.js) : la barre attend qu'il arrive au lieu de sauter tout de suite
   const vrai = niveauStudio(), tenu = window.Quetes && Quetes.xp && Quetes.xp.tenu ? Quetes.xp.tenu() : null;
   const xp = tenu != null ? Math.min(vrai.xp, tenu) : vrai.xp, n = tenu != null ? Math.floor(Math.pow(Math.max(0, xp) / 100, .55)) + 1 : vrai.n, seuil = k => Math.ceil(100 * Math.pow(Math.max(0, k - 1), 1 / .55) - 1e-6);
   const b = $('#niveau'); b.hidden = false;
-  $('#niv-n').textContent = n; $('#niv-rang').textContent = window.PALIER_NOM || RM_C.rang || '';   // nom du palier affiché (cohérent avec la pièce)
+  $('#niv-n').textContent = n; $('#niv-rang').textContent = nomPalier(n);   // nom du palier du niveau affiché : le même que la bannière d'XP (nomPalier)
   $('#niv-xp').style.width = clamp(100 * (xp - seuil(n)) / Math.max(1, seuil(n + 1) - seuil(n)), 0, 100).toFixed(1) + '%';
   b.title = `${xp} XP · ${RM_C.pct} %`;
 }
@@ -1745,7 +1756,11 @@ function finiUneFois(p, e) {
   const ep = etatFrais() ? ETAT.postes.find(x => x && x.id === p.id) : null;
   const tache = String((ep && (ep.tache_moment || ep.texte)) || e.texte || '').trim();
   if (!tache) return true;   // tâche inconnue : on notifie (sinon une clé vide bloquerait toutes les fins du poste 12 h)
-  const cle = p.id + '|' + tache, vus = LS.get('fini_vus', {}) || {}, n = Date.now();
+  return vuUneFois(p.id + '|' + tache);
+}
+// clé vue une seule fois en 12 h (mémoire de l'appareil, partagée par ses onglets, oubliée après 24 h)
+function vuUneFois(cle) {
+  const vus = LS.get('fini_vus', {}) || {}, n = Date.now();
   if (vus[cle] && n - vus[cle] < 12 * 3600e3) return false;
   vus[cle] = n; for (const k of Object.keys(vus)) if (!(n - vus[k] < 24 * 3600e3)) delete vus[k];
   LS.set('fini_vus', vus); return true;
@@ -2154,8 +2169,10 @@ const FinTache = (() => {
         const fini = String(ep.fini || ep.texte || '').slice(0, 120), p = postes().find(x => x.id === ep.id);
         FIN[ep.id] = { debut: Date.now(), cle, fini };
         const qf = (+ep.depuis || 0) * 1000;
-        if (!notifVieille(qf)) Bureau.dire(ep.id, `${t('jai_fini')}${fini ? ' « ' + fini.slice(0, 60) + ' »' : ''}. ${t('quelque_chose')}`, 10);
-        Notifs.ajouter({ id: 'fin-' + cle, type: 'decision', titre: nomPoste(p) + ' · ' + t('fin_tache'), ligne: fini, cible: { poste: ep.id }, quand: qf });
+        // une relance du studio donne un nouveau « depuis » (nouvelle clé) : pas de deuxième annonce pour la même tâche finie (12 h)
+        const neuf = !fini.trim() || vuUneFois('fin:' + ep.id + '|' + fini.trim());
+        if (neuf && !notifVieille(qf)) Bureau.dire(ep.id, `${t('jai_fini')}${fini ? ' « ' + fini.slice(0, 60) + ' »' : ''}. ${t('quelque_chose')}`, 10);
+        if (neuf) Notifs.ajouter({ id: 'fin-' + cle, type: 'decision', titre: nomPoste(p) + ' · ' + t('fin_tache'), ligne: fini, cible: { poste: ep.id }, quand: qf });
       } else if (FIN[ep.id] && (!ep.fin_de_tache || ep.etat !== 'disponible')) clore(ep.id);
     }
   }
@@ -3738,17 +3755,17 @@ const Bureau = (() => {
     const tout = CONF.mode === 'travail' || REP.etat === 'termine', cle = 'palier.' + (CONF.nom_projet || 'studio');
     const force = forcePalier || +(new URLSearchParams(location.search).get('palier')) || +CONF.palier || 0;
     if (!force && tout && !RM_C) { if (!PAL.cible()) PAL.regler(LS.get(cle, 1), false); return; }   // roadmap pas encore lue
-    const p = Paliers.calculer({ force, mode: tout ? 'travail' : 'accueil', niveau: niveauStudio().n, pct: RM_C ? RM_C.pct : 0, finie: RM_C && RM_C.finie });
+    const p = palierDe(niveauStudio().n);   // même calcul que l'en-tête et la bannière d'XP
     const vu = LS.get(cle, 0);
     if (!PAL.cible()) PAL.regler(vu && vu < p && !force ? vu : p, false);
-    const nomP = Paliers.NOMS[LANGUE === 'en' ? 'en' : 'fr'][p - 1];
+    const nomP = nomPalier(niveauStudio().n);
     if (window.PALIER_NOM !== nomP) { window.PALIER_NOM = nomP; majNiveau(); }   // le badge suit la pièce, pas seulement le rang
     if (PAL.cible() === p) { if (!force && vu !== p) LS.set(cle, p); return; }
     const monte = PAL.regler(p, ANIM);
     if (!force) LS.set(cle, p);
     if (monte) Succes.ajouter({ id: 'palier-' + p + '-' + Date.now(), icone: '▲', titre: (LANGUE === 'en' ? 'Your studio grows: ' : 'Ton studio s’agrandit : ') + Paliers.NOMS[LANGUE === 'en' ? 'en' : 'fr'][p - 1], sous: LANGUE === 'en' ? 'New floor, walls, lights and furniture' : 'Nouveau sol, murs, lumières et mobilier', taille: 'moyen' });
   }
-  window.essaiPalier = p => { forcePalier = clamp(+p || 0, 0, 5); majPalier.t = 0; return forcePalier ? 'palier ' + forcePalier : 'palier automatique'; };
+  window.essaiPalier = p => { forcePalier = window.__palierForce = clamp(+p || 0, 0, 5); majPalier.t = 0; majNiveau(); return forcePalier ? 'palier ' + forcePalier : 'palier automatique'; };
   let dernier = performance.now();
   // P6 : 30 images/s au plus, 10 au repos (rien touché depuis 2 min), 1 sans animations ; rien quand l'onglet est caché (rAF suspendu)
   let derniereInter = performance.now();
