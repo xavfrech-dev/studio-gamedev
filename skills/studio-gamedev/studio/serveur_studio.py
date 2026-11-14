@@ -1652,6 +1652,8 @@ def route_recruter(d):
     nom = texte(d, "nom", 40, True).lower()
     if not NOM_RE.match(nom) or nom in NOMS_RESERVES:
         raise Refus(400, "nom : 3 à 40 caractères parmi a-z, 0-9 et - (commence par une lettre ou un chiffre)")
+    if nom.startswith(jsonio.ANCIEN):   # préfixe des fiches rangées (jsonio.nom_fiche_archive) : la réembauche l'enlèverait
+        raise Refus(400, f"nom : « {jsonio.ANCIEN} » au début est réservé aux fiches rangées")
     if nom in {p.get("id") for p in (conf.get("postes") or []) if isinstance(p, dict)}:
         raise Refus(409, f"« {nom} » est déjà un poste du studio : choisis un autre nom")
     affiche = texte(d, "nom_affiche", 40) or nom.replace("-", " ").capitalize()

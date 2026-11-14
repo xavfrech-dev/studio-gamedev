@@ -525,6 +525,7 @@ def cmd_fonctions(d, port):
         ok("demandes : nom unique (ms + code) en mode exclusif, doublon de moins de 60 s ignoré, une seule optimisation en attente")
 
         # recrue, puis fin de tâche après un vrai calme
+        api("/api/recruter", {"nom": "ancien-essai", "nom_affiche": "Ancien", "role": "x", "mission": "x", "lancer": False}, 400)   # préfixe réservé aux fiches rangées
         api("/api/recruter", {"nom": "renfort-essai", "nom_affiche": "Renfort", "role": "Aide polyvalente", "mission": "Tâches sans moteur.", "lancer": False})
         statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
         statuts["renfort-essai"] = {"statut": "pas lancé", "maj": maintenant()}   # ce que Claude note pour lancer: false (SKILL.md)
