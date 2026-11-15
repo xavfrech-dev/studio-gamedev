@@ -9,7 +9,8 @@ Vérifie :
 - O14 : transcript_cc.py écarte les résultats d'outils sans perdre le texte visible ;
 - G11 : crochet_journal.py numérote les réponses (champ n croissant), même liste pleine (60) ;
 - M21 : dictee_propre.py (auto-essai) ;
-- M24 : essai_automatismes.py ne laisse plus de dossier temporaire.
+- M24 : essai_automatismes.py ne laisse plus de dossier temporaire ;
+- R15 : equipe.dossiers_workflows suit CLAUDE_CONFIG_DIR et « dossier_session » (jamais une session en dur).
 
 Usage : python -I -B essai_outils.py [--garder]      code 0 = tout vert
 """
@@ -194,6 +195,33 @@ def essai_divers(base):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def essai_workflows(base):
+    print("R15. Dossiers des chaînes (toutes les sessions, CLAUDE_CONFIG_DIR, dossier_session forcé)")
+    import equipe
+    projet = os.path.join(base, "Mon jeu R15")
+    os.makedirs(projet, exist_ok=True)
+    conf = os.path.join(base, "config_claude")
+    slug = __import__("re").sub(r"[^A-Za-z0-9]", "-", os.path.abspath(projet))
+    vieux = os.path.join(conf, "projects", slug, "ancienne", "subagents", "workflows")
+    neuf = os.path.join(conf, "projects", slug, "nouvelle", "subagents", "workflows")
+    force = os.path.join(base, "force", "s1", "subagents", "workflows")
+    for d in (vieux, neuf, force):
+        os.makedirs(d, exist_ok=True)
+    avant = os.environ.get("CLAUDE_CONFIG_DIR")
+    os.environ["CLAUDE_CONFIG_DIR"] = conf
+    try:
+        trouves = {os.path.normcase(os.path.realpath(d)) for d in equipe.dossiers_workflows(projet)}
+        ok(trouves == {os.path.normcase(os.path.realpath(d)) for d in (vieux, neuf)}, f"CLAUDE_CONFIG_DIR suivi, toutes les sessions lues ({len(trouves)}/2)")
+        f = equipe.dossiers_workflows(projet, dossier_session=os.path.join(base, "force"))
+        ok([os.path.realpath(x) for x in f] == [os.path.realpath(force)], "dossier_session forcé : seul ce dossier est lu")
+        ok(len(equipe.dossiers_workflows(projet, dossier_session="auto")) == 2, "dossier_session « auto » : déduit du projet")
+    finally:
+        if avant is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = avant
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--garder", action="store_true", help="garder le dossier temporaire")
@@ -206,6 +234,7 @@ def main(argv=None):
         essai_crochets(base)
         essai_crochet_journal(base)
         essai_divers(base)
+        essai_workflows(base)
     finally:
         if a.garder:
             print(f"dossier gardé : {base}")

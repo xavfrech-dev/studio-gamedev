@@ -116,12 +116,19 @@ def modele_court(m):
     return x.group(1).lower() if x else (str(m or "") or "")
 
 
-def dossiers_workflows(projet, maison=None):
-    """~/.claude/projects/<slug du projet>/<session>/subagents/workflows (toutes les sessions du projet)."""
-    if not projet:
+def dossiers_workflows(projet, maison=None, dossier_session=None):
+    """<config Claude>/projects/<slug du projet>/<session>/subagents/workflows (toutes les sessions du projet).
+    15/11 (jumeau du studio d'origine : session codée en dur, chef figé sur une vieille chaîne) : le dossier des
+    sessions se déduit comme ailleurs dans le studio (CLAUDE_CONFIG_DIR, sinon ~/.claude), et se force par
+    « dossier_session » de studio.config.json ; aucune session n'est jamais retenue en dur."""
+    if dossier_session and dossier_session != "auto":
+        base = dossier_session
+    elif not projet:
         return []
-    slug = re.sub(r"[^A-Za-z0-9]", "-", os.path.abspath(projet))
-    base = os.path.join(maison or os.path.expanduser("~"), ".claude", "projects", slug)
+    else:
+        slug = re.sub(r"[^A-Za-z0-9]", "-", os.path.abspath(projet))
+        config = os.path.join(maison, ".claude") if maison else (os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude"))
+        base = os.path.join(config, "projects", slug)
     try:
         return [d for d in glob.glob(os.path.join(glob.escape(base), "*", "subagents", "workflows")) if os.path.isdir(d)]
     except OSError:

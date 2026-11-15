@@ -2294,7 +2294,7 @@ def lire_equipe():
                              dossiers_agents=[], dossiers_lecture=[projet_ag] + ([perso] if os.path.realpath(perso) != os.path.realpath(projet_ag) else []),
                              dossier_recrues=os.path.join(Etat.studio, "recrues"),
                              dossiers_anciens_agents=[os.path.join(Etat.studio, "anciens", "agents")],
-                             workflows=equipe.dossiers_workflows(Etat.projet), anglais=en,
+                             workflows=equipe.dossiers_workflows(Etat.projet, dossier_session=conf.get("dossier_session") if isinstance(conf.get("dossier_session"), str) else None), anglais=en,
                              modele_defaut=mods.get("defaut") or "sonnet")
 
 
