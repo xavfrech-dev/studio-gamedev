@@ -196,14 +196,28 @@ FLUX_GENRES = ("choisir", "travail", "relire")
 FLUX_DOUBLE_RE = re.compile(r"-\d+$")   # poste doublé : « blender-2 » travaille pour le poste « blender »
 
 
+def _titre_choisi(r):
+    """Titre de la tâche choisie par une étape « choisir:<poste> » (son résultat : objet, ou texte avec « titre »).
+    Rien pour un choix vide (« rien ») ou « Aucune … »."""
+    if isinstance(r, str):
+        m = re.search(r"""['"]titre['"]\s*:\s*(['"])(.+?)\1\s*[,}]""", r)
+        r = {"titre": m.group(2)} if m else {}
+    if isinstance(r, dict) and r.get("titre") and not r.get("rien") and not str(r["titre"]).strip().startswith("Aucune"):
+        return str(r["titre"]).strip()[:200]
+    return ""
+
+
 def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
-    """Agents des flux de postes réellement en cours : {poste: genre d'étape} (« choisir », « travail » ou « relire »).
+    """Agents des flux de postes réellement en cours : {poste: {"genre", "titre"}} ; genre : « choisir », « travail » ou
+    « relire » ; titre : la tâche en cours, résultat du dernier « choisir:<poste> » du même journal (sinon "").
     Jumeau du correctif du studio d'origine (15/11 22:55, « toute l'équipe est en attente » alors qu'une vingtaine
     d'agents travaillaient) : un poste lancé en workflow (labels « choisir:<poste> », « travail:<poste> »,
     « relire:<poste> », poste doublé « <poste>-2 ») ne réécrit pas sa progression pendant une longue tâche, ou la
     laisse à 100 % entre deux tâches. On lit les journaux des workflows (dossiers_workflows) bougés depuis
     `fenetre_min` minutes et on garde les agents démarrés sans résultat ; un run fini ou immobile est ignoré
-    (un run tué laisse ses agents « démarrés » dans un journal qui ne bouge plus). Lecture seule."""
+    (un run tué laisse ses agents « démarrés » dans un journal qui ne bouge plus). Lecture seule.
+    15/11 23:15 (jumeau) : le titre choisi passe dans les minis du groupe à la place d'un vieux fichier de progression ;
+    une étape « travail » ou « relire » avec son titre l'emporte sur un « choisir » ou une étape sans titre."""
     t = maintenant or time.time()
     limite = t - fenetre_min * 60
     out = {}
@@ -212,7 +226,7 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
             try:
                 if os.path.getmtime(jr) < limite:
                     continue
-                ouverts, fini = {}, False
+                ouverts, fini, labels, titres = {}, False, {}, {}
                 with open(jr, encoding="utf-8", errors="replace") as f:
                     for ligne in f:
                         try:
@@ -223,9 +237,14 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
                             continue
                         ty, cle = e.get("type"), e.get("agentId") or e.get("key")
                         if ty == "started" and cle:
-                            ouverts[cle] = str(e.get("label") or "")
+                            ouverts[cle] = labels[cle] = str(e.get("label") or "")
                         elif ty == "result" and cle:
                             ouverts.pop(cle, None)
+                            lab = labels.get(cle, "")
+                            if lab.startswith("choisir:"):
+                                t_ = _titre_choisi(e.get("result"))
+                                if t_:
+                                    titres[lab.partition(":")[2].strip()] = t_
                         elif ty in ("finished", "completed", "failed", "cancelled", "stopped"):
                             fini = True
             except OSError:
@@ -233,10 +252,15 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
             if fini:
                 continue
             for label in ouverts.values():
-                genre, _, poste = label.partition(":")
-                poste = FLUX_DOUBLE_RE.sub("", poste.strip())
-                if genre in FLUX_GENRES and poste:
-                    out.setdefault(poste, genre)
+                genre, _, brut = label.partition(":")
+                brut = brut.strip()
+                poste = FLUX_DOUBLE_RE.sub("", brut)
+                if genre not in FLUX_GENRES or not poste:
+                    continue
+                v = {"genre": genre, "titre": "" if genre == "choisir" else titres.get(brut, "")}
+                a = out.get(poste)
+                if a is None or (v["titre"] and (a["genre"] == "choisir" or not a["titre"])):
+                    out[poste] = v
     return out
 
 

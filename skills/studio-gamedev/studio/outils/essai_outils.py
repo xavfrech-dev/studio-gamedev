@@ -12,7 +12,8 @@ Vérifie :
 - M24 : essai_automatismes.py ne laisse plus de dossier temporaire ;
 - R15 : equipe.dossiers_workflows suit CLAUDE_CONFIG_DIR et « dossier_session » (jamais une session en dur).
 - R16 : agents des flux de postes (labels choisir:/travail:/relire:<poste>, poste doublé <poste>-2) : un poste dont un agent
-  est démarré sans résultat « travaille » même avec une progression à 100 % immobile (correctif du 15/11 22:55).
+  est démarré sans résultat « travaille » même avec une progression à 100 % immobile (correctif du 15/11 22:55) ;
+  le titre du dernier « choisir:<poste> » est sa tâche (bandeau, minis), même devant une progression (15/11 23:15).
 
 Usage : python -I -B essai_outils.py [--garder]      code 0 = tout vert
 """
@@ -225,7 +226,7 @@ def essai_workflows(base):
 
 
 def essai_flux(base):
-    print("R16. Agents des flux de postes : le poste travaille même si sa progression ne bouge pas")
+    print("R16. Agents des flux de postes : le poste travaille, avec le titre choisi, même si sa progression ne bouge pas")
     import equipe
     import studio_etat
     projet = os.path.join(base, "Mon jeu R16")
@@ -241,44 +242,68 @@ def essai_flux(base):
         ch = os.path.join(d, "journal.jsonl")
         with open(ch, "w", encoding="utf-8") as f:
             for l in lignes:
-                f.write(json.dumps(l) + "\n")
+                f.write(json.dumps(l, ensure_ascii=False) + "\n")
         t = time.time() - age_min * 60
         os.utime(ch, (t, t))
 
-    journal("flux1", [{"type": "started", "agentId": "a1", "label": "choisir:blender-2"},
-                      {"type": "started", "agentId": "a2", "label": "travail:faune"}, {"type": "result", "agentId": "a2"},
-                      {"type": "started", "agentId": "a3", "label": "relire:son"},
-                      {"type": "started", "agentId": "a4", "label": "preparer:carte"}])
+    journal("flux1", [
+        # blender doublé : choix rendu en texte (regex), puis le travail en cours sous « blender-2 »
+        {"type": "started", "agentId": "a0", "label": "choisir:blender-2"},
+        {"type": "result", "agentId": "a0", "result": "Choix : {'titre': 'Animer le loup', 'poste': 'blender'}"},
+        {"type": "started", "agentId": "a1", "label": "travail:blender-2"},
+        # faune : choix rendu en objet, travail en cours (une vieille progression fraîche ne doit pas l'emporter)
+        {"type": "started", "agentId": "f0", "label": "choisir:faune"},
+        {"type": "result", "agentId": "f0", "result": {"titre": "Poser les rochers"}},
+        {"type": "started", "agentId": "f1", "label": "travail:faune"},
+        # son : « Aucune … » n'est pas un titre ; la relecture reste générique
+        {"type": "started", "agentId": "s0", "label": "choisir:son"},
+        {"type": "result", "agentId": "s0", "result": {"titre": "Aucune tâche disponible"}},
+        {"type": "started", "agentId": "s1", "label": "relire:son"},
+        # carte : choix « rien » ignoré ; décor : seulement en train de choisir
+        {"type": "started", "agentId": "c0", "label": "choisir:carte"},
+        {"type": "result", "agentId": "c0", "result": {"titre": "Quelque chose", "rien": True}},
+        {"type": "started", "agentId": "c1", "label": "travail:carte"},
+        {"type": "started", "agentId": "d0", "label": "choisir:decor"},
+        # rendu : travail fini (résultat), autre label ignoré
+        {"type": "started", "agentId": "r1", "label": "travail:rendu"}, {"type": "result", "agentId": "r1"},
+        {"type": "started", "agentId": "x1", "label": "preparer:menu"}])
     journal("vieux", [{"type": "started", "agentId": "b1", "label": "travail:vieux"}], age_min=90)
     journal("fini", [{"type": "started", "agentId": "c1", "label": "travail:termine"}, {"type": "finished"}])
-    ecrire(os.path.join(st, "studio.config.json"), {"postes": [{"id": i, "nom": i.capitalize()} for i in ("blender", "faune", "son", "libre")]})
-    for poste in ("blender", "faune"):
+    ecrire(os.path.join(st, "studio.config.json"),
+           {"postes": [{"id": i, "nom": i.capitalize()} for i in ("blender", "faune", "son", "carte", "decor", "rendu", "libre")]})
+    for poste, pct, age in (("blender", 100, 10), ("rendu", 100, 10), ("faune", 40, 2)):
         ch = os.path.join(st, "progression", poste + ".json")
-        ecrire(ch, {"pct": 100, "etape": "tâche précédente finie"})
-        t = time.time() - 10 * 60
+        ecrire(ch, {"pct": pct, "etape": "vieille tâche de la progression"})
+        t = time.time() - age * 60
         os.utime(ch, (t, t))
     avant = os.environ.get("CLAUDE_CONFIG_DIR")
     os.environ["CLAUDE_CONFIG_DIR"] = conf_dir
     try:
         flux = equipe.agents_en_cours_flux(equipe.dossiers_workflows(projet))
-        ok(flux == {"blender": "choisir", "son": "relire"}, f"démarrés sans résultat seulement, « -2 » rattaché au poste, vieux / finis / autres labels ignorés ({flux})")
+        attendu = {"blender": {"genre": "travail", "titre": "Animer le loup"}, "faune": {"genre": "travail", "titre": "Poser les rochers"},
+                   "son": {"genre": "relire", "titre": ""}, "carte": {"genre": "travail", "titre": ""}, "decor": {"genre": "choisir", "titre": ""}}
+        ok(flux == attendu, f"démarrés sans résultat, titre du dernier choix (objet ou texte), « Aucune » et « rien » écartés, -2 rattaché ({flux})")
         s = studio_etat.Studio(projet)
         conf = s.config()
         args = (conf, None, s.progressions(), {}, [], {}, [], None, None)
         sans = {q["id"]: q for q in s.postes(*args)}
         ok(sans["blender"]["etat"] != "travaille" and sans["blender"]["fin_de_tache"], f"sans les flux : blender {sans['blender']['etat']}, fin de tâche annoncée")
         avec = {q["id"]: q for q in s.postes(*args, flux=s.agents_flux(conf))}
-        ok(avec["blender"]["etat"] == "travaille" and avec["blender"]["ligne"]["picto"] == "▶" and not avec["blender"]["fin_de_tache"],
-           f"avec les flux : blender {avec['blender']['etat']}, ligne « {avec['blender']['ligne']['texte']} », pas de fin de tâche")
+        b, f_ = avec["blender"], avec["faune"]
+        ok(b["etat"] == "travaille" and b["ligne"]["picto"] == "▶" and b["ligne"]["complet"] == "Animer le loup" and b["tache_moment"] == "Animer le loup"
+           and not b["fin_de_tache"], f"blender : {b['etat']}, ligne « {b['ligne']['complet']} », mini « {b['tache_moment']} », pas de fin de tâche")
+        ok(f_["tache"] == "Poser les rochers" and f_["tache_moment"] == "Poser les rochers",
+           f"faune : le titre choisi l'emporte sur une progression fraîche (« {f_['tache']} », mini « {f_['tache_moment']} »)")
         ok(avec["son"]["etat"] == "travaille" and "relecture" in avec["son"]["ligne"]["complet"], f"son : {avec['son']['etat']} ({avec['son']['ligne']['complet']})")
-        ok(avec["faune"]["etat"] != "travaille" and avec["libre"]["etat"] == "disponible",
-           f"faune (résultat rendu) : {avec['faune']['etat']} ; libre : {avec['libre']['etat']}")
+        ok(avec["carte"]["ligne"]["complet"] == "travaille sur sa tâche" and avec["decor"]["ligne"]["complet"] == "choisit sa prochaine tâche",
+           f"sans titre : « {avec['carte']['ligne']['complet']} », « {avec['decor']['ligne']['complet']} »")
+        ok(avec["rendu"]["etat"] != "travaille" and avec["libre"]["etat"] == "disponible",
+           f"rendu (résultat rendu) : {avec['rendu']['etat']} ; libre : {avec['libre']['etat']}")
     finally:
         if avant is None:
             os.environ.pop("CLAUDE_CONFIG_DIR", None)
         else:
             os.environ["CLAUDE_CONFIG_DIR"] = avant
-
 
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)

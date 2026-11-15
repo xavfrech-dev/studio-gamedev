@@ -615,7 +615,7 @@ class Studio:
         return max(0.0, (time.time() - recent) / 60)
 
     def agents_flux(self, conf):
-        """{poste: genre d'étape} des agents des flux de postes en cours (equipe.agents_en_cours_flux) : un poste lancé en
+        """{poste: {genre, titre}} des agents des flux de postes en cours (equipe.agents_en_cours_flux) : un poste lancé en
         workflow travaille même si sa progression n'a pas bougé ou reste à 100 % entre deux tâches (correctif 15/11 22:55
         du studio d'origine : « toute l'équipe est en attente » alors qu'une vingtaine d'agents travaillaient)."""
         import equipe
@@ -876,9 +876,15 @@ class Studio:
                 etat = "disponible"
             # 15/11 22:55 (jumeau du studio d'origine) : un agent d'un flux de postes réellement en cours l'emporte sur
             # « attend », « fini » et « disponible » (sa progression ne bouge pas pendant une longue tâche, ou reste à 100 %)
-            f_genre = flux.get(pid) or flux.get(str(p.get("nom") or ""))
+            f_ = flux.get(pid) or flux.get(str(p.get("nom") or ""))
+            f_ = f_ if isinstance(f_, dict) else {"genre": f_} if isinstance(f_, str) else None
+            f_genre = (f_ or {}).get("genre") or ""
             if f_genre and etat in ("attend", "fini", "disponible"):
                 etat = "travaille"
+            # 15/11 23:15 (jumeau) : la tâche choisie par le flux (titre du dernier « choisir:<poste> ») est la tâche du moment,
+            # même s'il reste un vieux fichier de progression : c'est elle que montrent le bandeau et les minis du groupe
+            f_titre = str((f_ or {}).get("titre") or "")
+            f_texte = ((tx("relecture : ", "review: ") if f_genre == "relire" else "") + f_titre) if f_titre and f_genre != "choisir"                 else flux_lib.get(f_genre, "")
             # progression affichée
             if pc is not None:
                 prog_aff, src = pc, f"progression/{prog_nom}.json"
@@ -908,12 +914,14 @@ class Studio:
                     complet = lancee["titre"] or tx("demande lancée", "request started")
                 elif ouvert:
                     complet = f"{ouvert['nom']} " + tx("ouvert", "open") + (tx(" : ", ": ") + texte_prog if texte_prog and not fini_prog else "")
-                elif f_genre and not (frais and not fini_prog):
-                    complet = flux_lib.get(f_genre) or tx("au travail", "at work")
+                elif f_genre:
+                    complet = f_texte or tx("au travail", "at work")
                 elif pid == sess_poste:
                     complet = tx("orchestre la session", "runs the session")
                 else:
                     complet = court(st.get("texte"), 100) or texte_prog or tx("au travail", "at work")
+                if f_genre and f_texte:                       # le flux l'emporte (ligne, tâche, minis), même sur une progression
+                    complet = f_texte
             elif etat in ("attend", "fini"):
                 if a.get("attente"):
                     picto, complet = "⏸", tx("attend ", "waiting for ") + court(a["attente"], 100)
@@ -940,7 +948,7 @@ class Studio:
                  "progression": prog_aff, "progression_source": src, "restant_min": restant_de(prog) if etat in ("travaille", "bloque") else None,
                  "texte": texte_prog or court(st.get("texte"), 120), "tache": complet, "restantes": restantes[:12],
                  # tâche du moment (fiche, notification « a fini ») : la barre en cours, sinon la ligne ; « embauché pour : … » si rien
-                 "tache_moment": barre or (complet if etat in ("travaille", "bloque") else "") or (texte_prog if fini_prog else "") or mission_txt,
+                 "tache_moment": (complet if f_genre and etat == "travaille" else "") or barre or (complet if etat in ("travaille", "bloque") else "") or (texte_prog if fini_prog else "") or mission_txt,
                  "demandes": [{"fichier": d["fichier"], "titre": d["titre"], "statut": d["statut"], "tache_id": d["tache_id"],
                                "origine": d["origine"]} for d in dem][:6],
                  "ligne": {"picto": picto, "texte": court(complet, 40), "complet": court(complet, 200)}}
