@@ -448,14 +448,17 @@ class Studio:
             if not isinstance(d, dict):
                 raise ValueError("objet JSON attendu")
             self.anomalies.pop(rel, None)
+            self.__dict__.setdefault("_dernier_bon", {})[chemin] = d
             return d
         except FileNotFoundError:
             self.anomalies.pop(rel, None)
             self.lus.pop(chemin, None)
             return None
         except Exception as e:  # noqa: un fichier fautif ne doit pas arrêter le studio
-            if age_min(chemin) is not None and age_min(chemin) < 0.05:
-                return None   # en cours d'écriture : on attend le passage suivant
+            if age_min(chemin) is not None and age_min(chemin) < 2:
+                # 15/11 : un fichier écrit pendant qu'on le lit (agent + suivi en même temps) : on garde la dernière
+                # bonne lecture et on ne signale rien ; seul un fichier illisible depuis plus de 2 min est une anomalie
+                return getattr(self, "_dernier_bon", {}).get(chemin)
             self.anomalie(rel, court(f"{type(e).__name__} : {e}", 140))
             return None
 
