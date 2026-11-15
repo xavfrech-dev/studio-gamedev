@@ -1240,7 +1240,36 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "genre.principal": {
+       "egal": "fps"
+      }
+     },
+     "titre": "Your shooter: first or third person?"
+    },
+    {
+     "si": {
+      "camera.dimension": {
+       "egal": "2d"
+      }
+     },
+     "titre": "In 2D: side, top-down or isometric?"
+    },
+    {
+     "si": {
+      "camera.dimension": {
+       "dans": [
+        "3d",
+        "2_5d"
+       ]
+      }
+     },
+     "titre": "In {camera.dimension}, where is the camera?"
+    }
+   ]
   },
   {
    "id": "camera.controle",
@@ -1284,7 +1313,25 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "camera.dimension": {
+       "egal": "2d"
+      }
+     },
+     "titre": "In 2D, does the camera follow freely or is it guided?"
+    },
+    {
+     "si": {
+      "camera.vue": {
+       "existe": true
+      }
+     },
+     "titre": "Your camera ({camera.vue}): free or guided?"
+    }
+   ]
   },
   {
    "id": "gameplay.verbe",
@@ -1391,7 +1438,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "genre.principal": {
+       "existe": true
+      }
+     },
+     "titre": "In your “{genre.principal}” game, what does the player do 80% of the time?"
+    }
+   ]
   },
   {
    "id": "gameplay.systemes",
@@ -1495,7 +1552,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "genre.principal": {
+       "existe": true
+      }
+     },
+     "titre": "Which systems for your “{genre.principal}” game?"
+    }
+   ]
   },
   {
    "id": "gameplay.difficulte",
@@ -1886,7 +1953,28 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "genre.principal": {
+       "dans": [
+        "cartes",
+        "visual_novel"
+       ]
+      }
+     },
+     "titre": "How do matches or chapters follow each other?"
+    },
+    {
+     "si": {
+      "genre.principal": {
+       "existe": true
+      }
+     },
+     "titre": "Your “{genre.principal}” game: how is the world organised?"
+    }
+   ]
   },
   {
    "id": "monde.taille",
@@ -2263,7 +2351,17 @@
     "histoire.place": {
      "different_de": "aucune"
     }
-   }
+   },
+   "variantes": [
+    {
+     "si": {
+      "genre.principal": {
+       "egal": "visual_novel"
+      }
+     },
+     "titre": "How does your visual novel tell its story?"
+    }
+   ]
   },
   {
    "id": "histoire.choix",
@@ -2435,7 +2533,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "camera.dimension": {
+       "existe": true
+      }
+     },
+     "titre": "Which visual style for your {camera.dimension} game?"
+    }
+   ]
   },
   {
    "id": "da.palette",
@@ -3070,7 +3178,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "plateforme.cibles": {
+       "existe": true
+      }
+     },
+     "titre": "On {plateforme.cibles}, with which controls?"
+    }
+   ]
   },
   {
    "id": "plateforme.machine",
@@ -3258,7 +3376,28 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "camera.dimension": {
+       "existe": true
+      },
+      "plateforme.cibles": {
+       "existe": true
+      }
+     },
+     "titre": "Which engine for a {camera.dimension} game on {plateforme.cibles}?"
+    },
+    {
+     "si": {
+      "camera.dimension": {
+       "existe": true
+      }
+     },
+     "titre": "Which engine for a {camera.dimension} game?"
+    }
+   ]
   },
   {
    "id": "moteur.langage",
@@ -3414,7 +3553,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "moteur.nom": {
+       "existe": true
+      }
+     },
+     "titre": "With {moteur.nom}, which language?"
+    }
+   ]
   },
   {
    "id": "moteur.version",
@@ -3594,7 +3743,17 @@
     "multijoueur.mode": {
      "different_de": "solo"
     }
-   }
+   },
+   "variantes": [
+    {
+     "si": {
+      "multijoueur.mode": {
+       "existe": true
+      }
+     },
+     "titre": "In {multijoueur.mode}, how many players together?"
+    }
+   ]
   },
   {
    "id": "multijoueur.architecture",
@@ -3936,7 +4095,17 @@
    "libre": true,
    "micro": true,
    "passer": true,
-   "si": null
+   "si": null,
+   "variantes": [
+    {
+     "si": {
+      "ambition.temps": {
+       "egal": "jam"
+      }
+     },
+     "titre": "For the jam, what size?"
+    }
+   ]
   },
   {
    "id": "ambition.temps",
@@ -5155,5 +5324,690 @@
   "jalon_termine": "Milestone complete",
   "attend": "roadmap.json",
   "sautable": false
+ },
+ "adaptation": {
+  "acquis": [
+   "genre.principal",
+   "camera.dimension",
+   "camera.vue",
+   "plateforme.cibles",
+   "moteur.nom",
+   "multijoueur.mode",
+   "da.style",
+   "monde.structure",
+   "ambition.taille",
+   "ambition.temps"
+  ],
+  "regles": [
+   {
+    "id": "plateau-2d",
+    "si": {
+     "genre.principal": {
+      "dans": [
+       "cartes",
+       "visual_novel"
+      ]
+     }
+    },
+    "fixe": {
+     "camera.dimension": "2d",
+     "camera.controle": "guidee"
+    },
+    "raison": "a card game or visual novel is played on a board, with no free camera"
+   },
+   {
+    "id": "plateau-ecran",
+    "si": {
+     "genre.principal": {
+      "dans": [
+       "cartes",
+       "visual_novel"
+      ]
+     },
+     "camera.dimension": {
+      "egal": "2d"
+     }
+    },
+    "fixe": {
+     "camera.vue": "ecran_fixe"
+    },
+    "raison": "a 2D board fits on a fixed screen"
+   },
+   {
+    "id": "plateforme-cote",
+    "si": {
+     "genre.principal": {
+      "egal": "plateforme"
+     },
+     "camera.dimension": {
+      "egal": "2d"
+     }
+    },
+    "fixe": {
+     "camera.vue": "cote"
+    },
+    "raison": "a 2D platformer is seen from the side"
+   },
+   {
+    "id": "tir-3d",
+    "si": {
+     "genre.principal": {
+      "egal": "fps"
+     }
+    },
+    "fixe": {
+     "camera.dimension": "3d",
+     "gameplay.verbe": "combattre"
+    },
+    "raison": "a shooter is played in 3D, fighting"
+   },
+   {
+    "id": "vn-histoire",
+    "si": {
+     "genre.principal": {
+      "egal": "visual_novel"
+     }
+    },
+    "fixe": {
+     "histoire.place": "centre",
+     "gameplay.verbe": "discuter"
+    },
+    "raison": "a visual novel puts the story at the centre"
+   },
+   {
+    "id": "puzzle-verbe",
+    "si": {
+     "genre.principal": {
+      "egal": "puzzle"
+     }
+    },
+    "fixe": {
+     "gameplay.verbe": "resoudre"
+    },
+    "raison": "a puzzle game is about solving"
+   },
+   {
+    "id": "course-verbe",
+    "si": {
+     "genre.principal": {
+      "egal": "course"
+     }
+    },
+    "fixe": {
+     "gameplay.verbe": "conduire"
+    },
+    "raison": "a racing game is about driving"
+   },
+   {
+    "id": "gestion-verbe",
+    "si": {
+     "genre.principal": {
+      "egal": "gestion"
+     }
+    },
+    "fixe": {
+     "gameplay.verbe": "gerer"
+    },
+    "raison": "a management game is about managing"
+   },
+   {
+    "id": "roblox-plateforme",
+    "si": {
+     "plateforme.cibles": {
+      "egal": "roblox"
+     }
+    },
+    "fixe": {
+     "moteur.nom": "roblox"
+    },
+    "raison": "Roblox games are made in Roblox Studio"
+   },
+   {
+    "id": "roblox-moteur",
+    "si": {
+     "moteur.nom": {
+      "egal": "roblox"
+     }
+    },
+    "fixe": {
+     "plateforme.cibles": [
+      "roblox"
+     ],
+     "moteur.langage": "luau",
+     "moteur.version": "derniere"
+    },
+    "raison": "Roblox Studio: Roblox platform, Luau, always up to date"
+   },
+   {
+    "id": "web-2d",
+    "si": {
+     "moteur.nom": {
+      "dans": [
+       "phaser",
+       "pixijs"
+      ]
+     }
+    },
+    "fixe": {
+     "camera.dimension": "2d"
+    },
+    "raison": "this web engine does 2D"
+   },
+   {
+    "id": "web-3d",
+    "si": {
+     "moteur.nom": {
+      "egal": "threejs"
+     }
+    },
+    "fixe": {
+     "camera.dimension": "3d"
+    },
+    "raison": "three.js does 3D"
+   },
+   {
+    "id": "langage-impose",
+    "si": {
+     "moteur.nom": {
+      "dans": [
+       "bevy",
+       "ebitengine",
+       "love",
+       "pygame",
+       "defold"
+      ]
+     }
+    },
+    "fixe": {
+     "moteur.langage": "impose"
+    },
+    "raison": "this engine has its own language"
+   },
+   {
+    "id": "web-seul",
+    "si": {
+     "plateforme.cibles": {
+      "seul": "web"
+     }
+    },
+    "fixe": {
+     "plateforme.machine": "petite"
+    },
+    "raison": "a browser game must run on a modest machine"
+   },
+   {
+    "id": "mobile-seul",
+    "si": {
+     "plateforme.cibles": {
+      "seul": "mobile"
+     }
+    },
+    "fixe": {
+     "plateforme.machine": "mobile",
+     "plateforme.controles": [
+      "tactile"
+     ]
+    },
+    "raison": "on mobile, you play with your fingers"
+   },
+   {
+    "id": "jam-temps",
+    "si": {
+     "vision.motivation": {
+      "egal": "jam"
+     }
+    },
+    "fixe": {
+     "ambition.temps": "jam",
+     "ambition.taille": "prototype"
+    },
+    "raison": "a jam is a prototype in a few hours"
+   },
+   {
+    "id": "sans-ia-rapide",
+    "si": {
+     "ia.autorises": {
+      "existe": true,
+      "aucun_de": [
+       "images",
+       "modeles_3d",
+       "son"
+      ]
+     }
+    },
+    "fixe": {
+     "budget.generation_par_jalon": "aucun"
+    },
+    "raison": "no image, 3D or sound generation: no generation budget"
+   },
+   {
+    "id": "sans-ia-complet",
+    "si": {
+     "ia.images": {
+      "egal": "non"
+     },
+     "ia.son": {
+      "egal": "non"
+     },
+     "ia.modeles_3d": {
+      "aucun_de": [
+       "oui",
+       "maquettes"
+      ]
+     }
+    },
+    "fixe": {
+     "budget.generation_par_jalon": "aucun"
+    },
+    "raison": "no image, 3D or sound generation: no generation budget"
+   }
+  ],
+  "pitch": [
+   {
+    "cle": "moteur.nom",
+    "valeur": "godot",
+    "mots": [
+     "godot"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "unity",
+    "mots": [
+     "unity"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "unreal",
+    "mots": [
+     "unreal",
+     "ue5",
+     "ue 5"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "roblox",
+    "mots": [
+     "roblox"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "phaser",
+    "mots": [
+     "phaser"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "threejs",
+    "mots": [
+     "three js",
+     "threejs"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "pixijs",
+    "mots": [
+     "pixijs",
+     "pixi js"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "bevy",
+    "mots": [
+     "bevy"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "ebitengine",
+    "mots": [
+     "ebitengine",
+     "ebiten"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "love",
+    "mots": [
+     "love2d",
+     "love 2d"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "pygame",
+    "mots": [
+     "pygame"
+    ]
+   },
+   {
+    "cle": "moteur.nom",
+    "valeur": "defold",
+    "mots": [
+     "defold"
+    ]
+   },
+   {
+    "cle": "camera.dimension",
+    "valeur": "2d",
+    "mots": [
+     "2d"
+    ]
+   },
+   {
+    "cle": "camera.dimension",
+    "valeur": "3d",
+    "mots": [
+     "3d"
+    ]
+   },
+   {
+    "cle": "camera.dimension",
+    "valeur": "2_5d",
+    "mots": [
+     "2 5d",
+     "2 5 d"
+    ]
+   },
+   {
+    "cle": "plateforme.cibles",
+    "valeur": "web",
+    "mots": [
+     "navigateur",
+     "browser",
+     "jeu web",
+     "web game"
+    ]
+   },
+   {
+    "cle": "plateforme.cibles",
+    "valeur": "mobile",
+    "mots": [
+     "sur mobile",
+     "jeu mobile",
+     "on mobile",
+     "mobile game",
+     "smartphone",
+     "android",
+     "iphone",
+     "ios"
+    ]
+   },
+   {
+    "cle": "plateforme.cibles",
+    "valeur": "pc",
+    "mots": [
+     "pc",
+     "sur ordinateur",
+     "on computer"
+    ]
+   },
+   {
+    "cle": "plateforme.cibles",
+    "valeur": "consoles",
+    "mots": [
+     "consoles",
+     "sur console",
+     "on console"
+    ]
+   },
+   {
+    "cle": "plateforme.cibles",
+    "valeur": "vr",
+    "mots": [
+     "vr",
+     "realite virtuelle",
+     "virtual reality"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "roguelike",
+    "mots": [
+     "roguelike",
+     "roguelite",
+     "rogue like",
+     "rogue lite"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "plateforme",
+    "mots": [
+     "jeu de plateforme",
+     "jeu de plateformes",
+     "platformer",
+     "plateformer"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "tower_defense",
+    "mots": [
+     "tower defense"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "visual_novel",
+    "mots": [
+     "visual novel"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "cartes",
+    "mots": [
+     "jeu de cartes",
+     "card game",
+     "deckbuilder",
+     "deck builder",
+     "deckbuilding",
+     "deck building"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "fps",
+    "mots": [
+     "fps",
+     "first person shooter",
+     "jeu de tir",
+     "shooter"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "course",
+    "mots": [
+     "jeu de course",
+     "racing game",
+     "racing"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "survie",
+    "mots": [
+     "survie",
+     "survival"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "rpg",
+    "mots": [
+     "rpg",
+     "jeu de role"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "horreur",
+    "mots": [
+     "horreur",
+     "horror"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "gestion",
+    "mots": [
+     "jeu de gestion",
+     "city builder",
+     "tycoon"
+    ]
+   },
+   {
+    "cle": "genre.principal",
+    "valeur": "puzzle",
+    "mots": [
+     "puzzle game",
+     "jeu de reflexion"
+    ]
+   },
+   {
+    "cle": "camera.vue",
+    "valeur": "premiere_personne",
+    "mots": [
+     "premiere personne",
+     "1re personne",
+     "1ere personne",
+     "first person",
+     "fps"
+    ]
+   },
+   {
+    "cle": "camera.vue",
+    "valeur": "troisieme_personne",
+    "mots": [
+     "troisieme personne",
+     "3e personne",
+     "third person"
+    ]
+   },
+   {
+    "cle": "camera.vue",
+    "valeur": "dessus",
+    "mots": [
+     "vue de dessus",
+     "top down",
+     "topdown"
+    ]
+   },
+   {
+    "cle": "camera.vue",
+    "valeur": "isometrique",
+    "mots": [
+     "isometrique",
+     "isometric"
+    ]
+   },
+   {
+    "cle": "camera.vue",
+    "valeur": "cote",
+    "mots": [
+     "vue de cote",
+     "side scroller",
+     "side scrolling"
+    ]
+   },
+   {
+    "cle": "multijoueur.mode",
+    "valeur": "solo",
+    "mots": [
+     "solo",
+     "single player",
+     "singleplayer"
+    ]
+   },
+   {
+    "cle": "multijoueur.mode",
+    "valeur": "coop_locale",
+    "mots": [
+     "ecran partage",
+     "split screen",
+     "coop locale",
+     "couch coop"
+    ]
+   },
+   {
+    "cle": "multijoueur.mode",
+    "valeur": "competitif",
+    "mots": [
+     "pvp",
+     "competitif",
+     "competitive"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "pixel",
+    "mots": [
+     "pixel art",
+     "pixelart"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "low_poly",
+    "mots": [
+     "low poly",
+     "lowpoly"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "voxel",
+    "mots": [
+     "voxel",
+     "voxels"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "cel",
+    "mots": [
+     "cel shading",
+     "cel shade",
+     "cel shaded"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "dessin_main",
+    "mots": [
+     "dessine a la main",
+     "hand drawn"
+    ]
+   },
+   {
+    "cle": "da.style",
+    "valeur": "realiste",
+    "mots": [
+     "photorealiste",
+     "photorealistic"
+    ]
+   },
+   {
+    "cle": "monde.structure",
+    "valeur": "ouvert",
+    "mots": [
+     "monde ouvert",
+     "open world"
+    ]
+   }
+  ],
+  "textes": {
+   "acquis": "Already settled",
+   "pitch": "From your pitch I kept: {liste}. I won't ask again.",
+   "raison_pitch": "you wrote it in your pitch (“{mot}”)"
+  }
  }
 }

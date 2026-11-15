@@ -14,7 +14,7 @@ Les questions sont des **données** (`studio/questions.fr.json`, `studio/questio
 
 Toi (Claude), pendant que la page tourne : tu écris `deductions.json` après le pitch, `questions_suivi.json` si une réponse doit être précisée, et tu lis `.studio/reponses_questionnaire.json` (réponses).
 
-**Repli conversation** (pas de studio) : mêmes questions avec `AskUserQuestion` (1 à 4 questions par appel, 2 à 4 choix, « Autre » d'office), une étape par appel, ★ en premier suffixé « (recommandé) ». Même fichier de réponses. Si la page est ouverte, elle relit ce fichier toutes les 5 s : les réponses écrites depuis le chat la font avancer d'elle-même (« Je reprends les réponses données dans la conversation »), et `"etat": "termine"` ouvre « J'écris ta roadmap… ».
+**Repli conversation** (pas de studio) : mêmes questions avec `AskUserQuestion` (1 à 4 questions par appel, 2 à 4 choix, « Autre » d'office), une étape par appel, ★ en premier suffixé « (recommandé) ». Même fichier de réponses. Tire chaque question de `python -I -B studio/outils/questionnaire.py suivante --projet <projet>` (déjà reformulée, cartes visibles, ★, rappel « Déjà acquis ») et écris chaque réponse avec `… questionnaire.py repondre --projet <projet> --cle <id> --valeur <v> [--json]` : les déductions suivent, rien n'est reposé (voir « Questionnaire adaptatif »). Si la page est ouverte, elle relit ce fichier toutes les 5 s : les réponses écrites depuis le chat la font avancer d'elle-même (« Je reprends les réponses données dans la conversation »), et `"etat": "termine"` ouvre « J'écris ta roadmap… ».
 
 Règles communes :
 - Le ★ indiqué ici est le défaut ; il est recalculé avec le pitch et les réponses précédentes (règles R, via `deductions.json`).
@@ -352,6 +352,20 @@ Tout le reste prend son ★ et est marqué `à confirmer` dans `reponses_questio
 - **R14 Genre avec skill** : les systèmes ★ de l'étape 7 viennent du skill de genre.
 - **R15 Âge 18+ ou horreur** : l'humour noir de l'assistant reste possible ; pour « tout public », ★ humour = léger.
 
+## Questionnaire adaptatif (codé)
+
+Chaque réponse oriente les suivantes, dans la page comme en repli conversation (même logique : bloc `ADAPTATION` de `studio.html`, `studio/adaptation.py`, `studio/outils/questionnaire.py` ; données : bloc `adaptation` et champ `variantes` de `questions.<langue>.json`, produits par `construire_questions.py` ; essai : `python -I -B studio/outils/essai_questionnaire.py`, qui compare la page et le Python).
+
+- **Mémoire** : chaque réponse est écrite tout de suite dans `.studio/reponses_questionnaire.json` ; relancé, le questionnaire reprend à la première question non tranchée.
+- **Jamais de répétition** : une question qui a déjà une réponse (donnée, déduite, ou passée « à confirmer ») n'est jamais reposée ; seul « Je passe en mode complet » du récapitulatif repose les « à confirmer », une fois.
+- **Déduit = sauté** : après chaque réponse, les déductions sont recalculées (source `deduit`, `raison` lisible) :
+  - **mots du pitch** (`via: "pitch"`) : moteur nommé, 2D / 3D, navigateur / mobile / PC / consoles / VR, genre net (roguelike, jeu de cartes, visual novel, jeu de tir, tower defense…), caméra (1re personne, vue de dessus…), solo / écran partagé / PvP, style (pixel art, low poly, voxel…), monde ouvert ; deux valeurs pour une même question = rien ;
+  - **règles** (`via: "regle"`) : jeu de cartes ou visual novel → 2D, caméra guidée, écran fixe ; plateforme 2D → vue de côté ; jeu de tir → 3D et « combattre » ; visual novel → histoire au centre ; puzzle, course, gestion → leur verbe ; Roblox ↔ Roblox Studio, Luau (R1) ; Phaser / PixiJS → 2D, three.js → 3D ; navigateur seul → petite config (R2) ; mobile seul → tactile (R3) ; jam → prototype (R12) ; pas de génération d'images, 3D ni son → pas de budget de génération (R10).
+  Une déduction ne remplace jamais une réponse de l'utilisateur ni une clé `fixes` de `deductions.json` ; si la réponse qui la porte change (récapitulatif, retour), elle disparaît et la question revient. Les règles qui demandent du jugement (R5 moteur, R8 ambition, R14 systèmes) restent à toi, dans `deductions.json`.
+- **Reformulation** : `variantes` d'une question = `[{"si": …, "titre": "…{clé}…"}]` ; la première vraie remplace le titre, `{clé}` devient le libellé de la réponse (« En 2D : de côté, de dessus ou en isométrique ? », « Quel moteur pour un jeu en 2D sur Navigateur web ? ») ; les cartes gardent leur `si` (pas de 1re personne en 2D).
+- **Rappel** : sous chaque question, « Déjà acquis : Jeu de cartes / deckbuilder · 2D ~ · Navigateur web ~ · Phaser ~ » (clés `adaptation.acquis`, 6 au plus, `~` = déduit, la raison au survol). Après le pitch, l'assistant dit ce qu'il en a retenu.
+- Ajouter une règle, des mots ou une variante : dans `construire_questions.py` (`REGLES`, `PITCH`, `VARIANTES`), puis relance-le ; il refuse une clé, une valeur ou un opérateur inconnu.
+
 ## Format des questions pour la page : `studio/questions.json`
 
 Livré avec le studio (une version par langue : `questions.fr.json`, `questions.en.json`, mêmes `id` partout ; seuls les textes changent). La page les affiche une par une, dans l'ordre, en sautant celles dont la condition `si` est fausse ou dont la valeur est déjà fixée par `deductions.json`. Contenu actuel : 96 questions (23 en mode rapide), 377 cartes, 264 illustrations ; chapitres `accueil`, les 8 chapitres de la page, puis `fin` (récapitulatif). Le bloc `roadmap` du fichier donne les textes de l'écran « Voici ta roadmap » et du panneau Roadmap (`attend: "roadmap.json"`, `sautable: false`).
@@ -399,7 +413,7 @@ Livré avec le studio (une version par langue : `questions.fr.json`, `questions.
 
 Types : `choix` (une carte), `multi` (plusieurs cartes, `max` facultatif), `texte` (champ libre long, ex. pitch), `nom` (champ court), `couleur` (nuancier + libre), `personnage` (éditeur visuel : morphologie, peau, cheveux, tenue, couleurs, accessoire, avec aperçu animé), `curseur` (valeur numérique, ex. plafond de crédits).
 
-Conditions `si` : `{"<clé>": {"egal": v}}`, `{"different_de": v}`, `{"dans": [..]}`, `{"existe": true}` ; plusieurs clés = toutes vraies ; une clé sans réponse rend `egal` et `dans` faux, `different_de` vrai. Les règles R qui demandent un vrai raisonnement (R5 moteur, R8 ambition, R14 systèmes du genre) ne sont **pas** codées dans la page : c'est toi qui les appliques dans `deductions.json`.
+Conditions `si` : `{"<clé>": {"egal": v}}`, `{"different_de": v}`, `{"dans": [..]}`, `{"existe": true}`, `{"seul": v}` (la seule valeur choisie), `{"aucun_de": [..]}` ; plusieurs clés ou plusieurs opérateurs = tous vrais ; une clé sans réponse rend `egal`, `dans` et `seul` faux, `different_de` et `aucun_de` vrais. Les règles R qui demandent un vrai raisonnement (R5 moteur, R8 ambition, R14 systèmes du genre) ne sont **pas** codées dans la page : c'est toi qui les appliques dans `deductions.json`.
 
 Champs d'une question : `id`, `chapitre`, `type`, `rapide` (facultatif), `seulement_rapide` (posée seulement en mode rapide), `titre`, `aide` (la ligne de contexte que dit l'assistant), `choix`, `recommande` (la ★ : un `id`, une liste d'`id` pour `multi`, ou `null` quand seule `deductions.json` peut la donner), `recommande_depuis: "deductions"` (la ★ est recalculée par toi), `max` (multi), `propositions_depuis` (texte : la page affiche en suggestions `deductions.propositions[<id>]`), `defaut` (valeur par défaut d'un texte ou d'un curseur), `min` / `max` / `pas` (curseur), `cible` et `boutons` (personnage), `libre`, `micro`, `passer`, `si`.
 
@@ -433,7 +447,7 @@ Illustrations : `studio/cartes/<nom>.svg`, 160 × 120, style carnet (papier crè
 
 - `mode` : `rapide`, `complet` ou `adoption` (projet déjà commencé ; champ `analyse` = chemin de `analyse_projet.json`).
 - `source` : `utilisateur`, `deduit`, `a_confirmer`, `voix_a_interpreter`.
-- `via` : `clic`, `ecrit`, `voix`, `passer`, `analyse` (déduit du projet en mode adoption ; `raison` donne la preuve).
+- `via` : `clic`, `ecrit`, `voix`, `passer`, `analyse` (déduit du projet en mode adoption ; `raison` donne la preuve), `regle` et `pitch` (questionnaire adaptatif ; `raison` aussi). `{"cle", "effacer": true}` sur `/api/questionnaire` retire une réponse `regle` ou `pitch`, jamais une autre.
 - Une dictée est d'abord comparée aux `libelle` et `mots_voix` des cartes ; si une seule carte correspond, elle est choisie (`via: voix`, la page la montre sélectionnée et laisse 3 s pour corriger) ; sinon `voix_a_interpreter` + `texte_brut`, et tu poses une question de suivi.
 - `etat` passe à `termine` quand le maître valide le récapitulatif.
 - Le chapitre Personnages écrit `profil.json` (pas ce fichier), via la même API.

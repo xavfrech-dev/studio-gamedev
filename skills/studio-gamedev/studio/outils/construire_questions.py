@@ -11,6 +11,7 @@ Builds both question files from one bilingual source. Standard library only.
 """
 import json
 import os
+import re
 import sys
 for _flux in (sys.stdout, sys.stderr):                 # S6 : sortie en UTF-8, même redirigée (Windows)
     try:
@@ -879,6 +880,165 @@ add(Q("fin.valider", "fin", "choix",
       rec="oui", libre=False, passer=False))
 
 
+# ---------------------------------------------------------------- questionnaire adaptatif
+# Chaque réponse oriente les suivantes (retour d'un utilisateur, 15/11) :
+# - REGLES : une réponse en entraîne d'autres (source « deduit », via « regle ») ; la question n'est plus posée ;
+# - PITCH : mots du pitch qui tranchent une question (via « pitch ») ; deux valeurs pour une même question = rien ;
+# - VARIANTES : la question est reformulée selon les choix faits ({clé} = libellé de la réponse) ;
+# - ACQUIS : les clés montrées dans le rappel « Déjà acquis ».
+# Une déduction ne remplace jamais une réponse de l'utilisateur ; elle disparaît si la réponse qui la porte change.
+# Même logique dans la page (studio.html, bloc ADAPTATION) et en repli conversation (studio/adaptation.py,
+# outils/questionnaire.py) ; essai : outils/essai_questionnaire.py.
+JEU_PLAT = ["cartes", "visual_novel"]
+
+
+def R_(id, si, fixe, fr, en):
+    return {"id": id, "si": si, "fixe": fixe, "raison": {"fr": fr, "en": en}}
+
+
+REGLES = [
+    R_("plateau-2d", {"genre.principal": {"dans": JEU_PLAT}}, {"camera.dimension": "2d", "camera.controle": "guidee"},
+       "un jeu de cartes ou un visual novel se joue sur un plateau, sans caméra libre",
+       "a card game or visual novel is played on a board, with no free camera"),
+    R_("plateau-ecran", {"genre.principal": {"dans": JEU_PLAT}, "camera.dimension": {"egal": "2d"}}, {"camera.vue": "ecran_fixe"},
+       "un plateau en 2D tient sur un écran fixe", "a 2D board fits on a fixed screen"),
+    R_("plateforme-cote", {"genre.principal": {"egal": "plateforme"}, "camera.dimension": {"egal": "2d"}}, {"camera.vue": "cote"},
+       "un jeu de plateforme en 2D se voit de côté", "a 2D platformer is seen from the side"),
+    R_("tir-3d", {"genre.principal": {"egal": "fps"}}, {"camera.dimension": "3d", "gameplay.verbe": "combattre"},
+       "un jeu de tir se joue en 3D, en combattant", "a shooter is played in 3D, fighting"),
+    R_("vn-histoire", {"genre.principal": {"egal": "visual_novel"}}, {"histoire.place": "centre", "gameplay.verbe": "discuter"},
+       "un visual novel, c'est l'histoire au centre", "a visual novel puts the story at the centre"),
+    R_("puzzle-verbe", {"genre.principal": {"egal": "puzzle"}}, {"gameplay.verbe": "resoudre"},
+       "un jeu de réflexion, c'est résoudre", "a puzzle game is about solving"),
+    R_("course-verbe", {"genre.principal": {"egal": "course"}}, {"gameplay.verbe": "conduire"},
+       "un jeu de course, c'est piloter", "a racing game is about driving"),
+    R_("gestion-verbe", {"genre.principal": {"egal": "gestion"}}, {"gameplay.verbe": "gerer"},
+       "un jeu de gestion, c'est gérer", "a management game is about managing"),
+    R_("roblox-plateforme", {"plateforme.cibles": {"egal": "roblox"}}, {"moteur.nom": "roblox"},
+       "Roblox se fait dans Roblox Studio", "Roblox games are made in Roblox Studio"),
+    R_("roblox-moteur", {"moteur.nom": {"egal": "roblox"}}, {"plateforme.cibles": ["roblox"], "moteur.langage": "luau", "moteur.version": "derniere"},
+       "Roblox Studio : plateforme Roblox, langage Luau, toujours à jour", "Roblox Studio: Roblox platform, Luau, always up to date"),
+    R_("web-2d", {"moteur.nom": {"dans": ["phaser", "pixijs"]}}, {"camera.dimension": "2d"},
+       "ce moteur web fait de la 2D", "this web engine does 2D"),
+    R_("web-3d", {"moteur.nom": {"egal": "threejs"}}, {"camera.dimension": "3d"},
+       "three.js fait de la 3D", "three.js does 3D"),
+    R_("langage-impose", {"moteur.nom": {"dans": ["bevy", "ebitengine", "love", "pygame", "defold"]}}, {"moteur.langage": "impose"},
+       "ce moteur a son propre langage", "this engine has its own language"),
+    R_("web-seul", {"plateforme.cibles": {"seul": "web"}}, {"plateforme.machine": "petite"},
+       "un jeu de navigateur doit tourner sur une petite config", "a browser game must run on a modest machine"),
+    R_("mobile-seul", {"plateforme.cibles": {"seul": "mobile"}}, {"plateforme.machine": "mobile", "plateforme.controles": ["tactile"]},
+       "sur mobile, on joue au doigt", "on mobile, you play with your fingers"),
+    R_("jam-temps", {"vision.motivation": {"egal": "jam"}}, {"ambition.temps": "jam", "ambition.taille": "prototype"},
+       "une jam, c'est un prototype en quelques heures", "a jam is a prototype in a few hours"),
+    R_("sans-ia-rapide", {"ia.autorises": {"existe": True, "aucun_de": ["images", "modeles_3d", "son"]}}, {"budget.generation_par_jalon": "aucun"},
+       "pas de génération d'images, de 3D ni de son : pas de budget de génération", "no image, 3D or sound generation: no generation budget"),
+    R_("sans-ia-complet", {"ia.images": {"egal": "non"}, "ia.son": {"egal": "non"}, "ia.modeles_3d": {"aucun_de": ["oui", "maquettes"]}}, {"budget.generation_par_jalon": "aucun"},
+       "pas de génération d'images, de 3D ni de son : pas de budget de génération", "no image, 3D or sound generation: no generation budget"),
+]
+
+# Mots du pitch (comparés après normalisation : minuscules, sans accents, ponctuation = espace ; mots entiers).
+PITCH = [
+    ("moteur.nom", "godot", ["godot"]), ("moteur.nom", "unity", ["unity"]),
+    ("moteur.nom", "unreal", ["unreal", "ue5", "ue 5"]), ("moteur.nom", "roblox", ["roblox"]),
+    ("moteur.nom", "phaser", ["phaser"]), ("moteur.nom", "threejs", ["three js", "threejs"]),
+    ("moteur.nom", "pixijs", ["pixijs", "pixi js"]), ("moteur.nom", "bevy", ["bevy"]),
+    ("moteur.nom", "ebitengine", ["ebitengine", "ebiten"]), ("moteur.nom", "love", ["love2d", "love 2d"]),
+    ("moteur.nom", "pygame", ["pygame"]), ("moteur.nom", "defold", ["defold"]),
+    ("camera.dimension", "2d", ["2d"]), ("camera.dimension", "3d", ["3d"]), ("camera.dimension", "2_5d", ["2 5d", "2 5 d"]),
+    ("plateforme.cibles", "web", ["navigateur", "browser", "jeu web", "web game"]),
+    ("plateforme.cibles", "mobile", ["sur mobile", "jeu mobile", "on mobile", "mobile game", "smartphone", "android", "iphone", "ios"]),
+    ("plateforme.cibles", "pc", ["pc", "sur ordinateur", "on computer"]),
+    ("plateforme.cibles", "consoles", ["consoles", "sur console", "on console"]),
+    ("plateforme.cibles", "vr", ["vr", "realite virtuelle", "virtual reality"]),
+    ("genre.principal", "roguelike", ["roguelike", "roguelite", "rogue like", "rogue lite"]),
+    ("genre.principal", "plateforme", ["jeu de plateforme", "jeu de plateformes", "platformer", "plateformer"]),
+    ("genre.principal", "tower_defense", ["tower defense"]),
+    ("genre.principal", "visual_novel", ["visual novel"]),
+    ("genre.principal", "cartes", ["jeu de cartes", "card game", "deckbuilder", "deck builder", "deckbuilding", "deck building"]),
+    ("genre.principal", "fps", ["fps", "first person shooter", "jeu de tir", "shooter"]),
+    ("genre.principal", "course", ["jeu de course", "racing game", "racing"]),
+    ("genre.principal", "survie", ["survie", "survival"]),
+    ("genre.principal", "rpg", ["rpg", "jeu de role"]),
+    ("genre.principal", "horreur", ["horreur", "horror"]),
+    ("genre.principal", "gestion", ["jeu de gestion", "city builder", "tycoon"]),
+    ("genre.principal", "puzzle", ["puzzle game", "jeu de reflexion"]),
+    ("camera.vue", "premiere_personne", ["premiere personne", "1re personne", "1ere personne", "first person", "fps"]),
+    ("camera.vue", "troisieme_personne", ["troisieme personne", "3e personne", "third person"]),
+    ("camera.vue", "dessus", ["vue de dessus", "top down", "topdown"]),
+    ("camera.vue", "isometrique", ["isometrique", "isometric"]),
+    ("camera.vue", "cote", ["vue de cote", "side scroller", "side scrolling"]),
+    ("multijoueur.mode", "solo", ["solo", "single player", "singleplayer"]),
+    ("multijoueur.mode", "coop_locale", ["ecran partage", "split screen", "coop locale", "couch coop"]),
+    ("multijoueur.mode", "competitif", ["pvp", "competitif", "competitive"]),
+    ("da.style", "pixel", ["pixel art", "pixelart"]), ("da.style", "low_poly", ["low poly", "lowpoly"]),
+    ("da.style", "voxel", ["voxel", "voxels"]), ("da.style", "cel", ["cel shading", "cel shade", "cel shaded"]),
+    ("da.style", "dessin_main", ["dessine a la main", "hand drawn"]), ("da.style", "realiste", ["photorealiste", "photorealistic"]),
+    ("monde.structure", "ouvert", ["monde ouvert", "open world"]),
+]
+
+# Reformulations : la première variante dont « si » est vraie remplace le titre.
+VARIANTES = {
+    "camera.vue": [
+        {"si": {"genre.principal": {"egal": "fps"}}, "fr": "Ton jeu de tir : à la 1re ou à la 3e personne ?", "en": "Your shooter: first or third person?"},
+        {"si": {"camera.dimension": {"egal": "2d"}}, "fr": "En 2D : de côté, de dessus ou en isométrique ?", "en": "In 2D: side, top-down or isometric?"},
+        {"si": {"camera.dimension": {"dans": ANGLE_3D}}, "fr": "En {camera.dimension}, où est la caméra ?", "en": "In {camera.dimension}, where is the camera?"},
+    ],
+    "camera.controle": [
+        {"si": {"camera.dimension": {"egal": "2d"}}, "fr": "En 2D, la caméra suit le joueur librement ou elle est guidée ?", "en": "In 2D, does the camera follow freely or is it guided?"},
+        {"si": {"camera.vue": {"existe": True}}, "fr": "Ta caméra ({camera.vue}) : libre ou guidée ?", "en": "Your camera ({camera.vue}): free or guided?"},
+    ],
+    "gameplay.verbe": [
+        {"si": {"genre.principal": {"existe": True}}, "fr": "Dans ton jeu « {genre.principal} », que fait le joueur 80 % du temps ?", "en": "In your “{genre.principal}” game, what does the player do 80% of the time?"},
+    ],
+    "gameplay.systemes": [
+        {"si": {"genre.principal": {"existe": True}}, "fr": "Quels systèmes pour ton jeu « {genre.principal} » ?", "en": "Which systems for your “{genre.principal}” game?"},
+    ],
+    "monde.structure": [
+        {"si": {"genre.principal": {"dans": JEU_PLAT}}, "fr": "Comment s'enchaînent les parties ou les chapitres ?", "en": "How do matches or chapters follow each other?"},
+        {"si": {"genre.principal": {"existe": True}}, "fr": "Ton jeu « {genre.principal} » : comment le monde est-il organisé ?", "en": "Your “{genre.principal}” game: how is the world organised?"},
+    ],
+    "da.style": [
+        {"si": {"camera.dimension": {"existe": True}}, "fr": "Quel style visuel pour ton jeu en {camera.dimension} ?", "en": "Which visual style for your {camera.dimension} game?"},
+    ],
+    "plateforme.controles": [
+        {"si": {"plateforme.cibles": {"existe": True}}, "fr": "Sur {plateforme.cibles}, avec quelles commandes ?", "en": "On {plateforme.cibles}, with which controls?"},
+    ],
+    "moteur.nom": [
+        {"si": {"camera.dimension": {"existe": True}, "plateforme.cibles": {"existe": True}}, "fr": "Quel moteur pour un jeu en {camera.dimension} sur {plateforme.cibles} ?", "en": "Which engine for a {camera.dimension} game on {plateforme.cibles}?"},
+        {"si": {"camera.dimension": {"existe": True}}, "fr": "Quel moteur pour un jeu en {camera.dimension} ?", "en": "Which engine for a {camera.dimension} game?"},
+    ],
+    "moteur.langage": [
+        {"si": {"moteur.nom": {"existe": True}}, "fr": "Avec {moteur.nom}, quel langage ?", "en": "With {moteur.nom}, which language?"},
+    ],
+    "multijoueur.joueurs": [
+        {"si": {"multijoueur.mode": {"existe": True}}, "fr": "En {multijoueur.mode}, combien de joueurs ensemble ?", "en": "In {multijoueur.mode}, how many players together?"},
+    ],
+    "histoire.narration": [
+        {"si": {"genre.principal": {"egal": "visual_novel"}}, "fr": "Ton visual novel se raconte comment ?", "en": "How does your visual novel tell its story?"},
+    ],
+    "ambition.taille": [
+        {"si": {"ambition.temps": {"egal": "jam"}}, "fr": "Pour la jam, quelle taille ?", "en": "For the jam, what size?"},
+    ],
+}
+
+ACQUIS = ["genre.principal", "camera.dimension", "camera.vue", "plateforme.cibles", "moteur.nom",
+          "multijoueur.mode", "da.style", "monde.structure", "ambition.taille", "ambition.temps"]
+
+OPERATEURS = {"egal", "different_de", "dans", "existe", "seul", "aucun_de"}
+
+
+def adaptation(langue):
+    fr = langue == "fr"
+    return {
+        "acquis": ACQUIS,
+        "regles": [{"id": r["id"], "si": r["si"], "fixe": r["fixe"], "raison": r["raison"][langue]} for r in REGLES],
+        "pitch": [{"cle": c, "valeur": v, "mots": list(m)} for c, v, m in PITCH],
+        "textes": {"acquis": "Déjà acquis" if fr else "Already settled",
+                   "pitch": "J'ai retenu de ton pitch : {liste}. Je ne te le redemande pas." if fr else "From your pitch I kept: {liste}. I won't ask again.",
+                   "raison_pitch": "tu l'as écrit dans ton pitch (« {mot} »)" if fr else "you wrote it in your pitch (“{mot}”)"},
+    }
+
+
 # ---------------------------------------------------------------- roadmap
 # Textes de l'écran « Voici ta roadmap » (fin du questionnaire, non sautable)
 # et du panneau Roadmap (studio/roadmap.js). Format : references/studio.md.
@@ -972,12 +1132,15 @@ def construire(langue):
         d["micro"] = q["type"] in ("choix", "multi", "texte", "nom")
         d["passer"] = q["passer"]
         d["si"] = q["si"]
+        if q["id"] in VARIANTES:
+            d["variantes"] = [{"si": v["si"], "titre": v[langue]} for v in VARIANTES[q["id"]]]
         out.append(d)
     i = 0 if langue == "fr" else 1
     roadmap = {k: v[i] for k, v in ROADMAP_UI.items()}
     roadmap["attend"] = "roadmap.json"
     roadmap["sautable"] = False
-    return {"version": 1, "langue": langue, "chapitres": chap, "questions": out, "roadmap": roadmap}
+    return {"version": 1, "langue": langue, "chapitres": chap, "questions": out, "roadmap": roadmap,
+            "adaptation": adaptation(langue)}
 
 
 def verifier():
@@ -1000,6 +1163,61 @@ def verifier():
                     erreurs.append("condition sur une question pas encore posée : %s (%s)" % (k, q["id"]))
         if q["chap"] not in [c[0] for c in CHAPITRES]:
             erreurs.append("chapitre inconnu " + q["id"])
+    erreurs += verifier_adaptation()
+    return erreurs
+
+
+def verifier_adaptation():
+    """Règles, mots du pitch et variantes : clés connues, valeurs = des cartes de la question, opérateurs connus."""
+    par_id = {q["id"]: q for q in Q_}
+    erreurs = []
+
+    def valeur_ok(cle, v, ou):
+        q = par_id.get(cle)
+        if not q:
+            erreurs.append("%s : clé inconnue %s" % (ou, cle))
+            return
+        oids = [o["id"] for o in q["options"]]
+        vals = v if isinstance(v, list) else [v]
+        if isinstance(v, list) != (q["type"] == "multi"):
+            erreurs.append("%s : %s attend %s" % (ou, cle, "une liste" if q["type"] == "multi" else "une seule valeur"))
+        for x in vals:
+            if x not in oids:
+                erreurs.append("%s : valeur %s inconnue pour %s" % (ou, x, cle))
+
+    def cond_ok(si, ou):
+        for cle, c in (si or {}).items():
+            if cle not in par_id:
+                erreurs.append("%s : condition sur une clé inconnue %s" % (ou, cle))
+            for op in c:
+                if op not in OPERATEURS:
+                    erreurs.append("%s : opérateur inconnu %s" % (ou, op))
+    for r in REGLES:
+        cond_ok(r["si"], "règle " + r["id"])
+        for cle, v in r["fixe"].items():
+            valeur_ok(cle, v, "règle " + r["id"])
+            if cle in r["si"]:
+                erreurs.append("règle %s : fixe la clé de sa propre condition (%s)" % (r["id"], cle))
+    for cle, v, mots in PITCH:
+        valeur_ok(cle, [v] if par_id.get(cle, {}).get("type") == "multi" else v, "pitch " + v)
+        if not mots:
+            erreurs.append("pitch %s : aucun mot" % v)
+    for qid, vs in VARIANTES.items():
+        if qid not in par_id:
+            erreurs.append("variante d'une question inconnue " + qid)
+        for v in vs:
+            cond_ok(v["si"], "variante " + qid)
+            for lg in ("fr", "en"):
+                for cle in re.findall(r"\{([a-z0-9_.]+)\}", v[lg]):
+                    if cle not in v["si"]:
+                        erreurs.append("variante %s : {%s} sans condition « existe » sur cette clé" % (qid, cle))
+    for cle in ACQUIS:
+        if cle not in par_id:
+            erreurs.append("acquis : clé inconnue " + cle)
+    for q in Q_:
+        cond_ok(q["si"], q["id"])
+        for o in q["options"]:
+            cond_ok(o["si"], q["id"] + "/" + o["id"])
     return erreurs
 
 

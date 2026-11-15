@@ -6,6 +6,7 @@ Version **générique et paramétrable** du studio : tout vient de `<projet>/.st
 |---|---|
 | `studio.html` | La page isométrique (**prête**). Mode **accueil** : l'assistant fait créer le jeu question par question (cartes illustrées, ★ mise en avant, champ libre, micro, récapitulatif corrigeable), le studio se construit à chaque chapitre, puis « Voici ta roadmap ». Mode **travail** : postes et personnages, barres de progression avec temps restant, cloche des décisions, notifications, bandeau des succès en file, niveau, demandes à l'assistant ou à un poste (écrit ou voix) |
 | `questions.fr.json`, `questions.en.json` | Le questionnaire en données (**prêt** : 96 questions, 23 en mode rapide, 377 cartes) |
+| `adaptation.py`, `outils/questionnaire.py` | **Questionnaire adaptatif** : chaque réponse oriente les suivantes (déductions par règles et mots du pitch, questions déduites sautées, jamais de question reposée, titres reformulés, rappel « Déjà acquis », reprise) ; jumeau du bloc `ADAPTATION` de `studio.html` ; `questionnaire.py` sert au repli conversation. Essai : `outils/essai_questionnaire.py` (compare la page et le Python) |
 | `cartes/` | Illustrations des cartes (**prêtes** : 264 SVG style carnet, tracés par code) |
 | `outils/construire_questions.py` | Source unique des questions (FR et EN côte à côte) ; écrit les deux JSON |
 | `outils/dessiner_cartes.py` | Trace toutes les illustrations des cartes (aucune image générée, aucune police, aucun logo) |

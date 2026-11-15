@@ -2,6 +2,11 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [Non publié]
+
+### Amélioré
+- **Questionnaire adaptatif** : chaque réponse oriente les suivantes. Ce que le pitch ou une réponse permet de déduire (moteur, genre, plateforme, 2D/3D, caméra…) n'est plus demandé ; une question tranchée n'est jamais reposée ; les questions sont reformulées selon les choix (pas de caméra 3D pour un jeu de cartes) ; un rappel « Déjà acquis » s'affiche sous chaque question ; relancé, le questionnaire reprend où il en était. Même logique dans la page et en repli conversation (`studio/adaptation.py`, `studio/outils/questionnaire.py`). Essai : `studio/outils/essai_questionnaire.py`.
+
 ## [0.5.3] - 2026-11-15
 
 Le studio relance la vague suivante tout seul, montre les images de l'assistant, et l'XP se lit mieux.

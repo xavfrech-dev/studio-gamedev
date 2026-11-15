@@ -271,6 +271,7 @@ body.app.questionnaire #equipe,body.app.questionnaire #micro-zone{display:none}
 .bulle .qui{font:600 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--ocre)}
 .bulle h2{font:400 22px/1.25 var(--serif);margin:2px 0 4px}
 .bulle p{margin:0;color:var(--encre2);font-size:13.5px}
+.bulle p.acquis{margin-top:6px;font-size:12px;line-height:1.4}.bulle p.acquis span.deduit{font-style:italic;cursor:help}
 .bulle .msg{margin:0 0 6px;font:italic 15px var(--serif);color:var(--sapin)}
 .cartes{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:14px 0 6px}
 .carte{position:relative;display:flex;flex-direction:column;align-items:stretch;text-align:left;padding:8px 8px 10px;border-radius:8px;border:1px solid rgba(92,79,63,.25);background:#fffdf6;color:var(--encre);transition:transform .12s,box-shadow .12s}
@@ -3975,33 +3976,141 @@ const Bureau = (() => {
   };
 })();
 
+// ====================================================================== questionnaire adaptatif (jumeau de studio/adaptation.py)
+// ADAPTATION debut — fonctions pures (essai : outils/essai_questionnaire.py, sous Node, comparé au Python)
+const Adaptation = (() => {
+  const VIAS_DEDUITES = ['regle', 'pitch'];
+  const normA = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const valDe = (R, cle) => { const r = R[cle]; return r && typeof r === 'object' && r.valeur !== undefined ? r.valeur : null; };
+  function cond(si, R) {
+    if (!si) return true;
+    return Object.entries(si).every(([cle, c]) => {
+      const v = valDe(R, cle), absent = v === null, l = Array.isArray(v) ? v : [v];
+      return Object.entries(c || {}).every(([op, x]) => {
+        if (op === 'egal') return !absent && l.includes(x);
+        if (op === 'different_de') return absent || !l.includes(x);
+        if (op === 'dans') return !absent && l.some(y => x.includes(y));
+        if (op === 'existe') return x ? !absent : absent;
+        if (op === 'seul') return !absent && l.length === 1 && l[0] === x;
+        if (op === 'aucun_de') return absent || !l.some(y => x.includes(y));
+        return true;
+      });
+    });
+  }
+  const question = (QF, cle) => (QF.questions || []).find(q => q.id === cle) || null;
+  function duPitch(QF, pitch) {
+    const n = ' ' + normA(pitch) + ' ', trouve = {};
+    for (const m of ((QF.adaptation || {}).pitch || [])) {
+      const mot = m.mots.find(w => normA(w) && n.includes(' ' + normA(w) + ' '));
+      if (mot) (trouve[m.cle] = trouve[m.cle] || []).push([m.valeur, mot]);
+    }
+    const res = {};
+    for (const [cle, l] of Object.entries(trouve)) {
+      const q = question(QF, cle); if (!q) continue;
+      const vals = []; for (const [v] of l) if (!vals.includes(v)) vals.push(v);
+      if (q.type === 'multi') res[cle] = [vals, l[0][1]];
+      else if (vals.length === 1) res[cle] = [vals[0], l[0][1]];
+    }
+    return res;
+  }
+  function deduire(QF, R, exclure) {
+    const ad = QF.adaptation || {}, textes = ad.textes || {}, ex = new Set(exclure || []);
+    const base = {}; for (const [k, v] of Object.entries(R)) if (v && typeof v === 'object' && !VIAS_DEDUITES.includes(v.via)) base[k] = v;
+    const cur = Object.assign({}, base), ajout = {};
+    const p = base['vision.pitch'];
+    if (p && typeof p.valeur === 'string' && p.source === 'utilisateur') {
+      const d = duPitch(QF, p.valeur);
+      for (const cle of Object.keys(d).sort()) {
+        if (cle in cur || ex.has(cle)) continue;
+        const [v, mot] = d[cle];
+        cur[cle] = ajout[cle] = { valeur: v, source: 'deduit', via: 'pitch', raison: (textes.raison_pitch || 'pitch : {mot}').replace('{mot}', mot) };
+      }
+    }
+    for (let i = 0; i < 20; i++) {
+      let change = false;
+      for (const regle of (ad.regles || [])) {
+        if (!cond(regle.si, cur)) continue;
+        for (const [cle, v] of Object.entries(regle.fixe || {})) {
+          if (cle in cur || ex.has(cle)) continue;
+          cur[cle] = ajout[cle] = { valeur: v, source: 'deduit', via: 'regle', raison: regle.raison || '' };
+          change = true;
+        }
+      }
+      if (!change) break;
+    }
+    return ajout;
+  }
+  function difference(QF, R, exclure) {
+    const d = deduire(QF, R, exclure), ecrire = {}, retirer = [];
+    for (const [k, r] of Object.entries(d)) { const a = R[k]; if (!a || typeof a !== 'object' || JSON.stringify(a.valeur) !== JSON.stringify(r.valeur) || a.via !== r.via) ecrire[k] = r; }
+    for (const [k, r] of Object.entries(R)) if (r && typeof r === 'object' && VIAS_DEDUITES.includes(r.via) && !(k in d)) retirer.push(k);
+    return { ecrire, retirer };
+  }
+  function incluse(q, R, mode, fixes) {
+    if (q.chapitre !== 'fin' && (mode === 'complet' ? q.seulement_rapide : !q.rapide)) return false;
+    if (!cond(q.si, R)) return false;
+    if ((fixes || []).includes(q.id)) return false;
+    if (mode === 'adoption' && (R[q.id] || {}).via === 'analyse') return false;
+    return true;
+  }
+  function tranchee(q, R, revoir) {
+    if (q.chapitre === 'fin') return false;
+    const r = R[q.id]; if (!r || typeof r !== 'object') return false;
+    return !(revoir && r.source === 'a_confirmer');
+  }
+  function suivante(QF, R, mode, fixes, depuis, revoir) {
+    const tous = QF.questions || []; let i0 = 0;
+    if (depuis) { const i = tous.findIndex(q => q.id === depuis); i0 = i >= 0 ? i + 1 : 0; }
+    for (const q of tous.slice(i0)) if (incluse(q, R, mode, fixes) && !tranchee(q, R, revoir)) return q;
+    return null;
+  }
+  function libelle(QF, cle, v) {
+    const q = question(QF, cle) || {}, lib = {}; for (const c of (q.choix || [])) lib[c.id] = c.libelle || c.id;
+    if (Array.isArray(v)) return v.map(x => String(lib[x] !== undefined ? lib[x] : x)).join(', ');
+    if (v === null || v === undefined || typeof v === 'object' || typeof v === 'boolean') return '';
+    return String(lib[v] !== undefined ? lib[v] : v);
+  }
+  function titre(QF, q, R) {
+    for (const v of (q.variantes || [])) if (cond(v.si, R)) return v.titre.replace(/\{([a-z0-9_.]+)\}/g, (m, cle) => libelle(QF, cle, valDe(R, cle)) || m);
+    return q.titre || '';
+  }
+  function acquis(QF, R, sauf, maxi = 6) {
+    const out = [];
+    for (const cle of ((QF.adaptation || {}).acquis || [])) {
+      const r = R[cle]; if (cle === sauf || !r || typeof r !== 'object' || !['utilisateur', 'deduit'].includes(r.source)) continue;
+      const lib = libelle(QF, cle, r.valeur); if (lib) out.push({ cle, valeur: lib, source: r.source, raison: r.raison || '' });
+    }
+    return out.slice(0, maxi);
+  }
+  return { cond, deduire, difference, suivante, incluse, tranchee, titre, acquis, libelle, duPitch, VIAS_DEDUITES };
+})();
+// ADAPTATION fin
+
 // ====================================================================== questionnaire joué dans la page (mode accueil)
 const SCENE_VISIBLE = () => !$('#scene').hidden && !$('#scene').classList.contains('parti');
 const Quest = (() => {
-  let courant = null, dernierQF = null, pile = [], suivisFile = [], retourRecap = false, attente = null, annulation = null, choixMulti = new Set();
+  let courant = null, dernierQF = null, pile = [], suivisFile = [], retourRecap = false, attente = null, annulation = null, choixMulti = new Set(), revoir = false;
   const scene = $('#scene'), corps = $('#sc-corps');
   const R = () => REP.reponses;
   const val = id => R()[id] ? R()[id].valeur : undefined;
   const mode = () => REP.mode || (val('accueil.mode') === 'complet' ? 'complet' : 'rapide');
-  function cond(si) {
-    if (!si) return true;
-    return Object.entries(si).every(([cle, c]) => {
-      const v = val(cle), a = v === undefined || v === null;
-      if ('egal' in c) return !a && (Array.isArray(v) ? v.includes(c.egal) : v === c.egal);
-      if ('different_de' in c) return a || (Array.isArray(v) ? !v.includes(c.different_de) : v !== c.different_de);
-      if ('dans' in c) return !a && (Array.isArray(v) ? v.some(x => c.dans.includes(x)) : c.dans.includes(v));
-      if ('existe' in c) return c.existe ? !a : a;
-      return true;
-    });
-  }
-  const fixe = q => (DED && DED.fixes && DED.fixes[q.id]) || (REP.mode === 'adoption' && (R()[q.id] || {}).via === 'analyse');
-  function incluse(q) {
-    if (q.chapitre !== 'fin' && (mode() === 'complet' ? q.seulement_rapide : !q.rapide)) return false;   // adoption : comme rapide, moins ce qui est déduit du projet
-    if (!cond(q.si)) return false;
-    if (fixe(q)) return false;
-    return true;
-  }
+  const cond = si => Adaptation.cond(si, R());   // conditions « si » (questions, cartes, variantes) : bloc ADAPTATION
+  const fixes = () => DED && DED.fixes && typeof DED.fixes === 'object' ? Object.keys(DED.fixes) : [];
+  const incluse = q => Adaptation.incluse(q, R(), mode(), fixes());   // adoption : comme rapide, moins ce qui est déduit du projet
   const liste = () => QF.questions.filter(incluse);
+  // Questionnaire adaptatif : après chaque réponse, les déductions (règles, mots du pitch) suivent ; une question
+  // déduite n'est plus posée, une déduction dont la cause a changé disparaît ; jamais à la place d'une réponse donnée.
+  function suivreDeductions() {
+    const { ecrire, retirer } = Adaptation.difference(QF, R(), fixes());
+    for (const k of retirer) { delete R()[k]; posterFond('/api/questionnaire', { cle: k, effacer: true }).catch(() => {}); }
+    const t0 = new Date().toISOString(), dupitch = [];
+    for (const [k, r] of Object.entries(ecrire)) {
+      R()[k] = Object.assign({ t: t0 }, r);
+      posterFond('/api/questionnaire', { cle: k, valeur: r.valeur, source: 'deduit', via: r.via, raison: String(r.raison || '').slice(0, 300) }).catch(() => {});
+      if (r.via === 'pitch') dupitch.push(Adaptation.libelle(QF, k, r.valeur));
+    }
+    if (dupitch.length && QF.adaptation && QF.adaptation.textes) Bureau.dire('assistant', QF.adaptation.textes.pitch.replace('{liste}', dupitch.join(', ')), 8);
+  }
   const qDe = id => QF.questions.find(q => q.id === id) || (SUIVI && (SUIVI.questions || []).find(q => q.id === id));
   const rec = q => { const r = DED && DED.recommandes && DED.recommandes[q.id]; return r !== undefined && r !== null ? r : q.recommande; };
   const chapTitre = id => ((QF.chapitres || []).find(c => c.id === id) || {}).titre || id;
@@ -4017,6 +4126,7 @@ const Quest = (() => {
     if (q.id === 'accueil.mode' && (valeur === 'rapide' || valeur === 'complet')) { REP.mode = valeur; envoi.mode = valeur; }
     try { await posterFond('/api/questionnaire', envoi); } catch (e) { /* toast */ }
     if (q.a_propos) { R()[q.a_propos] = Object.assign({}, r); posterFond('/api/questionnaire', { cle: q.a_propos, valeur, source: r.source, via: r.via, texte_brut: o.texte_brut || '' }).catch(() => {}); }
+    if (QF && QF.adaptation) suivreDeductions();
     effetsProfil(q, valeur);
   }
   function effetsProfil(q, v) {
@@ -4051,10 +4161,9 @@ const Quest = (() => {
   // ---- navigation
   function suivante(depuis) {
     if (suivisFile.length) return suivisFile.shift();
-    const l = liste(); if (!depuis) return l.find(q => !(q.id in R())) || l[l.length - 1];
-    const tous = QF.questions, i = tous.findIndex(q => q.id === depuis.id);
-    for (let k = i + 1; k < tous.length; k++) if (incluse(tous[k])) return tous[k];
-    return null;
+    // jamais une question déjà tranchée (réponse donnée ou déduite) : reprise = la première non tranchée
+    if (!depuis) { const l = liste(); return Adaptation.suivante(QF, R(), mode(), fixes(), null, revoir) || l[l.length - 1]; }
+    return Adaptation.suivante(QF, R(), mode(), fixes(), depuis.id, revoir);
   }
   function avancer() {
     const prec = courant;
@@ -4109,7 +4218,7 @@ const Quest = (() => {
     if (q.id === 'fin.valider') milieu = recap() + milieu;
     const passer = q.passer !== false && q.type !== 'personnage';
     const valider = ['multi', 'texte', 'nom', 'couleur', 'curseur', 'personnage'].includes(q.type);
-    corps.innerHTML = `<div class="sc-tete"><canvas id="sc-avatar" width="168" height="168"></canvas><div class="bulle"><div class="qui">${esc(nomAssistant())}</div>${msg ? `<p class="msg">${esc(msg)}</p>` : ''}<h2>${esc(q.titre)}</h2>${q.aide ? `<p>${esc(q.aide)}</p>` : ''}</div></div>
+    corps.innerHTML = `<div class="sc-tete"><canvas id="sc-avatar" width="168" height="168"></canvas><div class="bulle"><div class="qui">${esc(nomAssistant())}</div>${msg ? `<p class="msg">${esc(msg)}</p>` : ''}<h2>${esc(QF.questions.includes(q) ? Adaptation.titre(QF, q, R()) : q.titre)}</h2>${q.aide ? `<p>${esc(q.aide)}</p>` : ''}${acquisHtml(q)}</div></div>
       ${milieu}<div id="sc-annule"></div>
       <div class="sc-bas">${pile.length ? `<button type="button" class="bts" id="sc-retour">← ${esc(t('retour'))}</button>` : ''}<span class="espace"></span>
       ${passer ? `<button type="button" class="bts" id="sc-passer">${esc(t('passer'))}</button>` : ''}${valider ? `<button type="button" class="btp" id="sc-valider">${esc(t('valider'))}</button>` : ''}</div>`;
@@ -4117,6 +4226,11 @@ const Quest = (() => {
     lier(q, cartes);
     const f = corps.querySelector('textarea,input[type=text]:not([readonly])'); if (f && (q.type === 'texte' || q.type === 'nom')) setTimeout(() => f.focus(), 50);
     corps.scrollTop = 0; Bureau.taille();
+  }
+  function acquisHtml(q) {   // rappel court de ce qui est déjà acquis (~ = déduit, la raison au survol)
+    if (!QF.adaptation || q.id === 'fin.valider' || (q.chapitre === 'accueil')) return '';
+    const l = Adaptation.acquis(QF, R(), q.a_propos || q.id); if (!l.length) return '';
+    return `<p class="acquis"><b>${esc(QF.adaptation.textes.acquis)}</b> : ${l.map(a => `<span${a.source === 'deduit' ? ` class="deduit" title="${esc(a.raison)}"` : ''}>${esc(a.valeur)}${a.source === 'deduit' ? ' ~' : ''}</span>`).join(' · ')}</p>`;
   }
   function majChapitres(q) {
     const ch = (QF.chapitres || []).filter(c => c.id !== 'accueil'), finis = chapitresFinis();
@@ -4242,7 +4356,7 @@ const Quest = (() => {
   async function finir(choix) {
     const q = qDe('fin.valider');
     if (choix === 'corriger') { await noter(q, 'corriger'); const tr = corps.querySelector('.recap'); if (tr) tr.scrollIntoView({ behavior: 'smooth' }); return; }
-    if (choix === 'complet') { REP.mode = 'complet'; await posterFond('/api/questionnaire', { mode: 'complet' }).catch(() => {}); pile = []; const l = liste(); return montrer(l.find(x => !(x.id in R()) && x.id !== 'fin.valider') || q); }
+    if (choix === 'complet') { REP.mode = 'complet'; revoir = true; await posterFond('/api/questionnaire', { mode: 'complet' }).catch(() => {}); pile = []; return montrer(Adaptation.suivante(QF, R(), 'complet', fixes(), null, true) || q); }   // les « à confirmer » reviennent, le reste tranché non
     await noter(q, 'oui');
     REP.etat = 'termine';
     finirChapitre('personnages');

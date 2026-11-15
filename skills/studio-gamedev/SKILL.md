@@ -100,7 +100,7 @@ Essai : `python -I -B studio/outils/essai_complet.py adoption --dossier <…>/es
    - essai du studio sans vrai projet : `python -I -B <skill>/studio/outils/essai_complet.py` (`references/studio.md`, « Installation », « Essai »).
 4. Quand `reponses_questionnaire.json` passe à `"etat": "termine"` : relis tout, résume en quelques lignes dans la conversation, et passe **tout de suite** à la phase 1 bis (la page affiche déjà « J'écris ta roadmap… »).
 
-**Repli** : si Python manque, si la page ne s'ouvre pas, ou si l'utilisateur préfère la conversation, pose le même questionnaire avec l'outil de questions à choix (`AskUserQuestion`, une étape par appel, le ★ en premier) et écris toi-même `reponses_questionnaire.json` au même format.
+**Repli** : si Python manque, si la page ne s'ouvre pas, ou si l'utilisateur préfère la conversation, pose le même questionnaire avec l'outil de questions à choix (`AskUserQuestion`, une étape par appel, le ★ en premier) et écris toi-même `reponses_questionnaire.json` au même format. Passe par `python -I -B <skill>/studio/outils/questionnaire.py suivante|repondre --projet <projet>` : question reformulée selon les réponses, rappel « Déjà acquis », déductions écrites, jamais une question tranchée reposée, reprise où on en était (`references/questionnaire.md`, « Questionnaire adaptatif »).
 
 ## Phase 1 bis : la roadmap (obligatoire, jamais sautée)
 

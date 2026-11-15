@@ -14,8 +14,9 @@ GET  : sert d'abord les fichiers du skill posés à côté de ce script (studio.
   GET /api/instantane?f=a.json,b.json[&connu=a.json:<marque>,…]  -> {"fichiers", "marques"} ; un fichier dont la marque
                       envoyée dans « connu » n'a pas changé n'est pas renvoyé (listé dans « inchanges »)
 POST : petite API JSON réservée à la page servie par ce même serveur :
-  /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
-                      -> .studio/reponses_questionnaire.json (fusion, écriture atomique)
+  /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, effacer?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
+                      -> .studio/reponses_questionnaire.json (fusion, écriture atomique) ; effacer: true retire une réponse
+                         déduite (via regle ou pitch) seulement, jamais une réponse de l'utilisateur
   /api/profil         {maitre?, assistant?, voix?}                 -> .studio/profil.json (fusion, valeurs bornées)
   /api/demande        {cible, texte, via, sujet?, en_reponse_a?, brouillon?, perimetre?, origine?}  -> .studio/demandes_vocales/<horodatage>_<cible>.json
                       origine (automatismes seulement) : auto:tyrannie | auto:relecture-partagee | auto:vague.<heure> ; jamais compté « en attente »
@@ -124,7 +125,7 @@ APPARENCES = {"aucune", "casque", "casquette", "beret", "lunettes", "chapeau", "
 NOMS_RESERVES = {"assistant", "maitre", "index", "statuts"}
 COULEUR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 SOURCES = {"utilisateur", "deduit", "a_confirmer", "voix_a_interpreter"}
-VIAS = {"clic", "ecrit", "voix", "passer", "analyse"}
+VIAS = {"clic", "ecrit", "voix", "passer", "analyse", "regle", "pitch"}   # regle, pitch : déductions du questionnaire adaptatif
 ETATS = {"en_cours", "termine"}
 MODES = {"rapide", "complet", "adoption"}
 ORIGINE_RE = re.compile(r"^(page|tache:[A-Za-z0-9_.:-]{1,80}|auto:fin-de-tache|auto:temporaire)$")
@@ -1393,6 +1394,13 @@ def route_questionnaire(d):
     if not isinstance(q.get("reponses"), dict):
         q["reponses"] = {}
     cle = texte(d, "cle", 80)
+    if cle and d.get("effacer") is True:            # questionnaire adaptatif : une déduction dont la cause a changé disparaît ;
+        if not CLE_RE.match(cle):                    # seule une réponse déduite (via regle ou pitch) peut être effacée
+            raise Refus(400, "cle invalide")
+        ancienne = q["reponses"].get(cle)
+        if isinstance(ancienne, dict) and ancienne.get("via") in ("regle", "pitch"):
+            del q["reponses"][cle]
+        cle = ""
     if cle:
         if not CLE_RE.match(cle):
             raise Refus(400, "cle invalide")
