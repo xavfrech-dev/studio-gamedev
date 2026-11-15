@@ -110,6 +110,14 @@ def main(argv=None):
         ecrire(st.f("demandes_vocales", e["demande"]["id"] + ".json"), {"cible": "assistant", "statut": "traitee"})
         r = passe(t0 + 3760)
         verifier("demande traitée : une nouvelle vague", len(envois()) == 2 and r["envoyee"], r)
+        # 2c) la nouvelle demande est close aussitôt (l'assistant a lancé la vague) mais les agents n'ont pas encore écrit leur
+        # barre : pas de nouvelle demande avant 20 min (avant le correctif : une demande à chaque passage)
+        e["demande"]["id"] = "20261114-170000-000-assistant"
+        ecrire(st.f("demandes_vocales", e["demande"]["id"] + ".json"), {"cible": "assistant", "statut": "traitee"})
+        r = passe(t0 + 3820)
+        verifier("close aussitôt : aucune nouvelle avant 20 min", len(envois()) == 2 and not r["envoyee"] and "20 min" in r["raison"], r)
+        r = passe(t0 + 3760 + 1201)
+        verifier("20 min plus tard, toujours tous libres : une nouvelle", len(envois()) == 3 and r["envoyee"], r)
         neuf()
 
         # 3) un poste en cours → aucune

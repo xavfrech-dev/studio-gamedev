@@ -61,6 +61,9 @@ VAGUE_CALME_S = 5 * 60
 VAGUE_CHAINE_S = 10 * 60                 # barre écrite par un suivi de chaîne (« source ») : réécrite toutes les 5 min tant que l'agent vit
 VAGUE_GARDE_S = 6 * 3600                 # demande sans fichier lisible (essai) : en attente 6 h au plus
 VAGUE_REESSAI_S = 5 * 60
+VAGUE_PAUSE_S = 20 * 60                  # au moins 20 min entre deux demandes « vague » (correctif du studio d'origine, 14/11 23:01 :
+                                         # une demande close aussitôt laissait repartir une demande à chaque passage, tant que les
+                                         # agents de la nouvelle vague n'avaient pas encore écrit leur barre)
 ELEMENT_RE = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+(\S.*)$")
 
 TXT = {
@@ -834,6 +837,8 @@ class Automatismes:
             res["raison"] = "postes libres depuis moins de 5 min" if not en else "desks free for less than 5 min"
         elif res["attente"]:
             res["raison"] = "une demande « vague » attend déjà l'assistant" if not en else "a “wave” request is already waiting for the assistant"
+        elif maintenant - e.get("dernier_envoi", 0) < VAGUE_PAUSE_S:
+            res["raison"] = "vague demandée il y a moins de 20 min" if not en else "wave requested less than 20 min ago"
         elif maintenant < e.get("reessai", 0):
             res["raison"] = e.get("refus") or ""
         else:
@@ -847,6 +852,7 @@ class Automatismes:
                 e["demande"] = {"t": int(maintenant), "id": str(r.get("id") or ""), "postes": res["libres"], "essai": bool(r.get("essai"))}
                 e.pop("reessai", None)
                 e.pop("refus", None)
+                e["dernier_envoi"] = int(maintenant)
                 res["envoyee"], res["attente"] = texte.split("\n", 1)[0], True
                 self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "vague", "postes": res["libres"], "ok": True})
             else:
