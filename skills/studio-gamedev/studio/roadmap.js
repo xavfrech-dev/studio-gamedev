@@ -95,7 +95,7 @@
     const f = projet.filter(tacheFinie).length, vues = projet.filter(t => tacheFinie(t) && t.vu).length;
     const titre = (en ? 'Requests from ' : 'Demandes de ') + prenom;
     return { id: 'JX', titre, hors_v1: true, prenom, taches: projet, total: projet.length, faites: f, vues, ferme: projet.length > 0 && vues === projet.length,
-      av: avancement(projet), pct: avancement(projet).avance,   // % pondéré, comme la barre (et comme le studio WILDLANDS)
+      av: avancement(projet), pct: avancement(projet).avance,   // % pondéré, comme la barre (et comme le studio d'origine)
      
       but: en ? `What ${prenom} asked for on top of the plan, by priority.` : `Ce que ${prenom} a demandé en plus du plan, par ordre de priorité.`,
       critere_fin: en ? `Closed when every project request is merged and seen by ${prenom}.` : `Fermé quand toutes les demandes du projet sont versées et vues par ${prenom}.`,

@@ -724,7 +724,7 @@ def compresser(corps, type_, accepte, cle=None):
 # Images citées par l'assistant (champ « images » des réponses, chemins du texte, fichiers envoyés au chat) : GET /api/image?chemin=…
 # Liste blanche : le dossier du projet (et STUDIO_IMAGES_RACINES, dossiers séparés par os.pathsep) ; extensions png/jpg/jpeg/webp/gif ;
 # contenu vérifié (signature du fichier) ; 30 Mo au plus. Jamais de chemin relatif, réseau (\\serveur), de flux NTFS (« : » après
-# le lecteur), de « .. », ni de dossier .git/.ssh/.claude. Jumeau du studio WILDLANDS (serveur_studio.py, image_permise).
+# le lecteur), de « .. », ni de dossier .git/.ssh/.claude. Jumeau du studio d'origine (serveur_studio.py, image_permise).
 IMAGES_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 IMAGE_MAX = 30 * 1024 * 1024
 IMAGES_DOSSIERS_REFUSES = {".git", ".ssh", ".claude", ".gnupg", ".aws"}

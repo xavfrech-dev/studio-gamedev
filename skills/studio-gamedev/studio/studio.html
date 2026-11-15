@@ -415,7 +415,7 @@ body.app #onglets-app button{font-weight:600}
 body.app #onglets-app .pastille{font-size:11px;min-width:18px;line-height:16px}
 /* T9 : réglages en lignes tactiles ; interrupteurs à la place des cases ; listes et curseurs à la taille du doigt */
 body.app #panneau .reglage{min-height:52px;margin:0;padding:6px 0;border-bottom:1px solid rgba(92,79,63,.14);justify-content:space-between;font-size:16px}
-/* 15/11 : interrupteurs partout (plus seulement sur téléphone) : piste grise / verte, pastille qui glisse, mot « Oui / Non » à côté ; jumeau des interrupteurs du studio WILDLANDS */
+/* 15/11 : interrupteurs partout (plus seulement sur téléphone) : piste grise / verte, pastille qui glisse, mot « Oui / Non » à côté ; jumeau des interrupteurs du studio d'origine */
 #panneau .reglage:has(input[type=checkbox]){justify-content:space-between;min-height:36px}
 #panneau .reglage input[type=checkbox]{order:3;appearance:none;-webkit-appearance:none;flex:none;width:48px;height:28px;border-radius:999px;background:#7d7264;box-shadow:inset 0 1px 3px rgba(0,0,0,.35);position:relative;margin:0;cursor:pointer;transition:background .18s}
 #panneau .reglage input[type=checkbox]::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.45);transition:transform .18s}
@@ -445,7 +445,7 @@ body.app #panneau.conv-app .surtitre,body.app #panneau.conv-app .conv-aide{displ
 body.app #entete{flex-wrap:nowrap;min-height:56px;padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:6px;gap:8px}
 body.app #entete h1{flex:1;min-width:0;max-width:none;font-size:18px;margin:0}
 body.app #horloge,body.app #v1 .piste,body.app #v1>span{display:none!important}
-/* 15/11 : sur téléphone, le niveau reste là en pastille compacte (« niv. 9 ») : le toucher ouvre l’infobulle d’XP (jumeau du carton « Niveau du studio » de WILDLANDS) */
+/* 15/11 : sur téléphone, le niveau reste là en pastille compacte (« niv. 9 ») : le toucher ouvre l’infobulle d’XP (jumeau du carton « Niveau du studio » du studio d'origine) */
 body.app #niveau{min-width:0;flex:0 0 auto;padding:4px 10px;border-radius:999px;gap:0}body.app #niveau .xpm,body.app #niveau .rang,body.app #niveau .niv-sep{display:none}
 body.app #v1{padding:4px 10px;gap:0;flex:none}
 body.app #fraicheur{font-size:0;padding:0;width:12px;height:12px;border-radius:50%;background:#6fae5e;border:0;flex:none;cursor:pointer}body.app #fraicheur.vieux{background:#e08a4a}
@@ -646,7 +646,7 @@ body:not(.app) #panneau:has(.eq-liste) .feuille{width:min(1060px,calc(94vw / var
 @media (prefers-reduced-motion:reduce){.micro.actif,#gros-micro.actif{transition:none}}
 /* S24 : en mode accueil (questionnaire, pas d'équipe ni de roadmap), la barre ne garde que Réglages, Son, Plein écran, Conversation et la voix */
 html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not(#bt-conv):not(#bt-assistant):not(#bt-plus-pc) { display: none !important; }
-/* ---------- images des réponses de Claude (jumeaux : studio WILDLANDS et skill) ---------- */
+/* ---------- images des réponses de Claude (jumeaux : studio d'origine et skill) ---------- */
 .cl-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:8px 0 12px;white-space:normal}
 .cl-images.seule{grid-template-columns:minmax(0,min(100%,420px))}
 .cl-img{display:block;padding:0;margin:0;border:1px solid rgba(92,79,63,.3);border-radius:8px;overflow:hidden;background:rgba(0,0,0,.08);cursor:zoom-in;aspect-ratio:4/3;min-height:0}
@@ -945,7 +945,8 @@ async function chargerTout() {
   if (Array.isArray(rass)) lireReponsesAssistant(rass);
   { const sg = await lire('suggestions.json'); SUGG = sg && Array.isArray(sg.suggestions) ? sg.suggestions.filter(x => x && x.id && x.titre).slice(0, 30) : [];
     const sv = LS.get('sug_vus', null), svs = new Set(sv || []);
-    for (const x of SUGG) if (x.gravite === 'urgent' && !svs.has(x.id)) { svs.add(x.id); if (sv !== null) Notifs.ajouter({ id: 'sug:' + x.id, type: 'alerte', titre: x.titre, ligne: x.action_proposee || x.explication || '', cible: { ensemble: true }, quand: quandHeure(x.cree_le || x.date_creation || '') }); }
+    const auj = new Date().toLocaleDateString('sv-SE'), passee = x => { const d = String(x.date || x.cree_le || x.date_creation || ''); return /^\d{4}-\d\d-\d\d/.test(d) && d.slice(0, 10) < auj; };   // jumeau 14/11 : suggestion d'un jour passé notée, pas sonnée
+    for (const x of SUGG) if (x.gravite === 'urgent' && !svs.has(x.id)) { svs.add(x.id); if (sv !== null && !passee(x)) Notifs.ajouter({ id: 'sug:' + x.id, type: 'alerte', titre: x.titre, ligne: x.action_proposee || x.explication || '', cible: { ensemble: true }, quand: quandHeure(x.cree_le || x.date_creation || '') }); }
     LS.set('sug_vus', [...svs].slice(-500)); }   // S36
   majEntete(); verifierDecisions(); verifierPostes(); Quest.suivis(); majOutils(); verifierRapport();
   try { verifierMessages(); majCouper(); verifierOptim(); Radio.lancer(); const nj = jassistNeufs(); $('#nb-jassist').textContent = nj > 0 ? String(nj) : ''; } catch (err) { console.warn('parité', err); }
@@ -1558,7 +1559,7 @@ setInterval(majCloche, 3000); setTimeout(majCloche, 800);
 setTimeout(clVerifierPage, 1500); setInterval(clVerifierPage, 120000);
 // la cloche s'ouvre toujours : la liste de ce qui attend (une issue en un clic pour chaque élément), ou un message rassurant
 function ouvrirCloche() { CL_ANNONCE = null; Panneau.remplacer('cloche', el => rendreCloche(el, true)); }
-// ---------------- images des réponses de Claude (jumeaux : studio WILDLANDS et skill studio-gamedev) ----------------
+// ---------------- images des réponses de Claude (jumeaux : studio d'origine et skill studio-gamedev) ----------------
 // Une réponse (journal du crochet, réponse écrite au studio, rapport, conversation) peut porter « images » : chemins locaux
 // (captures, planches). On y ajoute les chemins d'images cités dans le texte. Vignettes au-dessus du texte (là où le chat
 // les montre), chargement paresseux ; clic : visionneuse plein écran (flèches, Échap, glisser au téléphone). Le serveur ne

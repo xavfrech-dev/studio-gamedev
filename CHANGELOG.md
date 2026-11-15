@@ -2,10 +2,30 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
-## [Non publié]
+## [0.5.3] - 2026-11-15
+
+Le studio relance la vague suivante tout seul, montre les images de l'assistant, et l'XP se lit mieux.
+
+### Ajouté
+- **Vague suivante** : quand tous les postes libres (hors chaîne moteur) ont fini ou se taisent depuis plus de 5 min, le studio dépose **une** demande à l'assistant pour planifier la suite, avec la liste des postes libres et les tâches disponibles. Pas de doublon tant qu'elle attend, rien si un poste travaille, et au moins 20 min entre deux demandes. Essai : `studio/outils/essai_vague.py`.
+- **Images dans le studio** : les images que l'assistant envoie dans la conversation ou cite dans sa réponse s'affichent en vignettes au-dessus du texte (fil, rapport, journal), avec une visionneuse plein écran (flèches, Échap, glisser au téléphone). Le serveur ne sert que des images du dossier du projet (png, jpg, webp, gif, 30 Mo au plus).
+- **Jalon « Demandes de <prénom> » (JX)** dans la Roadmap, sous « En plus de la V1 » : les demandes faites hors du plan (`.studio/demandes_hors_plan.json`), avec % pondéré, ordre de priorité, groupe « Pour le studio » à part, nombre de demandes vues, badge et succès. Il ne compte pas dans le % de la V1.
+- **Infobulle d'XP** sur le bouton de niveau (survol, clavier, toucher) : total, niveau, rang, XP manquante, prochain rang, 5 derniers gains datés et répartition (tâches, jalons, quêtes). Sur téléphone, le niveau reste dans l'en-tête en pastille compacte.
 
 ### Amélioré
-- **Gains d'XP au milieu de l'écran** (jumeau du studio WILDLANDS) : rien pour un gain ancien au chargement ni en mode absent (le résumé « Pendant ton absence » donne le total) ; petits gains cumulés 2,5 s (8 s au plus) avec leur raison (tâches finies, jalons fermés, quête, sinon « travail du studio ») ; la barre d'XP attend l'arrivée du gain ; passage de rang : bannière plus marquée ; plus de bandeau de niveau en double ; réglage « Gains d'XP » aussi dans Réglages.
+- **Gains d'XP au milieu de l'écran** : rien pour un gain ancien au chargement ni en mode absent (le résumé « Pendant ton absence » donne le total) ; petits gains cumulés avec leur raison ; bannière lisible 8 s (en pause au survol, fermée au clic) qui dit d'où vient le gain, l'XP avant et après, le niveau et le rang ; passage de rang plus marqué ; plus de bandeau de niveau en double ; compteur au format local (+1 500) ; réglage « Gains d'XP » aussi dans Réglages.
+- **Un seul rang partout** : l'en-tête, la bannière d'XP et la pièce tirent leur rang des paliers (Garage… Studio AAA).
+- **Réglages en vrais interrupteurs** partout (plus seulement sur téléphone), plus contrastés, avec Oui / Non estompé quand un réglage est indisponible.
+- **Toute l'équipe** : les étapes des chaînes sont écrites en clair (« choisit sa prochaine tâche » au lieu de `choisir:blender`).
+- **Tâche du moment d'une recrue** : sa demande d'embauche n'est plus affichée comme sa tâche ; la barre en cours passe d'abord.
+- La page du studio est toujours relue sur le réseau quand le serveur répond (le cache hors ligne ne sert plus qu'en secours).
+
+### Corrigé
+- « a fini » et « fin de tâche » ne sont plus annoncés en boucle ni après une relance du studio pour la même tâche (une fois en 12 h) ; une fin sans texte est toujours annoncée.
+- Les messages que le studio dépose lui-même (contremaître, relecture partagée, vague suivante) ne comptent plus comme des messages de l'utilisateur « en attente ».
+- « fait », « traité », « terminé » et « refusé » finissent aussi une demande (avant : renvoi refusé et attribution automatique bloquée pour toujours).
+- Un fichier d'agent lu pendant son écriture ne donne plus d'anomalie : la dernière bonne lecture est gardée, l'anomalie n'apparaît qu'après 2 min.
+- Une suggestion urgente d'un jour passé est notée sans faire sonner la cloche.
 
 ## [0.5.2] - 2026-11-14
 

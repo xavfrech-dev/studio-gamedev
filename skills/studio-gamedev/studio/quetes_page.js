@@ -114,7 +114,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
 @keyframes xfEtincelle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 @keyframes xfPulse{0%{box-shadow:0 0 0 0 rgba(226,184,102,.75)}100%{box-shadow:0 0 0 14px rgba(226,184,102,0)}}
 @media (prefers-reduced-motion:reduce){#xp-fete .xf-carte{animation:none}#xp-fete .xf-e{display:none}#niveau.xp-pulse{animation:none}}
-/* 15/11 : détail des gains d'XP (bannière plus longue) et infobulle de la barre d'XP (jumeau studio WILDLANDS ⇄ skill) */
+/* 15/11 : détail des gains d'XP (bannière plus longue) et infobulle de la barre d'XP (jumeau du studio d'origine) */
 #xp-fete .xf-carte{background:radial-gradient(120% 120% at 50% 0%,#3c2e1c,#16120d);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 #xp-fete .xf-d{display:grid;gap:4px;width:min(460px,calc(100vw - 84px));margin-top:10px;padding-top:10px;border-top:1px solid rgba(241,217,164,.22);text-align:left;font:13px/1.35 var(--sans);color:#e9dcc0}
 #xp-fete .xf-g{font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#f1d9a4}
@@ -621,9 +621,9 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
   // Toute hausse de l'XP du studio (tâche, quête, jalon, versement : roadmap + etat.json) est fêtée : rebond, compteur,
   // étincelles, petit son (muet et babillage respectés), envol vers la barre de l'en-tête qui se remplit, bannière de niveau.
   // Gains groupés s'ils arrivent ensemble ; jamais bloquant (clic pour passer) ; réglage « Gains d'XP » : complet, discret, coupé.
-  // 14/11 (jumeau du studio WILDLANDS) : rien pour un gain ancien au chargement ni en mode absent (le résumé d'absence donne le total) ;
+  // 14/11 (jumeau du studio d'origine) : rien pour un gain ancien au chargement ni en mode absent (le résumé d'absence donne le total) ;
   // petits gains cumulés 2,5 s (8 s au plus) ; la barre attend l'arrivée du gain ; passage de rang : bannière plus marquée.
-  // 15/11 (demande de Xavier : « l'infobulle d'XP doit rester plus longtemps et être plus détaillée ») : jumeau studio WILDLANDS ⇄ skill.
+  // 15/11 (demande de l'utilisateur : « l'infobulle d'XP doit rester plus longtemps et être plus détaillée ») : jumeau du studio d'origine.
   // XpVue : rendu commun (mêmes classes, mêmes textes) du détail d'un gain d'XP et de l'infobulle de la barre d'XP ;
   // lecture() : temps de lecture de la bannière, en pause au survol (1,5 s au moins après la sortie), fin au clic ;
   // Bulle() : infobulle qui reste ouverte sous la souris et 1,5 s après, au clavier (focus), au toucher jusqu'au toucher suivant.
@@ -818,7 +818,7 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
       const lit = m === 'discret' ? 6000 : 8000, src = s0 && s0.length ? s0 : rs.map(x => ({ type: 'autre', nom: x }));   // 15/11 : 8 s lisibles (6 s en discret), pause au survol, clic : fermer
       const hote = nouveau(`<div id="xp-fete" class="${m === 'discret' ? 'discret' : ''}" role="status" aria-live="polite"><div class="xf-carte"><div class="xf-n">+0</div><div class="xf-xp">XP</div>${XpVue.gain(XV(), { de, a, src, n: nA, xa: seuil(nA), xb: seuil(nA + 1), rang: rangAct(nA), ms: lit, tactile: typeof TACTILE === 'function' && TACTILE() })}</div></div>`);
       document.body.appendChild(hote);
-      const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n'), fmt = v => '+' + v.toLocaleString(LANGUE === 'en' ? 'en-US' : 'fr-FR');   // « +1 840 », comme le studio WILDLANDS
+      const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n'), fmt = v => '+' + v.toLocaleString(LANGUE === 'en' ? 'en-US' : 'fr-FR');   // « +1 840 », comme le studio d'origine
       let fini = false; carte.onclick = () => { fini = true; if (passer) passer(); };
       if (m === 'discret') { const c = cible(); hote.style.setProperty('--cx', c.x + 'px'); hote.style.setProperty('--cy', (c.y + 30) + 'px'); }
       // compteur qui défile jusqu'au nombre, petits tics (babillage)
@@ -873,7 +873,7 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
   })();
   window.addEventListener('studio:roadmap', () => setTimeout(() => { try { Xp.verifier(); } catch (e) { /* rien */ } }, 0));
 
-  // infobulle du bouton #niveau (15/11, jumeau du studio WILDLANDS) : total, niveau, rang, XP du niveau, XP manquante, prochain rang,
+  // infobulle du bouton #niveau (15/11, jumeau du studio d'origine) : total, niveau, rang, XP du niveau, XP manquante, prochain rang,
   // 5 derniers gains datés (tâches « fait_le », jalons fermés, quêtes remplies de quetes_etat.json) et d'où vient l'XP
   const XpBulle = XpVue.Bulle(toucher => {
     const T = XV(), o = Xp.outils;
@@ -883,7 +883,7 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
     let suiv = null; for (let k = n + 1; k <= n + 80 && !suiv; k++) { const r = o.rang(k); if (r && r !== r0) suiv = { niveau: k, nom: r }; }
     if (!suiv && RM_C.prochain_rang && RM_C.prochain_rang.niveau > n) suiv = { niveau: RM_C.prochain_rang.niveau, nom: RM_C.prochain_rang.nom };
     if (suiv) suiv.xp = o.seuil(suiv.niveau);
-    const auj = new Date().toLocaleDateString('sv-SE'), heure = q => { q = String(q || ''); return q.slice(0, 10) === auj ? q.slice(11, 16) : q.slice(8, 10) + '/' + q.slice(5, 7); };
+    const auj = new Date().toLocaleDateString('sv-SE'), heure = q => { q = String(q || ''); const t = q.slice(11, 16); return q.slice(0, 10) === auj && /^\d\d:\d\d$/.test(t) ? t : q.slice(8, 10) + '/' + q.slice(5, 7); };   // fait_le sans heure : la date
     const l = [];
     for (const j of RM_C.jalons || []) { let fin = ''; for (const tc of j.taches || []) if (tc && (tc.statut === 'verse' || tc.statut === 'ecart') && tc.fait_le) { const d = String(tc.fait_le); if (d > fin) fin = d; l.push({ q: d, gain: xT, src: [{ type: 'tache', nom: tc.titre || tc.id, tache: tc.id, poste: tc.poste || '', jalon: j.id, xp: xT }] }); }
       if (j.ferme && fin) l.push({ q: fin + '~', gain: xJ, src: [{ type: 'jalon', nom: j.titre || j.id, jalon: j.id, xp: xJ }] }); }
