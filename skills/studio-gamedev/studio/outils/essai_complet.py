@@ -577,13 +577,16 @@ def cmd_fonctions(d, port):
         ok("demandes : nom unique (ms + code) en mode exclusif, doublon de moins de 60 s ignoré, une seule optimisation en attente")
 
         # message déposé par le studio lui-même (contremaître de la tyrannie) : signal pour l'assistant, jamais « tes messages attendent »
-        api("/api/demande", {"cible": "assistant", "texte": "Contremaître : agents inactifs à relancer : Renfort", "via": "ecrit", "origine": "auto:tyrannie"})
+        # (1) reconnu par son origine seule (texte sans début connu) ; (2) ancien message sans origine, reconnu par son début
+        api("/api/demande", {"cible": "assistant", "texte": "Agents inactifs à relancer : Renfort", "via": "ecrit", "origine": "auto:tyrannie"})
+        api("/api/demande", {"cible": "assistant", "texte": "Contremaître : agents bloqués : Renfort", "via": "ecrit"})
         api("/api/demande", {"cible": "assistant", "texte": "Origine inventée.", "origine": "auto:nimporte"}, 400)
         e_a = etat_une_fois()
-        m_a = [m for m in e_a.get("messages") or [] if str(m.get("texte", "")).startswith("Contremaître")]
-        n_u = sum(1 for m in e_a.get("messages") or [] if m.get("statut") == "nouvelle" and not str(m.get("texte", "")).startswith("Contremaître"))
+        est_auto = lambda m: str(m.get("texte", "")).startswith(("Agents inactifs à relancer", "Contremaître"))
+        m_a = [m for m in e_a.get("messages") or [] if est_auto(m)]
+        n_u = sum(1 for m in e_a.get("messages") or [] if m.get("statut") == "nouvelle" and not est_auto(m))
         se = e_a.get("session") or {}
-        if len(m_a) != 1 or m_a[0].get("auto") is not True or se.get("messages") != n_u:
+        if len(m_a) != 2 or any(m.get("auto") is not True for m in m_a) or se.get("messages") != n_u:
             echec(f"message automatique compté « en attente » : {m_a} ; session {se} (attendu {n_u} message(s) de l'utilisateur)")
         if "m.statut === 'nouvelle' && !m.auto" not in page:
             echec("studio.html : le bandeau « message en attente » ne filtre pas les messages automatiques (m.auto)")
