@@ -2947,7 +2947,7 @@ const XpPerso = (() => {
       let i = o.place >= 0 && libre(cands[o.place]) ? o.place : cands.findIndex(libre);
       if (i < 0) i = cands.findIndex(r => r && !chev(r, durs || obst) && !chev(r, pris));   // scène pleine : à côté d'une étiquette, jamais sur une bulle
       let r = cands[i];
-      if (i < 0) { r = cands[0]; let dy = 0; while (chev(r, pris) && dy < 6 * hh) { dy += hh + 2; r = rect(h[0], h[1] - 3 - dy); } i = 9; }   // tout est pris : empilé au-dessus de la tête
+      if (i < 0) { r = cands[0]; let dy = 0; while ((chev(r, pris) || chev(r, durs || obst)) && dy < 6 * hh) { dy += hh + 2; r = rect(h[0], h[1] - 3 - dy); } i = 9; }   // tout est pris : empilé au-dessus de la tête, à l'écart des bulles
       o.place = i < 9 ? i : -1; pris.push(r);
       c.globalAlpha = a; c.lineWidth = 3; c.strokeStyle = 'rgba(10,18,8,.88)'; c.strokeText(txt, r.x, r.y - monte);
       c.fillStyle = '#7fe36e'; c.fillText(txt, r.x, r.y - monte);
