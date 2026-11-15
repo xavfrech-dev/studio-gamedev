@@ -29,7 +29,7 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   GET /api/modeles                                                 -> modèle et effort de chaque agent, journal des changements
   /api/repondre       {id, choix?, texte_libre?}                   -> .studio/reponses.json (décision ou question de suivi)
   /api/cloche         {action: reporter|confier|remettre, cle}     -> .studio/cloche_memo.json (« plus tard » 24 h et « confié », communs au PC et au téléphone)
-  /api/reglages       {frequence_rapport_min?, attribution_auto?, embauche_auto?, auditeur?, controle_modeles?}  -> .studio/reglages.json
+  /api/reglages       {frequence_rapport_min?, attribution_auto?, embauche_auto?, auditeur?, controle_modeles?, forfait_optimise?}  -> .studio/reglages.json
   /api/confier        {agent, mission, titre?, tache_id?, origine?}  -> .studio/demandes/<horodatage>_<agent>.json (tâche confiée)
   /api/renvoyer       {nom, motif?}                                -> recrue archivée : .studio/recrues/_anciens/, .studio/anciens/agents/
   /api/reembaucher    {nom}                                        -> remet une recrue archivée dans l'équipe (lancer: false)
@@ -2550,7 +2550,7 @@ def refus_langue(msg):
 
 def route_reglages(d):
     f = d.get("frequence_rapport_min")
-    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent", "sante_auto", "blague", "auditeur", "controle_modeles",
+    bascules = {k: d[k] for k in ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto", "tyrannie_auto", "mode_absent", "sante_auto", "forfait_optimise", "blague", "auditeur", "controle_modeles",
                                   "quetes_actives", "quetes_secondaires", "quetes_son", "habillage_sons_ui") if k in d}
     bascules.update({k: v for k, v in d.items() if isinstance(k, str) and re.fullmatch(r"soutien\.[a-z0-9][a-z0-9-]{2,39}", k)})   # S4 : agents de soutien
     habillage = d.get("habillage_mode")

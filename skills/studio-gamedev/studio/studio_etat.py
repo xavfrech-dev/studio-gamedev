@@ -1490,6 +1490,14 @@ class Studio:
                                "absente": (age is None or age >= seuil) and (n_dem + n_msg) > 0}
         except Exception as e:
             etat["session"] = {"erreur": f"{type(e).__name__} : {e}"[:160]}
+        try:                                                # « Optimiser le forfait » : consigne écrite à chaque relevé (coupé par défaut)
+            if ICI not in sys.path:
+                sys.path.insert(0, ICI)
+            import optimiseur_forfait
+            cons = optimiseur_forfait.passer(self.dossier, conf, postes, chaine)
+            etat["forfait_optim"] = {k: cons.get(k) for k in ("actif", "decision", "delta", "cible", "actifs", "ligne", "ligne_en", "raison", "raison_en")}
+        except Exception as e:
+            etat["forfait_optim"] = {"actif": False, "erreur": f"{type(e).__name__} : {e}"[:160]}
         if qres:                                            # S4 : quêtes (résumé) ; l'XP des quêtes s'ajoute au niveau (la page l'additionne)
             etat["quetes"], etat["xp"] = qres.get("resume"), qres.get("xp", 0)
         fini = int(time.time())

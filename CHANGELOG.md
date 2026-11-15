@@ -4,6 +4,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 
 ## [Non publié]
 
+### Ajouté
+- **« Optimiser le forfait »** : un interrupteur à côté de la barre du forfait (vert quand il est actif, gris quand il est coupé ; coupé par défaut, gardé dans `reglages.json` → `forfait_optimise`, aussi dans Réglages ; rôle switch, clavier, FR et EN). Allumé, le studio mesure le rythme de dépense entre deux relevés, projette chaque fenêtre à sa remise à zéro et écrit pour Claude une consigne (`.studio/forfait_consigne.json`) : postes à ajouter sous 90 % projeté, à retirer au-dessus de 95 % (ou à 85 % utilisés à plus de 20 min de la remise à zéro, ou hebdo projeté au-delà de 100 %), sans jamais couper la chaîne critique ; l'hebdo vise juste sous 100 %. Une ligne courte dans la page dit ce qu'il fait (« +2 postes : 62 % projeté à la remise à zéro »). Module `studio/optimiseur_forfait.py` ; essai : `studio/outils/essai_forfait_optim.py`.
+
 ### Amélioré
 - **Questionnaire adaptatif** : chaque réponse oriente les suivantes. Ce que le pitch ou une réponse permet de déduire (moteur, genre, plateforme, 2D/3D, caméra…) n'est plus demandé ; une question tranchée n'est jamais reposée ; les questions sont reformulées selon les choix (pas de caméra 3D pour un jeu de cartes) ; un rappel « Déjà acquis » s'affiche sous chaque question ; relancé, le questionnaire reprend où il en était. Même logique dans la page et en repli conversation (`studio/adaptation.py`, `studio/outils/questionnaire.py`). Essai : `studio/outils/essai_questionnaire.py`.
 

@@ -148,6 +148,7 @@ Le studio fait travailler Claude, donc il consomme ton abonnement (ou ta clé d'
 | `enchainer` | `false` | une tâche finie ne lance pas la suivante sans ton accord (sauf si tu cliques « Je m'absente ») |
 | `pause_si_absent_min` | 60 | si tu te tais une heure **sans** cliquer « Je m'absente », rien de nouveau n'est lancé (ce qui tourne continue) |
 | `optimisation_auto` | `false` | pas d'analyse automatique du projet (une demande d'optimisation : une seule en attente, 30 min entre deux) |
+| `forfait_optimise` | `false` | interrupteur « Optimiser le forfait » à côté de la barre du forfait : allumé (vert), le studio ajoute ou retire des agents en parallèle selon le rythme de dépense, pour finir juste sous la limite à chaque remise à zéro, sans jamais couper la chaîne critique |
 | `attribution_auto` | `false` | en fin de tâche, le personnage **attend ton choix** ; à `true`, sans réponse en 2 min l'assistant lui confie la tâche suivante (1 en attente par personnage, 4 par heure) |
 | `embauche_auto` | `false` | un métier manque : le studio **le signale** ; à `true`, il embauche seul (1 par heure, 12 bureaux, recrue jamais lancée d'office) |
 

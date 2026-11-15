@@ -92,6 +92,14 @@ def main(argv=None):
             d["usage_supplementaire"].update(depense=a.depense, devise=a.devise)
     jsonio.ecrire(cible, d)   # écriture atomique : le studio ne lit jamais un fichier à moitié écrit
     print(cible)
+    try:                      # « Optimiser le forfait » (réglage forfait_optimise) : consigne recalculée à chaque relevé
+        import optimiseur_forfait
+        cons = optimiseur_forfait.passer(dossier)
+        if cons.get("actif"):
+            print("optimiseur : " + cons["ligne"] + " | " + cons["raison"] + (" | ajouter : " + ", ".join(cons["ajouter"]) if cons["ajouter"] else "")
+                  + (f" | à recruter : {cons['a_recruter']}" if cons["a_recruter"] else "") + (" | retirer : " + ", ".join(cons["retirer"]) if cons["retirer"] else ""))
+    except Exception as e:    # l'optimiseur ne bloque jamais l'écriture du forfait
+        print(f"optimiseur : {type(e).__name__} : {e}", file=sys.stderr)
     return 0
 
 

@@ -148,6 +148,7 @@ The studio makes Claude work, so it uses your subscription (or API key). The def
 | `enchainer` | `false` | a finished task does not start the next one without your approval (unless you click « Je m'absente », I'm away) |
 | `pause_si_absent_min` | 60 | if you stay silent for an hour **without** clicking « Je m'absente », nothing new is started (running work goes on) |
 | `optimisation_auto` | `false` | no automatic project analysis (an optimisation request: only one pending, 30 min between two) |
+| `forfait_optimise` | `false` | "Optimize the plan" switch next to the plan bar: on (green), the studio adds or removes parallel agents from the spending pace, to end just under the limit at each reset, never cutting the critical chain |
 | `attribution_auto` | `false` | at the end of a task, the character **waits for your choice**; at `true`, with no answer within 2 min the assistant gives it the next task (1 pending per character, 4 per hour) |
 | `embauche_auto` | `false` | a trade is missing: the studio **reports it**; at `true`, it hires on its own (1 per hour, 12 desks, a hire is never started automatically) |
 
