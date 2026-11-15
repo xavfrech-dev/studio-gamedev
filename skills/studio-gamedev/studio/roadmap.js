@@ -62,7 +62,7 @@
       jalons, faites, total, fermes, heures, heures_faites: heuresFaites,
       pct: total ? Math.round(100 * faites / total) : 0, av: avancement(jal.flatMap(j => (j && Array.isArray(j.taches)) ? j.taches : [])),
       en_cours: enCours, finie: jalons.length > 0 && fermes === jalons.length,
-      xp, niveau, xp_niveau: seuilNiveau(niveau), xp_suivant: seuilNiveau(niveau + 1), rang,
+      xp, xp_tache: xpT, xp_jalon: xpJ, niveau, xp_niveau: seuilNiveau(niveau), xp_suivant: seuilNiveau(niveau + 1), rang,
       prochain_rang: rangs.find(r => r.niveau > niveau) || null
     };
   }

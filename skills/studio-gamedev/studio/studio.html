@@ -444,7 +444,9 @@ body.app #panneau.conv-app .surtitre,body.app #panneau.conv-app .conv-aide{displ
 #bt-plus-app,#voile-actions{display:none}
 body.app #entete{flex-wrap:nowrap;min-height:56px;padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:6px;gap:8px}
 body.app #entete h1{flex:1;min-width:0;max-width:none;font-size:18px;margin:0}
-body.app #horloge,body.app #niveau,body.app #v1 .piste,body.app #v1>span{display:none!important}
+body.app #horloge,body.app #v1 .piste,body.app #v1>span{display:none!important}
+/* 15/11 : sur téléphone, le niveau reste là en pastille compacte (« niv. 9 ») : le toucher ouvre l’infobulle d’XP (jumeau du carton « Niveau du studio » de WILDLANDS) */
+body.app #niveau{min-width:0;flex:0 0 auto;padding:4px 10px;border-radius:999px;gap:0}body.app #niveau .xpm,body.app #niveau .rang,body.app #niveau .niv-sep{display:none}
 body.app #v1{padding:4px 10px;gap:0;flex:none}
 body.app #fraicheur{font-size:0;padding:0;width:12px;height:12px;border-radius:50%;background:#6fae5e;border:0;flex:none;cursor:pointer}body.app #fraicheur.vieux{background:#e08a4a}
 body.app #bt-plus-app{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex:none;border-radius:12px;border:1px solid rgba(226,184,102,.4);background:rgba(255,250,235,.06);color:#f1e3c3;font-size:24px;line-height:1}
@@ -669,7 +671,7 @@ html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not
   <div id="v1" title="Avancement pondéré de la roadmap" data-tt-t="a_v1"><span data-t="version">Version</span><div class="piste"><div class="plein" id="v1-plein"></div></div><b id="v1-pct">—</b></div>
   <div id="horloge" aria-live="off"></div>
   <div id="forfait" hidden><span data-t="forfait">Forfait Claude</span><div class="piste"><div class="plein" id="forfait-plein"></div></div><b id="forfait-pct">—</b><small id="forfait-rebours"></small></div>
-  <button type="button" id="niveau" title="Niveau du studio" data-tt-t="a_niveau" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b> · <span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
+  <button type="button" id="niveau" aria-label="Niveau du studio" data-ta-a="a_niveau" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b><span class="niv-sep"> · </span><span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
   <nav class="outils" aria-label="Outils" data-ta-a="a_outils">
     <button type="button" class="bt" id="bt-jour"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg><span data-t="aujourdhui">Aujourd'hui</span></button>
     <button type="button" class="bt" id="bt-ensemble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg><span data-t="ensemble">Vue d’ensemble</span></button>
@@ -1209,7 +1211,7 @@ function majNiveau() {
   const b = $('#niveau'); b.hidden = false;
   $('#niv-n').textContent = n; $('#niv-rang').textContent = nomPalier(n);   // nom du palier du niveau affiché : le même que la bannière d'XP (nomPalier)
   $('#niv-xp').style.width = clamp(100 * (xp - seuil(n)) / Math.max(1, seuil(n + 1) - seuil(n)), 0, 100).toFixed(1) + '%';
-  b.title = `${xp} XP · ${RM_C.pct} %`;
+  b.title = '';   // 15/11 : le détail est dans l'infobulle d'XP (quetes_page.js, XpBulle), plus de titre natif par-dessus
 }
 window.addEventListener('studio:roadmap', e => { RM_C = e.detail; majNiveau(); });
 

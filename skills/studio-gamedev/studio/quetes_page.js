@@ -114,6 +114,46 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
 @keyframes xfEtincelle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 @keyframes xfPulse{0%{box-shadow:0 0 0 0 rgba(226,184,102,.75)}100%{box-shadow:0 0 0 14px rgba(226,184,102,0)}}
 @media (prefers-reduced-motion:reduce){#xp-fete .xf-carte{animation:none}#xp-fete .xf-e{display:none}#niveau.xp-pulse{animation:none}}
+/* 15/11 : détail des gains d'XP (bannière plus longue) et infobulle de la barre d'XP (jumeau studio WILDLANDS ⇄ skill) */
+#xp-fete .xf-carte{background:radial-gradient(120% 120% at 50% 0%,#3c2e1c,#16120d);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#xp-fete .xf-d{display:grid;gap:4px;width:min(460px,calc(100vw - 84px));margin-top:10px;padding-top:10px;border-top:1px solid rgba(241,217,164,.22);text-align:left;font:13px/1.35 var(--sans);color:#e9dcc0}
+#xp-fete .xf-g{font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#f1d9a4}
+#xp-fete .xf-d ul{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:36vh;overflow:auto}
+#xp-fete .xf-d li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:1px 8px;align-items:baseline}
+#xp-fete .xf-d .xf-t{font:600 11px var(--sans);color:#f1d9a4;white-space:nowrap}
+#xp-fete .xf-d .xf-nom{min-width:0;overflow-wrap:anywhere}
+#xp-fete .xf-d li b{color:#f6d891;font-variant-numeric:tabular-nums;white-space:nowrap}
+#xp-fete .xf-d li small{grid-column:2/4;color:#cbb994;font-size:11.5px}
+#xp-fete .xf-plus{font-size:12px;color:#cbb994}
+#xp-fete .xf-av{margin-top:4px;font-variant-numeric:tabular-nums}#xp-fete .xf-av b{color:#f6d891}
+#xp-fete .xf-nv{font:600 13px var(--sans);color:#f1d9a4}
+#xp-fete .xf-barre{height:7px;border-radius:4px;background:#3a3128;overflow:hidden}#xp-fete .xf-barre i{display:block;height:100%;background:linear-gradient(90deg,#c9953e,#f1d9a4)}
+#xp-fete .xf-reste{font-size:12px;color:#cbb994;font-variant-numeric:tabular-nums}#xp-fete .xf-reste b{color:#f6d891}
+#xp-fete .xf-temps{height:2px;margin-top:4px;border-radius:2px;background:rgba(241,217,164,.55);transform-origin:left;animation:xfTemps var(--xf-d,8000ms) linear forwards}
+#xp-fete .xf-carte.pause .xf-temps{animation-play-state:paused}
+#xp-fete .xf-aide{font-size:11px;color:#a8977a;text-align:center}
+#xp-fete .xf-mini{display:none}
+#xp-fete.discret .xf-d{display:none}#xp-fete.discret .xf-mini{display:block;align-self:center;font:12px var(--sans);color:#e9dcc0;max-width:min(320px,calc(100vw - 150px));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes xfTemps{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+#xp-bulle{position:fixed;left:16px;top:60px;z-index:130;box-sizing:border-box;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:12px 14px;border-radius:14px;border:1px solid var(--ocre2,#e2b866);background:#1a150f;box-shadow:0 14px 40px rgba(0,0,0,.45);color:#efe3c8;font:13px/1.4 var(--sans);text-align:left}
+#xp-bulle[hidden]{display:none}
+#xp-bulle .xb-t{font:600 16px var(--serif);color:#f1d9a4}#xp-bulle .xb-t span{font-style:italic;color:#e2b866}
+#xp-bulle .xb-tot b{font-size:18px;color:#f6d891;font-variant-numeric:tabular-nums}
+#xp-bulle .xb-barre{height:8px;border-radius:4px;background:#3a3128;overflow:hidden;margin:6px 0 4px}#xp-bulle .xb-barre i{display:block;height:100%;background:linear-gradient(90deg,#c9953e,#f1d9a4)}
+#xp-bulle .xb-l{color:#d8c9a8;font-size:12.5px;font-variant-numeric:tabular-nums}#xp-bulle .xb-l b{color:#f6d891}
+#xp-bulle h4{margin:10px 0 4px;font:600 11px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#f1d9a4}
+#xp-bulle ul{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+#xp-bulle li{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:0 8px;align-items:baseline;font-size:12.5px}
+#xp-bulle li time{color:#a8977a;font-variant-numeric:tabular-nums}#xp-bulle li b{color:#f6d891;font-variant-numeric:tabular-nums;white-space:nowrap}
+#xp-bulle li span{min-width:0;overflow-wrap:anywhere}#xp-bulle li span i{color:#a8977a;font-style:normal}#xp-bulle li small{grid-column:2/4;color:#a8977a;font-size:11.5px}
+#xp-bulle .xb-rep{display:grid;grid-template-columns:auto minmax(30px,1fr) auto;gap:3px 8px;align-items:center;font-size:12.5px}
+#xp-bulle .xb-rep i{display:block;height:5px;min-width:2px;border-radius:3px;background:linear-gradient(90deg,#c9953e,#f1d9a4)}
+#xp-bulle .xb-rep b{font-variant-numeric:tabular-nums;color:#f6d891;text-align:right}
+#xp-bulle .xb-aide{margin-top:8px;font-size:11px;color:#a8977a}
+html[data-theme=clair] #xp-bulle{background:#fffcf4;color:#3b2f22;border-color:#c9a25a}
+html[data-theme=clair] #xp-bulle .xb-t,html[data-theme=clair] #xp-bulle h4,html[data-theme=clair] #xp-bulle .xb-tot b,html[data-theme=clair] #xp-bulle li b,html[data-theme=clair] #xp-bulle .xb-rep b,html[data-theme=clair] #xp-bulle .xb-l b{color:#8a5b12}
+html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair] #xp-bulle .xb-l{color:#5a4a36}html[data-theme=clair] #xp-bulle .xb-barre{background:#e2d4b4}html[data-theme=clair] #xp-bulle li time,html[data-theme=clair] #xp-bulle li small,html[data-theme=clair] #xp-bulle .xb-aide{color:#7a6a52}
+@media (prefers-reduced-motion:reduce){#xp-fete .xf-temps{animation:none}}
 @media (max-width:760px){#quete-suivie{max-width:60vw}body.app #quete-suivie{max-width:36vw;min-width:0}}
 </style>`));
 
@@ -316,13 +356,13 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
           try { Son.cloche(); } catch (e) { /* rien */ }
           try { Bureau.dire('assistant', titre, 7); } catch (e) { /* rien */ }
         } else if (a.type === 'quete_remplie') {
-          const q = PAR_ID[a.quete] || {}; Xp.raison(L(q.titre) || L(a.titre));
+          const q = PAR_ID[a.quete] || {}; Xp.raison(L(q.titre) || L(a.titre), a.xp);
           Succes.ajouter({ id: 'quete-' + a.quete, icone: cheminSur(a.icone, /\.(svg|png)$/i) ? a.icone : '★', titre: L(a.titre), sous: `${L(q.titre)} · +${a.xp || 0} XP`, taille: a.son || 'moyen', clic: () => ouvrirJournal() });
         } else if (a.type === 'deja_faites') {
-          Xp.raison(L(a.titre) || tf('q_deja', { n: a.n }));
+          Xp.raison(L(a.titre) || tf('q_deja', { n: a.n }), a.xp);
           Succes.ajouter({ id: 'quetes-deja-' + a.n, icone: '✓', titre: L(a.titre) || tf('q_deja', { n: a.n }), sous: '+' + (a.xp || 0) + ' XP', taille: 'moyen', clic: () => ouvrirJournal() });
         } else if (a.type === 'acte_fini') {
-          Xp.raison(tf('q_acte_fini', { n: L(a.titre) }));
+          Xp.raison(tf('q_acte_fini', { n: L(a.titre) }), a.xp);
           Succes.ajouter({ id: 'acte-' + a.acte, icone: cheminSur(a.icone, /\.(svg|png)$/i) ? a.icone : '⚑', titre: tf('q_acte_fini', { n: L(a.titre) }), sous: '+' + (a.xp || 0) + ' XP', taille: 'grand' });
         } else if (a.type === 'coup_de_peinture' && !STYLE_ATELIER) {
           Habillage.peinture();
@@ -583,8 +623,123 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
   // Gains groupés s'ils arrivent ensemble ; jamais bloquant (clic pour passer) ; réglage « Gains d'XP » : complet, discret, coupé.
   // 14/11 (jumeau du studio WILDLANDS) : rien pour un gain ancien au chargement ni en mode absent (le résumé d'absence donne le total) ;
   // petits gains cumulés 2,5 s (8 s au plus) ; la barre attend l'arrivée du gain ; passage de rang : bannière plus marquée.
+  // 15/11 (demande de Xavier : « l'infobulle d'XP doit rester plus longtemps et être plus détaillée ») : jumeau studio WILDLANDS ⇄ skill.
+  // XpVue : rendu commun (mêmes classes, mêmes textes) du détail d'un gain d'XP et de l'infobulle de la barre d'XP ;
+  // lecture() : temps de lecture de la bannière, en pause au survol (1,5 s au moins après la sortie), fin au clic ;
+  // Bulle() : infobulle qui reste ouverte sous la souris et 1,5 s après, au clavier (focus), au toucher jusqu'au toucher suivant.
+  const XpVue = (() => {
+    const ICO = { quete: '❖', etape: '⛭', versement: '⇪', commit: '✎', tache: '✓', jalon: '★', modele: '◆', jetons: '∿', autre: '•' };
+    const ORDRE = ['jalon', 'quete', 'tache', 'etape', 'versement', 'commit', 'modele', 'autre', 'jetons'];
+    const nb = (T, v) => Math.round(+v || 0).toLocaleString(T.locale);
+    const pc = (x, a, b) => Math.max(0, Math.min(100, 100 * (x - a) / Math.max(1, b - a))).toFixed(1);
+    const rp = (s, o) => Object.keys(o).reduce((r, k) => r.split('{' + k + '}').join(o[k]), String(s || ''));
+    function trier(src) {                                   // jetons (gains continus) réunis en une ligne, en dernier
+      const out = [], jet = { type: 'jetons', nom: '', poste: '', xp: 0, n: 0 };
+      for (const s of src || []) { if (!s) continue; if (s.type === 'jetons') { jet.xp += +s.xp || 0; jet.nom = s.nom; jet.poste = s.poste || ''; jet.n++; } else out.push(s); }
+      out.sort((a, b) => ((ORDRE.indexOf(a.type) + 99) % 99 - (ORDRE.indexOf(b.type) + 99) % 99) || ((+b.xp || 0) - (+a.xp || 0)));
+      if (jet.n) out.push(jet);
+      return out;
+    }
+    const meta = (T, s) => [s.tache ? String(s.tache).split(' · ')[0] : '', s.poste || '', s.jalon ? T.jalon + ' ' + s.jalon : ''].filter(Boolean).join(' · ');
+    const ligne = (T, s) => { const m = meta(T, s); return `<li><span class="xf-t">${ICO[s.type] || '•'} ${esc(T['ty_' + s.type] || T.ty_autre)}</span><span class="xf-nom">${esc(s.nom || '')}</span><b>${+s.xp ? '+' + nb(T, s.xp) : ''}</b>${m ? `<small>${esc(m)}</small>` : ''}</li>`; };
+    // détail d'un gain : o = { de, a, src, n, xa, xb, rang, ms, tactile }
+    function gain(T, o) {
+      const src = trier(o.src), p = src[0];
+      return `<div class="xf-d">${src.length > 1 ? `<div class="xf-g">${esc(rp(T.groupes, { n: src.length }))}</div>` : ''}<ul>${src.slice(0, 6).map(s => ligne(T, s)).join('')}</ul>`
+        + (src.length > 6 ? `<div class="xf-plus">${esc(rp(T.plus, { n: src.length - 6 }))}</div>` : '')
+        + `<div class="xf-av">${nb(T, o.de)} → <b>${nb(T, o.a)}</b> XP</div><div class="xf-nv">${esc(rp(T.niveau, { n: o.n }))}${o.rang ? ' · ' + esc(o.rang) : ''}</div>`
+        + `<div class="xf-barre"><i style="width:${pc(o.a, o.xa, o.xb)}%"></i></div><div class="xf-reste">${nb(T, o.a - o.xa)} / ${nb(T, o.xb - o.xa)} XP · ${rp(esc(T.reste), { x: `<b>${nb(T, o.xb - o.a)}</b>`, n: o.n + 1 })}</div>`
+        + `<div class="xf-temps" style="--xf-d:${Math.round(o.ms)}ms"></div><div class="xf-aide">${esc(o.tactile ? T.aide_toucher : T.aide_souris)}</div></div>`
+        + `<div class="xf-mini">${p ? esc(p.nom || '') + ' · ' : ''}${esc(rp(T.reste_court, { x: nb(T, o.xb - o.a), n: o.n + 1 }))}</div>`;
+    }
+    // infobulle de la barre : o = { xp, n, xa, xb, rang, suivant: { niveau, nom, xp } | null, histo: [{ h, gain, src }], repart: [{ lib, xp }], manque, tactile }
+    function bulle(T, o) {
+      const tot = (o.repart || []).reduce((s, r) => s + Math.max(0, +r.xp || 0), 0) || 1;
+      const hs = (o.histo || []).slice(0, 5).map(h => {
+        const s = trier(h.src), p = s.find(x => x.type !== 'jetons') || s[0] || { type: 'autre', nom: T.ty_autre }, m = meta(T, p);
+        return `<li><time>${esc(h.h || '')}</time><span>${ICO[p.type] || '•'} ${esc(p.nom || '')}${s.length > 1 ? ` <i>${esc(rp(T.et_autres, { n: s.length - 1 }))}</i>` : ''}</span><b>+${nb(T, h.gain)}</b>${m ? `<small>${esc(m)}</small>` : ''}</li>`;
+      }).join('');
+      return `<div class="xb-t">${esc(rp(T.niveau, { n: o.n }))}${o.rang ? ` <span>· ${esc(o.rang)}</span>` : ''}</div>`
+        + `<div class="xb-tot"><b>${nb(T, o.xp)}</b> ${esc(T.xp_total)}${o.manque ? ' ' + esc(T.manque) : ''}</div>`
+        + `<div class="xb-barre"><i style="width:${pc(o.xp, o.xa, o.xb)}%"></i></div>`
+        + `<div class="xb-l">${esc(T.ce_niveau)} : ${nb(T, o.xp - o.xa)} / ${nb(T, o.xb - o.xa)} XP · ${rp(esc(T.manque_xp), { x: `<b>${nb(T, o.xb - o.xp)}</b>`, n: o.n + 1 })}</div>`
+        + (o.suivant && o.suivant.xp > o.xp ? `<div class="xb-l">${rp(esc(T.rang_suiv), { r: esc(o.suivant.nom), n: o.suivant.niveau, x: `<b>${nb(T, o.suivant.xp - o.xp)}</b>` })}</div>` : '')
+        + `<h4>${esc(T.derniers)}</h4>` + (hs ? `<ul>${hs}</ul>` : `<div class="xb-l">${esc(T.aucun)}</div>`)
+        + ((o.repart || []).length ? `<h4>${esc(T.origine)}</h4><div class="xb-rep">${o.repart.map(r => `<span>${esc(r.lib)}</span><i style="width:${(100 * Math.max(0, +r.xp || 0) / tot).toFixed(1)}%"></i><b>${nb(T, r.xp)}</b>`).join('')}</div>` : '')
+        + `<div class="xb-aide">${esc(o.tactile ? T.bulle_toucher : T.bulle_souris)}</div>`;
+    }
+    function lecture(el, ms, setPasser) {
+      return new Promise(r => {
+        let reste = ms, t0 = 0, t = 0, pause = false, fin = false;
+        const entre = e => { if (pause || fin || (e && e.pointerType === 'touch')) return; pause = true; clearTimeout(t); reste = Math.max(0, reste - (Date.now() - t0)); el.classList.add('pause'); };
+        const sort = e => { if (!pause || fin || (e && e.pointerType === 'touch')) return; pause = false; reste = Math.max(reste, 1500); el.classList.remove('pause'); go(); };
+        const finir = () => { if (fin) return; fin = true; clearTimeout(t); ['pointerenter', 'focusin'].forEach(n => el.removeEventListener(n, entre)); ['pointerleave', 'focusout'].forEach(n => el.removeEventListener(n, sort)); r(); };
+        const go = () => { t0 = Date.now(); clearTimeout(t); t = setTimeout(finir, reste); };
+        ['pointerenter', 'focusin'].forEach(n => el.addEventListener(n, entre)); ['pointerleave', 'focusout'].forEach(n => el.addEventListener(n, sort));
+        setPasser(finir); go();
+        try { if (el.matches(':hover')) entre(); } catch (e) { /* rien */ }
+      });
+    }
+    function Bulle(contenu) {
+      let el = null, cible = null, minuteur = 0, toucher = false, type = 'mouse', fermeA = 0, vu = '';
+      const ouvert = () => !!(el && !el.hidden);
+      function creer() {
+        el = document.createElement('div'); el.id = 'xp-bulle'; el.setAttribute('role', 'tooltip'); el.hidden = true; document.body.appendChild(el);
+        el.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') clearTimeout(minuteur); });
+        el.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch' && !toucher) plusTard(); });
+      }
+      function placer() {
+        if (!cible || !ouvert()) return;
+        const r = cible.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, m = 16;
+        const x = Math.max(m, Math.min(innerWidth - m - w, r.left + r.width / 2 - w / 2));
+        let y = r.bottom + 8; if (y + h > innerHeight - m && r.top - 8 - h >= m) y = r.top - 8 - h;
+        el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(Math.max(m, Math.min(innerHeight - m - h, y))) + 'px';
+      }
+      function remplir() { let h = ''; try { h = contenu(toucher); } catch (e) { h = esc(String(e)); } if (h !== vu) { vu = h; el.innerHTML = h; } placer(); }
+      function ouvrir(t, parToucher) { clearTimeout(minuteur); if (!el) creer(); cible = t; toucher = !!parToucher; vu = ''; el.hidden = false; remplir(); t.setAttribute('aria-describedby', 'xp-bulle'); }
+      function fermer() { clearTimeout(minuteur); if (el) el.hidden = true; if (cible) cible.removeAttribute('aria-describedby'); cible = null; toucher = false; fermeA = Date.now(); }
+      function plusTard() { clearTimeout(minuteur); minuteur = setTimeout(fermer, 1500); }   // reste 1,5 s après la sortie de la souris
+      document.addEventListener('pointerdown', e => { type = e.pointerType || 'mouse'; if (toucher && ouvert()) fermer(); }, true);   // ouverte au toucher : le toucher suivant (n'importe où) la ferme
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && ouvert()) fermer(); });
+      document.addEventListener('click', e => {                // premier toucher sur la barre : l'infobulle, pas le panneau ; le toucher suivant la ferme (et ouvre le panneau)
+        const t = e.target && e.target.closest ? e.target.closest('[data-xp-bulle]') : null;
+        if (!t || type !== 'touch' || Date.now() - fermeA < 600) return;
+        e.preventDefault(); e.stopPropagation(); ouvrir(t, true);
+      }, true);
+      addEventListener('resize', placer); addEventListener('scroll', placer, true);
+      setInterval(() => { if (ouvert()) remplir(); }, 1000);   // chiffres vivants tant qu'elle est ouverte
+      function brancher(t) {
+        if (!t || t.dataset.xpBulle) return; t.dataset.xpBulle = '1';
+        if (!/^(BUTTON|A)$/.test(t.tagName) && !t.hasAttribute('tabindex')) t.tabIndex = 0;
+        t.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') ouvrir(t, false); });
+        t.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch' && !toucher) plusTard(); });
+        t.addEventListener('focus', () => { if (!ouvert() && type !== 'touch') ouvrir(t, false); });
+        t.addEventListener('blur', () => { if (!toucher) plusTard(); });
+      }
+      return { brancher, maj: () => { if (ouvert()) remplir(); }, fermer, ouvert, ouvrir };
+    }
+    return { gain, bulle, lecture, Bulle, trier, nb };
+  })();
+
+  // textes de XpVue (fr = en, mêmes clés)
+  const XV_FR = { locale: 'fr-FR', jalon: 'jalon', groupes: '{n} gains groupés', plus: 'et {n} de plus', niveau: 'Niveau {n}', reste: 'reste {x} XP vers le niveau {n}',
+    reste_court: 'reste {x} XP → niv. {n}', aide_souris: 'Survol : pause · clic : fermer', aide_toucher: 'Toucher : fermer', xp_total: 'XP au total',
+    manque: '(dernier état connu)', ce_niveau: 'Ce niveau', manque_xp: 'il manque {x} XP pour le niveau {n}', rang_suiv: 'Prochain rang : « {r} » au niveau {n} (encore {x} XP)',
+    derniers: 'Derniers gains', aucun: 'Aucun gain daté pour l’instant.', origine: 'D’où vient l’XP', et_autres: '+ {n} de plus',
+    bulle_souris: 'Reste ouverte sous la souris, et 1,5 s après.', bulle_toucher: 'Touche ailleurs pour fermer.',
+    rep_taches: 'Tâches finies ({n} × {x})', rep_jalons: 'Jalons fermés ({n} × {x})', rep_quetes: 'Quêtes remplies', attente_t: 'Niveau du studio', attente: 'En attente de la roadmap…', au_total: 'XP au total',
+    ty_quete: 'Quête', ty_etape: 'Étape versée', ty_versement: 'Versement', ty_commit: 'Commit', ty_tache: 'Tâche', ty_jalon: 'Jalon', ty_modele: 'Modèles', ty_jetons: 'Agents', ty_autre: 'Gain' };
+  const XV_EN = { locale: 'en-US', jalon: 'milestone', groupes: '{n} gains together', plus: 'and {n} more', niveau: 'Level {n}', reste: '{x} XP left to level {n}',
+    reste_court: '{x} XP → lvl {n}', aide_souris: 'Hover: pause · click: close', aide_toucher: 'Tap: close', xp_total: 'XP in total',
+    manque: '(last known state)', ce_niveau: 'This level', manque_xp: '{x} XP missing for level {n}', rang_suiv: 'Next rank: “{r}” at level {n} ({x} XP to go)',
+    derniers: 'Latest gains', aucun: 'No dated gain yet.', origine: 'Where the XP comes from', et_autres: '+ {n} more',
+    bulle_souris: 'Stays open under the mouse, and 1.5 s after.', bulle_toucher: 'Tap elsewhere to close.',
+    rep_taches: 'Tasks done ({n} × {x})', rep_jalons: 'Milestones closed ({n} × {x})', rep_quetes: 'Quests completed', attente_t: 'Studio level', attente: 'Waiting for the roadmap…', au_total: 'XP in total',
+    ty_quete: 'Quest', ty_etape: 'Step merged', ty_versement: 'Merge', ty_commit: 'Commit', ty_tache: 'Task', ty_jalon: 'Milestone', ty_modele: 'Models', ty_jetons: 'Agents', ty_autre: 'Gain' };
+  const XV = () => (typeof LANGUE !== 'undefined' && LANGUE === 'en' ? XV_EN : XV_FR);
   const Xp = (() => {
-    const CLE = 'xp_vu:' + (location.port || ''), file = [], raisons = [];
+    const CLE = 'xp_vu:' + (location.port || ''), file = [], raisons = [], srcAcc = [];   // srcAcc : d'où vient le gain (tâche, jalon, quête), 15/11
+    let vuIds = null;
     let base = null, minuteur = 0, enCours = false, passer = null, tenuXp = null, debut = 0, absent = 0, rangVu = null, vuRm = null, accT = 0, accJ = 0;
     const rmCompte = () => (typeof RM_C !== 'undefined' && RM_C) ? { f: +RM_C.faites || 0, j: +RM_C.fermes || 0 } : null;
     const rangAct = n => (typeof nomPalier === 'function' ? nomPalier(n) : window.PALIER_NOM) || '';   // rang du palier (Garage… Studio AAA), la même source que l'en-tête #niv-rang
@@ -599,14 +754,23 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
     const sonOk = () => { try { return !Son.coupe() && !document.hidden && !(typeof modeAbsent === 'function' && modeAbsent()); } catch (e) { return false; } };
     const babil = () => LS.get('babil_son', true) !== false;
     const attendre = ms => new Promise(r => { const t0 = setTimeout(r, ms); passer = () => { clearTimeout(t0); r(); }; });
-    function raison(txt) { if (txt && raisons.length < 8 && !raisons.includes(txt)) raisons.push(String(txt).slice(0, 80)); }
+    function raison(txt, xp) { if (txt && raisons.length < 8 && !raisons.includes(txt)) { raisons.push(String(txt).slice(0, 80)); srcAcc.push({ type: 'quete', nom: String(txt).slice(0, 110), xp: +xp || 0 }); } }
+    // tâches finies et jalons fermés depuis la lecture précédente de la roadmap : nom, identifiant, poste, jalon, XP
+    function idsRm() {
+      if (typeof RM_C === 'undefined' || !RM_C || !Array.isArray(RM_C.jalons)) return null;
+      const m = new Map(), xT = +RM_C.xp_tache || 100, xJ = +RM_C.xp_jalon || 500;
+      for (const j of RM_C.jalons) { for (const tc of j.taches || []) if (tc && (tc.statut === 'verse' || tc.statut === 'ecart')) m.set('t:' + tc.id, { type: 'tache', nom: String(tc.titre || tc.id || ''), tache: String(tc.id || ''), poste: String(tc.poste || ''), jalon: String(j.id || ''), xp: xT });
+        if (j.ferme) m.set('j:' + j.id, { type: 'jalon', nom: String(j.titre || j.id || ''), jalon: String(j.id || ''), xp: xJ }); }
+      return m;
+    }
     function verifier() {
       const xp = lireXp(); if (xp == null) return;
       if (!vusPret && D.qe) { vusPret = true; ((D.qe.deblocages && D.qe.deblocages.boutons) || []).forEach(b => b && b.id && VUS.add(b.id)); }
       const rc = rmCompte(), dT = rc && vuRm ? Math.max(0, rc.f - vuRm.f) : 0, dJ = rc && vuRm ? Math.max(0, rc.j - vuRm.j) : 0; if (rc) vuRm = rc;
-      if (base === null) { base = xp; LS.set(CLE, base); rangVu = rangAct(niv(xp)); return; }   // première lecture : un gain ancien ne s'affiche pas
+      { const ids = idsRm(); if (ids) { if (vuIds) for (const [k, v] of ids) if (!vuIds.has(k)) srcAcc.push(v); vuIds = ids; } }
+      if (base === null) { srcAcc.splice(0); base = xp; LS.set(CLE, base); rangVu = rangAct(niv(xp)); return; }   // première lecture : un gain ancien ne s'affiche pas
       if (xp < base) { base = xp; LS.set(CLE, base); return; }        // roadmap réécrite : nouvelle base, rien à fêter
-      if (xp > base && (absentOn() || mode() === 'coupe')) { if (absentOn()) absent += xp - base; base = xp; LS.set(CLE, base); raisons.splice(0); accT = accJ = 0; rangVu = rangAct(niv(xp)); return; }
+      if (xp > base && (absentOn() || mode() === 'coupe')) { if (absentOn()) absent += xp - base; base = xp; LS.set(CLE, base); raisons.splice(0); srcAcc.splice(0); accT = accJ = 0; rangVu = rangAct(niv(xp)); return; }
       if (xp > base) {                                                   // gains cumulés quelques secondes ; la barre attend
         accT += dT; accJ += dJ;
         if (!debut) { debut = Date.now(); if (!enCours) barre(base, false); }
@@ -617,7 +781,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       debut = 0; const xp = lireXp(); if (xp == null || xp <= base) { if (!enCours) libre(); return; }
       const rs = [accT > 1 ? tf('xp_taches', { n: accT }) : accT ? t('xp_tache1') : '', accJ > 1 ? tf('xp_jalons', { n: accJ }) : accJ ? t('xp_jalon') : ''].filter(Boolean).concat(raisons.splice(0)); accT = accJ = 0;
       if (!rs.length) rs.push(t('xp_travail'));
-      file.push({ de: base, a: xp, raisons: rs }); base = xp; LS.set(CLE, base); jouer();
+      file.push({ de: base, a: xp, raisons: rs, src: srcAcc.splice(0) }); base = xp; LS.set(CLE, base); jouer();
     }
     function libre() { tenuXp = null; try { if (typeof majNiveau === 'function') majNiveau(); } catch (e) { /* rien */ } }
     function barre(xp, doux) {
@@ -642,16 +806,17 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       if (enCours || !file.length) return;
       if (document.hidden) { document.addEventListener('visibilitychange', jouer, { once: true }); return; }
       enCours = true;
-      const g = file.splice(0).reduce((acc, x) => ({ de: Math.min(acc.de, x.de), a: Math.max(acc.a, x.a), raisons: acc.raisons.concat(x.raisons) }), { de: Infinity, a: -Infinity, raisons: [] });
+      const g = file.splice(0).reduce((acc, x) => ({ de: Math.min(acc.de, x.de), a: Math.max(acc.a, x.a), raisons: acc.raisons.concat(x.raisons), src: acc.src.concat(x.src || []) }), { de: Infinity, a: -Infinity, raisons: [], src: [] });
       try { await montrer(g); } catch (e) { erreur('gain d’XP', e); }
       passer = null; enCours = false; if (file.length) jouer(); else if (!debut) libre();
     }
-    async function montrer({ de, a, raisons: rs }) {
+    async function montrer({ de, a, raisons: rs, src: s0 }) {
       const gain = a - de, nDe = niv(de), nA = niv(a), m = mode();
       if (m === 'coupe' || gain <= 0) return;
       barre(de, false);                                     // la barre attend que le gain arrive
       const vieux = $('#xp-fete'); if (vieux) vieux.remove();
-      const hote = nouveau(`<div id="xp-fete" class="${m === 'discret' ? 'discret' : ''}" role="status" aria-live="polite"><div class="xf-carte" title="${esc(t('xp_passer'))}"><div class="xf-n">+0</div><div class="xf-xp">XP</div>${rs.length ? `<div class="xf-r">${esc(rs.slice(0, 3).join(' · '))}${rs.length > 3 ? ' …' : ''}</div>` : ''}</div></div>`);
+      const lit = m === 'discret' ? 6000 : 8000, src = s0 && s0.length ? s0 : rs.map(x => ({ type: 'autre', nom: x }));   // 15/11 : 8 s lisibles (6 s en discret), pause au survol, clic : fermer
+      const hote = nouveau(`<div id="xp-fete" class="${m === 'discret' ? 'discret' : ''}" role="status" aria-live="polite"><div class="xf-carte"><div class="xf-n">+0</div><div class="xf-xp">XP</div>${XpVue.gain(XV(), { de, a, src, n: nA, xa: seuil(nA), xb: seuil(nA + 1), rang: rangAct(nA), ms: lit, tactile: typeof TACTILE === 'function' && TACTILE() })}</div></div>`);
       document.body.appendChild(hote);
       const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n'), fmt = v => '+' + v.toLocaleString(LANGUE === 'en' ? 'en-US' : 'fr-FR');   // « +1 840 », comme le studio WILDLANDS
       let fini = false; carte.onclick = () => { fini = true; if (passer) passer(); };
@@ -660,19 +825,20 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       const duree = calme() || m === 'discret' ? 0 : Math.min(900, 320 + gain * 4), t0 = performance.now();
       if (m !== 'discret') etincelles(hote, 18, false);
       await new Promise(r => {
-        let tic = 0;
+        let tic = 0, compte = false;   // compte : le compteur a fini (le rendu en retard n'écrit plus une valeur partielle)
         const pas = now => {
+        if (compte) return;
           const k = duree ? clamp((now - t0) / duree, 0, 1) : 1, v = Math.round(gain * (1 - Math.pow(1 - k, 3)));
           nb.textContent = fmt(v);
           if (sonOk() && babil() && m !== 'discret' && k < 1 && now - tic > 70) { tic = now; try { Son.bip(660 + 900 * k, .04, { type: 'triangle', gain: .012 }); } catch (e) { /* rien */ } }
-          if (k < 1 && !fini) requestAnimationFrame(pas); else { nb.textContent = fmt(gain); r(); }
+          if (k < 1 && !fini) requestAnimationFrame(pas); else { compte = true; nb.textContent = fmt(gain); r(); }
         };
         requestAnimationFrame(pas);
-        passer = () => { nb.textContent = fmt(gain); r(); };      // clic : le compteur saute à la fin
-        setTimeout(() => { nb.textContent = fmt(gain); r(); }, duree + 400);   // page sans images (onglet en arrière-plan) : le compteur finit quand même
+        passer = () => { compte = true; nb.textContent = fmt(gain); r(); };      // clic : le compteur saute à la fin
+        setTimeout(() => { compte = true; nb.textContent = fmt(gain); r(); }, duree + 400);   // page sans images (onglet en arrière-plan) : le compteur finit quand même
       });
       if (sonOk()) try { Son.succes('petit'); } catch (e) { /* rien */ }
-      if (!fini) await attendre(m === 'discret' ? 1200 : 650);
+      if (!fini) await XpVue.lecture(carte, lit, f => { passer = f; });
       // envol vers la barre d'XP de l'en-tête
       const c = cible(), r0 = carte.getBoundingClientRect();
       if (!calme() && !fini) {
@@ -693,18 +859,42 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
       const tous = ((D.qe && D.qe.deblocages && D.qe.deblocages.boutons) || []).filter(b => b && b.id), nouv = tous.filter(b => !VUS.has(b.id)).map(b => L(b.libelle) || b.id);
       tous.forEach(b => VUS.add(b.id));                     // seulement ce qui est arrivé depuis la dernière bannière
       if (mode() === 'discret') { try { Succes.ajouter({ id: 'niveau-' + n, icone: '★', titre: tf('xp_niveau', { n }), sous: rang, taille: 'moyen' }); } catch (e) { /* rien */ } return; }
-      const h = nouveau(`<div id="xp-fete" class="niveau${neuf ? ' rang' : ''}" role="status" aria-live="polite"><div class="xf-carte" title="${esc(t('xp_passer'))}"><div class="xf-sur">${esc(t(neuf ? 'xp_rang_neuf' : 'xp_monte'))}</div><div class="xf-n">${esc(tf('xp_niveau', { n }))}</div>${neuf ? `<div class="xf-rang">${esc(rang)}</div>` : rang ? `<div class="xf-r">${esc(tf('xp_rang', { r: rang }))}</div>` : ''}${nouv.length ? `<div class="xf-r">🔓 ${esc(nouv.slice(-2).join(' · '))}</div>` : ''}</div></div>`);
+      const T = XV(), xn = lireXp() != null ? lireXp() : seuil(n), lit = neuf ? 9000 : 7000;   // 15/11 : 7 s (9 s pour un rang), pause au survol, total et XP restante
+      const h = nouveau(`<div id="xp-fete" class="niveau${neuf ? ' rang' : ''}" role="status" aria-live="polite"><div class="xf-carte"><div class="xf-sur">${esc(t(neuf ? 'xp_rang_neuf' : 'xp_monte'))}</div><div class="xf-n">${esc(tf('xp_niveau', { n }))}</div>${neuf ? `<div class="xf-rang">${esc(rang)}</div>` : rang ? `<div class="xf-r">${esc(tf('xp_rang', { r: rang }))}</div>` : ''}${nouv.length ? `<div class="xf-r">🔓 ${esc(nouv.slice(-2).join(' · '))}</div>` : ''}<div class="xf-d"><div class="xf-av"><b>${XpVue.nb(T, xn)}</b> ${esc(T.au_total)}</div><div class="xf-barre"><i style="width:${pct(xn).toFixed(1)}%"></i></div><div class="xf-reste">${T.reste.split('{x}').join(`<b>${XpVue.nb(T, seuil(n + 1) - xn)}</b>`).split('{n}').join(n + 1)}</div><div class="xf-temps" style="--xf-d:${lit}ms"></div><div class="xf-aide">${esc(typeof TACTILE === 'function' && TACTILE() ? T.aide_toucher : T.aide_souris)}</div></div></div></div>`);
       document.body.appendChild(h); etincelles(h, neuf ? 48 : 30, true);
       if (sonOk()) try { Son.succes('grand'); if (neuf) setTimeout(() => { if (sonOk()) Son.succes('moyen'); }, 700); } catch (e) { /* rien */ }
       let fin = false; h.querySelector('.xf-carte').onclick = () => { fin = true; if (passer) passer(); };
-      if (!vite) await attendre(neuf ? 3800 : 2600);
+      if (!vite) await XpVue.lecture(h.querySelector('.xf-carte'), lit, f => { passer = f; });
       h.classList.add('sort'); await new Promise(r => setTimeout(r, fin || calme() ? 0 : 280)); h.remove();
     }
     // résumé d'absence : XP gagnée pendant l'absence (photo de départ si elle existe, sinon le cumul vu par cette page)
     function gainAbsence(avant) { const x = lireXp(), g = avant && avant.xp != null && x != null ? x - avant.xp : absent; absent = 0; return Math.max(0, Math.round(g || 0)); }
-    return { verifier, raison, gainAbsence, mode, tenu: () => tenuXp, essai: (gain, r) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [] }); jouer(); }, base: () => base };
+    return { outils: { niv, seuil, rang: n => rangAct(n), lireXp }, verifier, raison, gainAbsence, mode, tenu: () => tenuXp, essai: (gain, r) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [], src: [{ type: 'autre', nom: r || 'essai', xp: gain }] }); jouer(); }, base: () => base };
   })();
   window.addEventListener('studio:roadmap', () => setTimeout(() => { try { Xp.verifier(); } catch (e) { /* rien */ } }, 0));
+
+  // infobulle du bouton #niveau (15/11, jumeau du studio WILDLANDS) : total, niveau, rang, XP du niveau, XP manquante, prochain rang,
+  // 5 derniers gains datés (tâches « fait_le », jalons fermés, quêtes remplies de quetes_etat.json) et d'où vient l'XP
+  const XpBulle = XpVue.Bulle(toucher => {
+    const T = XV(), o = Xp.outils;
+    if (typeof RM_C === 'undefined' || !RM_C) return `<div class="xb-t">${esc(T.attente_t)}</div><div class="xb-l">${esc(T.attente)}</div>`;
+    const tenu = Xp.tenu(), xp = tenu != null ? Math.min(niveauStudio().xp, tenu) : niveauStudio().xp, n = o.niv(xp), xT = +RM_C.xp_tache || 100, xJ = +RM_C.xp_jalon || 500;
+    const qx = (typeof ETAT !== 'undefined' && ETAT && Number.isFinite(+ETAT.xp)) ? +ETAT.xp : 0, r0 = o.rang(n);
+    let suiv = null; for (let k = n + 1; k <= n + 80 && !suiv; k++) { const r = o.rang(k); if (r && r !== r0) suiv = { niveau: k, nom: r }; }
+    if (!suiv && RM_C.prochain_rang && RM_C.prochain_rang.niveau > n) suiv = { niveau: RM_C.prochain_rang.niveau, nom: RM_C.prochain_rang.nom };
+    if (suiv) suiv.xp = o.seuil(suiv.niveau);
+    const auj = new Date().toLocaleDateString('sv-SE'), heure = q => { q = String(q || ''); return q.slice(0, 10) === auj ? q.slice(11, 16) : q.slice(8, 10) + '/' + q.slice(5, 7); };
+    const l = [];
+    for (const j of RM_C.jalons || []) { let fin = ''; for (const tc of j.taches || []) if (tc && (tc.statut === 'verse' || tc.statut === 'ecart') && tc.fait_le) { const d = String(tc.fait_le); if (d > fin) fin = d; l.push({ q: d, gain: xT, src: [{ type: 'tache', nom: tc.titre || tc.id, tache: tc.id, poste: tc.poste || '', jalon: j.id, xp: xT }] }); }
+      if (j.ferme && fin) l.push({ q: fin + '~', gain: xJ, src: [{ type: 'jalon', nom: j.titre || j.id, jalon: j.id, xp: xJ }] }); }
+    for (const a of (D.qe && D.qe.annonces) || []) if (a && ['quete_remplie', 'acte_fini', 'deja_faites'].includes(a.type) && a.le && +a.xp) l.push({ q: String(a.le), gain: +a.xp, src: [{ type: 'quete', nom: L(a.titre) || a.quete || '', xp: +a.xp }] });
+    l.sort((x, y) => (x.q < y.q ? 1 : x.q > y.q ? -1 : 0));
+    const rp = (s, v) => s.split('{n}').join(v.n).split('{x}').join(v.x);
+    return XpVue.bulle(T, { xp, n, xa: o.seuil(n), xb: o.seuil(n + 1), rang: r0, tactile: toucher, suivant: suiv,
+      histo: l.slice(0, 5).map(x => ({ h: heure(x.q), gain: x.gain, src: x.src })),
+      repart: [{ lib: rp(T.rep_taches, { n: RM_C.faites || 0, x: xT }), xp: (RM_C.faites || 0) * xT }, { lib: rp(T.rep_jalons, { n: RM_C.fermes || 0, x: xJ }), xp: (RM_C.fermes || 0) * xJ }, { lib: T.rep_quetes, xp: qx }].filter(x => x.xp > 0) });
+  });
+  { const nv = document.getElementById('niveau'); if (nv) XpBulle.brancher(nv); }
 
   // ------------------------------------------------------------------ bulle « ! » dans la scène (au-dessus de l'assistant)
   window.Quetes = {
@@ -713,7 +903,7 @@ html[data-habillage="1"] #bureau{filter:saturate(.16) contrast(.96)}
     soutien: nom => !!(D.cat && D.cat.agents && D.cat.agents[nom] && D.cat.agents[nom].soutien),
     ouvrirProposee: () => { const l = proposees(); if (l.length) ouvrirQuete(l[0].id); else ouvrirJournal(); },
     ouvrirJournal: () => ouvrirJournal(), ouvrir: id => ouvrirQuete(id),
-    maj: () => majCycle(), palier: () => Habillage.palier(), etat: () => D, xp: Xp
+    maj: () => majCycle(), palier: () => Habillage.palier(), etat: () => D, xp: Xp, xpBulle: XpBulle
   };
 
   // ------------------------------------------------------------------ cycle (appelé à la fin de chargerTout)
