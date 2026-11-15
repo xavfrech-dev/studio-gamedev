@@ -6,7 +6,8 @@ renvoi d'une recrue sans travail), embauche automatique. Mêmes règles que la p
 /api/recruter, /api/renvoyer) : il garde les plafonds (6 attributions par heure, une en attente par poste, refus si une tâche
 est en cours). État gardé dans .studio/automatismes.json. Rien ne part si les réglages sont coupés, en pause ou si la
 machine sature. Relecteur autonome : libre, il prend lui-même une relecture utile (commits, branches, tests, tests creux,
-roadmap et doc), une toutes les 20 min au plus ; dernier commit relu dans .studio/relecteur.json. Relecture partagée :
+roadmap et doc), une toutes les 20 min au plus ; dernier commit relu dans .studio/relecteur.json. Vague suivante : tous les
+postes libres (hors chaîne moteur) finis ou silencieux depuis plus de 5 min → une demande à l'assistant (auto:vague), une à la fois. Relecture partagée :
 plus de 60 min prévues → la moitié du lot à un relecteur libre, sinon à un « Relecteur (intérim) » (2 au plus), renvoyé à
 la fin de sa part sauf relecture à faire dans les 30 min. Variable STUDIO_ESSAI_SANS_ENVOI : rien n'est envoyé (essais).
 """
@@ -54,6 +55,15 @@ INTERIM_MAX = 2
 PARTAGE_PAR_HEURE = 6
 INTERIM_GARDE_S = 30 * 60
 INTERIM_PREFIXE = "relecteur-interim-"
+# Vague suivante : tous les postes libres (hors chaîne moteur) finis ou silencieux depuis plus de 5 min → UNE demande à
+# l'assistant (origine auto:vague.<heure>), pas de doublon tant qu'elle attend, rien si un poste travaille
+VAGUE_CALME_S = 5 * 60
+VAGUE_CHAINE_S = 10 * 60                 # barre écrite par un suivi de chaîne (« source ») : réécrite toutes les 5 min tant que l'agent vit
+VAGUE_GARDE_S = 6 * 3600                 # demande sans fichier lisible (essai) : en attente 6 h au plus
+VAGUE_REESSAI_S = 5 * 60
+VAGUE_PAUSE_S = 20 * 60                  # au moins 20 min entre deux demandes « vague » (correctif du studio d'origine, 14/11 23:01 :
+                                         # une demande close aussitôt laissait repartir une demande à chaque passage, tant que les
+                                         # agents de la nouvelle vague n'avaient pas encore écrit leur barre)
 ELEMENT_RE = re.compile(r"^\s*(?:[-*•]|\d+[.)])\s+(\S.*)$")
 
 TXT = {
@@ -114,6 +124,20 @@ TXT = {
     "it_bulle": ("je partage ma relecture avec un intérimaire", "I'm sharing my review with a temp"),
     "it_bulle_libre": ("je partage ma relecture avec {n}", "I'm sharing my review with {n}"),
     "it_motif": ("mission d'intérim finie", "temp assignment done"),
+    "vg_tete": ("Vague suivante : tous les postes libres ont fini ou n'ont rien écrit depuis plus de 5 min.\nPostes libres ({n}) :\n",
+                "Next wave: every free desk has finished or written nothing for more than 5 min.\nFree desks ({n}):\n"),
+    "vg_taches": ("\n\nTâches disponibles (taches_disponibles.json) :\n", "\n\nAvailable tasks (taches_disponibles.json):\n"),
+    "vg_aucune": ("- aucune", "- none"),
+    "vg_moteur": (" [moteur]", " [engine]"),
+    "vg_fin": ("\n\nÀ faire : planifie la vague suivante (une tâche par poste libre, sans moteur sauf la chaîne moteur). "
+               "Si rien n'est prêt, prépare la suite de la roadmap ou pose la question sous la cloche (decisions.json, ta recommandation en premier).\n"
+               "Déposée automatiquement (règle « vague suivante ») ; une seule à la fois.",
+               "\n\nTo do: plan the next wave (one task per free desk, no engine except the engine chain). "
+               "If nothing is ready, prepare the next roadmap steps or ask under the bell (decisions.json, your recommendation first).\n"
+               "Filed automatically (“next wave” rule); one at a time."),
+    "vg_fini": ("fini depuis {m} min", "finished {m} min ago"),
+    "vg_rien": ("rien écrit depuis {m} min", "nothing written for {m} min"),
+    "vg_travail": ("au travail", "at work"),
 }
 
 
@@ -758,6 +782,87 @@ class Automatismes:
         return {"interimaires": sorted(st["interimaires"]), "partages": st["partages"][-5:]}
 
     # ---------- un passage (toutes les 10 s ; la tyrannie toutes les 60 s)
+    # ---------- vague suivante : tous les postes avaient fini, la fin de tâche ne trouvait aucune tâche sans moteur,
+    # la tyrannie se taisait (file moteur) et personne ne planifiait la suite. Une demande à l'assistant, une à la fois.
+    def postes_moteur(self, c):
+        try:
+            return {o.get("poste") for o in self.s.outils_lourds(c["conf"]) if isinstance(o, dict) and o.get("poste")}
+        except Exception:
+            m = c["conf"].get("moteur") if isinstance(c["conf"].get("moteur"), dict) else {}
+            return {m["poste"]} if m.get("poste") else set()
+
+    def vague(self, c, maintenant):
+        en, e = c["en"], self.d.setdefault("vague", {})
+        vus = e.setdefault("vus", {})
+        res = {"libres": [], "occupe": None, "attente": False, "envoyee": None, "raison": ""}
+        coupee = (c["conf"].get("mode") != "travail" or c["regl"].get("pause") or c["sante"].get("bloquant", c["sante"].get("sature"))
+                  or not (self.auto(c, "attribution_auto") or self.auto(c, "tyrannie_auto")))
+        hors = self.postes_moteur(c)
+        equipe = [q for q in c["postes"] if q.get("id") and q["id"] not in hors and not str(q["id"]).startswith(INTERIM_PREFIXE)]
+        libres = []
+        for q in equipe:
+            v = c["progs"].get(q["id"])
+            d = v[0] if v and isinstance(v[0], dict) else {}
+            age = v[1] * 60 if v and isinstance(v[1], (int, float)) else None
+            pc = d.get("pct")
+            fini = isinstance(pc, (int, float)) and not isinstance(pc, bool) and pc >= 100
+            seuil = VAGUE_CHAINE_S if d.get("source") else VAGUE_CALME_S
+            lance = any(str(x.get("statut") or "").lower().startswith("lanc") for x in q.get("demandes") or [])
+            if lance or (age is not None and age <= seuil and not fini and not d.get("attente")) or (v is None and q.get("etat") == "travaille"):
+                vus.pop(q["id"], None)
+                res["occupe"] = res["occupe"] or f"{q.get('nom') or q['id']} : {tx('vg_travail', en)}"
+                continue
+            depuis = age if age is not None and not d.get("attente") else maintenant - vus.setdefault(q["id"], maintenant)
+            m = int(depuis // 60)
+            raison = tx("vg_fini", en, m=m) if fini or d.get("attente") else tx("vg_rien", en, m=m) + (f" ({pc} %)" if isinstance(pc, (int, float)) else "")
+            libres.append({"id": q["id"], "nom": q.get("nom") or q["id"], "depuis_s": int(depuis), "raison": raison})
+        ids = {q["id"] for q in equipe}
+        for k in [k for k in vus if k not in ids]:
+            vus.pop(k, None)
+        res["libres"] = [x["id"] for x in libres]
+        dm = e.get("demande") or {}
+        if dm.get("id") and os.path.exists(self.s.f("demandes_vocales", dm["id"] + ".json")):
+            st = str((lire(self.s.f("demandes_vocales", dm["id"] + ".json"), {}) or {}).get("statut") or "nouvelle")
+            res["attente"] = st in ("nouvelle", "prise")
+        elif dm:
+            res["attente"] = maintenant - dm.get("t", 0) < VAGUE_GARDE_S
+        if not res["attente"]:
+            e.pop("demande", None)
+        if coupee:
+            res["raison"] = "coupée (réglages, pause ou machine saturée)" if not en else "off (settings, pause or machine saturated)"
+        elif not libres:
+            res["raison"] = "aucun poste libre" if not en else "no free desk"
+        elif res["occupe"]:
+            res["raison"] = ("un poste travaille encore : " if not en else "a desk is still working: ") + res["occupe"]
+        elif min(x["depuis_s"] for x in libres) < VAGUE_CALME_S:
+            res["raison"] = "postes libres depuis moins de 5 min" if not en else "desks free for less than 5 min"
+        elif res["attente"]:
+            res["raison"] = "une demande « vague » attend déjà l'assistant" if not en else "a “wave” request is already waiting for the assistant"
+        elif maintenant - e.get("dernier_envoi", 0) < VAGUE_PAUSE_S:
+            res["raison"] = "vague demandée il y a moins de 20 min" if not en else "wave requested less than 20 min ago"
+        elif maintenant < e.get("reessai", 0):
+            res["raison"] = e.get("refus") or ""
+        else:
+            l = "\n".join(f"- {x['nom']} ({x['id']}) : {x['raison']}" for x in libres[:12])
+            t = "\n".join(f"- {x.get('id')} : {str(x.get('titre') or '')[:90]}" + (tx("vg_moteur", en) if x.get("moteur") or x.get("sans_moteur") is False else "")
+                          for x in c["taches"][:15]) or tx("vg_aucune", en)
+            heure = time.strftime("%Y%m%d-%H%M", time.localtime(maintenant))
+            texte = tx("vg_tete", en, n=len(libres)) + l + tx("vg_taches", en) + t + tx("vg_fin", en)
+            r = self.poster("/api/demande", {"cible": "assistant", "texte": texte[:2000], "via": "ecrit", "origine": f"auto:vague.{heure}"})
+            if r.get("ok"):
+                e["demande"] = {"t": int(maintenant), "id": str(r.get("id") or ""), "postes": res["libres"], "essai": bool(r.get("essai"))}
+                e.pop("reessai", None)
+                e.pop("refus", None)
+                e["dernier_envoi"] = int(maintenant)
+                res["envoyee"], res["attente"] = texte.split("\n", 1)[0], True
+                self.d.setdefault("journal", []).append({"t": int(maintenant), "type": "vague", "postes": res["libres"], "ok": True})
+            else:
+                e["reessai"] = int(maintenant + VAGUE_REESSAI_S)
+                e["refus"] = str(r.get("erreur") or r.get("code"))[:120]
+                res["raison"] = e["refus"]
+        e["dernier"] = {k: v for k, v in res.items() if k != "libres"}
+        return res
+
     def passer(self, conf, postes, r, progs, ouverts, chaine, sante):
         maintenant = time.time()
         try:
@@ -777,6 +882,10 @@ class Automatismes:
                 self.d["partage"] = self.partage_relecture(c, maintenant)
             except Exception as e:                              # la relecture partagée ne fige jamais les autres automatismes
                 self.d["partage"] = {"erreur": f"{type(e).__name__} : {e}"[:200]}
+            try:                                                # vague suivante : tous libres → une demande à l'assistant
+                self.vague(c, maintenant)
+            except Exception as e:                              # ne fige jamais les autres automatismes
+                self.d.setdefault("vague", {})["erreur"] = f"{type(e).__name__} : {e}"[:200]
             try:                                                # plan de restructuration accepté : renvois « après sa tâche »
                 import restructuration                          # (le serveur vérifie la tâche finie et le mode absent)
                 if maintenant - self.d.get("restru_t", 0) >= 120 and any(p.get("statut") == "en_cours" for p in restructuration.plans(self.s.dossier)):
@@ -795,6 +904,7 @@ class Automatismes:
                 "temporaires": {k: v for k, v in self.d["temporaires"].items() if maintenant - v.get("t", 0) < 6 * 3600},
                 "renvois": [x for x in self.d["renvois"] if maintenant - x["t"] < 600], "remonter": [x["decision"] for x in dern.get("diagnostics") or [] if x.get("decision")],
                 "relecteur": self.d.get("relecteur") or {}, "erreur": self.d.get("erreur"),
+                "vague": (self.d.get("vague") or {}).get("dernier") or {},
                 "partages": [x for x in ((self.d.get("interim") or {}).get("partages") or []) if maintenant - x.get("t", 0) < 600],
                 "interimaires": sorted((self.d.get("interim") or {}).get("interimaires") or {}),
                 "historique": self.historique(maintenant)}

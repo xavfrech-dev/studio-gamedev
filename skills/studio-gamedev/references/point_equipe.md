@@ -41,6 +41,15 @@ dans « Réglages », ou en disant « point d'équipe » / `/point-equipe`. « T
    Liste blanche seulement : ordre des tâches prêtes, relance d'un agent figé, statut de roadmap prouvé par un commit, choix réversible
    sans coût. `note` refuse (code 3) ce qui dépense, supprime, publie, touche le système ou un compte. Le rapport les liste sous
    « Décidé seul » (titre, raison).
+10. **Vague suivante** : quand tous les postes libres (hors chaîne moteur) ont fini ou n'ont rien écrit depuis plus de 5 min,
+   l'alimentation dépose **une** demande à l'assistant (`origine: auto:vague.<heure>`) : la liste des postes libres (depuis
+   quand) et les tâches de `taches_disponibles.json`. Pas de doublon tant qu'elle attend ; rien si un poste travaille (barre
+   < 100 % de moins de 5 min ; 10 min pour une barre écrite par un suivi de chaîne). Une barre « en attente : la chaîne
+   continue » compte comme finie, après 5 min de calme. Coupée par « Tout couper », par `attribution_auto` et `tyrannie_auto`
+   coupés tous les deux, ou une machine saturée. À la réception : planifier la vague suivante (une tâche par poste libre, sans
+   moteur sauf la chaîne moteur). Si rien n'est prêt : préparer la suite de la roadmap, ou poser la question sous la cloche
+   (`decisions.json`, recommandation en premier). Une demande `auto:vague` vaut accord pour lancer la vague, dans les limites
+   habituelles (`agents_max`, un seul chantier moteur). État : `.studio/automatismes.json` → `vague`.
 
 ## La petite blague
 
