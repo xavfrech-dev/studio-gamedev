@@ -614,6 +614,14 @@ class Studio:
                             pass
         return max(0.0, (time.time() - recent) / 60)
 
+    def agents_flux(self, conf):
+        """{poste: genre d'étape} des agents des flux de postes en cours (equipe.agents_en_cours_flux) : un poste lancé en
+        workflow travaille même si sa progression n'a pas bougé ou reste à 100 % entre deux tâches (correctif 15/11 22:55
+        du studio d'origine : « toute l'équipe est en attente » alors qu'une vingtaine d'agents travaillaient)."""
+        import equipe
+        ds = conf.get("dossier_session")
+        return equipe.agents_en_cours_flux(equipe.dossiers_workflows(self.projet, dossier_session=ds if isinstance(ds, str) else None))
+
     @staticmethod
     def demandes_en_attente(demandes, messages):
         """F : ce qui attend une session Claude : demandes de la page ou auto: pas encore prises, messages « nouvelle »."""
@@ -804,7 +812,7 @@ class Studio:
         return cand[0][1] if cand else None
 
     # ---------------- postes
-    def postes(self, conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine=None):
+    def postes(self, conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine=None, flux=None):
         self.memo.c["_conf_langue"] = conf.get("langue") or "fr"
         tx = self.tx
         recr = self.recrues()
@@ -822,6 +830,9 @@ class Studio:
             ids.add(x["nom"])
         taches = [(j, t) for j in (r or {}).get("jalons", []) for t in j.get("taches", [])]
         sess_poste = conf.get("session_poste") or ("direction" if "direction" in ids else "")
+        flux = flux if isinstance(flux, dict) else {}
+        flux_lib = {"choisir": tx("choisit sa prochaine tâche", "picking the next task"), "travail": tx("travaille sur sa tâche", "working on the task"),
+                    "relire": tx("sa tâche est en relecture", "task under review")}
         out = []
         for p in liste:
             pid = p["id"]
@@ -863,6 +874,11 @@ class Studio:
                 etat = "fini" if fini_prog and not dem and not a else "attend"
             else:
                 etat = "disponible"
+            # 15/11 22:55 (jumeau du studio d'origine) : un agent d'un flux de postes réellement en cours l'emporte sur
+            # « attend », « fini » et « disponible » (sa progression ne bouge pas pendant une longue tâche, ou reste à 100 %)
+            f_genre = flux.get(pid) or flux.get(str(p.get("nom") or ""))
+            if f_genre and etat in ("attend", "fini", "disponible"):
+                etat = "travaille"
             # progression affichée
             if pc is not None:
                 prog_aff, src = pc, f"progression/{prog_nom}.json"
@@ -892,6 +908,8 @@ class Studio:
                     complet = lancee["titre"] or tx("demande lancée", "request started")
                 elif ouvert:
                     complet = f"{ouvert['nom']} " + tx("ouvert", "open") + (tx(" : ", ": ") + texte_prog if texte_prog and not fini_prog else "")
+                elif f_genre and not (frais and not fini_prog):
+                    complet = flux_lib.get(f_genre) or tx("au travail", "at work")
                 elif pid == sess_poste:
                     complet = tx("orchestre la session", "runs the session")
                 else:
@@ -1400,7 +1418,8 @@ class Studio:
         ouverts = [o for o in self.outils_lourds(conf) if procs and any(n in o["processus"] for n in procs)]
         session_age = self.memo("session", 30, lambda: self.session_active(conf))
         chaine = self.chaine_active(progs, demandes, ouverts)
-        postes = self.postes(conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine)
+        flux = self.memo("agents_flux", 20, lambda: self.agents_flux(conf)) or {}
+        postes = self.postes(conf, r, progs, statuts, demandes, att, ouverts, session_age, chaine, flux)
         dispo = self.memo("taches", 0 if tout else 60, lambda: self.taches_disponibles(r)) or []
         gitinfo = self.memo("git", 0 if tout else 60, self.git)
         sysinfo = self.memo("systeme", 0 if tout else 60, lambda: self.systeme(conf)) or {}

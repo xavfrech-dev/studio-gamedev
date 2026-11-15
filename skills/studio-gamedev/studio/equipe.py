@@ -191,6 +191,55 @@ def etapes_ouvertes(dossiers, maintenant=None):
     return out
 
 
+FLUX_MIN = 45               # agents des flux de postes : journal de workflow bougé depuis moins de 45 min
+FLUX_GENRES = ("choisir", "travail", "relire")
+FLUX_DOUBLE_RE = re.compile(r"-\d+$")   # poste doublé : « blender-2 » travaille pour le poste « blender »
+
+
+def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
+    """Agents des flux de postes réellement en cours : {poste: genre d'étape} (« choisir », « travail » ou « relire »).
+    Jumeau du correctif du studio d'origine (15/11 22:55, « toute l'équipe est en attente » alors qu'une vingtaine
+    d'agents travaillaient) : un poste lancé en workflow (labels « choisir:<poste> », « travail:<poste> »,
+    « relire:<poste> », poste doublé « <poste>-2 ») ne réécrit pas sa progression pendant une longue tâche, ou la
+    laisse à 100 % entre deux tâches. On lit les journaux des workflows (dossiers_workflows) bougés depuis
+    `fenetre_min` minutes et on garde les agents démarrés sans résultat ; un run fini ou immobile est ignoré
+    (un run tué laisse ses agents « démarrés » dans un journal qui ne bouge plus). Lecture seule."""
+    t = maintenant or time.time()
+    limite = t - fenetre_min * 60
+    out = {}
+    for d in dossiers or []:
+        for jr in glob.glob(os.path.join(glob.escape(d), "*", "journal.jsonl")):
+            try:
+                if os.path.getmtime(jr) < limite:
+                    continue
+                ouverts, fini = {}, False
+                with open(jr, encoding="utf-8", errors="replace") as f:
+                    for ligne in f:
+                        try:
+                            e = json.loads(ligne)
+                        except ValueError:
+                            continue
+                        if not isinstance(e, dict):
+                            continue
+                        ty, cle = e.get("type"), e.get("agentId") or e.get("key")
+                        if ty == "started" and cle:
+                            ouverts[cle] = str(e.get("label") or "")
+                        elif ty == "result" and cle:
+                            ouverts.pop(cle, None)
+                        elif ty in ("finished", "completed", "failed", "cancelled", "stopped"):
+                            fini = True
+            except OSError:
+                continue
+            if fini:
+                continue
+            for label in ouverts.values():
+                genre, _, poste = label.partition(":")
+                poste = FLUX_DOUBLE_RE.sub("", poste.strip())
+                if genre in FLUX_GENRES and poste:
+                    out.setdefault(poste, genre)
+    return out
+
+
 def _barres(dossier, maintenant):
     """Barres progression/*.json (via restructuration.progressions_de) avec leur texte, leur source et « attente »."""
     out = {}

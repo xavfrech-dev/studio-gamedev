@@ -11,6 +11,8 @@ Vérifie :
 - M21 : dictee_propre.py (auto-essai) ;
 - M24 : essai_automatismes.py ne laisse plus de dossier temporaire ;
 - R15 : equipe.dossiers_workflows suit CLAUDE_CONFIG_DIR et « dossier_session » (jamais une session en dur).
+- R16 : agents des flux de postes (labels choisir:/travail:/relire:<poste>, poste doublé <poste>-2) : un poste dont un agent
+  est démarré sans résultat « travaille » même avec une progression à 100 % immobile (correctif du 15/11 22:55).
 
 Usage : python -I -B essai_outils.py [--garder]      code 0 = tout vert
 """
@@ -222,6 +224,62 @@ def essai_workflows(base):
             os.environ["CLAUDE_CONFIG_DIR"] = avant
 
 
+def essai_flux(base):
+    print("R16. Agents des flux de postes : le poste travaille même si sa progression ne bouge pas")
+    import equipe
+    import studio_etat
+    projet = os.path.join(base, "Mon jeu R16")
+    st = os.path.join(projet, ".studio")
+    os.makedirs(os.path.join(st, "progression"), exist_ok=True)
+    conf_dir = os.path.join(base, "config_claude_r16")
+    slug = __import__("re").sub(r"[^A-Za-z0-9]", "-", os.path.abspath(projet))
+    wf = os.path.join(conf_dir, "projects", slug, "session", "subagents", "workflows")
+
+    def journal(run, lignes, age_min=0):
+        d = os.path.join(wf, run)
+        os.makedirs(d, exist_ok=True)
+        ch = os.path.join(d, "journal.jsonl")
+        with open(ch, "w", encoding="utf-8") as f:
+            for l in lignes:
+                f.write(json.dumps(l) + "\n")
+        t = time.time() - age_min * 60
+        os.utime(ch, (t, t))
+
+    journal("flux1", [{"type": "started", "agentId": "a1", "label": "choisir:blender-2"},
+                      {"type": "started", "agentId": "a2", "label": "travail:faune"}, {"type": "result", "agentId": "a2"},
+                      {"type": "started", "agentId": "a3", "label": "relire:son"},
+                      {"type": "started", "agentId": "a4", "label": "preparer:carte"}])
+    journal("vieux", [{"type": "started", "agentId": "b1", "label": "travail:vieux"}], age_min=90)
+    journal("fini", [{"type": "started", "agentId": "c1", "label": "travail:termine"}, {"type": "finished"}])
+    ecrire(os.path.join(st, "studio.config.json"), {"postes": [{"id": i, "nom": i.capitalize()} for i in ("blender", "faune", "son", "libre")]})
+    for poste in ("blender", "faune"):
+        ch = os.path.join(st, "progression", poste + ".json")
+        ecrire(ch, {"pct": 100, "etape": "tâche précédente finie"})
+        t = time.time() - 10 * 60
+        os.utime(ch, (t, t))
+    avant = os.environ.get("CLAUDE_CONFIG_DIR")
+    os.environ["CLAUDE_CONFIG_DIR"] = conf_dir
+    try:
+        flux = equipe.agents_en_cours_flux(equipe.dossiers_workflows(projet))
+        ok(flux == {"blender": "choisir", "son": "relire"}, f"démarrés sans résultat seulement, « -2 » rattaché au poste, vieux / finis / autres labels ignorés ({flux})")
+        s = studio_etat.Studio(projet)
+        conf = s.config()
+        args = (conf, None, s.progressions(), {}, [], {}, [], None, None)
+        sans = {q["id"]: q for q in s.postes(*args)}
+        ok(sans["blender"]["etat"] != "travaille" and sans["blender"]["fin_de_tache"], f"sans les flux : blender {sans['blender']['etat']}, fin de tâche annoncée")
+        avec = {q["id"]: q for q in s.postes(*args, flux=s.agents_flux(conf))}
+        ok(avec["blender"]["etat"] == "travaille" and avec["blender"]["ligne"]["picto"] == "▶" and not avec["blender"]["fin_de_tache"],
+           f"avec les flux : blender {avec['blender']['etat']}, ligne « {avec['blender']['ligne']['texte']} », pas de fin de tâche")
+        ok(avec["son"]["etat"] == "travaille" and "relecture" in avec["son"]["ligne"]["complet"], f"son : {avec['son']['etat']} ({avec['son']['ligne']['complet']})")
+        ok(avec["faune"]["etat"] != "travaille" and avec["libre"]["etat"] == "disponible",
+           f"faune (résultat rendu) : {avec['faune']['etat']} ; libre : {avec['libre']['etat']}")
+    finally:
+        if avant is None:
+            os.environ.pop("CLAUDE_CONFIG_DIR", None)
+        else:
+            os.environ["CLAUDE_CONFIG_DIR"] = avant
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--garder", action="store_true", help="garder le dossier temporaire")
@@ -235,6 +293,7 @@ def main(argv=None):
         essai_crochet_journal(base)
         essai_divers(base)
         essai_workflows(base)
+        essai_flux(base)
     finally:
         if a.garder:
             print(f"dossier gardé : {base}")

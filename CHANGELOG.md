@@ -7,6 +7,9 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 ### Amélioré
 - **Questionnaire adaptatif** : chaque réponse oriente les suivantes. Ce que le pitch ou une réponse permet de déduire (moteur, genre, plateforme, 2D/3D, caméra…) n'est plus demandé ; une question tranchée n'est jamais reposée ; les questions sont reformulées selon les choix (pas de caméra 3D pour un jeu de cartes) ; un rappel « Déjà acquis » s'affiche sous chaque question ; relancé, le questionnaire reprend où il en était. Même logique dans la page et en repli conversation (`studio/adaptation.py`, `studio/outils/questionnaire.py`). Essai : `studio/outils/essai_questionnaire.py`.
 
+### Corrigé
+- **« Toute l'équipe est en attente » alors que les postes travaillent** : un poste lancé en workflow (étapes `choisir:<poste>`, `travail:<poste>`, `relire:<poste>`, poste doublé `<poste>-2`) passe à « travaille » tant qu'un de ses agents est démarré sans résultat, même si sa progression ne bouge pas pendant une longue tâche ou reste à 100 % entre deux tâches ; plus de « fin de tâche » annoncée à tort. Journaux des workflows bougés depuis 45 min, runs finis ignorés (`equipe.agents_en_cours_flux`, `studio_etat.py`). Essai : `studio/outils/essai_outils.py` (R16).
+
 ## [0.5.3] - 2026-11-15
 
 Le studio relance la vague suivante tout seul, montre les images de l'assistant, et l'XP se lit mieux.
