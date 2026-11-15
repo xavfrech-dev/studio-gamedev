@@ -14,6 +14,8 @@ Vérifie :
 - R16 : agents des flux de postes (labels choisir:/travail:/relire:<poste>, poste doublé <poste>-2) : un poste dont un agent
   est démarré sans résultat « travaille » même avec une progression à 100 % immobile (correctif du 15/11 22:55) ;
   le titre du dernier « choisir:<poste> » est sa tâche (bandeau, minis), même devant une progression (15/11 23:15).
+- R17 : « roadmap en retard » ne se déclenche que pour un commit qui annonce une fin (versé, vert, fait, fermé, RESULTAT OK)
+  sans ECHEC, rouge, « en cours », « à refaire » ni « bloqu… » (correctif du 15/11 23:45).
 
 Usage : python -I -B essai_outils.py [--garder]      code 0 = tout vert
 """
@@ -305,6 +307,31 @@ def essai_flux(base):
         else:
             os.environ["CLAUDE_CONFIG_DIR"] = avant
 
+def essai_roadmap_retard(base):
+    print("R17. Roadmap en retard : seulement pour un commit qui annonce une fin, sans échec")
+    import studio_etat
+    projet = os.path.join(base, "Mon jeu R17")
+    st = os.path.join(projet, ".studio")
+    ecrire(os.path.join(st, "roadmap.json"), {"jalons": [{"id": "J1", "taches": [
+        {"id": "V1-173", "statut": "en_cours"}, {"id": "V1-50", "statut": "a_faire"}, {"id": "V1-60", "statut": "verse"}]}]})
+    s = studio_etat.Studio(projet)
+
+    def regles(*sujets):
+        commits = [{"hash": f"c{i}", "h": "12:00", "sujet": x} for i, x in enumerate(sujets)]
+        return [x for x in s.roadmap_en_retard({"commits": commits}) if x[0].startswith("roadmap-commit-")]
+
+    bruit = ("Lot 12 (V1-173) : captures de brume 94/94 ; --analyser ECHEC brume 43/45",
+             "V1-173 : J2 rouge, à refaire", "V1-173 en cours (captures)", "V1-50 versé mais bloqué par la navmesh",
+             "V1-173 : relance des captures", "V1-60 versé")
+    ok(regles(*bruit) == [], f"captures, ECHEC, rouge, en cours, bloqué, tâche déjà versée : aucune suggestion ({len(regles(*bruit))})")
+    for sujet, tid in (("V1-173 versée, J2 vert", "V1-173"), ("poser_balisage RESULTAT OK (V1-50)", "V1-50"),
+                       ("V1-50 fait", "V1-50"), ("V1-50 done (merged)", "V1-50")):
+        r = regles(sujet)
+        ok(len(r) == 1 and tid in r[0][2], f"« {sujet} » : suggestion pour {tid} ({[x[2] for x in r]})")
+    ok(not studio_etat.sujet_annonce_fin("reverse proxy V1-50") and not studio_etat.sujet_annonce_fin(None),
+       "mots entiers seulement (« reverse » n'est pas « versé ») ; sujet vide accepté")
+
+
 def main(argv=None):
     a = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a.add_argument("--garder", action="store_true", help="garder le dossier temporaire")
@@ -319,6 +346,7 @@ def main(argv=None):
         essai_divers(base)
         essai_workflows(base)
         essai_flux(base)
+        essai_roadmap_retard(base)
     finally:
         if a.garder:
             print(f"dossier gardé : {base}")

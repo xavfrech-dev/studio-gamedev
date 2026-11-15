@@ -69,12 +69,23 @@ RENVOI_LIBRE_H = 24     # proposition de renvoi : recrue libre depuis 24 h sans 
 EXCLUS = re.compile(r"\b(sorti|sortie|écart|ecart|abandonn|hors v1|hors version|remplac|report|retir|dropped|removed|postponed|out of scope|replaced)", re.I)
 SUBPROC = {"capture_output": True, "text": True, "timeout": 20, "encoding": "utf-8", "errors": "replace",
            "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
+# 15/11 23:45 (porté du studio WILDLANDS : « le spécialiste de la roadmap, il sert vraiment à quelque chose ? ») :
+# un commit qui cite une tâche ne veut pas dire qu'elle est finie (échec, captures, rouge…). La règle « roadmap en retard »
+# ne retient que les sujets qui annoncent une fin, sans signe d'échec ni de travail en cours (français, et anglais pour un projet en anglais).
+FIN_COMMIT = re.compile(r"\bvers[ée]e?s?\b|\bverte?s?\b|\bfaite?s?\b|\bferm[ée]e?s?\b|RESULTAT OK|\bmerged\b|\bdone\b|\bclosed\b|\bgreen\b", re.I)
+PAS_FINI_COMMIT = re.compile(r"[ÉE]CHEC|\brouges?\b|en cours|[àa] refaire|bloqu|\bFAIL|\bred\b|in progress|\bredo\b|\bblocked\b", re.I)
 
 # ------------------------------------------------------------------ outils
 # -------------------------------------------------------------------- santé du PC (réglage sante_auto, coupé par défaut)
 # psutil s'il est installé ; sinon repli léger : Windows (GetSystemTimes, GlobalMemoryStatusEx), Linux (/proc), macOS (os.getloadavg).
 # Aucun processus n'est tué, aucun réglage du système n'est touché.
 _CPU_HIST, _CPU_PREC = [], []
+
+
+def sujet_annonce_fin(sujet):
+    """Vrai si le sujet de commit annonce une tâche finie (versé, vert, fait, fermé, RESULTAT OK) sans échec ni « en cours »."""
+    sujet = sujet or ""
+    return bool(FIN_COMMIT.search(sujet)) and not PAS_FINI_COMMIT.search(sujet)
 
 
 def _cpu_pct():
@@ -1040,7 +1051,7 @@ class Studio:
         return sug
 
     def roadmap_en_retard(self, gitinfo):
-        """roadmap.json en retard : un commit récent cite une tâche encore « a_faire » / « en_cours », ou docs/ROADMAP.md
+        """roadmap.json en retard : un commit récent qui annonce une fin (sujet_annonce_fin) cite une tâche encore « a_faire » / « en_cours », ou docs/ROADMAP.md
         a été modifié plus de 10 min après roadmap.json. Seulement des suggestions : la roadmap reste écrite par Claude."""
         r, out = self.roadmap(), []
         if not r:
@@ -1048,6 +1059,8 @@ class Studio:
         ouvertes = {t["id"]: t for j in r["jalons"] for t in j["taches"] if t.get("statut") in ("a_faire", "en_cours")}
         cites = []
         for c in ((gitinfo or {}).get("commits") or []):
+            if not sujet_annonce_fin(c.get("sujet")):          # 15/11 23:45 : seulement un commit qui annonce une fin
+                continue
             for tid in ouvertes:
                 if len(tid) >= 3 and re.search(r"(?<![\w-])" + re.escape(tid) + r"(?![\w-])", c.get("sujet") or ""):
                     cites.append((tid, c))
