@@ -644,6 +644,22 @@ body:not(.app) #panneau:has(.eq-liste) .feuille{width:min(1060px,calc(94vw / var
 @media (prefers-reduced-motion:reduce){.micro.actif,#gros-micro.actif{transition:none}}
 /* S24 : en mode accueil (questionnaire, pas d'équipe ni de roadmap), la barre ne garde que Réglages, Son, Plein écran, Conversation et la voix */
 html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not(#bt-conv):not(#bt-assistant):not(#bt-plus-pc) { display: none !important; }
+/* ---------- images des réponses de Claude (jumeaux : studio WILDLANDS et skill) ---------- */
+.cl-images{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin:8px 0 12px;white-space:normal}
+.cl-images.seule{grid-template-columns:minmax(0,min(100%,420px))}
+.cl-img{display:block;padding:0;margin:0;border:1px solid rgba(92,79,63,.3);border-radius:8px;overflow:hidden;background:rgba(0,0,0,.08);cursor:zoom-in;aspect-ratio:4/3;min-height:0}
+.cl-img img{display:block;width:100%;height:100%;object-fit:cover}
+.cl-img:hover{border-color:#b98532}.cl-img:focus-visible{outline:3px solid #e2b866;outline-offset:2px}
+#vis-img{position:fixed;inset:0;z-index:200;background:rgba(12,10,8,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+#vis-img[hidden]{display:none}
+#vis-img img{max-width:96vw;max-height:calc(100vh - 110px);max-height:calc(100dvh - 110px);object-fit:contain;border-radius:6px;background:#222;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#vis-img p{color:#efe6d2;margin:10px 0 0;font-size:14px;text-align:center;overflow-wrap:anywhere;max-width:92vw}
+#vis-img p b{font-weight:600;color:#f1d9a4}#vis-img p a{color:#f1d9a4}
+#vis-img .x{position:absolute;top:max(10px,env(safe-area-inset-top));right:12px;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:26px;line-height:1;cursor:pointer;z-index:1}
+#vis-img .nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:26px;cursor:pointer}
+#vis-img .nav:hover,#vis-img .x:hover{background:rgba(255,255,255,.2)}#vis-img .nav[hidden]{display:none}
+#vis-img .g{left:10px}#vis-img .d{right:10px}
+@media (max-width:600px){.cl-images{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}#vis-img .nav{top:auto;bottom:max(14px,env(safe-area-inset-bottom));transform:none}#vis-img img{max-height:calc(100dvh - 150px)}}
 </style>
 </head>
 <body>
@@ -900,7 +916,7 @@ async function chargerTout() {
   if (lg !== LANGUE || !QF) { LANGUE = TXT[lg] ? lg : 'en'; document.documentElement.lang = lg; traduirePage(); }
   const [prof, etat, st, dec, rdec, rass0, ded, sui, idx, rap, dstu, tdis, regl, jass] = await Promise.all(['profil.json', 'etat.json', 'demandes/statuts.json', 'decisions.json', 'reponses.json', 'reponses_assistant.json', 'deductions.json', 'questions_suivi.json', 'recrues/index.json', 'rapport_assistant.json', 'decisions_studio.json', 'taches_disponibles.json', 'reglages.json', 'journal_assistant.json'].map(lire));
   // réponses de l'assistant : celles qu'il écrit (reponses_assistant.json) et celles recopiées par le crochet Stop (journal_assistant.json)
-  const rass = (Array.isArray(rass0) ? rass0 : []).concat((Array.isArray(jass) ? jass : []).filter(x => x && x.texte).map(x => ({ id: 'j:' + x.id, cree_le: x.cree_le, titre: x.titre, texte: x.texte, journal: true })))
+  const rass = (Array.isArray(rass0) ? rass0 : []).concat((Array.isArray(jass) ? jass : []).filter(x => x && x.texte).map(x => ({ id: 'j:' + x.id, cree_le: x.cree_le, titre: x.titre, texte: x.texte, journal: true, images: Array.isArray(x.images) ? x.images : null })))
     .sort((a, b) => String(a.cree_le || '').localeCompare(String(b.cree_le || '')));
   if (prof) { PROFIL = prof; for (const k of ['maitre', 'assistant']) if (PROFIL[k] && /\{\{/.test(String(PROFIL[k].nom || ''))) PROFIL[k].nom = ''; } ETAT = etat; STATUTS = st || {}; REPONSES_DEC = Array.isArray(rdec) ? rdec : [];
   // décisions de Claude + propositions du studio (renvois : decisions_studio.json, jamais appliquées sans réponse)
@@ -1540,6 +1556,57 @@ setInterval(majCloche, 3000); setTimeout(majCloche, 800);
 setTimeout(clVerifierPage, 1500); setInterval(clVerifierPage, 120000);
 // la cloche s'ouvre toujours : la liste de ce qui attend (une issue en un clic pour chaque élément), ou un message rassurant
 function ouvrirCloche() { CL_ANNONCE = null; Panneau.remplacer('cloche', el => rendreCloche(el, true)); }
+// ---------------- images des réponses de Claude (jumeaux : studio WILDLANDS et skill studio-gamedev) ----------------
+// Une réponse (journal du crochet, réponse écrite au studio, rapport, conversation) peut porter « images » : chemins locaux
+// (captures, planches). On y ajoute les chemins d'images cités dans le texte. Vignettes au-dessus du texte (là où le chat
+// les montre), chargement paresseux ; clic : visionneuse plein écran (flèches, Échap, glisser au téléphone). Le serveur ne
+// sert que les images de sa liste blanche (GET /api/image?chemin=…) ; une image absente ou refusée disparaît sans bruit.
+const IMG_CL_EXT = /\.(png|jpe?g|webp|gif)$/i;
+const IMG_CL_RE = /`((?:[A-Za-z]:[\\/]|\/)[^`\n*?]+?\.(?:png|jpe?g|webp|gif))`|(?<![\w\\/.:~])([A-Za-z]:[\\/][^\s`"'<>|*?()[\]]+?\.(?:png|jpe?g|webp|gif))(?![\w])|(?<![\w\\/.:~])(\/(?:[^\s/`"'<>|*?()[\]]+\/)*[^\s/`"'<>|*?()[\]]+\.(?:png|jpe?g|webp|gif))(?![\w])/gi;
+function imagesDe(x, texte) {
+  const l = [], cles = new Set();
+  const aj = c => { c = String(c || '').trim(); if (/^[A-Za-z]:/.test(c)) c = c.replace(/\//g, '\\'); const k = c.toLowerCase(); if (c && c.length <= 1024 && IMG_CL_EXT.test(c) && !/[*?]/.test(c) && !cles.has(k)) { cles.add(k); l.push(c); } };
+  for (const c of (x && Array.isArray(x.images) ? x.images : [])) if (typeof c === 'string') aj(c);
+  String(texte || '').replace(IMG_CL_RE, (m, a, b, c) => { aj(a || b || c); return m; });
+  return l.slice(0, 24);
+}
+const urlImageCl = c => '/api/image?chemin=' + encodeURIComponent(c);
+const nomImageCl = c => String(c).split(/[\\/]/).pop();
+function galerieImages(l) {
+  if (!l || !l.length) return '';
+  const fr = typeof LANGUE === 'undefined' || LANGUE === 'fr';
+  return `<div class="cl-images${l.length === 1 ? ' seule' : ''}" data-cl-images>${l.map(c => `<button type="button" class="cl-img" data-cl-c="${esc(c)}" title="${esc(nomImageCl(c))}" aria-label="${esc((fr ? 'Agrandir l’image ' : 'Enlarge image ') + nomImageCl(c))}"><img src="${esc(urlImageCl(c))}" alt="${esc(nomImageCl(c))}" loading="lazy" decoding="async"></button>`).join('')}</div>`;
+}
+// image absente du disque ou hors de la liste blanche : la vignette s'efface (pas d'image cassée)
+document.addEventListener('error', e => { const img = e.target; if (img && img.tagName === 'IMG' && img.closest('.cl-img')) { const b = img.closest('.cl-img'), g = b.parentElement; b.remove(); if (g && !g.querySelector('.cl-img')) g.remove(); } }, true);
+const VisImg = (() => {
+  let l = [], i = 0, el = null, x0 = null, retour = null;
+  function creer() {
+    if (el) return el;
+    el = document.createElement('div'); el.id = 'vis-img'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.hidden = true;
+    el.innerHTML = '<button type="button" class="x" aria-label="Fermer">×</button><button type="button" class="nav g" aria-label="Image précédente">‹</button><img alt=""><p></p><button type="button" class="nav d" aria-label="Image suivante">›</button>';
+    document.body.appendChild(el);
+    el.querySelector('.x').onclick = fermer; el.querySelector('.g').onclick = () => aller(-1); el.querySelector('.d').onclick = () => aller(1);
+    el.addEventListener('click', e => { if (e.target === el) fermer(); });
+    el.addEventListener('touchstart', e => { x0 = e.touches.length === 1 ? e.touches[0].clientX : null; }, { passive: true });
+    el.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) aller(dx < 0 ? 1 : -1); }, { passive: true });
+    return el;
+  }
+  function montrer() {
+    const c = l[i], img = el.querySelector('img'), fr = typeof LANGUE === 'undefined' || LANGUE === 'fr';
+    img.src = urlImageCl(c); img.alt = nomImageCl(c);
+    el.querySelector('p').innerHTML = `<b>${esc(nomImageCl(c))}</b>${l.length > 1 ? ` · ${i + 1} / ${l.length}` : ''} · <a href="${esc(urlImageCl(c))}" target="_blank" rel="noopener">${fr ? 'taille réelle' : 'full size'}</a>`;
+    el.querySelectorAll('.nav').forEach(b => b.hidden = l.length < 2);
+  }
+  function ouvrir(liste, k) { if (!liste || !liste.length) return; l = liste; i = Math.max(0, Math.min(liste.length - 1, k | 0)); retour = document.activeElement; creer(); montrer(); el.hidden = false; el.querySelector('.x').focus(); }
+  function fermer() { if (!el || el.hidden) return; el.hidden = true; el.querySelector('img').removeAttribute('src'); try { retour && retour.focus && retour.focus(); } catch (e) { /* rien */ } }
+  function aller(d) { if (l.length < 2) return; i = (i + d + l.length) % l.length; montrer(); }
+  // Échap ferme la visionneuse seulement (pas le rapport dessous) ; flèches : image précédente / suivante
+  document.addEventListener('keydown', e => { if (!el || el.hidden) return; if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); fermer(); } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopImmediatePropagation(); aller(e.key === 'ArrowLeft' ? -1 : 1); } }, true);
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.cl-img'); if (!b) return; e.preventDefault(); e.stopPropagation(); const g = b.closest('[data-cl-images]'), liste = [...g.querySelectorAll('.cl-img')].map(x => x.dataset.clC); ouvrir(liste, liste.indexOf(b.dataset.clC)); }, true);
+  return { ouvrir, fermer, ouverte: () => !!el && !el.hidden };
+})();
+window.__imagesCl = { de: imagesDe, galerie: galerieImages, vis: () => VisImg.ouverte() };   // essais
 function md(src) {
   // Markdown simple → HTML sûr : tout est échappé, seuls titres, listes, gras/italique, code, tableaux et liens http(s) sont rendus
   const ligne = t => esc(t).replace(/`([^`]+)`/g, '<code class="mono">$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*]+)\*/g, '$1<i>$2</i>')
@@ -2378,9 +2445,10 @@ const Conv = (() => {
     for (const m of (ETAT && Array.isArray(ETAT.messages) ? ETAT.messages : [])) if (m && m.texte && !['controleur-modeles', 'auditeur'].includes(m.cible)) msg.set(m.id, { genre: 'moi', id: m.id, t: date(m.cree_le) || (msg.get(m.id) || {}).t || 0, texte: m.texte, cible: m.cible, statut: m.statut, pieces: m.pieces || (msg.get(m.id) || {}).pieces });
     const l = [...msg.values()];
     if (CC.msgs.length) { const t0 = Math.min(...CC.msgs.map(m => date(m.t) || Date.now()));   // la conversation de Claude Code fait foi
-      for (const m of CC.msgs) l.push({ genre: m.role === 'utilisateur' ? 'cc_moi' : 'cc_lui', id: 'cc:' + m.id, t: date(m.t), texte: m.texte });
+      for (const m of CC.msgs) l.push({ genre: m.role === 'utilisateur' ? 'cc_moi' : 'cc_lui', id: 'cc:' + m.id, t: date(m.t), texte: m.texte, images: m.images });
+      for (const m of REP_ASSIST) if (m && m.texte && !m.journal && Array.isArray(m.images) && m.images.length && date(m.cree_le) >= t0) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000), images: m.images });   // réponse écrite au studio avec images
       for (let k = l.length - 1; k >= 0; k--) if (l[k].genre === 'moi' && l[k].t && l[k].t < t0) l.splice(k, 1); }
-    else for (const m of REP_ASSIST) if (m && m.texte) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000) });
+    else for (const m of REP_ASSIST) if (m && m.texte) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000), images: m.images });
     const rem = (window.__tyrRemonter ? window.__tyrRemonter() : []);
     for (const d of DECISIONS) if (d && d.id) { const r = REPONSES_DEC.find(x => x && x.id === d.id); l.push({ genre: 'question', id: 'd:' + d.id, t: rem.includes(d.id) && !r ? Date.now() : date(d.cree_le), d, r }); }
     return l.sort((a, b) => a.t - b.t).slice(-80);
@@ -2389,11 +2457,11 @@ const Conv = (() => {
     const l = elements(), dernier = l[l.length - 1];
     const statut = s => ({ nouvelle: t('depose'), prise: t('lu'), faite: t('traite') })[s] || '';
     const enBas = !z._vu || z.scrollTop + z.clientHeight >= z.scrollHeight - 60, haut = z.scrollTop; z._vu = true;
-    z.innerHTML = l.length ? l.map(x => x.genre === 'cc_moi' ? `<div class="msg moi"><small>${esc(t('toi'))} · ${esc(heure(x.t))}</small><div class="md">${md(x.texte)}</div></div>`
-      : x.genre === 'cc_lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><div class="md">${md(x.texte)}</div></div>`
+    z.innerHTML = l.length ? l.map(x => x.genre === 'cc_moi' ? `<div class="msg moi"><small>${esc(t('toi'))} · ${esc(heure(x.t))}</small><div class="md">${galerieImages(imagesDe(x, x.texte))}${md(x.texte)}</div></div>`
+      : x.genre === 'cc_lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><div class="md">${galerieImages(imagesDe(x, x.texte))}${md(x.texte)}</div></div>`
       : x.genre === 'moi'
       ? `<div class="msg moi"><small>${esc(t('toi'))}${x.cible && x.cible !== 'assistant' ? ' → ' + esc(x.cible) : ''} · ${esc(heure(x.t))}${statut(x.statut) ? ' · ' + esc(statut(x.statut)) : ''}</small>${pjDuTexte(x.texte) ? `<p>${esc(pjDuTexte(x.texte))}</p>` : ''}${pjHtml(x.id, x.pieces)}</div>`
-      : x.genre === 'lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><p>${esc(x.texte)}</p><details class="rep-lien"><summary>${esc(t('repondre'))}</summary>${blocRepondre('fil-' + x.id, x.id.replace(/^r:/, ''))}</details></div>`
+      : x.genre === 'lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small>${galerieImages(imagesDe(x, x.texte))}<p>${esc(x.texte)}</p><details class="rep-lien"><summary>${esc(t('repondre'))}</summary>${blocRepondre('fil-' + x.id, x.id.replace(/^r:/, ''))}</details></div>`
       : `<div class="msg lui question" data-dec="${esc(x.d.id)}"><small>${esc(t('decision'))} · ${esc(heure(x.t))}</small><p><b>${esc(x.d.titre || '')}</b></p>${x.d.explication ? `<p>${esc(x.d.explication)}</p>` : ''}
           ${reponseDec(x.d, x.r) !== null ? `<p class="discret">✓ ${esc(t('regle'))} : ${esc(reponseDec(x.d, x.r))}</p>` : `<div class="choix-dec">${boutonsChoix(x.d)}</div>`}</div>`).join('')
       + (dernier && dernier.genre === 'lui' && /\?\s*["»)]*\s*$/.test(dernier.texte) ? `<p class="discret">${esc(t('reponds_ici'))}</p>` : '')
@@ -2535,7 +2603,7 @@ function ouvrirRapport() {
     const v1 = ETAT && ETAT.version1 && nombre(ETAT.version1.pct) !== null ? `<p class="discret">${esc(t('v1'))} : ${Math.round(ETAT.version1.pct)} % · ${esc(ETAT.version1.texte || '')}</p>` : '';
     const heure = String(r.heure).replace(/^\d{4}-\d{2}-\d{2}T/, '').slice(0, 5);
     el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('rapport_de'))} ${esc(heure)}</h2>
-      <div class="rapport-tete"><canvas width="160" height="160"></canvas>${r.blague ? `<div class="bulle">${esc(String(r.blague).slice(0, 600))}</div>` : ''}</div>${v1}
+      <div class="rapport-tete"><canvas width="160" height="160"></canvas>${r.blague ? `<div class="bulle">${esc(String(r.blague).slice(0, 600))}</div>` : ''}</div>${v1}${galerieImages(imagesDe(r, l(r.fini, 20).map(String).join('\n')))}
       ${tab.length ? `<table class="tab-rapport"><thead><tr><th>${esc(t('chantier'))}</th><th>${esc(t('etape'))}</th><th style="width:26%">%</th><th>${esc(t('reste_col'))}</th></tr></thead><tbody>${tab.map(x => { const p = nombre(x.pct); return `<tr><td>${esc(String(x.chantier || '').slice(0, 120))}</td><td>${esc(String(x.etape || '').slice(0, 200))}</td><td>${p === null ? '' : `<div class="barre"><i style="width:${clamp(p, 0, 100)}%"></i><span>${Math.round(clamp(p, 0, 100))} %</span></div>`}</td><td>${esc(String(x.reste || '').slice(0, 60))}</td></tr>`; }).join('')}</tbody></table>` : ''}
       ${l(r.fini, 20).length ? `<h3>${esc(t('fini_titre'))}</h3><ul class="liste-ok">${l(r.fini, 20).map(x => `<li>${esc(String(x).slice(0, 300))}</li>`).join('')}</ul>` : ''}
       <h3>${esc(t('a_decider'))}</h3><div data-adecider data-liste="${esc(JSON.stringify(dec))}">${htmlADecider(dec)}</div>`;
@@ -4845,7 +4913,7 @@ function ouvrirJournalAssistant() {
   jassistVu(); $('#nb-jassist').textContent = '';
   Panneau.remplacer('jassist', el => {
     const l = REP_ASSIST.slice().reverse();
-    el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('journal_assistant'))}</h2>${l.length ? `<ol class="liste-j">${l.map((m, i) => `<li><time>${esc(String(m.cree_le || '').slice(5, 16).replace('T', ' '))}</time><a href="#" data-i="${i}"><b>${esc(String(m.titre || String(m.texte || '').split('\n')[0]).slice(0, 110))}</b></a><div data-plein="${i}" hidden style="white-space:pre-wrap;margin-top:6px">${esc(String(m.texte || ''))}</div></li>`).join('')}</ol>` : `<p class="discret">${esc(t('jassist_rien'))}</p>`}`;
+    el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('journal_assistant'))}</h2>${l.length ? `<ol class="liste-j">${l.map((m, i) => `<li><time>${esc(String(m.cree_le || '').slice(5, 16).replace('T', ' '))}</time><a href="#" data-i="${i}"><b>${esc(String(m.titre || String(m.texte || '').split('\n')[0]).slice(0, 110))}</b></a><div data-plein="${i}" hidden style="white-space:pre-wrap;margin-top:6px">${galerieImages(imagesDe(m, m.texte))}${esc(String(m.texte || ''))}</div></li>`).join('')}</ol>` : `<p class="discret">${esc(t('jassist_rien'))}</p>`}`;
     el.querySelectorAll('[data-i]').forEach(a => a.onclick = ev => { ev.preventDefault(); const d = el.querySelector(`[data-plein="${a.dataset.i}"]`); d.hidden = !d.hidden; });
   });
 }

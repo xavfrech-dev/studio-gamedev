@@ -7,7 +7,8 @@ Lit sur l'entrée standard le JSON du crochet (transcript_path, session_id, cwd)
 - reprend tous les blocs de texte du tour (depuis le dernier message de l'utilisateur), sans les sous-agents ;
 - masque clés, jetons et adresses électroniques ;
 - verrou + fichier temporaire unique + 5 essais d'écriture ; un fichier illisible n'est jamais écrasé ;
-- n'écrit rien si le projet n'a pas de dossier .studio/.
+- n'écrit rien si le projet n'a pas de dossier .studio/ ;
+- « images » : images envoyées au chat pendant le tour (SendUserFile) puis chemins d'images existants cités dans le texte.
 Bibliothèque standard seulement."""
 import json
 import os
@@ -49,12 +50,40 @@ def fin_du_fichier(chemin):
     return brut.decode("utf-8", "replace").splitlines()
 
 
-def reponse_du_tour(chemin):
+IMAGES_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+# chemins d'images cités dans le texte : entre accents graves (espaces permis) ou nus (C:\…\x.png, /…/x.png)
+IMAGE_RE = re.compile(r"`((?:[A-Za-z]:[\\/]|/)[^`\n*?]+?\.(?:png|jpe?g|webp|gif))`"
+                      r"|(?<![\w\\/.:~])([A-Za-z]:[\\/][^\s`\"'<>|*?()\[\]]+?\.(?:png|jpe?g|webp|gif))(?![\w])"
+                      r"|(?<![\w\\/.:~])(/(?:[^\s/`\"'<>|*?()\[\]]+/)*[^\s/`\"'<>|*?()\[\]]+\.(?:png|jpe?g|webp|gif))(?![\w])", re.I)
+IMAGES_MAX = 24
+ENVOIS = {"SendUserFile"}                         # outils qui montrent un fichier à l'utilisateur dans le chat
+
+
+def ajouter_image(liste, chemin, base=""):
+    """Ajoute un chemin d'image existant (absolu, ou relatif au dossier de la session) une seule fois."""
+    if not isinstance(chemin, str) or not chemin.strip() or not chemin.lower().endswith(IMAGES_EXT):
+        return
+    c = chemin.strip()
+    if not os.path.isabs(c) and base:
+        c = os.path.join(base, c)
+    c = os.path.normpath(c)
+    if len(liste) < IMAGES_MAX and os.path.isfile(c) and c.lower() not in (x.lower() for x in liste):
+        liste.append(c)
+
+
+def images_du_texte(texte, liste):
+    for m in IMAGE_RE.finditer(texte or ""):
+        ajouter_image(liste, m.group(1) or m.group(2) or m.group(3))
+    return liste
+
+
+def reponse_du_tour(chemin, images=None):
+    """Texte du tour ; « images » (liste) reçoit les images envoyées au chat pendant le tour (SendUserFile), dans l'ordre."""
     try:
         lignes = fin_du_fichier(chemin)
     except OSError:
         return ""
-    blocs = []
+    blocs, envois = [], []
     for ligne in reversed(lignes):
         try:
             o = json.loads(ligne)
@@ -70,6 +99,14 @@ def reponse_du_tour(chemin):
             t = "\n".join(b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text").strip()
             if t:
                 blocs.append(t)
+            for b in reversed(c):
+                if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") in ENVOIS and isinstance(b.get("input"), dict):
+                    fichiers = b["input"].get("files")
+                    envois.append(([f for f in fichiers if isinstance(f, str)] if isinstance(fichiers, list) else [], str(o.get("cwd") or "")))
+    if images is not None:
+        for fichiers, base in reversed(envois):
+            for f in fichiers:
+                ajouter_image(images, f, base)
     return "\n\n".join(reversed(blocs)).strip()
 
 
@@ -112,11 +149,13 @@ def main():
     studio = os.path.join(projet, ".studio")
     if not os.path.isdir(studio):
         return
-    texte = masquer(reponse_du_tour(chemin))
+    images = []
+    texte = masquer(reponse_du_tour(chemin, images))
+    images_du_texte(texte, images)                    # chemins d'images existants cités dans la réponse
     # réponse sans contenu (un « . », ponctuation seule) : rien à montrer dans le studio
     if not re.search(r"[A-Za-z0-9À-ÿ]", texte or ""):
         texte = ""
-    if not texte:
+    if not texte and not images:                      # des images seules (envoyées au chat) : montrées quand même
         return
     sortie = os.path.join(studio, "journal_assistant.json")
     session = str(d.get("session_id") or "")[:8]
@@ -139,6 +178,8 @@ def main():
         n = max([x["n"] for x in liste if isinstance(x, dict) and isinstance(x.get("n"), int) and not isinstance(x.get("n"), bool)] + [len(liste)]) + 1
         liste.append({"n": n, "id": time.strftime("%Y%m%d-%H%M%S") + (f"-{session}" if session else ""), "cree_le": time.strftime("%Y-%m-%dT%H:%M:%S"),
                       "titre": premiere.strip("*# _"), "texte": texte[:12000], "source": "crochet"})
+        if images:
+            liste[-1]["images"] = images              # vignettes dans le studio (GET /api/image, liste blanche du serveur)
         tmp = f"{sortie}.{os.getpid()}.tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(liste[-MAX:], f, ensure_ascii=False, indent=1)

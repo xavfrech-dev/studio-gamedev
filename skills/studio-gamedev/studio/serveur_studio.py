@@ -9,6 +9,8 @@ GET  : sert d'abord les fichiers du skill posés à côté de ce script (studio.
        Le code (.html, .js, .css, manifeste) ne vient JAMAIS de .studio/ (G12 : un dépôt cloné ne remplace pas la page).
        Pas de liste de dossier ; extensions permises seulement ; jamais rien hors de ces deux dossiers.
        HTTP/1.1 (connexion gardée ; 30 s sans un octet : coupée) ; gzip au-dessus de 1 Ko si le navigateur l'accepte.
+  GET /api/image?chemin=<chemin absolu>  -> image citée par l'assistant (dossier du projet ou STUDIO_IMAGES_RACINES ; png/jpg/jpeg/webp/gif,
+                      signature vérifiée, 30 Mo au plus ; jamais .git/.ssh/.claude, flux NTFS, chemin réseau ni « .. »)
   GET /api/instantane?f=a.json,b.json[&connu=a.json:<marque>,…]  -> {"fichiers", "marques"} ; un fichier dont la marque
                       envoyée dans « connu » n'a pas changé n'est pas renvoyé (listé dans « inchanges »)
 POST : petite API JSON réservée à la page servie par ce même serveur :
@@ -715,6 +717,80 @@ def compresser(corps, type_, accepte, cle=None):
     return z
 
 
+# Images citées par l'assistant (champ « images » des réponses, chemins du texte, fichiers envoyés au chat) : GET /api/image?chemin=…
+# Liste blanche : le dossier du projet (et STUDIO_IMAGES_RACINES, dossiers séparés par os.pathsep) ; extensions png/jpg/jpeg/webp/gif ;
+# contenu vérifié (signature du fichier) ; 30 Mo au plus. Jamais de chemin relatif, réseau (\\serveur), de flux NTFS (« : » après
+# le lecteur), de « .. », ni de dossier .git/.ssh/.claude. Jumeau du studio WILDLANDS (serveur_studio.py, image_permise).
+IMAGES_EXT = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+IMAGE_MAX = 30 * 1024 * 1024
+IMAGES_DOSSIERS_REFUSES = {".git", ".ssh", ".claude", ".gnupg", ".aws"}
+
+
+def images_racines():
+    """Dossiers dont les images peuvent être servies : le projet suivi, plus STUDIO_IMAGES_RACINES."""
+    l = [Etat.projet] if getattr(Etat, "projet", None) else []
+    return l + [r for r in (os.environ.get("STUDIO_IMAGES_RACINES") or "").split(os.pathsep) if r.strip()]
+
+
+def type_image(entete):
+    """Type MIME d'après la signature du fichier (jamais d'après l'extension seule)."""
+    if entete.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if entete.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if entete[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if entete[:4] == b"RIFF" and entete[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
+def image_permise(chemin, racines):
+    """(chemin réel, type, taille, mtime) d'une image locale servie au studio, ou None si elle sort de la liste blanche."""
+    if not isinstance(chemin, str) or not chemin.strip() or len(chemin) > 1024 or "\x00" in chemin:
+        return None
+    c = chemin.strip()
+    if os.name == "nt":
+        c = c.replace("/", "\\")
+        if not re.match(r"^[A-Za-z]:\\", c) or ":" in c[2:]:          # absolu sur un lecteur ; ni \\serveur, ni \\?\, ni flux NTFS
+            return None
+    elif not c.startswith("/"):
+        return None
+    parties = [p for p in re.split(r"[\\/]+", c) if p]
+    if any(p in (".", "..") or p.lower() in IMAGES_DOSSIERS_REFUSES for p in parties):
+        return None
+    if os.path.splitext(c)[1].lower() not in IMAGES_EXT:
+        return None
+    try:
+        reel = os.path.realpath(c)
+    except (OSError, ValueError):
+        return None
+    if os.path.splitext(reel)[1].lower() not in IMAGES_EXT:          # lien vers autre chose qu'une image : refusé
+        return None
+    dedans = False
+    for r in racines:
+        try:
+            rr = os.path.realpath(r.strip())
+        except (OSError, ValueError):
+            continue
+        if os.path.normcase(reel).startswith(os.path.normcase(rr.rstrip("\\/")) + os.sep):
+            dedans = True
+            break
+    if not dedans:
+        return None
+    try:
+        if not os.path.isfile(reel):
+            return None
+        st = os.stat(reel)
+        if st.st_size <= 0 or st.st_size > IMAGE_MAX:
+            return None
+        with open(reel, "rb") as f:
+            t = type_image(f.read(16))
+    except OSError:
+        return None
+    return (reel, t, st.st_size, st.st_mtime_ns) if t else None
+
+
 class Studio(SimpleHTTPRequestHandler):
     server_version = "StudioGamedev/1.0"
     sys_version = ""
@@ -870,6 +946,26 @@ class Studio(SimpleHTTPRequestHandler):
                 self.repondre(200, dict(r, ok=True))
             except Exception as e:
                 self.repondre(500, {"ok": False, "erreur": f"{type(e).__name__} : {e}"[:200]})
+            return
+        if urlsplit(self.path).path == "/api/image":       # image citée par l'assistant : liste blanche (image_permise), lecture seule
+            trouve = image_permise((parse_qs(urlsplit(self.path).query).get("chemin") or [""])[0], images_racines())
+            if not trouve:
+                self.repondre(404, {"ok": False, "erreur": "image introuvable ou refusée"})
+                return
+            reel, type_, taille, mtime = trouve
+            etag = f'"{mtime:x}-{taille:x}"'
+            if self.headers.get("If-None-Match") == etag:
+                self.sans_corps(304, [("ETag", etag), ("Cache-Control", "private, max-age=600")])
+                return
+            try:
+                with open(reel, "rb") as f:
+                    corps = f.read(IMAGE_MAX + 1)
+            except OSError:
+                corps = b""
+            if not corps or len(corps) > IMAGE_MAX:
+                self.repondre(404, {"ok": False, "erreur": "image illisible"})
+                return
+            self.envoyer(200, corps, type_, [("ETag", etag), ("Cache-Control", "private, max-age=600"), ("Content-Disposition", "inline")])
             return
         if urlsplit(self.path).path == "/api/instantane":   # P6 : tous les JSON d'un cycle en une requête, ETag commun (304 si rien n'a changé)
             q = parse_qs(urlsplit(self.path).query)

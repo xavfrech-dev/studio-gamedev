@@ -4,6 +4,8 @@ Lit le transcript JSONL de la session active (le .jsonl le plus récent de ~/.cl
 sous-agents) en flux : on ne relit que la fin (offset). Garde seulement ce que Claude Code affiche : le texte de
 l'utilisateur et le texte de l'assistant. Jamais les résultats d'outils, les appels d'outils, les pensées, les rappels
 système, les notifications de tâches ni les conversations des sous-agents. Rien n'est copié ailleurs.
+Images (15/11) : les images envoyées au chat (SendUserFile) sont jointes au message suivant de l'assistant (champ « images »,
+chemins locaux ; la page les montre par GET /api/image), ou forment un message à elles si aucun texte ne suit.
 """
 import glob
 import json
@@ -28,6 +30,12 @@ def session_active(dossier):
         return None
 
 
+def _message_images(d, images):
+    """Message de l'assistant fait seulement d'images envoyées au chat (pas de texte après elles dans ce lot)."""
+    return {"id": str(d.get("uuid") or d.get("id") or "envoi") + "-images", "role": "assistant", "texte": "", "images": images[:24],
+            "t": str(d.get("timestamp") or "")[:40]}
+
+
 def _texte_visible(d):
     """(role, texte) si la ligne est un message que Claude Code affiche, sinon None."""
     t = d.get("type")
@@ -46,6 +54,26 @@ def _texte_visible(d):
     if not texte:
         return None
     return ("utilisateur" if t == "user" else "assistant"), texte
+
+
+IMAGES_EXT = (".png", ".jpg", ".jpeg", ".webp", ".gif")
+
+
+def _images_envoyees(d):
+    """Images montrées à l'utilisateur dans le chat par cette ligne (appel SendUserFile de l'assistant), chemins absolus."""
+    if d.get("type") != "assistant" or d.get("isSidechain"):
+        return []
+    c = (d.get("message") or {}).get("content")
+    out = []
+    for b in c if isinstance(c, list) else []:
+        if isinstance(b, dict) and b.get("type") == "tool_use" and b.get("name") == "SendUserFile" and isinstance(b.get("input"), dict):
+            for f in b["input"].get("files") or []:
+                if isinstance(f, str) and f.strip().lower().endswith(IMAGES_EXT):
+                    f = f.strip()
+                    if not os.path.isabs(f) and d.get("cwd"):
+                        f = os.path.join(str(d["cwd"]), f)
+                    out.append(os.path.normpath(f))
+    return out
 
 
 def lire(chemin, depuis=None):
@@ -68,7 +96,7 @@ def lire(chemin, depuis=None):
             return {"fichier": os.path.basename(chemin), "offset": fin, "messages": [], "debut": reprise}
         return {"fichier": os.path.basename(chemin), "offset": debut, "messages": [], "debut": reprise}
     lignes, offset = bloc[:dernier].split(b"\n"), debut + dernier + 1
-    out = []
+    out, images, dernier_envoi = [], [], {}
     for l in lignes:
         if b'"type":"user"' not in l and b'"type":"assistant"' not in l and b'"type": "user"' not in l and b'"type": "assistant"' not in l:
             continue
@@ -78,7 +106,19 @@ def lire(chemin, depuis=None):
             d = json.loads(l.decode("utf-8", "replace"))
         except ValueError:
             continue
+        envoyees = _images_envoyees(d)            # images envoyées au chat : jointes au texte de l'assistant qui suit
+        if envoyees:
+            images += [x for x in envoyees if x not in images]
+            dernier_envoi = d
         v = _texte_visible(d)
+        if v and v[0] == "utilisateur" and images:  # personne n'a commenté les images : elles restent un message à elles
+            out.append(_message_images(dernier_envoi, images))
+            images = []
         if v:
-            out.append({"id": str(d.get("uuid") or d.get("id") or len(out)), "role": v[0], "texte": v[1][:20000], "t": str(d.get("timestamp") or "")[:40]})
+            m = {"id": str(d.get("uuid") or d.get("id") or len(out)), "role": v[0], "texte": v[1][:20000], "t": str(d.get("timestamp") or "")[:40]}
+            if v[0] == "assistant" and images:
+                m["images"], images = images[:24], []
+            out.append(m)
+    if images:
+        out.append(_message_images(dernier_envoi, images))
     return {"fichier": os.path.basename(chemin), "offset": offset, "messages": out[-200:], "debut": reprise}
