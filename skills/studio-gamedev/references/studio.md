@@ -270,7 +270,7 @@ Règles lues par la page (`roadmap.js`, fonction `calculer`) :
 |---|---|
 | `prenom` | prénom de l'utilisateur (titre du jalon) ; vide : « Demandes de l'utilisateur » |
 | `categorie` | `projet` (le jeu : tâches du jalon) ; `studio` ou `skill` (le studio : groupe « Pour le studio », à part, hors de la barre) |
-| `statut` | comme les tâches : `a_faire`, `en_cours`, `pret`, `verse` (dans la branche principale, prouvé), `ecart` ; à défaut, `etat` en texte libre (« fait… », « branche… », « en cours… ») |
+| `statut` | comme les tâches : `a_faire`, `en_cours`, `pret`, `verse` (dans la branche principale, prouvé), `ecart` ; à défaut, `etat` en texte libre (« fait… », « branche… », « en cours… » ; « fait, partiel » compte en cours) |
 | `vu` | `true` quand l'utilisateur l'a vue (en jeu, dans le studio) |
 | `priorite` | entier facultatif, plus petit d'abord ; sinon : prêt, en cours, à faire, puis versé ; à égalité, la plus ancienne d'abord |
 

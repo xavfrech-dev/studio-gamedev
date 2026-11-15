@@ -74,7 +74,7 @@
   function statutDemande(d) {
     if (STATUTS.includes(d.statut)) return d.statut;
     const e = String(d.etat || '').trim().toLowerCase();
-    if (/^(fait|versé|verse|done|merged)/.test(e)) return 'verse';
+    if (/^(fait|versé|verse|done|merged)/.test(e)) return /partiel|partial/.test(e.split(';')[0]) ? 'en_cours' : 'verse';   // « fait, partiel » : pas encore versé en entier
     if (/^(prêt|pret|branche|ready|branch)/.test(e)) return 'pret';
     if (/^(en cours|à vérifier|a verifier|in progress|to check)/.test(e)) return 'en_cours';
     return 'a_faire';
@@ -95,7 +95,8 @@
     const f = projet.filter(tacheFinie).length, vues = projet.filter(t => tacheFinie(t) && t.vu).length;
     const titre = (en ? 'Requests from ' : 'Demandes de ') + prenom;
     return { id: 'JX', titre, hors_v1: true, prenom, taches: projet, total: projet.length, faites: f, vues, ferme: projet.length > 0 && vues === projet.length,
-      av: avancement(projet), pct: projet.length ? Math.round(100 * f / projet.length) : 0,
+      av: avancement(projet), pct: avancement(projet).avance,   // % pondéré, comme la barre (et comme le studio WILDLANDS)
+     
       but: en ? `What ${prenom} asked for on top of the plan, by priority.` : `Ce que ${prenom} a demandé en plus du plan, par ordre de priorité.`,
       critere_fin: en ? `Closed when every project request is merged and seen by ${prenom}.` : `Fermé quand toutes les demandes du projet sont versées et vues par ${prenom}.`,
       succes: { id: 'jalon-JX', icone: '★', titre: (en ? 'JX closed: ' : 'JX fermé : ') + titre, description: en ? 'Every request is done and seen.' : 'Toutes les demandes sont faites et vues.', son: 'grand' },
@@ -223,7 +224,7 @@
     return `<section class="rm-jalon${j.ferme ? ' ferme' : ''}${courant ? ' courant' : ''}">
       <h3><span class="rm-jid">${esc(j.id)}</span> ${esc(j.titre)}${j.ferme ? ` <span class="rm-ok">${esc(t('jalon_termine'))}</span>` : courant ? ` <span class="rm-cours">${esc(t('en_cours'))}</span>` : ''}</h3>
       ${j.but ? `<p class="rm-but">${esc(j.but)}</p>` : ''}
-      ${pile(j.av)}<p class="rm-discret">${esc(texteAv(j.av))} · <span class="rm-est" title="${esc(j.estimation && j.estimation.fin ? j.estimation.fin.replace('T', ' ') : '')}">${esc(temps(j.estimation, j.taches))}</span></p>
+      ${pile(j.av)}<p class="rm-discret">${esc(texteAv(j.av))}${j.hors_v1 ? ' · ' + esc(opts.langue === 'en' ? `${j.vues || 0} seen by ${j.prenom}` : `${j.vues || 0} vue${(j.vues || 0) > 1 ? 's' : ''} par ${j.prenom}`) : ''} · <span class="rm-est" title="${esc(j.estimation && j.estimation.fin ? j.estimation.fin.replace('T', ' ') : '')}">${esc(temps(j.estimation, j.taches))}</span></p>
       <p class="rm-discret">${j.critere_fin ? `<b>${esc(t('critere_fin'))}${dp()}</b> ${esc(j.critere_fin)}` : ''}${j.fin_visee ? ` · ${esc(t('fin_visee'))} ${date(j.fin_visee)}` : ''}${j.heures ? ` · ${esc(t('estimation'))} ${Math.round(j.heures)} ${esc(t('heures'))}` : ''}${(j.depend_de || []).length ? ` · ${esc(t('depend_de'))} ${j.depend_de.map(esc).join(', ')}` : ''}</p>
       ${s ? `<div class="rm-badge${gagne ? ' ok' : ''}" title="${esc(s.description || '')}"><span class="bi">${gagne ? icone(s.icone) : VERROU}</span><span><b>${esc(s.titre)}</b><small>${gagne ? (s.obtenu_le ? `${esc(t('succes_gagne'))} ${date(s.obtenu_le)}` : esc(s.description || '')) : esc(t('succes_verrouille')) + (s.description ? ' · ' + esc(s.description) : '')}</small></span></div>` : ''}
       <ul class="rm-taches">${j.taches.map(vTache).join('')}</ul>${(j.groupes || []).map(g => `<details class="rm-groupe"><summary><b>${esc(g.titre)}</b> · ${g.av.avance} % · ${g.av.valides}/${g.av.total}</summary>${pile(g.av)}<ul class="rm-taches">${g.taches.map(vTache).join('')}</ul></details>`).join('')}</section>`;
