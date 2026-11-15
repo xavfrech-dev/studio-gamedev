@@ -120,6 +120,8 @@ def essai(d):
     assert {x["corps"]["agent"] for x in tempo} == {"art", "code"}, tempo
     assert next(x for x in tempo if x["corps"]["agent"] == "code")["corps"]["tache_id"] == "J1-04", tempo   # sans moteur, pas sa tâche bloquée
     assert any(x["route"] == "/api/demande" and "bloqués" in x["corps"]["texte"] for x in e), e
+    # messages du contremaître : origine auto:tyrannie (jamais comptés « tes messages attendent »)
+    assert all(x["corps"].get("origine") == "auto:tyrannie" for x in e if x["route"] == "/api/demande"), e
     n = len(e)
     a.d["tyr"]["tour"] -= 61
     a.passer(conf, p, None, progs, [], None, {})

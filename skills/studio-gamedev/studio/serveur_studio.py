@@ -17,7 +17,8 @@ POST : petite API JSON réservée à la page servie par ce même serveur :
   /api/questionnaire  {cle?, valeur?, source?, via?, texte_brut?, raison?, chapitre_courant?, chapitres_finis?, etat?, mode?, langue?}
                       -> .studio/reponses_questionnaire.json (fusion, écriture atomique)
   /api/profil         {maitre?, assistant?, voix?}                 -> .studio/profil.json (fusion, valeurs bornées)
-  /api/demande        {cible, texte, via, sujet?, en_reponse_a?, brouillon?, perimetre?}  -> .studio/demandes_vocales/<horodatage>_<cible>.json
+  /api/demande        {cible, texte, via, sujet?, en_reponse_a?, brouillon?, perimetre?, origine?}  -> .studio/demandes_vocales/<horodatage>_<cible>.json
+                      origine (automatismes seulement) : auto:tyrannie | auto:relecture-partagee | auto:vague.<heure> ; jamais compté « en attente »
                       cible : assistant, un poste, controleur-modeles (« Le bon modèle pour chacun ») ou auditeur (si activé) ;
                       brouillon : pièces jointes rangées dans demandes_vocales/pieces/<id du message>/, chemins absolus listés
   /api/piece          corps brut, ?brouillon=<id>&nom=<fichier>    -> demandes_vocales/pieces/_brouillons/<id>/ (20 Mo, 10 fichiers, 60 Mo, types limités)
@@ -127,13 +128,16 @@ VIAS = {"clic", "ecrit", "voix", "passer", "analyse"}
 ETATS = {"en_cours", "termine"}
 MODES = {"rapide", "complet", "adoption"}
 ORIGINE_RE = re.compile(r"^(page|tache:[A-Za-z0-9_.:-]{1,80}|auto:fin-de-tache|auto:temporaire)$")
+ORIGINE_DEMANDE_RE = re.compile(r"^auto:(tyrannie|relecture-partagee|vague\.[0-9-]{1,20})$")   # /api/demande déposée par les automatismes
 NB_BUREAUX = 12
 DOUBLON_S = 60
 AUTO_ATTENTE_MAX = 1        # attribution automatique : une seule en attente par poste
 AUTO_PAR_HEURE = 4          # … et 4 par heure et par poste au plus
 EMBAUCHE_AUTO_DELAI_S = 3600
 OPTIM_DELAI_MIN = 30
-FINIS = ("fini", "faite", "écart", "ecart", "annul", "pas lancé")
+# mots de fin que Claude écrit dans statuts.json : « fini », mais aussi « fait », « traité », « terminé », « refusé » (correctif du
+# studio d'origine : une demande « terminé » restait en cours pour toujours, renvoi 409 et attribution automatique 429)
+FINIS = ("fini", "fait", "trait", "termin", "refus", "écart", "ecart", "annul", "pas lancé")
 
 # Valeurs permises de profil.json (references/questionnaire.md, « Format de profil.json »)
 PERMIS = {
@@ -1548,6 +1552,9 @@ def route_demande(d):
     sujet = texte(d, "sujet", 20)
     if sujet not in ("", "optimisation"):
         raise Refus(400, "sujet : optimisation ou rien")
+    origine = texte(d, "origine", 40)             # messages des automatismes seulement : jamais comptés « en attente » (message_auto)
+    if origine and not ORIGINE_DEMANDE_RE.match(origine):
+        raise Refus(400, "origine : auto:tyrannie, auto:relecture-partagee, auto:vague.<heure> ou rien")
     en_rep = texte(d, "en_reponse_a", 120)       # réponse écrite sous une réponse de l'assistant (id de l'entrée)
     if en_rep and not re.match(r"^[A-Za-z0-9_.:+-]{1,120}$", en_rep):
         raise Refus(400, "en_reponse_a invalide")
@@ -1566,6 +1573,8 @@ def route_demande(d):
     donnees = dict({"cible": cible, "texte": txt, "via": via, "cree_le": maintenant(), "statut": "nouvelle"}, **extra)
     if sujet:
         donnees["sujet"] = sujet
+    if origine:
+        donnees["origine"] = origine
     if en_rep:
         donnees["en_reponse_a"] = en_rep
     pieces = []

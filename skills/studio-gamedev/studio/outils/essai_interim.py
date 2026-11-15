@@ -85,7 +85,7 @@ def main(argv=None):
         assert all(x in m for x in LOT[4:]) and not any(x in m for x in LOT[:4]), m
         assert envois(a, "/api/agent") == [{"id": "relecteur-interim-1", "metiers": ["relecture"]}], envois(a, "/api/agent")
         dem = [x for x in envois(a, "/api/demande") if x.get("cible") == "relecture"]
-        assert len(dem) == 1 and "Tu gardes seulement" in dem[0]["texte"] and LOT[0] in dem[0]["texte"] and LOT[7] in dem[0]["texte"].split("Tu gardes")[0], dem
+        assert len(dem) == 1 and dem[0].get("origine") == "auto:relecture-partagee" and "Tu gardes seulement" in dem[0]["texte"] and LOT[0] in dem[0]["texte"] and LOT[7] in dem[0]["texte"].split("Tu gardes")[0], dem
         assert r["partages"] and r["partages"][-1]["bulle"] == "je partage ma relecture avec un intérimaire", r["partages"]
         assert r["interimaires"] == ["relecteur-interim-1"], r
         types = [j["type"] for j in a.d["journal"]]

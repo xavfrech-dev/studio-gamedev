@@ -576,6 +576,19 @@ def cmd_fonctions(d, port):
         api("/api/demande", {"cible": "assistant", "texte": "Optimise encore.", "sujet": "optimisation"}, 429)
         ok("demandes : nom unique (ms + code) en mode exclusif, doublon de moins de 60 s ignoré, une seule optimisation en attente")
 
+        # message déposé par le studio lui-même (contremaître de la tyrannie) : signal pour l'assistant, jamais « tes messages attendent »
+        api("/api/demande", {"cible": "assistant", "texte": "Contremaître : agents inactifs à relancer : Renfort", "via": "ecrit", "origine": "auto:tyrannie"})
+        api("/api/demande", {"cible": "assistant", "texte": "Origine inventée.", "origine": "auto:nimporte"}, 400)
+        e_a = etat_une_fois()
+        m_a = [m for m in e_a.get("messages") or [] if str(m.get("texte", "")).startswith("Contremaître")]
+        n_u = sum(1 for m in e_a.get("messages") or [] if m.get("statut") == "nouvelle" and not str(m.get("texte", "")).startswith("Contremaître"))
+        se = e_a.get("session") or {}
+        if len(m_a) != 1 or m_a[0].get("auto") is not True or se.get("messages") != n_u:
+            echec(f"message automatique compté « en attente » : {m_a} ; session {se} (attendu {n_u} message(s) de l'utilisateur)")
+        if "m.statut === 'nouvelle' && !m.auto" not in page:
+            echec("studio.html : le bandeau « message en attente » ne filtre pas les messages automatiques (m.auto)")
+        ok("message du contremaître (origine auto:tyrannie) : « auto » dans le fil, hors du compte de session et du bandeau « en attente » ; origine inconnue refusée (400)")
+
         # recrue, puis fin de tâche après un vrai calme
         api("/api/recruter", {"nom": "ancien-essai", "nom_affiche": "Ancien", "role": "x", "mission": "x", "lancer": False}, 400)   # préfixe réservé aux fiches rangées
         api("/api/recruter", {"nom": "renfort-essai", "nom_affiche": "Renfort", "role": "Aide polyvalente", "mission": "Tâches sans moteur.", "lancer": False})
@@ -646,9 +659,10 @@ def cmd_fonctions(d, port):
         api("/api/renvoyer", {"nom": "renfort-essai"}, 409)
         api("/api/renvoyer", {"nom": "direction"}, 403)
         statuts = lire(os.path.join(st, "demandes", "statuts.json"), {}) or {}
-        for f in os.listdir(os.path.join(st, "demandes")):
+        mots = iter(("terminé", "traité", "fait"))     # mots de fin autres que « fini » (Claude les écrit aussi) : demandes finies
+        for f in sorted(os.listdir(os.path.join(st, "demandes"))):
             if f.endswith("_renfort-essai.json"):
-                statuts[f] = {"statut": "fini", "maj": maintenant()}
+                statuts[f] = {"statut": next(mots, "fini"), "maj": maintenant()}
         ecrire(os.path.join(st, "demandes", "statuts.json"), statuts)
         api("/api/renvoyer", {"nom": "renfort-essai", "motif": "essai"})
         agent = os.path.join(d, ".claude", "agents", "renfort-essai.md")

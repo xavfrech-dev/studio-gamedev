@@ -456,12 +456,12 @@ class Automatismes:
         sd = ",".join(sorted(f"{x['id']}:{x['type']}" for x in diag))
         if diag and sd != ty.get("sig_diag") and maintenant - ty.get("diag_t", 0) >= ECART_DIAG_S:
             texte = tx("bloques", en) + "\n".join(f"- {x['nom']} {tx('est_bloque', en)} : {x['raison']} → {x['action']}" for x in diag)
-            if self.poster("/api/demande", {"cible": "assistant", "texte": texte[:3900], "via": "ecrit"}).get("ok"):
+            if self.poster("/api/demande", {"cible": "assistant", "texte": texte[:3900], "via": "ecrit", "origine": "auto:tyrannie"}).get("ok"):
                 ty["sig_diag"], ty["diag_t"] = sd, maintenant
         s = ",".join(sorted(q["id"] for q in l))
         if l and (s != ty.get("sig") or maintenant - ty.get("derniere", 0) > ECART_DIAG_S):
             texte = tx("inactifs", en) + ", ".join(q.get("nom") or q["id"] for q in l)
-            if self.poster("/api/demande", {"cible": "assistant", "texte": texte, "via": "ecrit"}).get("ok"):
+            if self.poster("/api/demande", {"cible": "assistant", "texte": texte, "via": "ecrit", "origine": "auto:tyrannie"}).get("ok"):
                 ty["sig"], ty["derniere"] = s, maintenant
         # renvoi d'une recrue à 100 % sans travail de son métier depuis 30 min (le serveur refuse si une tâche est en cours)
         for q in [x for x in c["postes"] if x.get("genre") == "recrue"]:
@@ -750,7 +750,8 @@ class Automatismes:
             if r.get("ok"):
                 self.poster("/api/demande", {"cible": pid, "texte": tx("it_garde", en, m=int(reste), avec=avec, n=len(part),
                                                                         liste_av="\n".join(f"- {x}" for x in part),
-                                                                        liste="\n".join(f"- {x}" for x in garde))[:1990], "via": "ecrit"})
+                                                                        liste="\n".join(f"- {x}" for x in garde))[:1990], "via": "ecrit",
+                                             "origine": "auto:relecture-partagee"})
                 st["partages"].append({"t": int(maintenant), "poste": pid, "avec": avec, "n": len(part), "garde": len(garde), "bulle": bulle})
             journal.append({"t": int(maintenant), "type": "partage", "poste": pid, "avec": avec, "n": len(part), "ok": bool(r.get("ok")),
                             "refus": r.get("erreur")})

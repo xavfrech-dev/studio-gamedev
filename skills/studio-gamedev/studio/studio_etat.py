@@ -618,7 +618,8 @@ class Studio:
     def demandes_en_attente(demandes, messages):
         """F : ce qui attend une session Claude : demandes de la page ou auto: pas encore prises, messages « nouvelle »."""
         n_dem = sum(1 for d in demandes or [] if d.get("lancer") and not d.get("vu"))
-        n_msg = sum(1 for m in messages or [] if isinstance(m, dict) and m.get("statut") == "nouvelle")
+        # un message déposé par le studio lui-même (auto) n'est pas « ton message attend » : il n'allume jamais le bandeau
+        n_msg = sum(1 for m in messages or [] if isinstance(m, dict) and m.get("statut") == "nouvelle" and not m.get("auto"))
         return n_dem, n_msg
 
     def roadmap(self):
@@ -689,6 +690,7 @@ class Studio:
                 return {"id": str(d.get("id") or os.path.basename(f)[:-5])[:80], "cible": str(d.get("cible") or "")[:40],
                         "texte": str(d["texte"])[:600], "cree_le": str(d.get("cree_le") or "")[:19],
                         "statut": str(d.get("statut") or "nouvelle")[:20], "via": str(d.get("via") or "")[:10],
+                        **({"auto": True} if message_auto(d) else {}),   # déposé par le studio lui-même (contremaître, relecture partagée…)
                         **({"pieces": [os.path.basename(str(x))[:90] for x in d["pieces"][:10]]} if isinstance(d.get("pieces"), list) and d["pieces"] else {})}
             return None
         tous = sorted(self.g("demandes_vocales", "*.json"))
@@ -1456,6 +1458,20 @@ class Studio:
             ecrire_json(self.f("etat.json"), etat)
             self.dernier_etat, self.passage_fini = etat, fini
         return etat
+
+
+# Messages que le studio dépose lui-même (contremaître de la tyrannie, relecture partagée, vague suivante) : des signaux pour
+# l'assistant, pas des messages de l'utilisateur. Ils ne comptent jamais dans « tes messages attendent » (bandeau de session,
+# bandeau « message en attente » de la page : champ « auto »). Origine auto:… (automatismes.py) ; débuts de texte pour ceux
+# déposés avant que l'origine soit écrite. (Correctif du studio d'origine : le bandeau rouge « en attente de Claude depuis
+# 11 min » s'allumait sur un message du contremaître.)
+AUTO_DEBUTS = ("Contremaître :", "Foreman:", "Relecture partagée", "Review shared", "Vague suivante", "Next wave")
+
+
+def message_auto(d):
+    if str(d.get("origine") or "").startswith("auto:"):
+        return True
+    return str(d.get("texte") or "").lstrip().startswith(AUTO_DEBUTS)
 
 
 def verrou(studio, forcer):

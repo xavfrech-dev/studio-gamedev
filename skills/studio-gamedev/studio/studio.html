@@ -4851,7 +4851,7 @@ document.addEventListener('keydown', e => {
 // Message de l'utilisateur sans réponse depuis 10 min : bien visible
 function verifierMessages() {
   const el = $('#msg-attente'); if (!el) return;
-  const l = (ETAT && Array.isArray(ETAT.messages) ? ETAT.messages : []).filter(m => m && m.statut === 'nouvelle' && Date.now() - Date.parse(m.cree_le || 0) > 10 * 60000);
+  const l = (ETAT && Array.isArray(ETAT.messages) ? ETAT.messages : []).filter(m => m && m.statut === 'nouvelle' && !m.auto && Date.now() - Date.parse(m.cree_le || 0) > 10 * 60000);
   // sous l'en-tête, et sous le bandeau « données du studio anciennes » s'il est affiché (au téléphone, il cachait son texte et Relancer)
   const basAl = ['#alerte-etat', '#alerte-etat-ancien'].map(s => $(s)).filter(x => x && !x.hidden && x.getClientRects().length).reduce((m, x) => Math.max(m, x.getBoundingClientRect().bottom), 0);
   el.style.setProperty('--haut', Math.max((($('#entete') && $('#entete').offsetHeight) || 70), Math.ceil(basAl)) + 8 + 'px');
