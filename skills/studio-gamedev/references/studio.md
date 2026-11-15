@@ -71,6 +71,7 @@ Gabarit : `modeles/studio.config.json`.
    !.studio/roadmap.json
    !.studio/studio.config.json
    ```
+   (`.studio/demandes_hors_plan.json` peut aussi être versionné si l'utilisateur le souhaite : ses citations y sont.)
    Si des fichiers de `.studio/` sont déjà suivis par git, dis-le et propose `git rm --cached` (sans commit sans accord). En adoption, passe par `python -I -B <skill>/studio/outils/adoption.py gitignore --projet <projet>` : le bloc n'est ajouté que s'il manque, à la fin, sans toucher au reste.
 4. Lance en arrière-plan : `python -I -B <skill>/studio/serveur_studio.py --projet <projet>` (port : `--port`, sinon `studio.config.json`, sinon 8790 ; s'il est pris, le premier libre après). La première ligne affichée donne l'adresse.
 5. Ouvre `http://127.0.0.1:<port>/studio.html` (navigateur intégré s'il existe, sinon donne le lien).
@@ -142,6 +143,7 @@ Tous dans `<projet>/.studio/` (le « dossier du studio »).
 | `decisions.json` | Claude / assistant | page | `[{"id", "titre", "explication", "choix": [{"id", "libelle"}], "recommande", "cree_le", "poste"?, "reserve"?: "depense" \| "suppression" \| "publication" \| "systeme" \| "compte", "reserve_utilisateur"?}]` → la cloche sonne, une bulle « ? » apparaît au-dessus du personnage `poste` (sinon de l'assistant) et la décision entre dans le fil de conversation. Tranchée par le coordinateur (`outils/cloche.py decider`) : `statut: "repondue"`, `reponse`, `repondue_le`, `decide_par: "coordinateur"` ou `"coordinateur (absence)"`, `decide_le`, `raison`, `en_absence`, `recommandation_suivie` ; si l'utilisateur la change ensuite (« Changer » dans « Pendant ton absence »), le serveur ajoute `change_par_utilisateur` et garde l'ancien choix dans `reponse_coordinateur` ; une décision `reserve`, `reserve_utilisateur` ou `depense` n'est jamais tranchée par lui. Assistant actif : `cloche.py proposer` pose une proposition (`genre: "proposition"`, id `prop-<base>-<date>`, `base`, choix `faire` ★ / `plus_tard`, `raison`, `origine`, `action`, `propose_par: "assistant"` ; 3 ouvertes au plus) ; `cloche.py note` note une petite décision prise seul (`genre: "petite_decision"`, `petite`, déjà `repondue`, `decide_par: "assistant"`, `raison`, `en_absence`) |
 | `reponses.json` | page (API) | Claude | `[{"id", "choix", "texte_libre", "repondu_le"}]` → reportées dans `DECISIONS.md` |
 | `roadmap.json` | Claude (fin du questionnaire, puis à chaque versement) | page | « roadmap.json » ci-dessous |
+| `demandes_hors_plan.json` | Claude (dès qu'une demande hors plan arrive, puis à chaque point) | page (`roadmap.js` : jalon JX) | « demandes_hors_plan.json » ci-dessous |
 | `analyse_projet.json`, `analyse_projet.md` | `adoption.py analyser` (adoption) | Claude | inventaire du projet existant : `moteur` {nom, version, langage, preuve, details}, `scenes`, `code`, `systemes[]` {id, titre, preuve, carte, poste, estimation_standard_h}, `assets`, `docs`, `pitch_readme`, `conventions`, `tests`, `todo`, `git`, `calibrage` {heures_deja_estimees, methode, heures_standard_de_l_existant, facteur, heures_par_semaine_observees}, `deductions` {sures, probables}, `existant[]` (→ J0), `manques`, `postes_proposes`, `fichiers_proteges[]` {chemin, action : `a_cote`, `bloc` ou `bloc_gitignore`, cible}, `agents_existants`, `resume` (5 lignes) |
 | `empreintes_adoption.json` | `adoption.py analyser` (première analyse ; `--nouvelle-photo` pour la refaire) | `adoption.py verifier` | `{"cree_le", "fichiers": {"<chemin>": {"sha256", "taille"}}}` |
 | `propositions/<fichier>.bloc.md` | Claude (adoption) | Claude, utilisateur | bloc proposé pour un fichier existant (`CLAUDE.md`…), en attente d'accord |
@@ -252,6 +254,27 @@ Règles lues par la page (`roadmap.js`, fonction `calculer`) :
 - Ce qui vient du fichier est affiché comme du texte (jamais comme du HTML) ; icônes et sons seulement en chemins relatifs du studio.
 
 **Dans la page** : `<link rel="stylesheet" href="roadmap.css"><script src="roadmap.js"></script>`, puis `Roadmap.installer({langue, barre: <barre des boutons>, succes: <fonction de succès du studio, facultative>})` ajoute le bouton **Roadmap** (avec le % d'avancement) ; quand le maître valide le récapitulatif (`fin.valider = oui`), la page appelle `Roadmap.voici()` : écran « J'écris ta roadmap… » sans bouton fermer, puis « Voici ta roadmap » avec fanfare dès que `roadmap.json` arrive, et bouton « C'est parti ! ».
+
+## demandes_hors_plan.json : le jalon « Demandes de <prénom> »
+
+Écrit par Claude dans `<projet>/.studio/demandes_hors_plan.json` **dès que l'utilisateur demande quelque chose qui n'est pas, ou mal, dans la roadmap** (chat, dictée, réponse dans le studio), puis tenu à jour à chaque point. La page (`roadmap.js`, fonction `jalonDemandes`) le relit avec `roadmap.json` (toutes les 10 s) et en fait le jalon **JX « Demandes de <prénom> »**, sous « En plus de la V1 » : même barre empilée, même % pondéré, même badge et même succès que les autres jalons. Il ne compte **pas** dans le % de la V1 ni dans le niveau ; ne recopie pas ces demandes dans `roadmap.json`.
+
+```json
+{"version": 1, "prenom": "Léa", "demandes": [
+  {"id": "D-001", "date": "2026-11-15 09:37", "citation": "ses mots exacts", "quoi": "titre court", "categorie": "projet",
+   "statut": "en_cours", "tache": "J2-04 (ou « nouvelle »)", "preuve": "commit, fichier", "vu": false, "priorite": null}
+]}
+```
+
+| Champ | Sens |
+|---|---|
+| `prenom` | prénom de l'utilisateur (titre du jalon) ; vide : « Demandes de l'utilisateur » |
+| `categorie` | `projet` (le jeu : tâches du jalon) ; `studio` ou `skill` (le studio : groupe « Pour le studio », à part, hors de la barre) |
+| `statut` | comme les tâches : `a_faire`, `en_cours`, `pret`, `verse` (dans la branche principale, prouvé), `ecart` ; à défaut, `etat` en texte libre (« fait… », « branche… », « en cours… ») |
+| `vu` | `true` quand l'utilisateur l'a vue (en jeu, dans le studio) |
+| `priorite` | entier facultatif, plus petit d'abord ; sinon : prêt, en cours, à faire, puis versé ; à égalité, la plus ancienne d'abord |
+
+Le jalon est **fermé** (succès « JX fermé ») quand toutes les demandes `projet` sont `verse` ou `ecart` **et** `vu: true`.
 
 ## Paliers du studio
 

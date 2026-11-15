@@ -67,10 +67,45 @@
     };
   }
 
+  // Jalon « Demandes de <prénom> » (JX) : ce que l'utilisateur a demandé en plus du plan, écrit par Claude dans
+  // .studio/demandes_hors_plan.json (references/studio.md). Tâches = demandes « projet » par priorité ; « studio » à part.
+  // Hors du % de la V1 ; fermé quand toutes les demandes projet sont versées (ou écart) ET vues par l'utilisateur.
+  const RANG_D = { pret: 0, en_cours: 1, a_faire: 2, verse: 3, ecart: 4 };
+  function statutDemande(d) {
+    if (STATUTS.includes(d.statut)) return d.statut;
+    const e = String(d.etat || '').trim().toLowerCase();
+    if (/^(fait|versé|verse|done|merged)/.test(e)) return 'verse';
+    if (/^(prêt|pret|branche|ready|branch)/.test(e)) return 'pret';
+    if (/^(en cours|à vérifier|a verifier|in progress|to check)/.test(e)) return 'en_cours';
+    return 'a_faire';
+  }
+  function jalonDemandes(doc, langue) {
+    const en = String(langue || 'fr').slice(0, 2) === 'en';
+    const liste = Array.isArray(doc) ? doc : (doc && Array.isArray(doc.demandes) ? doc.demandes : []);
+    if (!liste.length) return null;
+    const prenom = String((doc && !Array.isArray(doc) && doc.prenom) || '').trim().slice(0, 40) || (en ? 'the user' : 'l’utilisateur');
+    const tache = (d, i) => { const st = statutDemande(d); return { id: String(d.id || ('D-' + (i + 1))).slice(0, 24), titre: String(d.quoi || d.titre || d.citation || '').slice(0, 160), statut: st,
+      priorite: 0, vu: !!d.vu, note: String(d.tache || d.etat || '').slice(0, 200), date: String(d.date || ''), estimation_h: nombre(d.estimation_h, 0) || undefined, _p: Number.isFinite(+d.priorite) && d.priorite !== null && d.priorite !== '' ? +d.priorite : null }; };
+    const trier = ts => ts.sort((a, b) => (a._p === null) - (b._p === null) || (a._p || 0) - (b._p || 0) || RANG_D[a.statut] - RANG_D[b.statut] || a.date.localeCompare(b.date) || a.id.localeCompare(b.id)).map((t, i) => Object.assign(t, { priorite: i + 1 }));
+    const tous = liste.filter(d => d && typeof d === 'object').map(tache);
+    const cat = d => String(d.categorie || 'projet').toLowerCase();
+    const brut = liste.filter(d => d && typeof d === 'object');
+    const projet = trier(tous.filter((t, i) => !['studio', 'skill'].includes(cat(brut[i]))));
+    const studio = trier(tous.filter((t, i) => ['studio', 'skill'].includes(cat(brut[i]))));
+    const f = projet.filter(tacheFinie).length, vues = projet.filter(t => tacheFinie(t) && t.vu).length;
+    const titre = (en ? 'Requests from ' : 'Demandes de ') + prenom;
+    return { id: 'JX', titre, hors_v1: true, prenom, taches: projet, total: projet.length, faites: f, vues, ferme: projet.length > 0 && vues === projet.length,
+      av: avancement(projet), pct: projet.length ? Math.round(100 * f / projet.length) : 0,
+      but: en ? `What ${prenom} asked for on top of the plan, by priority.` : `Ce que ${prenom} a demandé en plus du plan, par ordre de priorité.`,
+      critere_fin: en ? `Closed when every project request is merged and seen by ${prenom}.` : `Fermé quand toutes les demandes du projet sont versées et vues par ${prenom}.`,
+      succes: { id: 'jalon-JX', icone: '★', titre: (en ? 'JX closed: ' : 'JX fermé : ') + titre, description: en ? 'Every request is done and seen.' : 'Toutes les demandes sont faites et vues.', son: 'grand' },
+      groupes: studio.length ? [{ id: 'studio', titre: en ? 'For the studio' : 'Pour le studio', taches: studio, av: avancement(studio) }] : [] };
+  }
+
   // Succès gagnés : jalons fermés (ou marqués obtenus par Claude) + succès final.
   function succesGagnes(c, rm) {
     const out = [];
-    for (const j of c.jalons) {
+    for (const j of c.jalons.concat(c.hors || [])) {
       if (!j.succes || !j.succes.id) continue;
       if (j.ferme || j.succes.obtenu_le) out.push(Object.assign({ jalon: j.id }, j.succes));
     }
@@ -80,13 +115,13 @@
   }
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { calculer, succesGagnes, niveauDepuisXp, seuilNiveau, tacheFinie, STATUTS };
+    module.exports = { calculer, succesGagnes, niveauDepuisXp, seuilNiveau, tacheFinie, STATUTS, jalonDemandes };
   }
   if (typeof document === 'undefined') return;
 
   // ------------------------------------------------------------ page
   const opts = { url: 'roadmap.json', langue: 'fr', periode_s: 10, succes: null, barre: null };
-  let T = {}, RM = null, C = null, sig = '', ouvert = false, modeVoici = false, attenteDepuis = 0, minuteur = null;
+  let T = {}, RM = null, C = null, DEM = null, sig = '', ouvert = false, modeVoici = false, attenteDepuis = 0, minuteur = null;
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
   const t = k => (T && typeof T[k] === 'string') ? T[k] : k;
@@ -179,7 +214,7 @@
     const meta = [tc.poste ? esc(tc.poste) : '', tc.estimation_h ? `${esc(tc.estimation_h)} ${esc(t('heures'))}` : '',
       (tc.depend_de || []).length ? `${esc(t('depend_de'))} ${tc.depend_de.map(esc).join(', ')}` : ''].filter(Boolean).join(' · ');
     return `<li class="rm-tache st-${st}"><span class="rm-case" aria-hidden="true">${ok ? '✓' : st === 'en_cours' ? '…' : ''}</span>
-      <span class="rm-tt"><b><span class="rm-id">${esc(tc.id)}</span> ${esc(tc.titre)}</b>${tc.critere ? `<small>${esc(tc.critere)}</small>` : ''}${meta ? `<small class="rm-meta">${meta}</small>` : ''}</span>
+      <span class="rm-tt"><b><span class="rm-id">${esc(tc.id)}</span> ${tc.priorite ? `<span class="rm-prio">P${esc(tc.priorite)}</span> ` : ''}${esc(tc.titre)}</b>${tc.priorite && tc.note ? `<small>${esc(tc.note)}</small>` : ''}${tc.priorite && ok ? `<small class="rm-meta">${esc(opts.langue === 'en' ? (tc.vu ? 'seen' : 'not seen yet') : (tc.vu ? 'vue' : 'pas encore vue'))}</small>` : ''}${tc.critere ? `<small>${esc(tc.critere)}</small>` : ''}${meta ? `<small class="rm-meta">${meta}</small>` : ''}</span>
       <span class="rm-st">${esc(t('statut_' + st))}</span></li>`;
   }
 
@@ -191,7 +226,7 @@
       ${pile(j.av)}<p class="rm-discret">${esc(texteAv(j.av))} · <span class="rm-est" title="${esc(j.estimation && j.estimation.fin ? j.estimation.fin.replace('T', ' ') : '')}">${esc(temps(j.estimation, j.taches))}</span></p>
       <p class="rm-discret">${j.critere_fin ? `<b>${esc(t('critere_fin'))}${dp()}</b> ${esc(j.critere_fin)}` : ''}${j.fin_visee ? ` · ${esc(t('fin_visee'))} ${date(j.fin_visee)}` : ''}${j.heures ? ` · ${esc(t('estimation'))} ${Math.round(j.heures)} ${esc(t('heures'))}` : ''}${(j.depend_de || []).length ? ` · ${esc(t('depend_de'))} ${j.depend_de.map(esc).join(', ')}` : ''}</p>
       ${s ? `<div class="rm-badge${gagne ? ' ok' : ''}" title="${esc(s.description || '')}"><span class="bi">${gagne ? icone(s.icone) : VERROU}</span><span><b>${esc(s.titre)}</b><small>${gagne ? (s.obtenu_le ? `${esc(t('succes_gagne'))} ${date(s.obtenu_le)}` : esc(s.description || '')) : esc(t('succes_verrouille')) + (s.description ? ' · ' + esc(s.description) : '')}</small></span></div>` : ''}
-      <ul class="rm-taches">${j.taches.map(vTache).join('')}</ul></section>`;
+      <ul class="rm-taches">${j.taches.map(vTache).join('')}</ul>${(j.groupes || []).map(g => `<details class="rm-groupe"><summary><b>${esc(g.titre)}</b> · ${g.av.avance} % · ${g.av.valides}/${g.av.total}</summary>${pile(g.av)}<ul class="rm-taches">${g.taches.map(vTache).join('')}</ul></details>`).join('')}</section>`;
   }
 
   function rendre() {
@@ -222,6 +257,7 @@
       </details>
       <div class="rm-frise" aria-hidden="true">${C.jalons.map(j => `<span class="${j.ferme ? 'ok' : C.en_cours && C.en_cours.id === j.id ? 'cours' : ''}" style="flex:${Math.max(1, j.total)}"><i style="width:${j.av.avance}%"></i><em>${esc(j.id)}</em></span>`).join('')}</div>
       ${C.jalons.map(vJalon).join('')}
+      ${(C.hors || []).length ? `<h3 class="rm-x">${esc(opts.langue === 'en' ? 'On top of V1' : 'En plus de la V1')}</h3><p class="rm-discret">${esc(opts.langue === 'en' ? 'Not counted in the V1 progress. Read from .studio/demandes_hors_plan.json.' : 'Hors du % de la V1. Lu dans .studio/demandes_hors_plan.json.')}</p>${C.hors.map(j => vJalon(Object.assign({}, j, { taches: j.taches }))).join('')}` : ''}
       ${RM.succes_final ? `<h3 class="rm-x">${esc(t('succes_titre'))}</h3><div class="rm-badge${C.finie || RM.succes_final.obtenu_le ? ' ok' : ''}"><span class="bi">${C.finie || RM.succes_final.obtenu_le ? icone(RM.succes_final.icone) : VERROU}</span><span><b>${esc(RM.succes_final.titre)}</b><small>${esc(RM.succes_final.description || '')}</small></span></div>` : ''}
       ${modeVoici ? `<p style="text-align:center;margin-top:22px"><button type="button" class="rm-go">${esc(t('continuer'))}</button></p>` : ''}`;
     const go = corps.querySelector('.rm-go'); if (go) go.onclick = fermer;
@@ -236,10 +272,13 @@
       const r = await fetch(opts.url, { cache: 'no-cache' });
       if (!r.ok) throw new Error(r.status);
       const txt = await r.text();
-      if (txt === sig) return; sig = txt;
+      let dtx = '';
+      try { const rd = await fetch(String(opts.url).replace(/roadmap\.json(\?.*)?$/, 'demandes_hors_plan.json'), { cache: 'no-cache' }); if (rd.ok) dtx = await rd.text(); } catch (e) { /* pas de demandes */ }
+      if (txt + '\u0000' + dtx === sig) return; sig = txt + '\u0000' + dtx;
       const rm = JSON.parse(txt);
       if (!rm || !Array.isArray(rm.jalons)) throw new Error('format');
-      const premier = !RM; RM = rm; C = calculer(RM);
+      try { DEM = dtx ? jalonDemandes(JSON.parse(dtx), opts.langue) : null; } catch (e) { DEM = null; }
+      const premier = !RM; RM = rm; C = calculer(RM); C.hors = DEM ? [DEM] : [];
       majBouton(); nouveautes();
       try { window.dispatchEvent(new CustomEvent('studio:roadmap', { detail: C })); } catch (e) { /* vieux navigateur */ }
       if (ouvert || (premier && modeVoici)) { if (!ouvert) ouvrir(); else rendre(); if (premier && modeVoici) jouer('grand'); }
@@ -280,7 +319,7 @@
     voici() { modeVoici = true; attenteDepuis = Date.now(); ouvrir(); if (!RM) setTimeout(function tic() { if (modeVoici && !RM) { rendre(); setTimeout(tic, 15000); } }, 15000); },
     ouvrir, fermer, recharger: charger,
     etat() { return C; },
-    calculer, succesGagnes
+    calculer, succesGagnes, jalonDemandes
   };
   racine.Roadmap = Roadmap;
 })(typeof window !== 'undefined' ? window : globalThis);

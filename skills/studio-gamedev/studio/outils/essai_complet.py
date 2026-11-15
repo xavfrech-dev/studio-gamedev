@@ -702,7 +702,7 @@ def cmd_fonctions(d, port):
         # fichier fautif ignoré et signalé ; tâche sortie jamais proposée
         casse = os.path.join(st, "progression", "casse.json")
         ecrire(casse, "{pas du json")
-        vieillir(casse, 1)
+        vieillir(casse, 3)   # 15/11 (b571739) : illisible depuis plus de 2 min seulement = anomalie
         rm_ch = os.path.join(st, "roadmap.json")
         rm = lire(rm_ch)
         prets = {t["id"] for t in (lire(os.path.join(st, "taches_disponibles.json"), {}) or {}).get("taches", [])}
