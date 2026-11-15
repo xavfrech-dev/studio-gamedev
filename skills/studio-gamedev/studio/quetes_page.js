@@ -816,6 +816,8 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
       barre(de, false);                                     // la barre attend que le gain arrive
       const vieux = $('#xp-fete'); if (vieux) vieux.remove();
       const lit = m === 'discret' ? 6000 : 8000, src = s0 && s0.length ? s0 : rs.map(x => ({ type: 'autre', nom: x }));   // 15/11 : 8 s lisibles (6 s en discret), pause au survol, clic : fermer
+      const persos = () => { try { if (typeof XpPerso !== 'undefined') XpPerso.gains(src); } catch (e) { /* rien */ } };   // « +N XP » au-dessus du perso de chaque tâche finie (gain sans poste : rien)
+      if (m === 'discret') persos();                         // discret : tout de suite ; en grand : quand la carte a quitté le milieu (sinon elle le cache)
       const hote = nouveau(`<div id="xp-fete" class="${m === 'discret' ? 'discret' : ''}" role="status" aria-live="polite"><div class="xf-carte"><div class="xf-n">+0</div><div class="xf-xp">XP</div>${XpVue.gain(XV(), { de, a, src, n: nA, xa: seuil(nA), xb: seuil(nA + 1), rang: rangAct(nA), ms: lit, tactile: typeof TACTILE === 'function' && TACTILE() })}</div></div>`);
       document.body.appendChild(hote);
       const carte = hote.querySelector('.xf-carte'), nb = hote.querySelector('.xf-n'), fmt = v => '+' + v.toLocaleString(LANGUE === 'en' ? 'en-US' : 'fr-FR');   // « +1 840 », comme le studio d'origine
@@ -848,7 +850,7 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
         carte.style.opacity = '.35';
         await attendre(620);
       }
-      hote.remove();
+      hote.remove(); if (m !== 'discret') persos();
       if (c.el) { c.el.classList.remove('xp-pulse'); void c.el.offsetWidth; c.el.classList.add('xp-pulse'); setTimeout(() => c.el.classList.remove('xp-pulse'), 1300); }
       if (nA > nDe) { const b = $('#niv-xp'); if (b) b.style.width = '100%'; await attendre(fini ? 0 : 750); barre(seuil(nA), false); }
       barre(a, true);
@@ -869,7 +871,7 @@ html[data-theme=clair] #xp-bulle .xb-t span{color:#a0681a}html[data-theme=clair]
     }
     // résumé d'absence : XP gagnée pendant l'absence (photo de départ si elle existe, sinon le cumul vu par cette page)
     function gainAbsence(avant) { const x = lireXp(), g = avant && avant.xp != null && x != null ? x - avant.xp : absent; absent = 0; return Math.max(0, Math.round(g || 0)); }
-    return { outils: { niv, seuil, rang: n => rangAct(n), lireXp }, verifier, raison, gainAbsence, mode, tenu: () => tenuXp, essai: (gain, r) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [], src: [{ type: 'autre', nom: r || 'essai', xp: gain }] }); jouer(); }, base: () => base };
+    return { outils: { niv, seuil, rang: n => rangAct(n), lireXp }, verifier, raison, gainAbsence, mode, tenu: () => tenuXp, essai: (gain, r, poste) => { const xp = lireXp() || 0; file.push({ de: Math.max(0, xp - gain), a: xp, raisons: r ? [r] : [], src: [{ type: 'autre', nom: r || 'essai', xp: gain, poste: poste || '' }] }); jouer(); }, base: () => base };
   })();
   window.addEventListener('studio:roadmap', () => setTimeout(() => { try { Xp.verifier(); } catch (e) { /* rien */ } }, 0));
 

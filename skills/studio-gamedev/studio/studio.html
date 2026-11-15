@@ -2906,6 +2906,65 @@ function lookPoste(p) {
 }
 const lookDe = qui => { const a = PROFIL[qui] && PROFIL[qui].apparence; return a && typeof a === 'object' ? a : (qui === 'maitre' ? { peau: '#c68642', cheveux: { coupe: 'courts', couleur: '#2b1d14' }, tenue: { couleur1: '#3f7a52', couleur2: '#e9c47f' }, accessoire: 'casque_audio' } : { morphologie: 'petite', peau: '#f1c27d', cheveux: { coupe: 'en_bataille', couleur: '#b55239' }, tenue: { couleur1: '#4d6f9c', couleur2: '#f4ecd9' }, accessoire: 'chapeau' }); };
 
+// « +N XP » vert au-dessus du perso qui a fait gagner l'XP (15/11, demande de Xavier) : petit, contour sombre, monte de quelques px et
+// s'efface en 2,6 s ; plusieurs gains rapprochés d'un même perso s'additionnent (le chiffre grandit, il repart) ; jamais sur une bulle de parole,
+// une étiquette, un panneau ni un autre « +N XP » : au-dessus de la tête, sinon au-dessus de son étiquette, sinon à côté de la tête, sinon empilé.
+// Moins d'animations : il apparaît sans bouger. Gain sans poste (jetons, quêtes) : rien au-dessus des persos, la bannière suffit.
+// Réglage « Gains d'XP » coupé : rien (la bannière s'arrête avant d'appeler gains()).
+const XpPerso = (() => {
+  const VIE = 2600, FONDU = 900, ACT = new Map();
+  const norme = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const chev = (r, l) => l.some(o => o && Math.min(r.x1, o.x1) - Math.max(r.x0, o.x0) > 0 && Math.min(r.y1, o.y1) - Math.max(r.y0, o.y0) > 0);
+  function ajouter(id, xp) {
+    xp = Math.round(+xp || 0); if (!id || xp <= 0) return;
+    const n = performance.now(), o = ACT.get(id);
+    if (o && n - o.t0 < VIE - FONDU) { o.xp += xp; o.t0 = n - Math.min(n - o.t0, 160); o.n++; }   // encore bien lisible : on additionne, il repart
+    else ACT.set(id, { xp, t0: n, n: 1, place: -1 });
+  }
+  // src : [{ poste, xp }] (historique des gains) ; api.trouver(poste) : id du perso du bureau, ou '' (rien au-dessus des persos)
+  function gains(src) {
+    const par = new Map();
+    for (const s of src || []) { if (!s || !s.poste || !(+s.xp > 0)) continue; let id = ''; try { id = api.trouver(String(s.poste)) || ''; } catch (e) { id = ''; } if (id) par.set(id, (par.get(id) || 0) + +s.xp); }
+    for (const [id, xp] of par) ajouter(id, xp);
+    return [...par.keys()];
+  }
+  const actifs = () => { const n = performance.now(); for (const [id, o] of ACT) if (n - o.t0 > VIE) ACT.delete(id); return ACT.size > 0; };
+  // c : contexte en px CSS ; tetes : Map id -> [x, y] (haut de la tête, écran) ; propre(id) : rect de son étiquette ou null ;
+  // obst : étiquettes, bulles, panneaux ; k : échelle des étiquettes ; calme : sans mouvement ; W, H : taille de la scène ;
+  // durs : bulles et panneaux (jamais couverts ; scène pleine : une étiquette peut l'être un peu, une bulle jamais)
+  function dessiner(c, tetes, propre, obst, k, calme, W, H, durs) {
+    if (!actifs()) return [];
+    const n = performance.now(), pris = [], out = [], fs = Math.max(10, Math.round(11.5 * (k || 1))), hh = fs + 4, loc = api.locale();
+    c.save(); c.font = `700 ${fs}px system-ui, -apple-system, "Segoe UI", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'alphabetic'; c.lineJoin = 'round';
+    for (const [id, o] of ACT) {
+      const h = tetes.get(id); if (!h || !Number.isFinite(h[0]) || !Number.isFinite(h[1])) continue;
+      const age = n - o.t0, txt = '+' + o.xp.toLocaleString(loc) + ' XP', w = c.measureText(txt).width + 6;
+      const monte = calme ? 0 : 7 * (1 - Math.pow(1 - Math.min(1, age / VIE), 2));
+      const a = (calme ? 1 : Math.min(1, age / 160)) * Math.min(1, Math.max(0, (VIE - age) / FONDU));
+      const rect = (x, y) => { x = Math.min(Math.max(x, w / 2 + 4), (W || 1e5) - w / 2 - 4); y = Math.min(Math.max(y, hh + 11), (H || 1e5) - 4); return { x, y, x0: x - w / 2, x1: x + w / 2, y0: y - hh - 7, y1: y + 2 }; };   // la montée comprise
+      const et = propre(id), cands = [rect(h[0], h[1] - 3), et ? rect((et.x0 + et.x1) / 2, et.y0 - 3) : null, rect(h[0] + 14 + w / 2, h[1] + fs + 2), rect(h[0] - 14 - w / 2, h[1] + fs + 2)];
+      const libre = r => r && !chev(r, obst) && !chev(r, pris);
+      let i = o.place >= 0 && libre(cands[o.place]) ? o.place : cands.findIndex(libre);
+      if (i < 0) i = cands.findIndex(r => r && !chev(r, durs || obst) && !chev(r, pris));   // scène pleine : à côté d'une étiquette, jamais sur une bulle
+      let r = cands[i];
+      if (i < 0) { r = cands[0]; let dy = 0; while (chev(r, pris) && dy < 6 * hh) { dy += hh + 2; r = rect(h[0], h[1] - 3 - dy); } i = 9; }   // tout est pris : empilé au-dessus de la tête
+      o.place = i < 9 ? i : -1; pris.push(r);
+      c.globalAlpha = a; c.lineWidth = 3; c.strokeStyle = 'rgba(10,18,8,.88)'; c.strokeText(txt, r.x, r.y - monte);
+      c.fillStyle = '#7fe36e'; c.fillText(txt, r.x, r.y - monte);
+      out.push({ id, txt, x: Math.round(r.x), y: Math.round(r.y - monte), place: ['tete', 'etiquette', 'droite', 'gauche'][i] || 'empile', alpha: +a.toFixed(2), n: o.n });
+    }
+    c.restore(); api.dernier = out;
+    return out;
+  }
+  // éléments de la page posés sur la scène (bandeau de parole…) : rects en px de la scène, s'ils sont affichés
+  const dom = (cv, ids) => { const c = cv.getBoundingClientRect(), out = []; for (const id of ids) { const e = document.getElementById(id); if (!e || e.hidden) continue; const a = e.getBoundingClientRect(); if (a.width > 0 && a.height > 0) out.push({ x0: a.left - c.left - 4, y0: a.top - c.top - 4, x1: a.right - c.left + 4, y1: a.bottom - c.top + 4 }); } return out; };
+  const api = { gains, ajouter, actifs, dessiner, norme, dom, trouver: () => '', locale: () => 'fr-FR', dernier: [], vider: () => ACT.clear() };
+  return api;
+})();
+// poste d'un gain (tâche de la roadmap : son « poste », un id de studio.config.json, ou son nom) -> perso du bureau
+XpPerso.trouver = poste => { const n = XpPerso.norme(poste), l = postes(), p = l.find(x => x.id === poste) || l.find(x => n && [x.id, x.nom, nomPoste(x), x.role].some(v => XpPerso.norme(v) === n)); return p ? p.id : ''; };
+XpPerso.locale = () => (typeof LANGUE !== 'undefined' && LANGUE === 'en' ? 'en-US' : 'fr-FR');
+window.__xpPerso = XpPerso;   // essais : « +N XP » des persos (dernier dessin, trouver un poste)
 const Bureau = (() => {
   const cv = $('#bureau'); let cx = cv.getContext('2d');
   const POLICE = '"Jeu Interface","Segoe UI",system-ui,sans-serif';
@@ -3425,6 +3484,8 @@ const Bureau = (() => {
     for (const b of boites) if (b.parle) b.et.rect = null;   // étiquette remplacée par sa bulle pendant qu'il parle
     for (const b of ordre.slice().reverse()) if (!b.cache && !b.parle) { try { dessineEtiquette(cx, b, T); } catch (e) { erreur('étiquette', e); } }
     for (const b of boites) if (b.bulle) { try { dessineBulle(cx, b); } catch (e) { erreur('bulle', e); } }
+    // « +N XP » au-dessus du perso qui a fait gagner l'XP : par-dessus tout, à l'écart des bulles, des étiquettes et des panneaux
+    try { if (XpPerso.actifs()) ETQ.xp = XpPerso.dessiner(cx, new Map(liste.map(o => [o.id, [o.ax, o.ay]])), id => places.find(r => r.id === id && r.b && !r.b.cache && !r.b.parle) || null, places.concat(bulles, OBST0, XpPerso.dom(cv, ['parole'])), KL, !ANIM || MOINS_MVT.matches, L.w, L.h, bulles.concat(OBST0, XpPerso.dom(cv, ['parole']))); } catch (e) { erreur('+XP du perso', e); }
     for (const b of boites) if (!b.visible || b.cache) b.et.rect = null;
     ETQ.caches = ordre.filter(b => b.cache).map(b => b.id); if (ETQ.caches.length) ETQ.denseJusque = tn + 12000;
     ETQ.places = places;
@@ -3851,7 +3912,7 @@ const Bureau = (() => {
   ['pointerdown', 'pointermove', 'wheel', 'keydown', 'touchstart'].forEach(ev => addEventListener(ev, () => { derniereInter = performance.now(); }, { passive: true }));
   function boucle(n) {
     requestAnimationFrame(boucle);
-    const pas = !ANIM ? 1000 : n - derniereInter > 120000 ? 100 : 33;
+    const pas = !ANIM && !XpPerso.actifs() ? 1000 : n - derniereInter > 120000 ? 100 : 33;
     if (n - dernier < pas - 4) return;
     const dt = Math.min(.1, (n - dernier) / 1000); dernier = n; try { bouger(dt); dessiner(); } catch (e) { erreur('boucle', e); }
   }
