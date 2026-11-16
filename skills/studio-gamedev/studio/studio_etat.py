@@ -1513,7 +1513,10 @@ class Studio:
 # bandeau « message en attente » de la page : champ « auto »). Origine auto:… (automatismes.py) ; débuts de texte pour ceux
 # déposés avant que l'origine soit écrite. (Correctif du studio d'origine : le bandeau rouge « en attente de Claude depuis
 # 11 min » s'allumait sur un message du contremaître.)
-AUTO_DEBUTS = ("Contremaître :", "Foreman:", "Relecture partagée", "Review shared", "Vague suivante", "Next wave")
+# 16/11 : une relance depuis la cloche (« Relancer l’assistant : « … » ») reprend un message d'origine déjà compté :
+# elle n'allume pas seule le bandeau « en attente » (même correctif que le studio d'origine, « Relance depuis la cloche »).
+AUTO_DEBUTS = ("Contremaître :", "Foreman:", "Relecture partagée", "Review shared", "Vague suivante", "Next wave",
+               "Relancer l’assistant :", "Relancer l'assistant :", "Remind the assistant :", "Remind the assistant:")
 
 
 def message_auto(d):
