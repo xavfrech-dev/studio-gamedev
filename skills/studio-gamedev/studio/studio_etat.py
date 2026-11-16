@@ -896,6 +896,12 @@ class Studio:
             # même s'il reste un vieux fichier de progression : c'est elle que montrent le bandeau et les minis du groupe
             f_titre = str((f_ or {}).get("titre") or "")
             f_texte = ((tx("relecture : ", "review: ") if f_genre == "relire" else "") + f_titre) if f_titre and f_genre != "choisir"                 else flux_lib.get(f_genre, "")
+            # 16/11 (Xavier : « c'est normal que la tâche du relecteur soit en relecture ? ») : un relecteur relit,
+            # son propre travail n'est pas « en relecture » ; sa contre-relecture se dit « relit une 2e fois ».
+            if f_genre and (pid in ("relecture", "relecteur") or "relect" in str(p.get("role") or "").lower()[:40]):
+                f_texte = (tx("choisit la prochaine relecture", "picking the next review") if f_genre == "choisir" else
+                           (tx("relit une 2e fois : ", "second review: ") if f_genre == "relire" else tx("relit : ", "reviewing: ")) + f_titre if f_titre else
+                           {"travail": tx("relit une branche", "reviewing a branch"), "relire": tx("relit une 2e fois", "second review")}.get(f_genre, f_texte))
             # progression affichée
             if pc is not None:
                 prog_aff, src = pc, f"progression/{prog_nom}.json"
