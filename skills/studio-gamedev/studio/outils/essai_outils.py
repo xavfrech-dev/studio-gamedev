@@ -281,7 +281,7 @@ def essai_flux(base):
     avant = os.environ.get("CLAUDE_CONFIG_DIR")
     os.environ["CLAUDE_CONFIG_DIR"] = conf_dir
     try:
-        flux = equipe.agents_en_cours_flux(equipe.dossiers_workflows(projet))
+        flux = {k: {"genre": v["genre"], "titre": v["titre"]} for k, v in equipe.agents_en_cours_flux(equipe.dossiers_workflows(projet)).items()}
         attendu = {"blender": {"genre": "travail", "titre": "Animer le loup"}, "faune": {"genre": "travail", "titre": "Poser les rochers"},
                    "son": {"genre": "relire", "titre": ""}, "carte": {"genre": "travail", "titre": ""}, "decor": {"genre": "choisir", "titre": ""}}
         ok(flux == attendu, f"démarrés sans résultat, titre du dernier choix (objet ou texte), « Aucune » et « rien » écartés, -2 rattaché ({flux})")

@@ -59,6 +59,12 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 POIDS_AV = {"verse": 1, "ecart": 1, "pret": 0.7, "en_cours": 0.35, "a_faire": 0}
 RESTE = {"verse": 0, "ecart": 0, "pret": 0.3, "en_cours": 0.65, "a_faire": 1}
 FRAIS_MIN = 30          # une progression plus vieille que ça n'est plus « en train de travailler »
+# 16/11 23:40 (jumeau du studio d'origine, « tout est en attente ou à 0 % alors que des agents tournent ») :
+# barre d'un agent de flux encore en cours : gardée jusqu'à 6 h ; écrite avant le départ de l'agent (tâche précédente)
+# ou pendant sa relecture : remplacée par le cycle du poste (choisir, travail, relecture ; étape en cours comptée à moitié)
+ACTIF_MAX_H = 6
+CYCLE_FLUX = {"choisir": 17, "travail": 50, "relire": 83}
+DOUBLE_RE = re.compile(r"-\d+$")     # barre d'un poste doublé : « level-2 » compte pour le poste « level »
 CHAINE_MIN = 10         # chaîne active : une progression a bougé depuis 10 min (ou outil lourd ouvert, ou demande lancée récente)
 IMAGES_MAX = 36
 IMAGE_MAX_OCTETS = 12 * 1024 * 1024
@@ -845,12 +851,23 @@ class Studio:
         flux_lib = {"choisir": tx("choisit sa prochaine tâche", "picking the next task"), "travail": tx("travaille sur sa tâche", "working on the task"),
                     "relire": tx("sa tâche est en relecture", "task under review")}
         out = []
+        # 16/11 23:40 (jumeau) : barres écrites sous un autre nom que le poste : poste doublé (« <poste>-2 ») et anciens noms
+        # déclarés dans config.json (« alias_progression » : {"ancien nom": "poste"}) ; règles génériques, pas run par run
+        alias = conf.get("alias_progression") if isinstance(conf.get("alias_progression"), dict) else {}
+
+        def poste_de_barre(nom, d):
+            if d.get("poste"):
+                return str(d["poste"])
+            if nom in ids:
+                return nom
+            base = DOUBLE_RE.sub("", nom)
+            return str(alias.get(nom) or alias.get(base) or base)
         for p in liste:
             pid = p["id"]
-            # progression : son fichier, ou le plus frais des fichiers qui déclarent "poste": pid
+            # progression : la plus récente de son fichier et des fichiers qui déclarent "poste": pid (ou s'y rattachent)
             prog, prog_nom, prog_age = None, "", None
             for nom, (d, age) in progs.items():
-                if nom == pid or d.get("poste") == pid:
+                if nom == pid or poste_de_barre(nom, d) == pid:
                     if prog is None or age < prog_age or (nom == pid and prog_nom != pid and age <= FRAIS_MIN and prog_age > FRAIS_MIN):
                         prog, prog_nom, prog_age = d, nom, age
             st = statuts.get(pid) if isinstance(statuts.get(pid), dict) else {}
@@ -902,8 +919,25 @@ class Studio:
                 f_texte = (tx("choisit la prochaine relecture", "picking the next review") if f_genre == "choisir" else
                            (tx("relit une 2e fois : ", "second review: ") if f_genre == "relire" else tx("relit : ", "reviewing: ")) + f_titre if f_titre else
                            {"travail": tx("relit une branche", "reviewing a branch"), "relire": tx("relit une 2e fois", "second review")}.get(f_genre, f_texte))
+            # 16/11 23:40 (jumeau) : un agent du flux tourne sur ce poste. Sa barre la plus récente compte même vieille (jusqu'à
+            # ACTIF_MAX_H) et son texte n'est plus écrasé par celui du flux ; une barre écrite avant le départ de l'agent est
+            # celle de sa tâche précédente (souvent 100 % : « a fini, attend la suite » alors qu'il travaille) : on montre
+            # alors le cycle du poste. Pendant la relecture, le cycle parle mieux que la barre de fin du travail.
+            prog_agent, cycle = False, None
+            if f_genre in CYCLE_FLUX:
+                debut = (f_ or {}).get("debut")
+                t_prog = time.time() - (prog_age or 0) * 60
+                garder = (prog is not None and f_genre != "relire" and (prog_age or 0) <= ACTIF_MAX_H * 60
+                          and not (isinstance(debut, (int, float)) and t_prog < debut - 120))
+                if garder:                              # texte de la barre prioritaire seulement si on sait qu'elle date de la tâche en cours
+                    prog_agent = pc is not None and pc < 100 and isinstance(debut, (int, float))
+                else:
+                    prog, prog_nom, prog_age, pc, fini_prog, cycle = None, "", None, None, False, CYCLE_FLUX[f_genre]
             # progression affichée
-            if pc is not None:
+            if cycle is not None:
+                prog_aff, src = cycle, tx("étapes faites du cycle du poste (choisir, travail, relecture ; étape en cours comptée à moitié)",
+                                          "steps done in the post cycle (pick, work, review; current step counted as half)")
+            elif pc is not None:
                 prog_aff, src = pc, f"progression/{prog_nom}.json"
             elif statut.startswith("fini"):
                 prog_aff, src = 100, "statut de la demande"
@@ -923,7 +957,7 @@ class Studio:
                 picto, complet = "⛔", tx("bloqué : ", "blocked: ") + (texte_prog or court(st.get("texte"), 100) or tx("raison à voir", "reason to check"))
             elif etat == "travaille":
                 picto = "▶"
-                if frais and texte_prog and not fini_prog:
+                if (frais or prog_agent) and texte_prog and not fini_prog:
                     complet = texte_prog
                 elif lancee and est_embauche(lancee):
                     complet = barre or mission_txt or lancee["titre"] or tx("demande lancée", "request started")
@@ -937,8 +971,8 @@ class Studio:
                     complet = tx("orchestre la session", "runs the session")
                 else:
                     complet = court(st.get("texte"), 100) or texte_prog or tx("au travail", "at work")
-                if f_genre and f_texte:                       # le flux l'emporte (ligne, tâche, minis), même sur une progression
-                    complet = f_texte
+                if f_genre and f_texte and not prog_agent:    # le flux l'emporte (ligne, tâche, minis), sauf sur la barre que
+                    complet = f_texte                         # l'agent écrit pour sa tâche en cours (16/11 23:40)
             elif etat in ("attend", "fini"):
                 if a.get("attente"):
                     picto, complet = "⏸", tx("attend ", "waiting for ") + court(a["attente"], 100)
@@ -969,6 +1003,9 @@ class Studio:
                  "demandes": [{"fichier": d["fichier"], "titre": d["titre"], "statut": d["statut"], "tache_id": d["tache_id"],
                                "origine": d["origine"]} for d in dem][:6],
                  "ligne": {"picto": picto, "texte": court(complet, 40), "complet": court(complet, 200)}}
+            # signe de vie : dernière écriture du journal de l'agent du flux (la page ne le dit plus « peut-être arrêté »)
+            if isinstance((f_ or {}).get("vivant_t"), (int, float)):
+                q["vivant_t"] = int(f_["vivant_t"])
             # fin de tâche : vrai calme (100 % immobile depuis 5 min, rien devant lui, pas de chaîne à son nom, pas de demande lancée)
             q["calme_min"] = int(prog_age) if prog is not None and prog_age is not None else None
             # temps réel : heure de la dernière nouvelle de l'agent et fin prévue, pour une barre qui avance entre deux écritures

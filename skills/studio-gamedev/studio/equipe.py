@@ -217,7 +217,10 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
     `fenetre_min` minutes et on garde les agents démarrés sans résultat ; un run fini ou immobile est ignoré
     (un run tué laisse ses agents « démarrés » dans un journal qui ne bouge plus). Lecture seule.
     15/11 23:15 (jumeau) : le titre choisi passe dans les minis du groupe à la place d'un vieux fichier de progression ;
-    une étape « travail » ou « relire » avec son titre l'emporte sur un « choisir » ou une étape sans titre."""
+    une étape « travail » ou « relire » avec son titre l'emporte sur un « choisir » ou une étape sans titre.
+    16/11 23:40 (jumeau, « tout est en attente ou à 0 % ») : chaque agent porte aussi « debut » (création de son journal
+    agent-<id>.jsonl) et « vivant_t » (sa dernière écriture) ; un run dont le journal ne bouge plus mais dont un agent
+    écrit encore reste suivi (un agent de travail de plus de 45 min disparaissait de la carte)."""
     t = maintenant or time.time()
     limite = t - fenetre_min * 60
     out = {}
@@ -225,7 +228,9 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
         for jr in glob.glob(os.path.join(glob.escape(d), "*", "journal.jsonl")):
             try:
                 if os.path.getmtime(jr) < limite:
-                    continue
+                    fa_ = glob.glob(os.path.join(glob.escape(os.path.dirname(jr)), "agent-*.jsonl"))
+                    if not fa_ or max(os.path.getmtime(f) for f in fa_) < limite:
+                        continue
                 ouverts, fini, labels, titres = {}, False, {}, {}
                 with open(jr, encoding="utf-8", errors="replace") as f:
                     for ligne in f:
@@ -251,13 +256,22 @@ def agents_en_cours_flux(dossiers, maintenant=None, fenetre_min=FLUX_MIN):
                 continue
             if fini:
                 continue
-            for label in ouverts.values():
+            for cle_a, label in ouverts.items():
                 genre, _, brut = label.partition(":")
                 brut = brut.strip()
                 poste = FLUX_DOUBLE_RE.sub("", brut)
                 if genre not in FLUX_GENRES or not poste:
                     continue
-                v = {"genre": genre, "titre": "" if genre == "choisir" else titres.get(brut, "")}
+                v = {"genre": genre, "titre": "" if genre == "choisir" else titres.get(brut, ""), "debut": None, "vivant_t": None}
+                try:
+                    fa = os.path.join(os.path.dirname(jr), f"agent-{cle_a}.jsonl")
+                    st_ = os.stat(fa)
+                    # création du fichier : st_birthtime (macOS, BSD), st_ctime sous Windows ; ailleurs ctime bouge à chaque
+                    # écriture : pas de date de départ (la barre n'est alors jamais écartée comme « tâche précédente »)
+                    v["debut"] = getattr(st_, "st_birthtime", None) or (st_.st_ctime if os.name == "nt" else None)
+                    v["vivant_t"] = int(st_.st_mtime)
+                except OSError:
+                    pass                                # agent en file, pas encore démarré
                 a = out.get(poste)
                 if a is None or (v["titre"] and (a["genre"] == "choisir" or not a["titre"])):
                     out[poste] = v

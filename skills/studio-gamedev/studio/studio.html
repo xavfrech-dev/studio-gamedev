@@ -1785,7 +1785,7 @@ function etatPoste(p) {
     act = a;
   }
   if (pct !== null) pct = pctVivant(p.id, pct, ep, etat);
-  return { pct, etat, restantes, texte, reste, ligne, occupe: etat === 'travaille', nouvelle: t0 || null, brut, t0, fin, act, depuis: ep && nombre(ep.depuis) ? ep.depuis * 1000 : null, src: ep ? String(ep.progression_source || '') : (pr ? 'progression/' : '') };
+  return { pct, etat, restantes, texte, reste, ligne, occupe: etat === 'travaille', nouvelle: t0 || null, brut, t0, fin, act, vivant_t: ep && nombre(ep.vivant_t) ? +ep.vivant_t : 0, depuis: ep && nombre(ep.depuis) ? ep.depuis * 1000 : null, src: ep ? String(ep.progression_source || '') : (pr ? 'progression/' : '') };
 }
 // Temps réel : entre deux nouvelles de l'agent, la barre avance d'après le temps écoulé et son estimation (heure du fichier, progression_t ;
 // fin prévue, fin_t), mais jamais plus de AVANCE_MAX points au-delà du dernier chiffre écrit (une estimation trop optimiste n'invente pas
@@ -1835,14 +1835,18 @@ function infoAction(id, e) {
   if (e.etat === 'fini') return att('fini', motA('fini_libre'), depuisEtat, { fini: true });
   if (e.etat === 'disponible') return att('libre', lg.picto === '⚑' ? motA('assistant') : motA('libre'), depuisEtat);
   const b = e.brut, t0 = e.t0 || 0, fin = e.fin || 0, a = e.act;
-  if (e.etat !== 'travaille' || b == null || (e.src && !/^progression\//.test(e.src))) return att('continu', motA('continu'), depuisEtat);
+  // 16/11 23:40 (jumeau) : le cycle du poste (choisir, travail, relecture) d'un agent du flux est un vrai % : barre, pas « en continu »
+  if (e.etat !== 'travaille' || b == null || (e.src && !/^progression\/|^(?:étapes faites du cycle|steps done in the post cycle)/i.test(e.src))) return att('continu', motA('continu'), depuisEtat);
   // « attend la compil », « en attente de… », « waiting for… » : oui ; « Attendre la fin de la compil puis tester » (une tâche) : non
   const attendTxt = /^(?:[^:]{1,40}:\s*)?(?:attends?\b|en attente\b|en pause\b|bloqu[ée]|patiente\b|waiting\b|paused\b|blocked\b)/i.test(texte), sansEstim = b === 0 && t0 && fin && fin <= t0;
   if (b < 100 && (attendTxt || sansEstim)) return att('attente', attendTxt ? (/^(?:[^:]{1,40}:\s*)?(?:en pause|paused)/i.test(texte) ? motA('pause') : motA('attente')) : motA('sans_estim'), t0 ? (n - t0) / 60000 : depuisEtat);
-  if (a && a.debut && a.t0c != null && t0 === a.t0c && b === a.bc) return att('demarre', motA('demarre'), (n - a.debut) / 60000);   // rien de neuf depuis le changement d'action
+  // 16/11 23:40 (jumeau) : seulement pour une barre écrite par l'agent (t0) ; une barre calculée (sans heure de nouvelle) restait sinon
+  // à « 0 %, vient de commencer » pour toujours
+  if (a && a.debut && t0 && a.t0c != null && t0 === a.t0c && b === a.bc) return att('demarre', motA('demarre'), (n - a.debut) / 60000);   // rien de neuf depuis le changement d'action
   if (b >= 100) return att('fini', motA('fini_suite'), t0 ? (n - t0) / 60000 : depuisEtat, { fini: true });   // fini : barre d'attente « fini ✓ », jamais une barre pleine figée
   // fin prévue largement dépassée et plus aucune nouvelle (plus de 45 min et plus de deux fois la durée annoncée) : l'agent ne donne plus signe de vie
-  const derniere = Math.max(t0, (a && a.vuNouv) || 0), silence = t0 ? (n - derniere) / 60000 : null;
+  // vivant_t (16/11, jumeau) : dernière écriture du journal de l'agent du flux : un agent qui travaille sans réécrire sa barre n'est pas « muet »
+  const derniere = Math.max(t0, (a && a.vuNouv) || 0, (+e.vivant_t || 0) * 1000), silence = t0 ? (n - derniere) / 60000 : null;
   if (fin && n > fin && silence != null && silence > Math.max(45, 2 * (fin - t0) / 60000)) return att('attente', motA('muet'), silence, { muet: true });
   let reste = fin ? Math.max(0, (fin - n) / 60000) : e.reste, retard = null;
   if (fin && n > fin) { retard = (n - fin) / 60000; reste = null; }

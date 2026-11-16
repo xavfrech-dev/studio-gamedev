@@ -48,6 +48,7 @@ Gabarit : `modeles/studio.config.json`.
 | `dossier_donnees` | Données lourdes hors dépôt (relatif au projet, sinon vide : un dossier hors du projet se passe à l'alimentation par `--donnees` et se note dans `CLAUDE.md`, jamais dans cette config versionnée) | réponse de l'étape 20 |
 | `dossier_agents` | Définitions d'agents des postes | `<projet>/.claude/agents` |
 | `dossier_session` | Journal de la session Claude Code à suivre | `auto` : `.jsonl` le plus récent sous `~/.claude/projects/<chemin du projet encodé>/` |
+| `alias_progression` | Anciens noms de barres de progression rattachés à un poste (`{"ancien nom": "poste"}`). Une barre `<poste>-2.json` (poste doublé) va d'office au poste, sauf si `<poste>-2` est lui-même un poste | `{}` |
 | `port` | Port local | 8790 ; s'il est pris, le premier libre après |
 | `economie` | Réglages de dépense de jetons (voir SKILL.md, « Économie ») : `agents_max`, `modele_agents` (`haiku`, `sonnet`, `opus`, `inherit`), `point_min`, `point_si_changement`, `enchainer`, `pause_si_absent_min`, `optimisation_auto`, `attribution_auto`, `embauche_auto`, `attente_max_s` ; `reglages.json` (écrit par la page, « Réglages ») passe avant pour `attribution_auto` et `embauche_auto` | `{2, "sonnet", 120, true, false, 60, false, false, false, 1800}` : le plus sobre |
 | `moteur.nom`, `moteur.processus[]`, `moteur.poste` | Le moteur et le poste qui tient la chaîne moteur | selon le moteur ; poste : le premier dont l'id contient « moteur » |

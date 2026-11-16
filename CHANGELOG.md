@@ -11,6 +11,14 @@ Le studio sait piloter plusieurs comptes Claude qui se relaient.
 
 ## [Non publié]
 
+### Corrigé
+- **Cartes des postes en attente ou à 0 % alors que des agents tournent** : la tâche, le % et la barre suivent de nouveau ce que les agents écrivent.
+  - Une barre écrite sous un autre nom compte pour le poste : poste doublé (`<poste>-2.json`) et anciens noms déclarés dans `alias_progression`. La barre la plus récente gagne.
+  - Agent d'un flux de postes en cours : sa barre reste lue jusqu'à 6 h et son texte n'est plus écrasé par le titre du flux. Une barre écrite avant le départ de l'agent (tâche précédente, souvent 100 %, « a fini, attend la suite ») laisse place au cycle du poste : choisir 17 %, travail 50 %, relecture 83 %.
+  - La carte reçoit `vivant_t`, la dernière écriture du journal de l'agent : un agent qui travaille sans réécrire sa barre n'est plus « sans nouvelles ». Un run au journal immobile reste suivi tant qu'un de ses agents écrit.
+  - Page : « vient de commencer » seulement pour une barre écrite par l'agent (une barre calculée y restait bloquée à 0 %) ; le cycle du poste s'affiche comme une barre, pas « en continu ».
+  - Essai : `studio/outils/essai_barres_temps_reel.py`.
+
 ## [0.5.5] - 2026-11-16
 
 Le bandeau rouge « en attente » ne s'allume plus pour une simple relance de la cloche.
