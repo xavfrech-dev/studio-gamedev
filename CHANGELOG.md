@@ -4,13 +4,19 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 
 ## [Non publié]
 
+## [0.5.4] - 2026-11-16
+
+Le questionnaire tient compte de chaque réponse, le studio règle la dépense du forfait, montre la vraie tâche de chaque poste, et l'XP gagnée apparaît au-dessus du perso.
+
 ### Ajouté
 - **« Optimiser le forfait »** : un interrupteur à côté de la barre du forfait (vert quand il est actif, gris quand il est coupé ; coupé par défaut, gardé dans `reglages.json` → `forfait_optimise`, aussi dans Réglages ; rôle switch, clavier, FR et EN). Allumé, le studio mesure le rythme de dépense entre deux relevés, projette chaque fenêtre à sa remise à zéro et écrit pour Claude une consigne (`.studio/forfait_consigne.json`) : postes à ajouter sous 90 % projeté, à retirer au-dessus de 95 % (ou à 85 % utilisés à plus de 20 min de la remise à zéro, ou hebdo projeté au-delà de 100 %), sans jamais couper la chaîne critique ; l'hebdo vise juste sous 100 %. Une ligne courte dans la page dit ce qu'il fait (« +2 postes : 62 % projeté à la remise à zéro »). Module `studio/optimiseur_forfait.py` ; essai : `studio/outils/essai_forfait_optim.py`.
 
 ### Amélioré
+- **« +N XP » au-dessus du perso** : petit chiffre vert à contour sombre au-dessus du perso qui a fini la tâche ; il monte de quelques pixels et s'efface en 2,6 s ; gains rapprochés additionnés ; jamais sur une bulle, une étiquette, un panneau ou le bandeau (sinon empilé à l'écart). Réglage « Gains d'XP » coupé : rien ; moins d'animations : sans mouvement.
 - **Questionnaire adaptatif** : chaque réponse oriente les suivantes. Ce que le pitch ou une réponse permet de déduire (moteur, genre, plateforme, 2D/3D, caméra…) n'est plus demandé ; une question tranchée n'est jamais reposée ; les questions sont reformulées selon les choix (pas de caméra 3D pour un jeu de cartes) ; un rappel « Déjà acquis » s'affiche sous chaque question ; relancé, le questionnaire reprend où il en était. Même logique dans la page et en repli conversation (`studio/adaptation.py`, `studio/outils/questionnaire.py`). Essai : `studio/outils/essai_questionnaire.py`.
 
 ### Corrigé
+- **Chaînes suivies** : le dossier des sessions est déduit comme ailleurs (`CLAUDE_CONFIG_DIR`, réglage `dossier_session`) au lieu d'un chemin par défaut. Essai : `studio/outils/essai_outils.py` (R15).
 - **« La roadmap n'a pas suivi » à tort** : un commit qui cite une tâche ouverte ne suffit plus. Seul un sujet qui annonce une fin (versé, vert, fait, fermé, RESULTAT OK ; merged, done, closed, green) et sans ECHEC, rouge, « en cours », « à refaire » ni « bloqu… » (FAIL, red, in progress, redo, blocked) déclenche la suggestion (`studio_etat.sujet_annonce_fin`). Essai : `studio/outils/essai_outils.py` (R17).
 - **« Toute l'équipe est en attente » alors que les postes travaillent** : un poste lancé en workflow (étapes `choisir:<poste>`, `travail:<poste>`, `relire:<poste>`, poste doublé `<poste>-2`) passe à « travaille » tant qu'un de ses agents est démarré sans résultat, même si sa progression ne bouge pas pendant une longue tâche ou reste à 100 % entre deux tâches ; plus de « fin de tâche » annoncée à tort. Le bandeau et les minis du groupe montrent la vraie tâche : le titre du dernier choix `choisir:<poste>` (sauf « rien » ou « Aucune… »), même s'il reste un vieux fichier de progression. Journaux des workflows bougés depuis 45 min, runs finis ignorés (`equipe.agents_en_cours_flux`, `studio_etat.py`). Essai : `studio/outils/essai_outils.py` (R16).
 

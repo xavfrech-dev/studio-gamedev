@@ -69,7 +69,7 @@ RENVOI_LIBRE_H = 24     # proposition de renvoi : recrue libre depuis 24 h sans 
 EXCLUS = re.compile(r"\b(sorti|sortie|écart|ecart|abandonn|hors v1|hors version|remplac|report|retir|dropped|removed|postponed|out of scope|replaced)", re.I)
 SUBPROC = {"capture_output": True, "text": True, "timeout": 20, "encoding": "utf-8", "errors": "replace",
            "creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)}
-# 15/11 23:45 (porté du studio WILDLANDS : « le spécialiste de la roadmap, il sert vraiment à quelque chose ? ») :
+# 15/11 23:45 (retour d'utilisateur : « le spécialiste de la roadmap, il sert vraiment à quelque chose ? ») :
 # un commit qui cite une tâche ne veut pas dire qu'elle est finie (échec, captures, rouge…). La règle « roadmap en retard »
 # ne retient que les sujets qui annoncent une fin, sans signe d'échec ni de travail en cours (français, et anglais pour un projet en anglais).
 FIN_COMMIT = re.compile(r"\bvers[ée]e?s?\b|\bverte?s?\b|\bfaite?s?\b|\bferm[ée]e?s?\b|RESULTAT OK|\bmerged\b|\bdone\b|\bclosed\b|\bgreen\b", re.I)

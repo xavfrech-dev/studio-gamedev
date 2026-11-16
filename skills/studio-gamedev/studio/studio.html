@@ -2918,7 +2918,7 @@ function lookPoste(p) {
 }
 const lookDe = qui => { const a = PROFIL[qui] && PROFIL[qui].apparence; return a && typeof a === 'object' ? a : (qui === 'maitre' ? { peau: '#c68642', cheveux: { coupe: 'courts', couleur: '#2b1d14' }, tenue: { couleur1: '#3f7a52', couleur2: '#e9c47f' }, accessoire: 'casque_audio' } : { morphologie: 'petite', peau: '#f1c27d', cheveux: { coupe: 'en_bataille', couleur: '#b55239' }, tenue: { couleur1: '#4d6f9c', couleur2: '#f4ecd9' }, accessoire: 'chapeau' }); };
 
-// « +N XP » vert au-dessus du perso qui a fait gagner l'XP (15/11, demande de Xavier) : petit, contour sombre, monte de quelques px et
+// « +N XP » vert au-dessus du perso qui a fait gagner l'XP (15/11, demande d'un utilisateur) : petit, contour sombre, monte de quelques px et
 // s'efface en 2,6 s ; plusieurs gains rapprochés d'un même perso s'additionnent (le chiffre grandit, il repart) ; jamais sur une bulle de parole,
 // une étiquette, un panneau ni un autre « +N XP » : au-dessus de la tête, sinon au-dessus de son étiquette, sinon à côté de la tête, sinon empilé.
 // Moins d'animations : il apparaît sans bouger. Gain sans poste (jetons, quêtes) : rien au-dessus des persos, la bannière suffit.
