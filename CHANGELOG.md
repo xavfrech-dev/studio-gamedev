@@ -12,6 +12,9 @@ Le studio sait piloter plusieurs comptes Claude qui se relaient.
 ## [Non publié]
 
 ### Corrigé
+- **Téléphone : la salle du studio coupée à droite et en bas** (debout, couché, plein écran). En mode application, la pièce entière tient dans le cadre au chargement et à « recadrer » : la zone libre est mesurée sur la page (en-tête, barre ou rail d'onglets avec le bord sûr du bas, bande ou colonne de l'équipe), et la pièce se pose au-dessus du micro et du zoom (ou à leur gauche) si elle y reste au moins à 85 % de sa taille. Tourner le téléphone ou passer en plein écran ramène à la pièce entière. Sur PC, rien ne change.
+- **Puce du forfait « 90 % » pour une semaine utilisée à 10 %** : sans fenêtre de 5 h (fenêtre « 5 h » / « session » absente ou sans %, ou seulement des fenêtres hebdo), la puce dit « Semaine N % » (« Week N% »), N = % utilisé de la semaine, barre remplie d'autant ; info-bulle et lecteur d'écran donnent aussi le reste. Avec une fenêtre de 5 h : inchangé. Essai : `node studio/outils/essai_forfait_semaine.js`.
+- **Comptes en relais sans fenêtre de 5 h** : le % du compte actif est lu dans `forfait.json` même quand il n'y a que des fenêtres hebdo ; la ligne du plan n'annonce plus de cible de 5 h ; rythme mesuré pris dans `comptes.json` → `rythme_mesure` (moins de 2 h). Essai : `essai_comptes_relais.py`, cas 11.
 - **Cartes des postes en attente ou à 0 % alors que des agents tournent** : la tâche, le % et la barre suivent de nouveau ce que les agents écrivent.
   - Une barre écrite sous un autre nom compte pour le poste : poste doublé (`<poste>-2.json`) et anciens noms déclarés dans `alias_progression`. La barre la plus récente gagne.
   - Agent d'un flux de postes en cours : sa barre reste lue jusqu'à 6 h et son texte n'est plus écrasé par le titre du flux. Une barre écrite avant le départ de l'agent (tâche précédente, souvent 100 %, « a fini, attend la suite ») laisse place au cycle du poste : choisir 17 %, travail 50 %, relecture 83 %.

@@ -224,6 +224,8 @@ body.app .micro{width:44px;height:44px;min-width:44px;padding:0;justify-content:
 .fil .lui{align-self:flex-start;border-radius:12px 12px 12px 2px}
 .fil .question{border:2px solid #c9953e;background:linear-gradient(180deg,#fffaf0,#fbefd2)}
 .fil .vide{align-self:center;color:var(--encre3);font-style:italic}
+.fil .fil-reglees{align-self:stretch;border:1px solid rgba(63,122,82,.3);border-radius:10px;background:#f3f6ef;padding:6px 10px;font-size:.88em}.fil .fil-reglees summary{cursor:pointer;color:#2f6b3f;font-weight:600;padding:4px 0;min-height:28px}
+.fil .fil-reglees ul{margin:6px 0 2px;padding-left:18px;max-height:45vh;overflow:auto}.fil .fil-reglees li{margin:5px 0;line-height:1.35;overflow-wrap:anywhere}.fil .fil-reglees li span{color:var(--encre3)}
 /* fin de tâche, renvoi */
 .encadre{border:1px solid rgba(92,79,63,.3);border-radius:10px;padding:10px 14px;margin:12px 0;background:#fffaf0}
 .encadre.fin{border:2px solid #c9953e;background:linear-gradient(180deg,#fffaf0,#fbefd2)}
@@ -552,6 +554,7 @@ body.app #equipe .membre{scroll-snap-align:start;padding:6px 10px 6px 6px;gap:8p
 #forfait.orange .plein{background:linear-gradient(90deg,#e2b866,#d0802a)}#forfait.orange b{color:#f0b060}
 #forfait.rouge .plein{background:linear-gradient(90deg,#d8664a,#a8432e)}#forfait.rouge b{color:#ef8a6e}
 #forfait small{font:400 12.5px var(--sans);color:#bfb196;font-variant-numeric:tabular-nums;border-left:1px solid var(--bord,rgba(233,210,160,.2));padding-left:10px;min-width:8.6em}
+#forfait.semaine b::before{content:attr(data-mot) " ";font-weight:400;color:#bfb196;font-size:12px}html[data-theme=clair] #forfait.semaine b::before{color:#5a4a36}
 #forfait.ancien{opacity:.6}#forfait.ancien .piste,#forfait.ancien b{display:none}
 @media (max-width:1400px){#forfait .piste{width:90px}}
 @media (max-width:1100px){#forfait small{display:none}}
@@ -1268,8 +1271,11 @@ function majEntete() {
   majNiveau();
 }
 // ouverte : pas de réponse dans reponses.json et pas fermée par l'assistant (statut « repondue », « reglee »… après une réponse dans le chat)
+// une fiche qui porte déjà sa réponse (reponse, repondue_le…) est réglée même si son statut est resté « ouverte » ou absent
+// A decision record that already carries its answer is settled even if its status was left "open".
+const repondueDansFiche = d => !!d && ((d.reponse != null && d.reponse !== '') || !!(d.repondue_le || d.repondu_le || d.decide_le || d.reponse_libre));
 const decisionsOuvertes = () => { const r = (window.__tyrRemonter ? window.__tyrRemonter() : []);
-  return DECISIONS.filter(d => d && d.id && !REPONSES_DEC.some(x => x && x.id === d.id) && (!d.statut || ['ouverte', 'en_attente'].includes(d.statut))).sort((a, b) => (r.includes(a.id) ? 0 : 1) - (r.includes(b.id) ? 0 : 1)); };
+  return DECISIONS.filter(d => d && d.id && !repondueDansFiche(d) && !REPONSES_DEC.some(x => x && x.id === d.id) && (!d.statut || ['ouverte', 'en_attente'].includes(d.statut))).sort((a, b) => (r.includes(a.id) ? 0 : 1) - (r.includes(b.id) ? 0 : 1)); };
 function verifierDecisions() {
   const l = decisionsOuvertes(), b = $('#bt-decisions');
   if (b) majCloche();
@@ -1288,6 +1294,7 @@ async function repondreDecision(d, choix, libre) {
     if (d.type === 'renvoi' && choix === 'renvoyer' && d.nom) { await posterFond('/api/renvoyer', { nom: d.nom, motif: 'proposition du studio acceptée' }); apresRenvoi(d.nom); }
     await posterFond('/api/repondre', { id: d.id, choix: choix || '', texte_libre: libre || '' });
     REPONSES_DEC.push({ id: d.id, choix: choix || '', texte_libre: libre || '', repondu_le: new Date().toISOString().slice(0, 19) });
+    FIL_REP_RECENTES[d.id] = Date.now();   // la carte reste 2 min dans le fil, le temps de voir la réponse partir
     Bureau.partir(d.id); verifierDecisions(); Conv.maj(); toast(esc(t('reponse_envoyee'))); return true;
   } catch (e) { return false; /* toast déjà montré */ }
 }
@@ -2403,7 +2410,7 @@ async function majCC() {
 function reponseDec(d, r) {
   const lib = id => { const c = (Array.isArray(d.choix) ? d.choix : []).find(x => (typeof x === 'string' ? x : x.id) === id); return c ? (typeof c === 'string' ? c : c.libelle || c.id) : id; };
   if (r) return [r.choix ? lib(r.choix) : '', r.texte_libre || ''].filter(Boolean).join(' · ') || t('repondu');
-  if (d.statut && !['ouverte', 'en_attente'].includes(d.statut)) return d.reponse ? (typeof d.reponse === 'object' ? [lib(d.reponse.choix || ''), d.reponse.texte_libre || ''].filter(Boolean).join(' · ') : lib(String(d.reponse))) : t('regle');
+  if ((d.statut && !['ouverte', 'en_attente'].includes(d.statut)) || repondueDansFiche(d)) return d.reponse ? (typeof d.reponse === 'object' ? [lib(d.reponse.choix || ''), d.reponse.texte_libre || ''].filter(Boolean).join(' · ') : lib(String(d.reponse))) : t('regle');
   return null;
 }
 setInterval(() => { if (Panneau.ouvert() === 'conv' && !document.hidden) majCC().then(() => Conv.maj()); }, 2500);
@@ -2486,8 +2493,10 @@ setInterval(() => { try { majOngletsApp(); } catch (e) { /* rien */ } }, 1000);
 // (erreur de chargement du script dans les navigateurs intégrés)
 if ('serviceWorker' in navigator && window.isSecureContext && (/[?&]app=1/.test(location.search) || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches && !matchMedia('(any-pointer: fine)').matches || navigator.standalone === true)) navigator.serviceWorker.register('sw.js').catch(() => {});
 window.__app = () => ({ app: MODE_APP(), onglets: !!document.getElementById('onglets-app') });   // essais
+const FIL_REP_RECENTES = {};   // questions répondues depuis la page il y a moins de 2 min (id -> heure)
 const Conv = (() => {
-  let sig = '', question = null; const MES = LS.get('mes_messages', []);
+  let sig = '', question = null, replOuvert = false; const MES = LS.get('mes_messages', []);
+  const titreReglees = n => LANGUE === 'fr' ? `✓ ${n} question${n > 1 ? 's' : ''} réglée${n > 1 ? 's' : ''} : l’historique` : `✓ ${n} settled question${n > 1 ? 's' : ''}: history`;
   const date = s => { const v = Date.parse(String(s || '')); return Number.isFinite(v) ? v : 0; };
   const heure = ms => ms ? new Date(ms).toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' }) : '';
   function elements() {
@@ -2501,14 +2510,23 @@ const Conv = (() => {
       for (let k = l.length - 1; k >= 0; k--) if (l[k].genre === 'moi' && l[k].t && l[k].t < t0) l.splice(k, 1); }
     else for (const m of REP_ASSIST) if (m && m.texte) l.push({ genre: 'lui', id: 'r:' + String(m.id || m.cree_le), t: date(m.cree_le), texte: String(m.texte).slice(0, 4000), images: m.images });
     const rem = (window.__tyrRemonter ? window.__tyrRemonter() : []);
-    for (const d of DECISIONS) if (d && d.id) { const r = REPONSES_DEC.find(x => x && x.id === d.id); l.push({ genre: 'question', id: 'd:' + d.id, t: rem.includes(d.id) && !r ? Date.now() : date(d.cree_le), d, r }); }
-    return l.sort((a, b) => a.t - b.t).slice(-80);
+    // heure écrite dans le futur par un agent : ramenée à maintenant (sinon la carte reste collée en bas du fil)
+    // une question réglée (par l'utilisateur, l'assistant, tout statut fermé, reponses.json du serveur : même état sur chaque appareil)
+    // quitte le fil et passe dans le repli « réglées » en tête ; répondue ici il y a moins de 2 min : sa carte reste
+    // A settled question leaves the thread (folded "settled" history at the top); a future timestamp is clamped to now.
+    const reglees = [];
+    for (const d of DECISIONS) if (d && d.id) { const r = REPONSES_DEC.find(x => x && x.id === d.id), tq = Math.min(date(d.cree_le || d.maj_le || d.maj), Date.now());
+      const it = { genre: 'question', id: 'd:' + d.id, t: rem.includes(d.id) && !r ? Date.now() : tq, d, r };
+      if (reponseDec(d, r) !== null && !(Date.now() - (FIL_REP_RECENTES[d.id] || 0) < 120000)) reglees.push(it); else l.push(it); }
+    const out = l.sort((a, b) => a.t - b.t).slice(-80); out.reglees = reglees.sort((a, b) => b.t - a.t); return out;
   }
   function rendreFil(z) {
-    const l = elements(), dernier = l[l.length - 1];
+    const l = elements(), dernier = l[l.length - 1], nR = l.reglees.length, coupe = s => s.length > 160 ? s.slice(0, 157) + '…' : s;
+    const repli = nR ? `<details class="fil-reglees" id="fil-reglees"${replOuvert ? ' open' : ''}><summary>${esc(titreReglees(nR))}</summary><ul>${l.reglees.slice(0, 60)
+      .map(x => `<li data-fil-id="${esc(x.id)}">${esc(coupe(String(x.d.titre || x.d.question || x.d.id)))}<span> · ${x.t > 1 ? esc(heure(x.t)) + ' · ' : ''}✓ ${esc(reponseDec(x.d, x.r))}</span></li>`).join('')}</ul></details>` : '';
     const statut = s => ({ nouvelle: t('depose'), prise: t('lu'), faite: t('traite') })[s] || '';
     const enBas = !z._vu || z.scrollTop + z.clientHeight >= z.scrollHeight - 60, haut = z.scrollTop; z._vu = true;
-    z.innerHTML = l.length ? l.map(x => x.genre === 'cc_moi' ? `<div class="msg moi"><small>${esc(t('toi'))} · ${esc(heure(x.t))}</small><div class="md">${galerieImages(imagesDe(x, x.texte))}${md(x.texte)}</div></div>`
+    z.innerHTML = repli + (l.length ? l.map(x => x.genre === 'cc_moi' ? `<div class="msg moi"><small>${esc(t('toi'))} · ${esc(heure(x.t))}</small><div class="md">${galerieImages(imagesDe(x, x.texte))}${md(x.texte)}</div></div>`
       : x.genre === 'cc_lui' ? `<div class="msg lui"><small>${esc(nomAssistant())} · ${esc(heure(x.t))}</small><div class="md">${galerieImages(imagesDe(x, x.texte))}${md(x.texte)}</div></div>`
       : x.genre === 'moi'
       ? `<div class="msg moi"><small>${esc(t('toi'))}${x.cible && x.cible !== 'assistant' ? ' → ' + esc(x.cible) : ''} · ${esc(heure(x.t))}${statut(x.statut) ? ' · ' + esc(statut(x.statut)) : ''}</small>${pjDuTexte(x.texte) ? `<p>${esc(pjDuTexte(x.texte))}</p>` : ''}${pjHtml(x.id, x.pieces)}</div>`
@@ -2516,13 +2534,14 @@ const Conv = (() => {
       : `<div class="msg lui question" data-dec="${esc(x.d.id)}"><small>${esc(t('decision'))} · ${esc(heure(x.t))}</small><p><b>${esc(x.d.titre || '')}</b></p>${x.d.explication ? `<p>${esc(x.d.explication)}</p>` : ''}
           ${reponseDec(x.d, x.r) !== null ? `<p class="discret">✓ ${esc(t('regle'))} : ${esc(reponseDec(x.d, x.r))}</p>` : `<div class="choix-dec">${boutonsChoix(x.d)}</div>`}</div>`).join('')
       + (dernier && dernier.genre === 'lui' && /\?\s*["»)]*\s*$/.test(dernier.texte) ? `<p class="discret">${esc(t('reponds_ici'))}</p>` : '')
-      : `<div class="conv-vide"><div class="av">✦</div><p>${esc(t('conv_vide'))}</p><div class="sugg">${['sugg_1', 'sugg_2', 'sugg_3'].map(k => `<button type="button" class="bts" data-sugg="${esc(t(k))}">${esc(t(k))}</button>`).join('')}</div></div>`;
+      : `<div class="conv-vide"><div class="av">✦</div><p>${esc(t('conv_vide'))}</p><div class="sugg">${['sugg_1', 'sugg_2', 'sugg_3'].map(k => `<button type="button" class="bts" data-sugg="${esc(t(k))}">${esc(t(k))}</button>`).join('')}</div></div>`);
+    { const rp = z.querySelector('#fil-reglees'); if (rp) rp.ontoggle = () => { replOuvert = rp.open; }; }   // le repli reste ouvert d'un rafraîchissement à l'autre
     z.querySelectorAll('[data-sugg]').forEach(b => b.onclick = () => { const ta = $('#conv-texte'); if (ta) { ta.value = b.dataset.sugg; ta.focus(); } });   // T5
     try { verifierPieces(z); } catch (e) { /* rien */ }
     z.querySelectorAll('[data-dec]').forEach(b => b.querySelectorAll('[data-c]').forEach(c => c.onclick = () => { const d = DECISIONS.find(x => x.id === b.dataset.dec); if (d) repondreDecision(d, c.dataset.c, ''); }));
     z.scrollTop = enBas ? z.scrollHeight : haut;   // en bas, sauf si on a remonté pour relire
   }
-  const signature = () => JSON.stringify(elements().map(x => [x.id, x.statut || '', x.r ? 1 : 0, x.d ? x.d.statut || '' : '', (x.pieces || []).length]));
+  const signature = () => { const e = elements(); return JSON.stringify([e.reglees.map(x => x.id)].concat(e.map(x => [x.id, x.statut || '', x.r ? 1 : 0, x.d ? x.d.statut || '' : '', (x.pieces || []).length]))); };
   function ouvrir(parUtilisateur) {
     sig = '';
     (parUtilisateur ? Panneau.remplacer : Panneau.montrer)('conv', el => {   // clic : remplace la fenêtre ouverte ; ouverture automatique : à la suite
@@ -3085,6 +3104,31 @@ const Bureau = (() => {
     const haut = ($('#entete').offsetHeight || 60) + 2, bas = SCENE_VISIBLE() ? $('#scene').offsetHeight * .85 : bandeBas, dispoH = Math.max(240, L.h - haut - bas);
     TW = Math.max(26, Math.min(110, (L.w * .96) / ((W + H) / 2), dispoH / ((W + H) / 4 + 3.3)));
     TH = TW / 2; OX = L.w / 2 - (W - H) * TW / 4; OY = haut + TW * 3.3 + (SCENE_VISIBLE() ? 0 : Math.max(0, (dispoH - TW * ((W + H) / 4 + 3.3)) / 2));
+    if (document.body.classList.contains('app') && !SCENE_VISIBLE()) cadrageTel(haut);
+  }
+  // Téléphone (mode application, debout ou couché, plein écran compris) : la pièce entière tient dans le cadre, au zoom 1 et à « recadrer ».
+  // Avant, la hauteur ne retirait pas la barre d'onglets (bord sûr du bas compris) et, couché, la pièce ignorait le rail d'onglets et
+  // la colonne de l'équipe à gauche : elle passait dessous, coupée. Zone libre mesurée sur la page ; on la resserre au-dessus du micro
+  // et du zoom (ou à gauche du zoom) si la pièce y reste au moins à 85 % de sa taille, sinon les boutons passent par-dessus.
+  // Phone (app mode, portrait or landscape, fullscreen included): the whole room fits the frame at zoom 1 and on "recenter".
+  function cadrageTel(haut) {
+    const rect = s => { const e = $(s); if (!e || e.hidden || getComputedStyle(e).display === 'none') return null; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 ? r : null; };
+    const m = 8, og = rect('#onglets-app'), eq = rect('#equipe'), mi = rect('#micro-zone'), zo = rect('#zoom');
+    let x0 = m, x1 = L.w - m, y0 = haut + 4, y1 = L.h - m;
+    if (og) { if (og.width > og.height) y1 = Math.min(y1, og.top - m); else if (og.left < L.w / 2) x0 = Math.max(x0, og.right + m); else x1 = Math.min(x1, og.left - m); }   // barre en bas ou rail sur le côté
+    if (eq) { if (eq.width >= eq.height) y1 = Math.min(y1, eq.top - m); else if (eq.left < L.w / 2) x0 = Math.max(x0, eq.right + m); else x1 = Math.min(x1, eq.left - m); }   // bande en bas ou colonne
+    const k = (W + H) / 4 + 3.3, ech = z => z.x1 - z.x0 > 40 && z.y1 - z.y0 > 40 ? Math.min((z.x1 - z.x0) / ((W + H) / 2), (z.y1 - z.y0) / k) : 0;
+    const tout = { x0, x1, y0, y1 }, zones = [];
+    const basBoutons = Math.min(mi ? mi.top : Infinity, zo ? zo.top : Infinity) - 6;
+    if (basBoutons < y1) zones.push({ x0, x1, y0, y1: basBoutons });
+    if (zo && zo.left - 6 < x1) zones.push({ x0, x1: zo.left - 6, y0, y1 });
+    let z = tout, e = ech(tout); const e0 = e;
+    for (const c of zones) { const ec = ech(c); if (ec >= e0 * .85 && ec > (z === tout ? 0 : e)) { z = c; e = ec; } }
+    if (!(e > 0)) return;
+    TW = Math.max(18, Math.min(110, e)); TH = TW / 2;
+    OX = (z.x0 + z.x1) / 2 - (W - H) * TW / 4;
+    OY = z.y0 + TW * 3.3 + Math.max(0, (z.y1 - z.y0 - TW * k) / 2);
+    L.cadrageTel = z === tout ? 'tout' : 'zone-libre';
   }
   const iso = (gx, gy, z = 0) => [OX + (gx - gy) * TW / 2, OY + (gx + gy) * TH / 2 - z * TH];
   function poly(pts, fill, stroke) { cx.beginPath(); pts.forEach((p, i) => i ? cx.lineTo(p[0], p[1]) : cx.moveTo(p[0], p[1])); cx.closePath(); if (fill) { cx.fillStyle = fill; cx.fill(); } if (stroke) { cx.strokeStyle = stroke; cx.lineWidth = 1; cx.stroke(); } }
@@ -4003,9 +4047,13 @@ const Bureau = (() => {
     if (z.perso) centrerSur(z.x + z.w / 2, z.y + z.h / 2);   // recentrage sur le personnage cliqué (comme le studio d'origine)
     z.f();
   });
-  addEventListener('resize', () => { taille(); bornerCam(); });
+  // téléphone tourné : retour à la pièce entière (orientation de l'écran, pas un clavier qui s'ouvre)
+  const suivreTaille = () => { const ori = innerWidth > innerHeight; if (document.body.classList.contains('app') && L.ori !== undefined && L.ori !== ori) recadrer(); L.ori = ori; taille(); bornerCam(); };
+  addEventListener('resize', suivreTaille);
+  // téléphone : la bande de l'équipe et la barre d'onglets prennent leur taille après le chargement (et changent en tournant) ; la pièce suit
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => { if (document.body.classList.contains('app')) suivreTaille(); }); for (const s of ['#equipe', '#onglets-app', '#entete']) { const e = $(s); if (e) ro.observe(e); } }
   return {
-    demarrer() { taille(); requestAnimationFrame(boucle); }, taille, zoomer, recadrer, cam: () => Object.assign({}, CAM), animations(v) { ANIM = !!v; },
+    demarrer() { L.ori = innerWidth > innerHeight; taille(); requestAnimationFrame(boucle); }, taille, zoomer, recadrer, cam: () => Object.assign({}, CAM), animations(v) { ANIM = !!v; },
     construire(ids, anime) { for (const id of ids) { if (!construit.has(id)) { construit.add(id); if (anime) { POP[id] = performance.now(); Son.construit(); } else POP[id] = performance.now() - 1000; } } },
     depart(p) { const i = postes().findIndex(x => x.id === p.id); if (i < 0 || !SLOTS[placeDe(i)]) return; DEPARTS[p.id] = { t0: performance.now(), look: lookPoste(p), sx: SLOTS[placeDe(i)][0], sy: SLOTS[placeDe(i)][1] }; Son.construit(); },
     partir(id) { const b = BULLES[id]; if (b) PARTIES.push({ x: b[0], y: b[1], t0: performance.now() }); delete BULLES[id]; },
@@ -4451,7 +4499,7 @@ $('#z-cadre').onclick = () => Bureau.recadrer();
 function pleinEcran() { if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); }
 $('#bt-plein').onclick = pleinEcran;
 function majBoutonPlein() { const s = $('#bt-plein span'), v = t(document.fullscreenElement ? 'quitter_plein' : 'plein_ecran'); if (s && s.textContent !== v) s.textContent = v; const r = $('#rg-plein'); if (r && r.textContent !== v) r.textContent = v; }
-document.addEventListener('fullscreenchange', () => { document.body.classList.toggle('ecran-plein', !!document.fullscreenElement); try { scrollTo(0, 0); majOngletsApp(); majBoutonPlein(); ajusterOutils(); majEquipe(); dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } setTimeout(() => { try { ajusterOutils(); dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } }, 300); });
+document.addEventListener('fullscreenchange', () => { document.body.classList.toggle('ecran-plein', !!document.fullscreenElement); try { scrollTo(0, 0); majOngletsApp(); majBoutonPlein(); ajusterOutils(); majEquipe(); if (document.body.classList.contains('app')) Bureau.recadrer(); /* téléphone : plein écran = pièce entière */ dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } setTimeout(() => { try { ajusterOutils(); dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } }, 300); });
 document.addEventListener('keydown', e => { if ((e.key === 'f' || e.key === 'F') && !e.ctrlKey && !e.metaKey && !e.altKey && RACCOURCIS() && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && !document.activeElement.isContentEditable) { e.preventDefault(); pleinEcran(); } });
 setInterval(() => { const d = new Date(), h = $('#horloge'); { const q = parseFloat(new URLSearchParams(location.search).get('heure')); if (Number.isFinite(q) && q >= 0 && q < 24) d.setHours(Math.floor(q), Math.round((q % 1) * 60)); }   /* ?heure= : aperçu */ if (h) { const x = esc(d.toLocaleDateString(LANGUE, { weekday: 'long', day: 'numeric', month: 'long' })) + ' · <b>' + esc(d.toLocaleTimeString(LANGUE, { hour: '2-digit', minute: '2-digit' })) + '</b>'; if (h._x !== x) { h._x = x; h.innerHTML = x; } }
   const r = RM_C, pc = r && r.av && Number.isFinite(r.av.avance) ? r.av.avance : r && Number.isFinite(r.pct) ? r.pct : null; { const v = pc === null ? '—' : pc + ' %', w = (pc || 0) + '%', cache = CONF.mode !== 'travail'; if ($('#v1-pct').textContent !== v) $('#v1-pct').textContent = v; if ($('#v1-plein').style.width !== w) $('#v1-plein').style.width = w; if ($('#v1').hidden !== cache) $('#v1').hidden = cache; } }, 1000);   // P6 : n'écrit que ce qui change
@@ -4475,24 +4523,33 @@ function majForfait() {
   if (!fen.length || CONF.mode !== 'travail') { if (!el.hidden) { el.hidden = true; try { ajusterOutils(); } catch (e) { /* rien */ } } return; }
   if (el.hidden) { el.hidden = false; try { ajusterOutils(); } catch (e) { /* rien */ } }
   const maj = d.maj ? new Date(d.maj) : null, age = maj && !isNaN(maj) ? Date.now() - maj : Infinity;
-  const f = fen.reduce((m, x) => +x.pct_utilise > +m.pct_utilise ? x : m, fen[0]), reste = clamp(100 - +f.pct_utilise, 0, 100);
+  // Compte sans fenêtre de 5 h (fenêtre « 5 h » / « session » absente ou sans %, ou seulement des fenêtres hebdo) : la puce dit
+  // « Semaine N % » (N = % UTILISÉ de la semaine, barre remplie d'autant). Avant, elle montrait le % RESTANT sans le dire
+  // (« 90 % » au téléphone pour une semaine à 10 %), lu comme 90 % utilisés. Avec une fenêtre de 5 h : inchangé.
+  // Account without a 5-hour window: the chip reads "Week N%" (N = % of the week USED), not the unlabeled % left.
+  const est5h = x => x && /(^|\W)5\s*h|session/i.test(String(x.nom || ''));
+  const semaineSeule = !fen.some(est5h) && ((d.fenetres || []).some(x => est5h(x) && (x.absente === true || x.pct_utilise == null)) || fen.every(x => /hebdo|semaine|week/i.test(String(x.nom || ''))));
+  const f = fen.reduce((m, x) => +x.pct_utilise > +m.pct_utilise ? x : m, fen[0]), reste = clamp(100 - +f.pct_utilise, 0, 100), use = 100 - reste, val = semaineSeule ? use : reste;
+  el.classList.toggle('semaine', semaineSeule);
+  { const lb = el.querySelector('span[data-t="forfait"]'), mot = semaineSeule ? (en ? 'Week used' : 'Semaine utilisée') : (en ? 'Claude plan' : 'Forfait Claude'); if (lb && lb.textContent !== mot) lb.textContent = mot; const bp = $('#forfait-pct'), mc = en ? 'Week' : 'Semaine'; if (bp.dataset.mot !== mc) bp.dataset.mot = mc; }
   const raz = f.remise_a_zero ? new Date(f.remise_a_zero) : null, ms = raz && !isNaN(raz) ? raz - Date.now() : NaN;
   // remise à zéro passée depuis la dernière écriture : les chiffres décrivent l'ancienne fenêtre, ils sont donc anciens (pas de « imminente » qui dure)
   // Reset already passed since the figures were written: they describe the previous window, so they are old data.
   const razPassee = Number.isFinite(ms) && ms <= 0, ancien = age > seuilForfait(d.source) || razPassee;
   el.classList.toggle('ancien', ancien); el.classList.toggle('orange', !ancien && reste <= 40 && reste > 15); el.classList.toggle('rouge', !ancien && reste <= 15);
-  const w = reste + '%'; if ($('#forfait-plein').style.width !== w) $('#forfait-plein').style.width = w;
+  const w = val + '%'; if ($('#forfait-plein').style.width !== w) $('#forfait-plein').style.width = w;
   const loc = en ? 'en-GB' : 'fr-FR';
-  { const pi = $('#forfait .piste'), sa = (k, v) => { if (pi.getAttribute(k) !== v) pi.setAttribute(k, v); }; sa('role', 'progressbar'); sa('aria-label', en ? 'Claude plan left' : 'Forfait Claude restant'); sa('aria-valuemin', '0'); sa('aria-valuemax', '100'); sa('aria-valuenow', String(Math.round(reste)));
-    sa('aria-valuetext', (en ? `${Math.round(reste)}% left` : `${Math.round(reste)} % restants`) + (raz && !isNaN(raz) ? (en ? ', resets ' : ', remise à zéro ') + raz.toLocaleString(loc, { weekday: 'long', hour: '2-digit', minute: '2-digit' }) : '') + (ancien ? (en ? ', old data' : ', données anciennes') : '')); }
-  const v = pctT(Math.round(reste)); if ($('#forfait-pct').textContent !== v) $('#forfait-pct').textContent = v;
+  { const pi = $('#forfait .piste'), sa = (k, v) => { if (pi.getAttribute(k) !== v) pi.setAttribute(k, v); }; sa('role', 'progressbar'); sa('aria-label', semaineSeule ? (en ? 'Week used (no 5-hour window)' : 'Semaine utilisée (sans fenêtre de 5 h)') : en ? 'Claude plan left' : 'Forfait Claude restant'); sa('aria-valuemin', '0'); sa('aria-valuemax', '100'); sa('aria-valuenow', String(Math.round(val)));
+    sa('aria-valuetext', (semaineSeule ? (en ? `${Math.round(use)}% of the week used, ${Math.round(reste)}% left` : `${Math.round(use)} % de la semaine utilisés, ${Math.round(reste)} % restants`) : en ? `${Math.round(reste)}% left` : `${Math.round(reste)} % restants`) + (raz && !isNaN(raz) ? (en ? ', resets ' : ', remise à zéro ') + raz.toLocaleString(loc, { weekday: 'long', hour: '2-digit', minute: '2-digit' }) : '') + (ancien ? (en ? ', old data' : ', données anciennes') : '')); }
+  const v = pctT(Math.round(val)); if ($('#forfait-pct').textContent !== v) $('#forfait-pct').textContent = v;
   const rb = razPassee ? (en ? 'reset done, old data' : 'remis à zéro, données anciennes') : ancien ? (en ? 'old data' : 'données anciennes') : Number.isFinite(ms) ? '↻ ' + rebours(ms) : ''; if ($('#forfait-rebours').textContent !== rb) $('#forfait-rebours').textContent = rb;
   const jour = x => x.toLocaleDateString(loc, { weekday: 'short', day: '2-digit', month: '2-digit' }) + (en ? ' at ' : ' à ') + deuxC(x.getHours()) + ':' + deuxC(x.getMinutes());
   const dans = ms2 => { const m = Math.max(0, Math.round(ms2 / 60000)), j = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return (j ? j + (en ? ' d ' : ' j ') : '') + h + ' h ' + deuxC(m % 60); };
   const lignes = fen.map(x => { const r = x.remise_a_zero ? new Date(x.remise_a_zero) : null; return `${x.nom || (en ? 'Window' : 'Fenêtre')}${en ? ': ' : ' : '}` + (en ? `${Math.round(100 - +x.pct_utilise)}% left (${Math.round(+x.pct_utilise)}% used)` : `${Math.round(100 - +x.pct_utilise)} % restants (${Math.round(+x.pct_utilise)} % utilisés)`) + (r && !isNaN(r) ? (r - Date.now() <= 0 ? (en ? `, reset ${jour(r)} (already passed, figures not rewritten since)` : `, remise à zéro ${jour(r)} (déjà passée, chiffres pas réécrits depuis)`) : en ? `, resets ${jour(r)} (in ${dans(r - Date.now())})` : `, remise à zéro ${jour(r)} (dans ${dans(r - Date.now())})`) : ''); });
   const sup = d.usage_supplementaire, argent = (val, dev) => { const x = +String(val).replace(',', '.'); if (!Number.isFinite(x)) return String(val); try { return x.toLocaleString(loc, { style: 'currency', currency: dev || 'EUR' }); } catch (e) { return x.toFixed(2) + ' ' + (dev || ''); } };
   if (sup) lignes.push(sup.actif ? (en ? 'Extra usage: on' : 'Usage supplémentaire : activé') + (sup.depense != null ? (en ? ', ' + argent(sup.depense, sup.devise) + ' spent' : ', ' + argent(sup.depense, sup.devise) + ' dépensés') : '') : (en ? 'Extra usage: off' : 'Usage supplémentaire : désactivé'));
-  const titre = (en ? `Claude plan${d.offre ? ' ' + d.offre : ''}: the bar shows what is left on the most used window.\n` : `Forfait Claude${d.offre ? ' ' + d.offre : ''} : la barre montre ce qui reste sur la fenêtre la plus entamée.\n`) + lignes.join('\n')
+  const titre = (semaineSeule ? (en ? `Claude plan${d.offre ? ' ' + d.offre : ''}: no 5-hour window on this account, only the week counts. "Week ${Math.round(use)}%" = share of the week already used (${Math.round(reste)}% left).\n` : `Forfait Claude${d.offre ? ' ' + d.offre : ''} : pas de fenêtre de 5 h sur ce compte, seule la semaine compte. « Semaine ${Math.round(use)} % » = part de la semaine déjà utilisée (${Math.round(reste)} % restants).\n`)
+    : en ? `Claude plan${d.offre ? ' ' + d.offre : ''}: the bar shows what is left on the most used window.\n` : `Forfait Claude${d.offre ? ' ' + d.offre : ''} : la barre montre ce qui reste sur la fenêtre la plus entamée.\n`) + lignes.join('\n')
     + '\n' + (maj && !isNaN(maj) ? (en ? 'Figures from ' : 'Chiffres du ') + jour(maj) + (ancien ? (en ? ': old data (older than the announced rate)' : ' : données anciennes (plus vieilles que la cadence prévue)') : '') : (en ? 'Date of the figures unknown' : 'Date des chiffres inconnue')) + (d.source ? (en ? '\nSource: ' : '\nSource : ') + d.source : '') + '.';
   if (el.title !== titre) el.title = titre;
   majForfaitOptim();

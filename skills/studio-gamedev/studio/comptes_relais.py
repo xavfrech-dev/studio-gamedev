@@ -123,7 +123,19 @@ def calculer(comptes, forfait=None, maintenant=None):
         hebdo = max((f for f in longues if f["remise"] >= tard - 3600), key=lambda f: f["pct"])
         if len(longues) > 1 and hebdo["remise"] == min(f["remise"] for f in longues):
             hebdo = None                                   # une seule échéance : pas de fenêtre « semaine » distincte
+    # 17/11 : compte sans fenêtre de 5 h (« 5 heures » absente, pct null) : il ne reste que les fenêtres hebdo, à la même
+    # échéance ; la règle ci-dessus les écartait. Une fenêtre nommée « Hebdo » / « semaine » / « week » est la semaine.
+    if hebdo is None:
+        nommees = [f for f in longues if re.search(r"hebdo|semaine|week", f["nom"], re.I)]
+        if nommees:
+            hebdo = max(nommees, key=lambda f: f["pct"])
     courte = min(longues, key=lambda f: f["remise"]) if len(longues) > 1 else None
+    # compte actif sans fenêtre de 5 h : forfait.json la marque « absente », ou comptes.json « fenetre_5h »: false
+    sans_5h = any(isinstance(f, dict) and f.get("absente") is True and re.match(r"^\s*5\s*h", str(f.get("nom") or ""), re.I)
+                  for f in ((forfait or {}).get("fenetres") or [] if isinstance(forfait, dict) else []))
+    sans_5h = sans_5h or any(isinstance(c, dict) and c.get("actif") is True and c.get("fenetre_5h") is False for c in comptes["comptes"])
+    if sans_5h:
+        courte = None
 
     lignes = []
     for c in comptes["comptes"]:
@@ -181,7 +193,7 @@ def calculer(comptes, forfait=None, maintenant=None):
     phase = 2 if phase >= 2 else 1                          # phase 1 sans fin_phase_1 : plein régime sans date de fin
 
     def cible_de(r):
-        return min(PLAFOND_5H, r * 5 * facteur) if facteur and r is not None else None
+        return min(PLAFOND_5H, r * 5 * facteur) if facteur and r is not None and not sans_5h else None
 
     ret_fr = f"{retour_nom} ({jour_txt(retour)})" if retour and retour_nom else (jour_txt(retour) if retour else "")
     ret_en = f"{retour_nom} ({jour_txt(retour, 'en')})" if retour and retour_nom else (jour_txt(retour, "en") if retour else "")
@@ -205,7 +217,7 @@ def calculer(comptes, forfait=None, maintenant=None):
     rythme = cible = rythme2 = None
     if phase == 1:
         rythme = plein
-        cible = PLAFOND_5H if plein else None
+        cible = PLAFOND_5H if plein and not sans_5h else None
         h1 = max(0.0, (fin1 - now) / 3600) if fin1 else None
         if H is not None and h1 is not None:
             h1 = min(h1, H)
@@ -236,6 +248,10 @@ def calculer(comptes, forfait=None, maintenant=None):
         ecoule = (t_forfait - (courte["remise"] - dh * 3600)) / 3600
         if 0.25 <= ecoule <= dh:
             mesure = (courte["pct"] / ecoule) / facteur
+    # 17/11 : sans fenêtre de 5 h, rythme mesuré écrit dans comptes.json (« rythme_mesure » : points_h, t), s'il a moins de 2 h
+    rm = comptes.get("rythme_mesure") if isinstance(comptes.get("rythme_mesure"), dict) else {}
+    if mesure is None and sans_5h and nombre(rm.get("points_h")) and iso_t(rm.get("t")) and now - iso_t(rm.get("t")) <= 2 * 3600:
+        mesure = nombre(rm.get("points_h"))
 
     def phrase(ok, t_fin, trou, lg):
         if not retour:
@@ -278,7 +294,15 @@ def calculer(comptes, forfait=None, maintenant=None):
     jusqua = f" jusqu'à {round(relais)} %" if relais < 100 else ""
     detail = [f"Budget de semaine des comptes disponibles{jusqua} : {round(budget)} points ({', '.join(x['nom'] + ' ' + str(round(x['budget'])) for x in dispo) or 'aucun'})."]
     detail_en = [f"Weekly budget of the available accounts{(' up to ' + str(round(relais)) + '%') if relais < 100 else ''}: {round(budget)} points."]
-    if phase == 1:
+    if phase == 1 and sans_5h:
+        detail.append("Compte actif sans fenêtre de 5 h : seule la semaine limite, pilotage au rythme de semaine (points/h).")
+        detail_en.append("Active account has no 5-hour window: only the week limits, paced in weekly points per hour.")
+        detail.append(f"Phase 1 : plein régime jusqu'à {jour_txt(fin1)}." if fin1 else "Phase 1 : plein régime, sans date de fin (plan.fin_phase_1).")
+        detail_en.append(f"Phase 1: full speed until {jour_txt(fin1, 'en')}." if fin1 else "Phase 1: full speed, no end date (plan.fin_phase_1).")
+        if rythme2 is not None:
+            detail.append(f"Puis phase 2 : {num(rythme2)} pt/h.")
+            detail_en.append(f"Then phase 2: {num(rythme2, 'en')} pt/h.")
+    elif phase == 1:
         if fin1:
             detail.append(f"Phase 1 : plein régime (fenêtre de 5 h à 97-99 %) jusqu'à {jour_txt(fin1)}.")
             detail_en.append(f"Phase 1: full speed (5-hour window at 97-99%) until {jour_txt(fin1, 'en')}.")

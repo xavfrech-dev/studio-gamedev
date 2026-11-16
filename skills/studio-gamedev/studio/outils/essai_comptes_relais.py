@@ -152,5 +152,25 @@ for _ in range(5000):
             mauvais += 1
 ok(mauvais == 0, f"{mauvais} « trou de 0 min » sur 5000 tirages")
 
+print("11. compte actif sans fenêtre de 5 h (fenêtre « 5 heures » absente, seulement des fenêtres hebdo)")
+d = base(rythme_mesure={"t": "2026-01-05T11:50:00Z", "points_h": 4.0})
+d["comptes"][0]["fenetre_5h"] = False
+f = {"maj": "2026-01-05T12:00:00Z", "compte": "compte A", "fenetres": [
+    {"nom": "Hebdo · tous les modèles", "pct_utilise": 10, "remise_a_zero": "2026-01-12T00:00:00Z"},
+    {"nom": "Hebdo · autre modèle", "pct_utilise": 0, "remise_a_zero": "2026-01-12T00:00:00Z"},
+    {"nom": "5 heures", "pct_utilise": None, "remise_a_zero": None, "absente": True}]}
+r = C.calculer(d, f, NOW)
+a = [x for x in r["comptes"] if x["nom"] == "compte A"][0]
+ok(a["pct"] == 10 and a["source"] == "forfait.json", f"sans 5 h : 10 % lu dans forfait.json ({a['pct']}, {a['source']})")
+ok("5 h" not in r["plan"]["ligne"] and r["plan"]["cible_5h"] is None, f"sans 5 h : la ligne du plan ne parle pas de fenêtre de 5 h ({r['plan']['ligne']})")
+ok(r["plan"]["rythme_mesure"] == 4.0, f"sans 5 h : rythme mesuré de comptes.json → rythme_mesure ({r['plan']['rythme_mesure']})")
+ok("sans fenêtre de 5 h" in r["plan"]["detail"], "sans 5 h : le détail le dit")
+d2 = base(rythme_mesure={"t": "2026-01-05T08:00:00Z", "points_h": 4.0})
+d2["comptes"][0]["fenetre_5h"] = False
+ok(C.calculer(d2, f, NOW)["plan"]["rythme_mesure"] is None, "sans 5 h : rythme_mesure de plus de 2 h ignoré")
+r2 = C.calculer(base(), forfait(10, 40, "compte A"), NOW)
+ok(r2["plan"]["cible_5h"] == 98 and "fenêtre de 5 h → 98 %" in r2["plan"]["ligne"], f"avec 5 h : ligne inchangée ({r2['plan']['ligne']})")
+ok(r2["plan"]["rythme_mesure"] is not None, "avec 5 h : rythme mesuré par la fenêtre de 5 h")
+
 print("\n" + ("tout vert" if not ECHECS else f"{len(ECHECS)} échec(s)"))
 sys.exit(1 if ECHECS else 0)
