@@ -2,6 +2,13 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.6] - 2026-11-16
+
+Le studio sait piloter plusieurs comptes Claude qui se relaient.
+
+### Ajouté
+- **Comptes en relais** : si le projet a un `comptes.json` (comptes, % de semaine, remise à zéro, compte actif, plan), une pastille à côté de la barre du forfait montre une mini-barre par compte (l'actif entouré) et « ça tient » ou « trou de N h ». Un clic ouvre le détail : une ligne par compte (actif, en réserve, épuisé avec son jour de retour), la phase du plan (plein régime puis rythme lissé), la cible de la fenêtre de 5 h et la prévision au rythme mesuré. Le % du compte actif vient de `forfait.json`, seulement pour le compte qu'il nomme. Rien ne s'affiche sans `comptes.json`. Lisible sur téléphone (360 px). Module `studio/comptes_relais.py` ; format dans `references/studio.md`.
+
 ## [Non publié]
 
 ## [0.5.5] - 2026-11-16
