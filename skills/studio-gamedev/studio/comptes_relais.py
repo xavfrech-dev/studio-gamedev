@@ -8,13 +8,19 @@ comptes.json (écrit par Claude ou à la main) :
    "mesures": {"semaine_par_fenetre_5h_pleine": 14,          # points de semaine que coûte une fenêtre de 5 h pleine (~98 %)
                "semaine_par_heure_plein_regime": 3.0},       # points de semaine par heure à plein régime
    "plan": {"phase": 1, "fin_phase_1": "…Z", "prochain_retour": "…Z"},   # tout facultatif
-   "seuil_epuise": 98}                                      # % de semaine à partir duquel un compte est « épuisé »
+   "seuil_epuise": 98,                                      # % de semaine à partir duquel un compte est « épuisé »
+   "seuil_relais": 95}                                      # facultatif : on passe au compte suivant à ce % (défaut 100) ;
+                                                            # le budget de chaque compte disponible = seuil_relais − % utilisé
 forfait.json (compte actif, plus frais) : sa fenêtre la plus longue donne le % de semaine du compte actif,
   sa fenêtre la plus courte (« 5 heures ») le rythme mesuré.
 
 Plan : phase 1 = plein régime jusqu'à fin_phase_1 ; phase 2 = rythme lissé (budget restant / heures jusqu'au prochain
 retour d'un compte). Cible de la fenêtre de 5 h = rythme × 5 × (98 / semaine_par_fenetre_5h_pleine), plafonnée à 98 %.
+Phase 1 sans fin_phase_1 : plein régime sans date de fin (la phase ne bascule jamais seule sans date).
+Horizon : le retour du compte épuisé qui revient le plus tôt ; à défaut, la prochaine remise à zéro d'un compte disponible
+(« remise de … ») ; à défaut, plan.prochain_retour.
 Prévision : « ça tient jusqu'au retour de … » ou « trou de N h avant le retour de … » ; plus la même au rythme mesuré.
+« ralentir » : le plan tient mais pas le rythme mesuré (la page l'affiche en orange : « tient si on ralentit »).
 Sans dépendance (bibliothèque standard), testable seul : python -I -B comptes_relais.py <comptes.json> [forfait.json]
 """
 import calendar
@@ -97,6 +103,8 @@ def calculer(comptes, forfait=None, maintenant=None):
         return None
     now = time.time() if maintenant is None else float(maintenant)
     seuil = nombre(comptes.get("seuil_epuise")) or 98.0
+    relais = nombre(comptes.get("seuil_relais"))
+    relais = 100.0 if relais is None or not 0 < relais <= 100 else relais
     mes = comptes.get("mesures") if isinstance(comptes.get("mesures"), dict) else {}
     plan = comptes.get("plan") if isinstance(comptes.get("plan"), dict) else {}
     par_fen = nombre(mes.get("semaine_par_fenetre_5h_pleine"))
@@ -150,23 +158,27 @@ def calculer(comptes, forfait=None, maintenant=None):
         return None
 
     dispo = [x for x in lignes if x["statut"] != "epuise"]
-    budget = sum(max(0.0, 100.0 - x["pct"]) for x in dispo)
-    # prochain retour : le compte épuisé qui revient le plus tôt ; sinon la première remise à venir ; sinon le plan
-    cand = [x for x in lignes if x["statut"] == "epuise" and x["remise"] and x["remise"] > now] or \
-           [x for x in lignes if x["remise"] and x["remise"] > now]
+    for x in dispo:
+        x["budget"] = round(max(0.0, relais - x["pct"]), 1)
+    budget = sum(x["budget"] for x in dispo)
+    # prochain retour : le compte épuisé qui revient le plus tôt ; sinon la première remise à zéro à venir d'un compte
+    # disponible (« remise de … », pas « retour » : il n'était pas parti) ; sinon le plan
+    epu = [x for x in lignes if x["statut"] == "epuise" and x["remise"] and x["remise"] > now]
+    rem = [x for x in lignes if x["remise"] and x["remise"] > now]
+    retour_type = "retour" if epu else "remise"
+    cand = epu or rem
     if cand:
         ret = min(cand, key=lambda x: x["remise"])
         retour, retour_nom = float(ret["remise"]), ret["nom"]
     else:
-        retour, retour_nom = iso_t(plan.get("prochain_retour")), ""
+        retour, retour_nom, retour_type = iso_t(plan.get("prochain_retour")), "", "retour"
     H = (retour - now) / 3600 if retour and retour > now else None
 
     fin1 = iso_t(plan.get("fin_phase_1"))
     phase = int(nombre(plan.get("phase")) or 1)
     if phase == 1 and fin1 and fin1 <= now:
         phase = 2
-    if phase == 1 and not fin1:
-        phase = 2 if H else 1
+    phase = 2 if phase >= 2 else 1                          # phase 1 sans fin_phase_1 : plein régime sans date de fin
 
     def cible_de(r):
         return min(PLAFOND_5H, r * 5 * facteur) if facteur and r is not None else None
@@ -183,7 +195,7 @@ def calculer(comptes, forfait=None, maintenant=None):
             dur = d if d is not None else float("inf")
             if b <= r * dur:
                 t_fin = t + b / r * 3600
-                if retour and t_fin < retour:
+                if retour and t_fin < retour - 60:          # moins d'une minute d'écart : pas de « trou de 0 min »
                     return False, t_fin, (retour - t_fin) / 3600
                 return True, t_fin, 0.0
             b -= r * dur
@@ -230,13 +242,20 @@ def calculer(comptes, forfait=None, maintenant=None):
             if t_fin:
                 return (f"ça tient jusqu'à {jour_txt(t_fin)}" if lg == "fr" else f"lasts until {jour_txt(t_fin, 'en')}")
             return "ça tient" if lg == "fr" else "it holds"
-        if ok:
-            if not retour_nom:
+        if not retour_nom:                                 # date seule : « jusqu'à jeu. 19/11 23:00 », « avant jeu. … »
+            if ok:
                 return (f"ça tient jusqu'à {ret_fr}" if lg == "fr" else f"holds until {ret_en}")
+            return (f"à sec {jour_txt(t_fin)}, trou de {heures(trou)} avant {ret_fr}" if lg == "fr"
+                    else f"dry {jour_txt(t_fin, 'en')}, {heures(trou, 'en')} gap before {ret_en}")
+        if retour_type == "remise":
+            if ok:
+                return (f"ça tient jusqu'à la remise à zéro de {ret_fr}" if lg == "fr" else f"holds until {ret_en} resets")
+            return (f"à sec {jour_txt(t_fin)}, trou de {heures(trou)} avant la remise à zéro de {ret_fr}" if lg == "fr"
+                    else f"dry {jour_txt(t_fin, 'en')}, {heures(trou, 'en')} gap before {ret_en} resets")
+        if ok:
             return (f"ça tient jusqu'au retour de {ret_fr}" if lg == "fr" else f"holds until {ret_en} is back")
-        qui = retour_nom or (jour_txt(retour) if lg == "fr" else jour_txt(retour, "en"))
-        return (f"à sec {jour_txt(t_fin)}, trou de {heures(trou)} avant le retour de {qui}" if lg == "fr"
-                else f"dry {jour_txt(t_fin, 'en')}, {heures(trou, 'en')} gap before {qui} is back")
+        return (f"à sec {jour_txt(t_fin)}, trou de {heures(trou)} avant le retour de {ret_fr}" if lg == "fr"
+                else f"dry {jour_txt(t_fin, 'en')}, {heures(trou, 'en')} gap before {ret_en} is back")
 
     prev, prev_en = phrase(tient, t_fin, trou, "fr"), phrase(tient, t_fin, trou, "en")
     mes_fr = mes_en = ""
@@ -256,12 +275,16 @@ def calculer(comptes, forfait=None, maintenant=None):
     morceaux.append(prev)
     morceaux_en.append(prev_en)
 
-    detail = [f"Budget de semaine des comptes disponibles : {round(budget)} points ({', '.join(x['nom'] + ' ' + str(round(100 - x['pct'])) for x in dispo) or 'aucun'})."]
-    detail_en = [f"Weekly budget of the available accounts: {round(budget)} points."]
+    jusqua = f" jusqu'à {round(relais)} %" if relais < 100 else ""
+    detail = [f"Budget de semaine des comptes disponibles{jusqua} : {round(budget)} points ({', '.join(x['nom'] + ' ' + str(round(x['budget'])) for x in dispo) or 'aucun'})."]
+    detail_en = [f"Weekly budget of the available accounts{(' up to ' + str(round(relais)) + '%') if relais < 100 else ''}: {round(budget)} points."]
     if phase == 1:
         if fin1:
             detail.append(f"Phase 1 : plein régime (fenêtre de 5 h à 97-99 %) jusqu'à {jour_txt(fin1)}.")
             detail_en.append(f"Phase 1: full speed (5-hour window at 97-99%) until {jour_txt(fin1, 'en')}.")
+        else:
+            detail.append("Phase 1 : plein régime (fenêtre de 5 h à 97-99 %), sans date de fin (plan.fin_phase_1).")
+            detail_en.append("Phase 1: full speed (5-hour window at 97-99%), no end date (plan.fin_phase_1).")
         if rythme2 is not None:
             c2 = cible_de(rythme2)
             detail.append(f"Puis phase 2 : {num(rythme2)} pt/h" + (f", fenêtre de 5 h vers {round(c2)} %" if c2 is not None else "") + ".")
@@ -270,18 +293,24 @@ def calculer(comptes, forfait=None, maintenant=None):
         detail.append("Phase 2 : rythme lissé = budget restant / heures jusqu'au prochain retour d'un compte.")
         detail_en.append("Phase 2: smoothed pace = budget left / hours until the next account is back.")
     if retour:
-        detail.append(f"Prochain retour : {ret_fr}" + (f", dans {heures(H)}" if H else "") + ".")
-        detail_en.append(f"Next account back: {ret_en}.")
+        quoi = "Prochain retour" if retour_type == "retour" else "Prochaine remise à zéro"
+        detail.append(f"{quoi} : {ret_fr}" + (f", dans {heures(H)}" if H else "") + ".")
+        detail_en.append(f"{'Next account back' if retour_type == 'retour' else 'Next reset'}: {ret_en}.")
     if mes_fr:
         detail.append(mes_fr[0].upper() + mes_fr[1:] + ".")
         detail_en.append(mes_en[0].upper() + mes_en[1:] + ".")
+    ralentir = bool(tient and mesure and not m_tient)
+    if ralentir:
+        detail.append("Le plan ne tient que si on ralentit au rythme cible.")
+        detail_en.append("The plan only holds if the pace drops to the target.")
 
     return {
         "maj": int(now), "comptes": lignes,
         "plan": {
             "phase": phase, "cible_5h": None if cible is None else round(cible), "rythme_cible": None if rythme is None else round(rythme, 2),
             "rythme_phase2": None if rythme2 is None else round(rythme2, 2), "rythme_mesure": None if mesure is None else round(mesure, 2),
-            "budget": round(budget, 1), "retour": int(retour) if retour else None, "retour_nom": retour_nom,
+            "budget": round(budget, 1), "seuil_relais": relais, "retour": int(retour) if retour else None, "retour_nom": retour_nom,
+            "retour_type": retour_type if retour else None, "ralentir": ralentir,
             "tient": bool(tient), "a_sec": int(t_fin) if t_fin else None, "trou_h": round(trou, 1),
             "mesure_tient": bool(m_tient), "mesure_trou_h": round(m_trou, 1) if mesure else None,
             "prevision": prev, "prevision_en": prev_en, "mesure": mes_fr, "mesure_en": mes_en,

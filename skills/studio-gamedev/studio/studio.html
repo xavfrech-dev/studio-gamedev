@@ -596,6 +596,8 @@ body.app #forfait small,body.app #forfait>span:first-child{display:none}body.app
 @media (max-width:700px){.relais-bloc{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 60px);width:auto;max-height:calc(100vh - 150px);overflow:auto}}
 body.app #relais .r-mot,#entete.serre3 #relais .r-mot,#entete.serre4 #relais .r-mot{display:none}body.app #relais-bt{padding:4px 5px;gap:0;min-height:30px}body.app #relais b{display:none}body.app #relais .r-mini{gap:2px}body.app #relais .r-mini i{width:5px;height:16px;border-radius:2px}body.app #relais .r-mini i.actif{outline-width:1px}body.app #relais .r-mini i>u{width:auto!important;right:0;top:auto;height:var(--r)}body.app #relais.trou{border-color:#d0802a}body.app #relais.ok{border-color:#5f8f4a}
 html[data-theme=clair] #relais{background:rgba(255,252,244,.85);color:#3b2f22}html[data-theme=clair] #relais b{color:#8a5b12}html[data-theme=clair] .relais-bloc{background:#fffcf4;color:#3b2f22}html[data-theme=clair] .relais-bloc h4,html[data-theme=clair] .relais-bloc li.actif .nm{color:#8a5b12}html[data-theme=clair] .relais-bloc li .st,html[data-theme=clair] .relais-bloc .r-mesure{color:#5a4a36}html[data-theme=clair] .relais-bloc li .r-barre,html[data-theme=clair] #relais .r-mini i{background:#e2d4b4}html[data-theme=clair] #relais.ok b,html[data-theme=clair] .relais-bloc li.actif .st{color:#2f7a3c}html[data-theme=clair] #relais.trou b,html[data-theme=clair] .relais-bloc .r-plan.trou{color:#a0681a}
+/* Relecteur 16/11 : le plan tient mais pas le rythme mesuré → orange « tient si on ralentit » (plus de vert trompeur) */
+#relais.ralentir b{color:#f0b060}body.app #relais.ralentir{border-color:#d0802a}.relais-bloc .r-mesure.ralentir{color:#f0b060}html[data-theme=clair] #relais.ralentir b,html[data-theme=clair] .relais-bloc .r-mesure.ralentir{color:#a0681a}
 html[data-theme=clair] #forfait .i-piste{background:#a59c8e}html[data-theme=clair] #forfait .interrupteur[aria-checked=true] .i-piste{background:#2f8a46}html[data-theme=clair] #forfait .optim-ligne{color:#5a4a36}html[data-theme=clair] #forfait .interrupteur:focus-visible{outline-color:#8a5b12}
 html[data-theme=clair] #forfait{background:rgba(255,252,244,.85);color:#3b2f22}html[data-theme=clair] #forfait b{color:#8a5b12}html[data-theme=clair] #forfait small{color:#5a4a36}
 /* plein écran PC : la barre de menus reste en haut, le reste se redistribue */
@@ -4515,6 +4517,10 @@ window.__forfaitEssai = d => { FORFAIT.d = d; majForfait(); const el = $('#forfa
 // .studio/comptes.json et forfait.json ; sans comptes.json, rien ne s'affiche. Pastille : une mini-barre par compte (semaine
 // restante) + prévision du plan ; clic : bloc détaillé (une ligne par compte, ligne du plan, rythme mesuré).
 // Optional "Relay accounts" block: several Claude accounts taking turns; one line per account, then the pace plan and forecast.
+function placerRelais() {   // pastille à gauche (en-tête replié) : bloc ouvert vers la droite plutôt que hors de l'écran / badge on the left: open to the right
+  const bl = $('#relais-bloc'), r = $('#relais'); if (!bl || bl.hidden || !r || r.hidden) return;
+  bl.style.left = bl.style.right = ''; if (innerWidth > 700 && bl.getBoundingClientRect().left < 16) { bl.style.right = 'auto'; bl.style.left = '0'; }
+}
 function majRelais() {
   const el = $('#relais'); if (!el) return;
   const en = LANGUE === 'en', d = ETAT && ETAT.comptes_relais, cs = d && Array.isArray(d.comptes) ? d.comptes : [];
@@ -4524,25 +4530,27 @@ function majRelais() {
   const p = d.plan || {}, reste = c => clamp(100 - (+c.pct || 0), 0, 100), cl = c => c.statut === 'epuise' ? 'epuise' : (reste(c) <= 25 ? 'bas' : '');
   const pc = x => en ? Math.round(x) + '%' : Math.round(x) + ' %', tx = c => (en ? c.texte_en : c.texte) || c.texte || '';
   html($('#relais-mini'), cs.map(c => `<i class="${c.actif ? 'actif ' : ''}${cl(c)}"><u style="--r:${reste(c)}%;width:${reste(c)}%"></u></i>`).join(''));
-  const trou = p.tient === false;
-  el.classList.toggle('trou', trou); el.classList.toggle('ok', !trou && !!p.prevision);
-  ec($('#relais-etat'), 'textContent', trou ? (en ? Math.round(p.trou_h || 0) + ' h gap' : 'trou ' + Math.round(p.trou_h || 0) + ' h') : (p.prevision ? (en ? 'holds' : 'ça tient') : '—'));
+  const trou = p.tient === false, lent = !trou && p.ralentir === true;   // lent : le plan tient, le rythme mesuré non / plan holds, measured pace does not
+  el.classList.toggle('trou', trou); el.classList.toggle('ralentir', lent); el.classList.toggle('ok', !trou && !lent && !!p.prevision);
+  ec($('#relais-etat'), 'textContent', trou ? (en ? Math.round(p.trou_h || 0) + ' h gap' : 'trou ' + Math.round(p.trou_h || 0) + ' h') : (lent ? (en ? 'holds if we slow down' : 'tient si on ralentit') : (p.prevision ? (en ? 'holds' : 'ça tient') : '—')));
   ec($('#relais .r-mot'), 'textContent', en ? 'Accounts' : 'Comptes'); ec($('#relais-titre'), 'textContent', en ? 'Relay accounts' : 'Comptes en relais');
   { const bl = $('#relais-bloc'); if (bl.getAttribute('aria-label') !== $('#relais-titre').textContent) bl.setAttribute('aria-label', $('#relais-titre').textContent); }
   html($('#relais-liste'), cs.map(c => `<li class="${c.actif ? 'actif ' : ''}${esc(c.statut)} ${cl(c)}" title="${esc(c.nom)}${en ? ': ' + pc(+c.pct || 0) + ' of the week used, ' + pc(reste(c)) + ' left' + (c.remise_txt_en ? ', resets ' + esc(c.remise_txt_en) : '') : ' : ' + pc(+c.pct || 0) + ' de la semaine utilisés, ' + pc(reste(c)) + ' restants' + (c.remise_txt ? ', remise à zéro ' + esc(c.remise_txt) : '')}${c.note ? '\n' + esc(c.note) : ''}"><span class="nm">${esc(c.nom)}</span><span class="r-barre" role="progressbar" aria-label="${esc((en ? 'Week left: ' : 'Semaine restante : ') + c.nom)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(reste(c))}"><i style="width:${reste(c)}%"></i></span><span class="pc">${pc(reste(c))}</span><span class="st">${esc(tx(c))}</span></li>`).join(''));
   const pl = $('#relais-plan'), ligne = (en ? p.ligne_en : p.ligne) || '', det = (en ? p.detail_en : p.detail) || '';
   ec(pl, 'textContent', ligne); pl.classList.toggle('trou', trou); ec(pl, 'title', det);
-  ec($('#relais-mesure'), 'textContent', (en ? p.mesure_en : p.mesure) || '');
+  ec($('#relais-mesure'), 'textContent', (en ? p.mesure_en : p.mesure) || ''); $('#relais-mesure').classList.toggle('ralentir', lent);
   const resume = cs.map(c => `${c.nom}${en ? ': ' + pc(reste(c)) + ' left' : ' : ' + pc(reste(c)) + ' restants'}, ${tx(c)}`).join('\n');
   ec($('#relais-bt'), 'title', (en ? 'Relay accounts (bars: what is left of each account\'s week)\n' : 'Comptes en relais (barres : ce qui reste de la semaine de chaque compte)\n') + resume + (ligne ? '\n' + ligne : '') + (det ? '\n\n' + det : '') + (en ? '\n(click: details)' : '\n(clic : détail)'));
+  placerRelais();
 }
 { const b = $('#relais-bt'), bl = $('#relais-bloc');
-  const ouvrir = o => { if (!b || !bl) return; bl.hidden = !o; b.setAttribute('aria-expanded', o ? 'true' : 'false'); try { localStorage.setItem('studio.relais_ouvert', o ? '1' : '0'); } catch (e) { /* rien */ } };
+  const ouvrir = o => { if (!b || !bl) return; bl.hidden = !o; if (o) placerRelais(); b.setAttribute('aria-expanded', o ? 'true' : 'false'); try { localStorage.setItem('studio.relais_ouvert', o ? '1' : '0'); } catch (e) { /* rien */ } };
   if (b) b.addEventListener('click', e => { e.stopPropagation(); ouvrir(bl.hidden); });
   document.addEventListener('click', e => { if (bl && !bl.hidden && !e.target.closest('#relais')) ouvrir(false); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && bl && !bl.hidden) { ouvrir(false); b.focus(); } });
+  addEventListener('resize', placerRelais);
   try { if (new URLSearchParams(location.search).get('relais') === '1' || localStorage.getItem('studio.relais_ouvert') === '1') ouvrir(true); } catch (e) { /* rien */ } }   // ?relais=1 : bloc ouvert d'emblée
-window.__relaisEssai = d => { const s = ETAT; ETAT = Object.assign({}, ETAT, { comptes_relais: d }); majRelais(); const r = { cache: $('#relais').hidden, etat: $('#relais-etat').textContent, lignes: $('#relais-liste').children.length, plan: $('#relais-plan').textContent }; ETAT = s; majRelais(); return r; };   // essais
+if (new URLSearchParams(location.search).has('essai')) window.__relaisEssai = d => { const s = ETAT; ETAT = Object.assign({}, ETAT, { comptes_relais: d }); majRelais(); const r = { cache: $('#relais').hidden, etat: $('#relais-etat').textContent, lignes: $('#relais-liste').children.length, plan: $('#relais-plan').textContent }; ETAT = s; majRelais(); return r; };   // essais
 chargerForfait(); setInterval(chargerForfait, 60000);
 setInterval(() => { try { majForfait(); } catch (e) { /* rien */ } try { majRelais(); } catch (e) { /* rien */ } }, 1000);
 $('#bt-journal').onclick = () => ouvrirJournal();

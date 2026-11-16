@@ -1503,8 +1503,13 @@ class Studio:
             if os.path.isfile(ch_c):
                 if ICI not in sys.path:
                     sys.path.insert(0, ICI)
-                import comptes_relais
-                etat["comptes_relais"] = comptes_relais.calculer(jsonio.lire(ch_c, None), jsonio.lire(os.path.join(self.dossier, "forfait.json"), None))
+                import importlib
+                import comptes_relais as cr
+                mt = os.path.getmtime(cr.__file__)          # rechargé quand le fichier change (pas besoin de relancer la boucle)
+                if getattr(cr, "_mtime_charge", mt) != mt:
+                    cr = importlib.reload(cr)
+                cr._mtime_charge = mt
+                etat["comptes_relais"] = cr.calculer(jsonio.lire(ch_c, None), jsonio.lire(os.path.join(self.dossier, "forfait.json"), None))
         except Exception as e:
             etat["comptes_relais"] = None
             self.anomalie("comptes.json", f"{type(e).__name__} : {e}"[:160])
