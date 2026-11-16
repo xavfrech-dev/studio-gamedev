@@ -4,6 +4,13 @@ Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [
 
 ## [Non publié]
 
+## [0.5.5] - 2026-11-16
+
+Le bandeau rouge « en attente » ne s'allume plus pour une simple relance de la cloche.
+
+### Corrigé
+- **Bandeau « en attente de Claude » allumé par une relance** : une relance de la cloche (« Relancer l’assistant : … », « Remind the assistant : … ») reprend un message déjà compté ; elle ne compte plus seule comme un message en attente, seul le message d'origine compte. Essai : `studio/outils/essai_relance_cloche.py`.
+
 ## [0.5.4] - 2026-11-16
 
 Le questionnaire tient compte de chaque réponse, le studio règle la dépense du forfait, montre la vraie tâche de chaque poste, et l'XP gagnée apparaît au-dessus du perso.
