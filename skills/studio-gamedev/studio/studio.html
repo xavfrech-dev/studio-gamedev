@@ -567,6 +567,35 @@ body.app #forfait small,body.app #forfait>span:first-child{display:none}body.app
 @media (max-width:1400px){#forfait .optim-ligne{display:none}}@media (max-width:1100px){#forfait .i-mot{display:none}}
 #entete.serre3 #forfait .optim-ligne,#entete.serre3 #forfait .i-mot,#entete.serre4 #forfait .optim-ligne,#entete.serre4 #forfait .i-mot,body.app #forfait .optim-ligne,body.app #forfait .i-mot{display:none}
 @media (prefers-reduced-motion:reduce){#forfait .i-piste,#forfait .i-bouton{transition:none}}
+/* « Comptes en relais » (facultatif, .studio/comptes.json) : pastille à côté du forfait (une mini-barre par compte + prévision), bloc déroulant */
+#relais{position:relative;display:flex;align-items:center;font:400 14px var(--serif);background:rgba(255,250,235,.05);border:1px solid var(--bord,rgba(233,210,160,.2));border-radius:999px;color:#e8dcc2;white-space:nowrap}
+#relais[hidden]{display:none}
+#relais-bt{display:flex;align-items:center;gap:8px;background:none;border:0;color:inherit;font:inherit;padding:5px 14px;min-height:32px;box-sizing:border-box;border-radius:999px;cursor:pointer}
+#relais-bt:focus-visible{outline:2px solid #f1d9a4;outline-offset:2px}
+#relais .r-mini{display:inline-flex;gap:3px;align-items:center}
+#relais .r-mini i{display:block;width:16px;height:10px;border-radius:3px;background:#3a3128;border:1px solid rgba(0,0,0,.4);overflow:hidden;position:relative}
+#relais .r-mini i>u{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#c9953e,#7fae5e)}
+#relais .r-mini i.actif{outline:1.5px solid #f1d9a4;outline-offset:1px}
+#relais .r-mini i.epuise>u{background:#a8432e}#relais .r-mini i.bas>u{background:linear-gradient(90deg,#e2b866,#d0802a)}
+#relais b{font:600 13px var(--sans);color:#f1d9a4;font-variant-numeric:tabular-nums}#relais.trou b{color:#f0b060}#relais.ok b{color:#9fcf86}
+.relais-bloc{position:absolute;right:0;top:calc(100% + 6px);z-index:130;width:min(440px,calc(100vw - 32px));box-sizing:border-box;background:#211b15;border:1px solid var(--bord,rgba(233,210,160,.2));border-radius:12px;padding:10px 14px 12px;box-shadow:0 8px 24px rgba(0,0,0,.55);white-space:normal;font:400 13px var(--sans);color:#e8dcc2}
+.relais-bloc[hidden]{display:none}
+.relais-bloc h4{margin:0 0 8px;font:600 14px var(--serif);color:#f1d9a4}
+.relais-bloc ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.relais-bloc li{display:grid;grid-template-columns:minmax(5.5em,auto) 1fr auto;align-items:center;gap:4px 10px}
+.relais-bloc li .nm{font-weight:600}.relais-bloc li.actif .nm{color:#f1d9a4}
+.relais-bloc li .r-barre{height:11px;border-radius:6px;background:#3a3128;border:1px solid rgba(0,0,0,.4);overflow:hidden}
+.relais-bloc li .r-barre>i{display:block;height:100%;background:linear-gradient(90deg,#c9953e,#7fae5e)}
+.relais-bloc li.bas .r-barre>i{background:linear-gradient(90deg,#e2b866,#d0802a)}.relais-bloc li.epuise .r-barre>i{background:linear-gradient(90deg,#d8664a,#a8432e)}
+.relais-bloc li .pc{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right}
+.relais-bloc li .st{grid-column:1/-1;font-size:12px;color:#bfb196;margin-top:-4px}.relais-bloc li.epuise .st{color:#ef8a6e}.relais-bloc li.actif .st{color:#9fcf86}
+.relais-bloc .r-plan{margin:10px 0 0;padding-top:8px;border-top:1px solid var(--bord,rgba(233,210,160,.2));line-height:1.4}
+.relais-bloc .r-mesure{margin:4px 0 0;font-size:12px;color:#bfb196;line-height:1.35}.relais-bloc .r-mesure:empty{display:none}
+.relais-bloc .r-plan.trou{color:#f0b060}
+@media (max-width:1100px){#relais .r-mot{display:none}}
+@media (max-width:700px){.relais-bloc{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top,0px) + 60px);width:auto;max-height:calc(100vh - 150px);overflow:auto}}
+body.app #relais .r-mot,#entete.serre3 #relais .r-mot,#entete.serre4 #relais .r-mot{display:none}body.app #relais-bt{padding:4px 5px;gap:0;min-height:30px}body.app #relais b{display:none}body.app #relais .r-mini{gap:2px}body.app #relais .r-mini i{width:5px;height:16px;border-radius:2px}body.app #relais .r-mini i.actif{outline-width:1px}body.app #relais .r-mini i>u{width:auto!important;right:0;top:auto;height:var(--r)}body.app #relais.trou{border-color:#d0802a}body.app #relais.ok{border-color:#5f8f4a}
+html[data-theme=clair] #relais{background:rgba(255,252,244,.85);color:#3b2f22}html[data-theme=clair] #relais b{color:#8a5b12}html[data-theme=clair] .relais-bloc{background:#fffcf4;color:#3b2f22}html[data-theme=clair] .relais-bloc h4,html[data-theme=clair] .relais-bloc li.actif .nm{color:#8a5b12}html[data-theme=clair] .relais-bloc li .st,html[data-theme=clair] .relais-bloc .r-mesure{color:#5a4a36}html[data-theme=clair] .relais-bloc li .r-barre,html[data-theme=clair] #relais .r-mini i{background:#e2d4b4}html[data-theme=clair] #relais.ok b,html[data-theme=clair] .relais-bloc li.actif .st{color:#2f7a3c}html[data-theme=clair] #relais.trou b,html[data-theme=clair] .relais-bloc .r-plan.trou{color:#a0681a}
 html[data-theme=clair] #forfait .i-piste{background:#a59c8e}html[data-theme=clair] #forfait .interrupteur[aria-checked=true] .i-piste{background:#2f8a46}html[data-theme=clair] #forfait .optim-ligne{color:#5a4a36}html[data-theme=clair] #forfait .interrupteur:focus-visible{outline-color:#8a5b12}
 html[data-theme=clair] #forfait{background:rgba(255,252,244,.85);color:#3b2f22}html[data-theme=clair] #forfait b{color:#8a5b12}html[data-theme=clair] #forfait small{color:#5a4a36}
 /* plein écran PC : la barre de menus reste en haut, le reste se redistribue */
@@ -683,6 +712,7 @@ html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not
   <div id="v1" title="Avancement pondéré de la roadmap" data-tt-t="a_v1"><span data-t="version">Version</span><div class="piste"><div class="plein" id="v1-plein"></div></div><b id="v1-pct">—</b></div>
   <div id="horloge" aria-live="off"></div>
   <div id="forfait" hidden><span data-t="forfait">Forfait Claude</span><div class="piste"><div class="plein" id="forfait-plein"></div></div><b id="forfait-pct">—</b><small id="forfait-rebours"></small><button type="button" id="forfait-optim" class="interrupteur" role="switch" aria-checked="false" aria-describedby="forfait-optim-ligne"><span class="i-piste" aria-hidden="true"><span class="i-bouton"></span></span><span class="i-mot" data-t="forfait_optim_court">Optimiser</span></button><span id="forfait-optim-ligne" class="optim-ligne" hidden></span></div>
+  <div id="relais" hidden><button type="button" id="relais-bt" aria-expanded="false" aria-controls="relais-bloc"><span class="r-mot">Comptes</span><span class="r-mini" id="relais-mini" aria-hidden="true"></span><b id="relais-etat">—</b></button><div class="relais-bloc" id="relais-bloc" role="region" hidden><h4 id="relais-titre">Comptes en relais</h4><ul id="relais-liste"></ul><p class="r-plan" id="relais-plan"></p><p class="r-mesure" id="relais-mesure"></p></div></div>
   <button type="button" id="niveau" aria-label="Niveau du studio" data-ta-a="a_niveau" hidden><span><span id="niv-t">niv.</span> <b id="niv-n">1</b><span class="niv-sep"> · </span><span class="rang" id="niv-rang"></span></span><span class="xpm"><i id="niv-xp"></i></span></button>
   <nav class="outils" aria-label="Outils" data-ta-a="a_outils">
     <button type="button" class="bt" id="bt-jour"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg><span data-t="aujourdhui">Aujourd'hui</span></button>
@@ -4481,8 +4511,40 @@ async function basculerForfaitOptim() {
 { const b = $('#forfait-optim'); if (b) b.addEventListener('click', e => { e.stopPropagation(); basculerForfaitOptim(); }); }   // bouton natif : Entrée et Espace marchent au clavier
 window.__forfaitOptimEssai = () => { majForfaitOptim(); const b = $('#forfait-optim'), li = $('#forfait-optim-ligne'); return { role: b.getAttribute('role'), coche: b.getAttribute('aria-checked'), nom: b.getAttribute('aria-label'), ligne: li.hidden ? '' : li.textContent, couleur: getComputedStyle(b.querySelector('.i-piste')).backgroundColor }; };   // essais
 window.__forfaitEssai = d => { FORFAIT.d = d; majForfait(); const el = $('#forfait'); return { cache: el.hidden, classe: el.className, pct: $('#forfait-pct').textContent, rebours: $('#forfait-rebours').textContent, titre: el.title }; };   // essais
+// « Comptes en relais » (facultatif) : etat.json → comptes_relais, calculé par l'alimentation (comptes_relais.py) à partir de
+// .studio/comptes.json et forfait.json ; sans comptes.json, rien ne s'affiche. Pastille : une mini-barre par compte (semaine
+// restante) + prévision du plan ; clic : bloc détaillé (une ligne par compte, ligne du plan, rythme mesuré).
+// Optional "Relay accounts" block: several Claude accounts taking turns; one line per account, then the pace plan and forecast.
+function majRelais() {
+  const el = $('#relais'); if (!el) return;
+  const en = LANGUE === 'en', d = ETAT && ETAT.comptes_relais, cs = d && Array.isArray(d.comptes) ? d.comptes : [];
+  if (!cs.length || CONF.mode !== 'travail') { if (!el.hidden) { el.hidden = true; try { ajusterOutils(); } catch (e) { /* rien */ } } return; }
+  if (el.hidden) { el.hidden = false; try { ajusterOutils(); } catch (e) { /* rien */ } }
+  const ec = (n, k, v) => { if (n && n[k] !== v) n[k] = v; }, html = (n, v) => { if (n && n._x !== v) { n._x = v; n.innerHTML = v; } };
+  const p = d.plan || {}, reste = c => clamp(100 - (+c.pct || 0), 0, 100), cl = c => c.statut === 'epuise' ? 'epuise' : (reste(c) <= 25 ? 'bas' : '');
+  const pc = x => en ? Math.round(x) + '%' : Math.round(x) + ' %', tx = c => (en ? c.texte_en : c.texte) || c.texte || '';
+  html($('#relais-mini'), cs.map(c => `<i class="${c.actif ? 'actif ' : ''}${cl(c)}"><u style="--r:${reste(c)}%;width:${reste(c)}%"></u></i>`).join(''));
+  const trou = p.tient === false;
+  el.classList.toggle('trou', trou); el.classList.toggle('ok', !trou && !!p.prevision);
+  ec($('#relais-etat'), 'textContent', trou ? (en ? Math.round(p.trou_h || 0) + ' h gap' : 'trou ' + Math.round(p.trou_h || 0) + ' h') : (p.prevision ? (en ? 'holds' : 'ça tient') : '—'));
+  ec($('#relais .r-mot'), 'textContent', en ? 'Accounts' : 'Comptes'); ec($('#relais-titre'), 'textContent', en ? 'Relay accounts' : 'Comptes en relais');
+  { const bl = $('#relais-bloc'); if (bl.getAttribute('aria-label') !== $('#relais-titre').textContent) bl.setAttribute('aria-label', $('#relais-titre').textContent); }
+  html($('#relais-liste'), cs.map(c => `<li class="${c.actif ? 'actif ' : ''}${esc(c.statut)} ${cl(c)}" title="${esc(c.nom)}${en ? ': ' + pc(+c.pct || 0) + ' of the week used, ' + pc(reste(c)) + ' left' + (c.remise_txt_en ? ', resets ' + esc(c.remise_txt_en) : '') : ' : ' + pc(+c.pct || 0) + ' de la semaine utilisés, ' + pc(reste(c)) + ' restants' + (c.remise_txt ? ', remise à zéro ' + esc(c.remise_txt) : '')}${c.note ? '\n' + esc(c.note) : ''}"><span class="nm">${esc(c.nom)}</span><span class="r-barre" role="progressbar" aria-label="${esc((en ? 'Week left: ' : 'Semaine restante : ') + c.nom)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(reste(c))}"><i style="width:${reste(c)}%"></i></span><span class="pc">${pc(reste(c))}</span><span class="st">${esc(tx(c))}</span></li>`).join(''));
+  const pl = $('#relais-plan'), ligne = (en ? p.ligne_en : p.ligne) || '', det = (en ? p.detail_en : p.detail) || '';
+  ec(pl, 'textContent', ligne); pl.classList.toggle('trou', trou); ec(pl, 'title', det);
+  ec($('#relais-mesure'), 'textContent', (en ? p.mesure_en : p.mesure) || '');
+  const resume = cs.map(c => `${c.nom}${en ? ': ' + pc(reste(c)) + ' left' : ' : ' + pc(reste(c)) + ' restants'}, ${tx(c)}`).join('\n');
+  ec($('#relais-bt'), 'title', (en ? 'Relay accounts (bars: what is left of each account\'s week)\n' : 'Comptes en relais (barres : ce qui reste de la semaine de chaque compte)\n') + resume + (ligne ? '\n' + ligne : '') + (det ? '\n\n' + det : '') + (en ? '\n(click: details)' : '\n(clic : détail)'));
+}
+{ const b = $('#relais-bt'), bl = $('#relais-bloc');
+  const ouvrir = o => { if (!b || !bl) return; bl.hidden = !o; b.setAttribute('aria-expanded', o ? 'true' : 'false'); try { localStorage.setItem('studio.relais_ouvert', o ? '1' : '0'); } catch (e) { /* rien */ } };
+  if (b) b.addEventListener('click', e => { e.stopPropagation(); ouvrir(bl.hidden); });
+  document.addEventListener('click', e => { if (bl && !bl.hidden && !e.target.closest('#relais')) ouvrir(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && bl && !bl.hidden) { ouvrir(false); b.focus(); } });
+  try { if (new URLSearchParams(location.search).get('relais') === '1' || localStorage.getItem('studio.relais_ouvert') === '1') ouvrir(true); } catch (e) { /* rien */ } }   // ?relais=1 : bloc ouvert d'emblée
+window.__relaisEssai = d => { const s = ETAT; ETAT = Object.assign({}, ETAT, { comptes_relais: d }); majRelais(); const r = { cache: $('#relais').hidden, etat: $('#relais-etat').textContent, lignes: $('#relais-liste').children.length, plan: $('#relais-plan').textContent }; ETAT = s; majRelais(); return r; };   // essais
 chargerForfait(); setInterval(chargerForfait, 60000);
-setInterval(() => { try { majForfait(); } catch (e) { /* rien */ } }, 1000);
+setInterval(() => { try { majForfait(); } catch (e) { /* rien */ } try { majRelais(); } catch (e) { /* rien */ } }, 1000);
 $('#bt-journal').onclick = () => ouvrirJournal();
 $('#bt-optim').onclick = () => ouvrirOptimisation();
 $('#bt-jassist').onclick = () => ouvrirJournalAssistant();

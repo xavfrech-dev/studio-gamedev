@@ -1498,6 +1498,16 @@ class Studio:
             etat["forfait_optim"] = {k: cons.get(k) for k in ("actif", "decision", "delta", "cible", "actifs", "ligne", "ligne_en", "raison", "raison_en")}
         except Exception as e:
             etat["forfait_optim"] = {"actif": False, "erreur": f"{type(e).__name__} : {e}"[:160]}
+        try:                                                # « Comptes en relais » (facultatif) : .studio/comptes.json + forfait.json
+            ch_c = os.path.join(self.dossier, "comptes.json")
+            if os.path.isfile(ch_c):
+                if ICI not in sys.path:
+                    sys.path.insert(0, ICI)
+                import comptes_relais
+                etat["comptes_relais"] = comptes_relais.calculer(jsonio.lire(ch_c, None), jsonio.lire(os.path.join(self.dossier, "forfait.json"), None))
+        except Exception as e:
+            etat["comptes_relais"] = None
+            self.anomalie("comptes.json", f"{type(e).__name__} : {e}"[:160])
         if qres:                                            # S4 : quêtes (résumé) ; l'XP des quêtes s'ajoute au niveau (la page l'additionne)
             etat["quetes"], etat["xp"] = qres.get("resume"), qres.get("xp", 0)
         fini = int(time.time())
