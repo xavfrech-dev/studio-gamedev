@@ -105,6 +105,9 @@ def calculer(comptes, forfait=None, maintenant=None):
 
     fen = fenetres(forfait) if isinstance(forfait, dict) else []
     t_forfait = iso_t((forfait or {}).get("maj")) if isinstance(forfait, dict) else None
+    # forfait.json peut dire de quel compte il vient (« compte ») : on ne le prête qu'à ce compte-là (au changement
+    # de compte, comptes.json et forfait.json ne sont pas réécrits au même instant)
+    compte_forfait = str(forfait.get("compte") or "").strip() if isinstance(forfait, dict) else ""
     longues = [f for f in fen if f["remise"]]
     hebdo = None
     if longues:
@@ -123,7 +126,7 @@ def calculer(comptes, forfait=None, maintenant=None):
         p = nombre(c.get("pct_semaine"))
         r = iso_t(c.get("remise_semaine"))
         source = "comptes.json"
-        if actif and hebdo is not None:
+        if actif and hebdo is not None and (not compte_forfait or compte_forfait == str(c.get("nom") or "").strip()):
             p, source = hebdo["pct"], "forfait.json"
             r = hebdo["remise"] or r
         remis = bool(r and r <= now)
@@ -228,6 +231,8 @@ def calculer(comptes, forfait=None, maintenant=None):
                 return (f"ça tient jusqu'à {jour_txt(t_fin)}" if lg == "fr" else f"lasts until {jour_txt(t_fin, 'en')}")
             return "ça tient" if lg == "fr" else "it holds"
         if ok:
+            if not retour_nom:
+                return (f"ça tient jusqu'à {ret_fr}" if lg == "fr" else f"holds until {ret_en}")
             return (f"ça tient jusqu'au retour de {ret_fr}" if lg == "fr" else f"holds until {ret_en} is back")
         qui = retour_nom or (jour_txt(retour) if lg == "fr" else jour_txt(retour, "en"))
         return (f"à sec {jour_txt(t_fin)}, trou de {heures(trou)} avant le retour de {qui}" if lg == "fr"
