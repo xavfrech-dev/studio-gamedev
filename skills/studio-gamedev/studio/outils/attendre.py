@@ -13,6 +13,9 @@ Attente (questionnaire, demandes de la page) :
     economie.attente_max_s de studio.config.json est ignoré (une attente qui revient « rien » coûte un réveil entier).
     reglages.json ne réveille que pour les clés qui changent ton travail (REGLAGES_TRAVAIL) : l'ordre de l'équipe,
     la blague, l'affichage de la santé… ne coûtent aucun tour.
+    Réveil autosuffisant : la ligne JSON porte aussi « a_traiter », le contenu utile de ce qui a changé (texte des
+    demandes nouvelles, réponses aux décisions, réglages de travail modifiés, demandes de la page). Dans le cas courant,
+    tu n'as AUCUN fichier à ouvrir : relis un fichier seulement si « tronque » est vrai ou s'il y a des pièces jointes.
     Un changement survenu entre deux attentes n'est jamais perdu : l'état vu est gardé dans .studio/attente.etat.json.
 
 Point de suivi (avant chaque point programmé, sans attendre) :
@@ -103,6 +106,8 @@ def tete_git(projet):
 
 
 def differences(avant, apres):
+    avant = {k: v for k, v in avant.items() if not k.startswith("_")}       # « _… » : mémoire de l'attente, pas un fichier
+    apres = {k: v for k, v in apres.items() if not k.startswith("_")}
     d = [{"f": k, "etat": "nouveau" if k not in avant else "modifie"} for k in sorted(apres) if avant.get(k) != apres[k]]
     d += [{"f": k, "etat": "supprime"} for k in sorted(avant) if k not in apres]
     return d
@@ -113,6 +118,65 @@ def ecrire_etat(chemin, donnees):
         jsonio.ecrire(chemin, donnees, indent=None, ensure_ascii=True, fsync=False)
     except OSError:
         pass
+
+
+TEXTE_MAX = 700          # caractères gardés par texte (« tronque » : relire le fichier)
+ITEMS_MAX = 10
+
+
+def court(x, n=TEXTE_MAX):
+    x = str(x or "")
+    return (x[:n] + "…", True) if len(x) > n else (x, False)
+
+
+def contenu(studio, diff, avant_reglages, reponses_vues):
+    """Ce qui a changé, déjà lu : l'assistant n'a pas à ouvrir les fichiers (un tour d'outil de moins par fichier)."""
+    out, tronque = [], False
+    for x in diff:
+        f = x["f"]
+        if x["etat"] == "supprime" or len(out) >= ITEMS_MAX:
+            continue
+        d = lire_json(os.path.join(studio, *f.split("/")), None)
+        if f.startswith("demandes_vocales/") and isinstance(d, dict):
+            if d.get("statut") not in (None, "", "nouvelle"):
+                continue                       # déjà prise, faite ou annulée : rien à faire
+            t, c = court(d.get("texte"))
+            tronque |= c
+            e = {"genre": "message", "fichier": f, "id": d.get("id"), "cible": d.get("cible"), "texte": t}
+            for k in ("en_reponse_a", "sujet", "via", "origine"):
+                if d.get(k):
+                    e[k] = d[k]
+            if d.get("pieces"):
+                e["pieces"] = d["pieces"][:10]
+            if d.get("consigne"):
+                e["consigne_a_lire"] = True    # longue : lire le fichier
+                tronque = True
+            out.append(e)
+        elif f.startswith("demandes/") and isinstance(d, dict):
+            if d.get("statut") not in (None, "", "nouvelle"):
+                continue
+            t, c = court(d.get("mission") or d.get("role") or "", 400)
+            tronque |= c
+            out.append({"genre": "demande_page", "fichier": f, "type": d.get("type"), "nom": d.get("nom"), "titre": d.get("titre"),
+                        "lancer": d.get("lancer"), "origine": d.get("origine"), "mission": t})
+        elif f == "reponses.json" and isinstance(d, list):
+            for r in d[-30:]:
+                if not isinstance(r, dict):
+                    continue
+                cle = f"{r.get('id')}|{r.get('repondu_le')}|{r.get('choix')}"
+                if cle in reponses_vues:
+                    continue
+                reponses_vues.add(cle)
+                t, c = court(r.get("texte_libre"), 400)
+                tronque |= c
+                out.append({"genre": "reponse", "id": r.get("id"), "choix": r.get("choix"), "texte_libre": t})
+        elif f == "reglages.json" and isinstance(d, dict):
+            ch = {k: d.get(k) for k in REGLAGES_TRAVAIL if d.get(k) != (avant_reglages or {}).get(k)}
+            if ch:
+                out.append({"genre": "reglages", "changes": ch})
+        elif f.startswith("recrues/") and isinstance(d, dict):
+            out.append({"genre": "recrue", "fichier": f, "nom": d.get("nom"), "role": court(d.get("role"), 200)[0]})
+    return out, tronque
 
 
 def resume_questionnaire(studio):
@@ -156,7 +220,11 @@ def main(argv=None):
     vu = lire_json(etat_ch, None)
     courant = empreintes(studio, ATTENTE)
     if not isinstance(vu, dict):          # premier appel : l'état actuel sert de départ
-        vu = courant
+        vu = dict(courant)
+        rp = lire_json(os.path.join(studio, "reponses.json"), [])
+        vu["_reponses_vues"] = [f"{r.get('id')}|{r.get('repondu_le')}|{r.get('choix')}" for r in rp if isinstance(r, dict)][-200:] if isinstance(rp, list) else []
+        rg = lire_json(os.path.join(studio, "reglages.json"), {})
+        vu["_reglages"] = {k: rg.get(k) for k in REGLAGES_TRAVAIL if k in rg} if isinstance(rg, dict) else {}
         ecrire_etat(etat_ch, vu)
     fin = time.time() + maxi if maxi else None
     while True:
@@ -170,8 +238,14 @@ def main(argv=None):
                     break
                 dernier = courant
             diff = differences(vu, courant)
-            ecrire_etat(etat_ch, courant)
-            sortie = {"evenement": "changement", "fichiers": diff[:40], "nb": len(diff)}
+            vues = set(vu.get("_reponses_vues") or [])
+            a_traiter, tronque = contenu(studio, diff, vu.get("_reglages"), vues)
+            memo = dict(courant)
+            memo["_reponses_vues"] = sorted(vues)[-200:]
+            rg = lire_json(os.path.join(studio, "reglages.json"), {})
+            memo["_reglages"] = {k: rg.get(k) for k in REGLAGES_TRAVAIL if k in rg} if isinstance(rg, dict) else {}
+            ecrire_etat(etat_ch, memo)
+            sortie = {"evenement": "changement", "fichiers": diff[:40], "nb": len(diff), "a_traiter": a_traiter, "tronque": tronque}
             if any(x["f"] == "reponses_questionnaire.json" for x in diff):
                 sortie["questionnaire"] = resume_questionnaire(studio)
             print(json.dumps(sortie, ensure_ascii=False))

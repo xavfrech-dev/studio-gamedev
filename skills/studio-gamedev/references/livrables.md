@@ -19,7 +19,7 @@ Remplis les gabarits de `modeles/` avec `.studio/reponses_questionnaire.json` (r
 
 ## Adoption : ne jamais écraser
 
-Projet déjà commencé (`SKILL.md`, « Adoption d'un projet existant ») : chaque livrable regarde d'abord `analyse_projet.json.fichiers_proteges`.
+Projet déjà commencé (`references/adoption.md`) : chaque livrable regarde d'abord `analyse_projet.json.fichiers_proteges`.
 
 | Fichier du projet | S'il n'existe pas | S'il existe déjà |
 |---|---|---|

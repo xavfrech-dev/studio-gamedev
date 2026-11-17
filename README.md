@@ -209,7 +209,7 @@ Puis ouvre l'adresse affichée (`http://127.0.0.1:8810/studio.html`, ou le port 
 | Chemin | Contenu |
 |---|---|
 | `skills/studio-gamedev/SKILL.md` | Le déroulé du skill (phases 0 à 6) |
-| `skills/studio-gamedev/references/` | Questionnaire, routage vers les skills, règles de travail, livrables, contrat du studio |
+| `skills/studio-gamedev/references/` | Questionnaire, routage vers les skills, règles de travail, livrables, contrat du studio, adoption, vie du projet, options (santé, forfait) |
 | `skills/studio-gamedev/modeles/` | Gabarits : GDD, ROADMAP, DECISIONS, CLAUDE.md, agent, config, profil, roadmap |
 | `skills/studio-gamedev/studio/` | La page du studio, son serveur local, l'alimentation du bureau et sa veille, le questionnaire, 264 illustrations SVG tracées par code, les paliers du décor (`paliers.js`) et les personnages rendus (`sprites/`, outils de rendu dans `outils/sprites/`) |
 | `commands/studio.md` | La commande `/studio-gamedev:studio` |
