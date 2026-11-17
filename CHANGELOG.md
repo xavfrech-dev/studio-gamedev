@@ -2,14 +2,9 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
-## [0.5.6] - 2026-11-16
+## [0.5.7] - 2026-11-17
 
-Le studio sait piloter plusieurs comptes Claude qui se relaient.
-
-### Ajouté
-- **Comptes en relais** : si le projet a un `comptes.json` (comptes, % de semaine, remise à zéro, compte actif, plan), une pastille à côté de la barre du forfait montre une mini-barre par compte (l'actif entouré) et « ça tient » ou « trou de N h ». Un clic ouvre le détail : une ligne par compte (actif, en réserve, épuisé avec son jour de retour), la phase du plan (plein régime puis rythme lissé), la cible de la fenêtre de 5 h et la prévision au rythme mesuré. Le % du compte actif vient de `forfait.json`, seulement pour le compte qu'il nomme. Rien ne s'affiche sans `comptes.json`. Lisible sur téléphone (360 px). Module `studio/comptes_relais.py` ; format dans `references/studio.md`.
-
-## [Non publié]
+Moins de jetons quand le studio attend, cloche groupée, version téléphone, barres en temps réel, questions réglées repliées.
 
 ### Changé (retours d'un utilisateur : moins de jetons quand le studio attend)
 - **Attente sans fin** : sans `--max`, `outils/attendre.py` attend sans limite de temps et ne rend la main qu'à un vrai changement (code 0) ; il ne revient plus « rien de neuf » tout seul (une nuit sans message coûtait une douzaine de réveils de plus de 300 000 jetons chacun). Le code 3 n'existe plus qu'avec `--max` (appel au premier plan). `economie.attente_max_s` est ignoré (0 dans les modèles de config).
@@ -40,6 +35,14 @@ Le studio sait piloter plusieurs comptes Claude qui se relaient.
   - La carte reçoit `vivant_t`, la dernière écriture du journal de l'agent : un agent qui travaille sans réécrire sa barre n'est plus « sans nouvelles ». Un run au journal immobile reste suivi tant qu'un de ses agents écrit.
   - Page : « vient de commencer » seulement pour une barre écrite par l'agent (une barre calculée y restait bloquée à 0 %) ; le cycle du poste s'affiche comme une barre, pas « en continu ».
   - Essai : `studio/outils/essai_barres_temps_reel.py`.
+
+## [0.5.6] - 2026-11-16
+
+Le studio sait piloter plusieurs comptes Claude qui se relaient.
+
+### Ajouté
+- **Comptes en relais** : si le projet a un `comptes.json` (comptes, % de semaine, remise à zéro, compte actif, plan), une pastille à côté de la barre du forfait montre une mini-barre par compte (l'actif entouré) et « ça tient » ou « trou de N h ». Un clic ouvre le détail : une ligne par compte (actif, en réserve, épuisé avec son jour de retour), la phase du plan (plein régime puis rythme lissé), la cible de la fenêtre de 5 h et la prévision au rythme mesuré. Le % du compte actif vient de `forfait.json`, seulement pour le compte qu'il nomme. Rien ne s'affiche sans `comptes.json`. Lisible sur téléphone (360 px). Module `studio/comptes_relais.py` ; format dans `references/studio.md`.
+
 
 ## [0.5.5] - 2026-11-16
 
