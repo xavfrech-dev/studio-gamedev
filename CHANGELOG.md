@@ -11,6 +11,21 @@ Le studio sait piloter plusieurs comptes Claude qui se relaient.
 
 ## [Non publié]
 
+### Changé (retours d'un utilisateur : moins de jetons quand le studio attend)
+- **Attente sans fin** : sans `--max`, `outils/attendre.py` attend sans limite de temps et ne rend la main qu'à un vrai changement (code 0) ; il ne revient plus « rien de neuf » tout seul (une nuit sans message coûtait une douzaine de réveils de plus de 300 000 jetons chacun). Le code 3 n'existe plus qu'avec `--max` (appel au premier plan). `economie.attente_max_s` est ignoré (0 dans les modèles de config).
+- **Réglages visuels muets** : dans `reglages.json`, seules les clés qui changent le travail de l'assistant réveillent `attendre.py` (automatismes, `mode_absent`, `pause`, fréquence du point, noms, rôles et modèles des postes…) ; l'ordre de l'équipe, la blague, l'affichage de la santé ne coûtent plus un tour.
+- **SKILL.md, boucle d'écoute** : `attendre.py` en arrière-plan sans `--max`, relancé à la fin de chaque tour sans exception, jamais mis en pause « pour économiser » ; la barre du forfait s'écrit à la fin de chaque réponse (jamais de réveil rien que pour elle) ; **fil résumé `FIL.md`** (une ligne par échange, en-tête + 40 dernières lignes, `outils/fil.py`) lu à la reprise, avec une session neuve proposée après un gros travail.
+- **La cloche n'envoie les choix qu'à sa fermeture** : tant qu'elle est ouverte, un clic sur un choix le retient (contour vert, ✓, `aria-pressed`), un 2e clic l'enlève, un bandeau dit « N choix prêts : ils partent ensemble quand tu fermes la cloche ». À la fermeture (×, clic à côté, Échap, autre panneau qui la remplace), tous partent l'un après l'autre : un seul réveil. Gardés dans le navigateur (rechargement compris) ; un choix dont la question a disparu est oublié ; un envoi refusé reste retenu. La fenêtre d'une seule décision et les boutons de la conversation envoient toujours tout de suite. `Panneau` émet `panneau-quitte`.
+
+### Corrigé (téléphone)
+- Rappuyer sur l'onglet ouvert (barre du bas) le referme : retour à la vue de l'équipe.
+- Clavier ouvert sur Firefox Android : la page plus large que haute ne passe plus en faux mode paysage (rail d'onglets à gauche) ; ce mode demande un écran couché d'au moins 600 px de large.
+- Menu ⋯ grisé et sans réaction : le voile passait par-dessus ; la barre du haut passe devant lui.
+- La conversation garde le texte commencé (fermer / rouvrir, rechargement) ; effacé une fois envoyé.
+- Entrée va à la ligne au téléphone (`enterkeyhint="enter"`), on envoie avec « Envoyer » ; au PC, Entrée envoie toujours (Maj+Entrée : ligne). Même règle pour « Écrire à l'assistant ».
+- En-tête de la conversation sur une ligne, croix à droite ; bulles jusqu'à 94 % de la largeur, marges de 8 px.
+- Essais : `essai_attente.py`, `essai_retours_ami.py` (Chrome sans tête, PC 1400 × 900 et téléphone 390 × 844, son coupé).
+
 ### Corrigé
 - **Barre d'agent écrite avec « pourcentage » au lieu de « pct » : poste ignoré.** Une barre `progression/*.json` sans `pct` prend son % dans `pourcentage`, `progression` ou `pourcent` (nombre seulement ; `pct` présent gagne toujours). Le poste garde sa carte et son %, sans anomalie de données. `studio_etat.py` (`normaliser_pct`) et `restructuration.progressions_de`. Essai : `essai_barres_temps_reel.py`, partie 4.
 - **Vieilles questions déjà réglées qui restaient dans la conversation** (PC et téléphone). Une question réglée (réponse dans `reponses.json`, statut fermé quel qu'il soit, ou fiche qui porte déjà sa réponse : `reponse`, `repondue_le`, `repondu_le`, `decide_le`, `reponse_libre`) n'a plus de carte dans le fil : elle passe dans le repli « ✓ N questions réglées : l'historique » en tête (60 dernières, heure et réponse ; le repli reste ouvert d'un rafraîchissement à l'autre). L'état vient du serveur : même affichage sur chaque appareil. Une question répondue depuis le fil garde sa carte 2 minutes. Une heure écrite dans le futur est ramenée à maintenant (la carte ne reste plus collée en bas du fil). La cloche ignore aussi une fiche qui porte sa réponse. Essai : `essai_questions_reglees.py` (Chrome sans tête, PC puis téléphone 390 × 844 sur un profil neuf).

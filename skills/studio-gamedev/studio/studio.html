@@ -442,7 +442,11 @@ html,body{overscroll-behavior:none}
 .conv-vide{text-align:center;padding:36px 12px 16px;color:#5c4f3f}.conv-vide .av{width:56px;height:56px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:#2b241c;color:#f1c86e}
 .conv-vide p{font-size:18px;margin:0 0 14px}.conv-vide .sugg{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}.conv-vide .sugg .bts{min-height:40px;border-radius:999px;padding:6px 16px}
 .toast.groupe{cursor:pointer}
-body.app #panneau.conv-app .surtitre,body.app #panneau.conv-app .conv-aide{display:none}body.app #panneau.conv-app h2{font-size:20px;margin:0 0 8px;padding:0 8px 0 48px;min-height:40px;line-height:1.2;display:flex;align-items:center}body.app.feuille-actions #bt-son::after{content:attr(title)}
+body.app #panneau.conv-app .surtitre,body.app #panneau.conv-app .conv-aide{display:none}body.app #panneau.conv-app h2{font-size:18px;margin:0 0 6px;padding:0 52px 0 4px;min-height:44px;line-height:1.2;display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.app #panneau.conv-app .feuille{padding-left:calc(8px + env(safe-area-inset-left));padding-right:calc(8px + env(safe-area-inset-right));padding-top:calc(6px + env(safe-area-inset-top))}
+body.app #panneau.conv-app .feuille>.x{position:absolute;top:calc(6px + env(safe-area-inset-top));right:calc(8px + env(safe-area-inset-right));margin:0;float:none;z-index:3}
+body.app #panneau.conv-app .fil .msg{max-width:94%}
+body.app #panneau.conv-app .conv-saisie{margin:0 -8px}body.app.feuille-actions #bt-son::after{content:attr(title)}
 /* T7 : en-tête compact (56 px) ; les outils passent dans la feuille d'actions « ⋯ » */
 #bt-plus-app,#voile-actions{display:none}
 body.app #entete{flex-wrap:nowrap;min-height:56px;padding-top:calc(6px + env(safe-area-inset-top));padding-bottom:6px;gap:8px}
@@ -462,7 +466,7 @@ body.app.feuille-actions #entete nav.outils .bt[hidden]{display:none}
 body.app.feuille-actions #entete nav.outils .bt>span[data-t]{position:static;width:auto;height:auto;overflow:visible;clip:auto;white-space:normal;text-align:left}
 body.app.feuille-actions #micro-zone,body.app.feuille-actions #zoom{display:none}
 body.app #zoom{bottom:calc(160px + env(safe-area-inset-bottom))}
-body.app.feuille-actions #voile-actions{display:block;position:fixed;inset:0;z-index:71;background:rgba(12,10,8,.5)}
+body.app.feuille-actions #voile-actions{display:block;position:fixed;inset:0;z-index:71;background:rgba(12,10,8,.5)}body.app.feuille-actions #entete{z-index:73}
 /* T6 : notifications en haut, une à la fois ; plus de bouton chat flottant ; équipe en défilement aimanté avec un dégradé */
 body.app #toasts{top:calc(64px + env(safe-area-inset-top));bottom:auto;left:8px;right:8px;align-items:stretch}
 body.app #toasts .toast{width:auto;max-width:none;font-size:16px}
@@ -485,7 +489,7 @@ body.app .conv-saisie textarea{min-height:44px;max-height:30vh;field-sizing:cont
 body.app .conv-saisie .rangee{margin:0;flex-wrap:nowrap}
 body.app .conv-saisie .rangee [data-envoyer]{margin-left:auto;min-width:96px}
 /* T1 + T2 : téléphone couché (petite hauteur, doigt) : icônes seules sur une rangée qui défile, onglets en rail vertical */
-@media (orientation:landscape) and (max-height:500px){
+@media (orientation:landscape) and (max-height:500px) and (min-width:600px){
   #entete .outils{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#entete .outils>*{flex:0 0 auto}
   #entete .outils .bt>span[data-t]{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   #entete .outils .bt,#entete .outils .bt.fort,#entete #bt-optim,#entete #bt-notifs,#entete #bt-son{padding:6px 10px;min-width:0;min-height:40px}
@@ -839,7 +843,7 @@ const TXT = {
     restru_attente: 'plan en préparation…', restru_pret: 'Plan prêt sous la cloche', restru_dernier: 'Dernier plan', restru_defaire: 'Défaire ce plan', restru_defait: 'Plan défait : renvoyés réembauchés, anciens noms remis',
     restru_st_ouverte: 'en attente de ta réponse', restru_st_en_cours: 'appliqué, renvois après leur tâche en attente', restru_st_appliquee: 'appliqué', restru_st_classe: 'classé (rien fait)', restru_st_a_modifier: 'à refaire par l’auditeur', restru_st_defait: 'défait', restru_st_remplace: 'remplacé',
     decider: 'Décider', ouvrir_cloche: 'Ouvrir la cloche', rien_cloche: 'Aucune décision en attente.', etat_vieux: 'Les infos du studio datent de {m} min : il continue avec ses propres estimations.', etat_vieux_detail: 'Le programme qui met le studio à jour (veille_studio.py, studio_etat.py) ne répond plus. « Relancer » le redémarre ; tu peux aussi dire à Claude : relance le studio.', relancer_b: 'Relancer', etat_relance: '… relance demandée, les infos reviennent dans quelques secondes.', masquer_30: 'Masquer 30 min', illisible: 'Fichier illisible ignoré',
-    cl_bouton: 'Cloche', cl_an_tard: 'Plus tard : « {t} » revient demain.', cl_an_remis: '« {t} » est de retour dans la liste.', cl_an_envoi: '« {c} » : envoi…', cl_an_envoye: '« {c} » : enregistré ({t}).',
+    cl_bouton: 'Cloche', cl_prets_1: '1 choix prêt : il part quand tu fermes la cloche.', cl_prets_n: '{n} choix prêts : ils partent ensemble quand tu fermes la cloche.', cl_an_retenu: '« {c} » retenu : il part à la fermeture de la cloche.', cl_an_oublie: '« {c} » enlevé.', cl_an_tard: 'Plus tard : « {t} » revient demain.', cl_an_remis: '« {t} » est de retour dans la liste.', cl_an_envoi: '« {c} » : envoi…', cl_an_envoye: '« {c} » : enregistré ({t}).',
     cl_an_confie: 'Confié à l’assistant : {t}.', cl_an_lien: 'Lien ouvert dans un nouvel onglet. Quand c’est fait, réponds ici.', cl_an_echec: 'Pas enregistré ({t}) : {e}. Réessaie, ou confie-le à l’assistant.',
     cl_an_fiche: 'Fiche introuvable : ce poste n’existe plus. Confie-le à l’assistant ou mets-le à plus tard.', cl_confier: 'Confier à l’assistant', cl_confier_t: 'L’assistant s’en occupe (une demande lui est déposée) ; l’élément quitte la liste 24 h', cl_tard: 'Plus tard', cl_tard_t: 'Caché 24 h, puis il revient', cl_accepter: 'J’accepte la dépense', cl_refuser: 'Je refuse', cl_autre: 'Autre réponse…', cl_repondre: 'Répondre', cl_fait: 'C’est fait', cl_lien: 'Ouvrir le lien', cl_appliquer: 'Appliquer', cl_voir_poste: 'Voir sa fiche', cl_bloque_titre: '{nom} est bloqué', cl_msg_sans_reponse: 'Ton message attend une réponse', cl_depuis: 'depuis {m} min', cl_relancer: 'Relancer l’assistant', cl_voir_conv: 'Ouvrir la conversation', cl_agent_attend: '{nom} attend ta réponse', cl_repondre_conv: 'Répondre dans la conversation', cl_maj_titre: 'Le studio a été mis à jour', cl_maj_detail: 'Recharge la page pour avoir la nouvelle version (brouillons et réglages restent).', cl_recharger: 'Recharger maintenant', cl_remettre: 'Remettre dans la liste', cl_recommande: 'recommandé', cl_surtitre: 'Pour toi', cl_titre: 'La cloche', cl_resume_1: 'Une chose t’attend.', cl_resume_n: '{n} choses t’attendent.', cl_vide_titre: 'Rien ne t’attend.', cl_vide_texte: 'L’équipe avance seule ; la cloche sonnera s’il faut ton avis ou ta main.', cl_confies: 'Confiés à l’assistant', cl_confie_etat: 'Confié : l’assistant s’en occupe.', cl_reportes: 'Pour plus tard', cl_reporte_etat: 'Revient dans {h} h.', cl_g_decision: 'Décision', cl_g_depense: 'Accord de dépense', cl_g_afaire: 'À faire de ta main', cl_g_blocage: 'Blocage', cl_g_demande: 'Demande en attente', cl_g_maj: 'Mise à jour', cl_s_fab: 'À ajouter depuis Fab', cl_s_reconnexion: 'Reconnexion à un site', cl_s_ecoute: 'À écouter ou valider en jeu', cl_mission_tete: 'Depuis la cloche, l’utilisateur te confie ({genre}) :', cl_mission_montant: 'Montant :', cl_mission_choix: 'Choix possibles :', cl_mission_fin: 'Tranche au mieux (le choix recommandé sauf contre-indication), règle-le, puis ferme l’élément (decisions.json : statut « repondue » avec la réponse).', cl_mission_depense: 'Ne dépense RIEN sans son accord : cherche une solution gratuite ou déjà payée, sinon repose-lui la question avec le montant exact.', cl_mission_afaire: 'Fais-le sans lui si c’est possible (sans saisir de mot de passe ni payer) ; sinon prépare tout et dis-lui pas à pas quoi faire. Puis passe l’élément à « fait » dans a_faire.json.', cl_cloche_aria: 'Cloche : {n}', cl_rien_aria: 'Cloche : rien ne t’attend', cl_cloche_title: 'La cloche : tout ce qui attend ta réponse ou ta main, avec une issue en un clic pour chacun' },
   en: { pe_morphologie: 'Build', pe_peau: 'Skin', pe_coupe: 'Haircut', pe_cheveux: 'Hair', pe_tenue: 'Outfit', pe_couleur1: 'Colour 1', pe_couleur2: 'Colour 2', pe_accessoire: 'Accessory', pe_mince: 'slim', pe_moyenne: 'average', pe_costaude: 'stocky', pe_petite: 'short', pe_grande: 'tall', pe_courts: 'short', pe_longs: 'long', pe_boucles: 'curly', pe_en_bataille: 'messy', pe_queue: 'ponytail', pe_rase: 'shaved', pe_aucune: 'none', pe_sweat: 'hoodie', pe_chemise: 'shirt', pe_bleu_de_travail: 'overalls', pe_heros: 'hero', pe_tablier: 'apron', pe_costume: 'suit', pe_armure: 'armour', pe_robe: 'dress', pe_aucun: 'none', pe_casque: 'helmet', pe_casque_audio: 'headphones', pe_casquette: 'cap', pe_beret: 'beret', pe_chapeau: 'hat', pe_lunettes: 'glasses', pe_barbe: 'beard', pe_couronne: 'crown', pe_bandeau: 'headband', pe_capuche: 'hood', pe_cornes: 'horns', te_demande: 'asks you', bloque_sur: 'waiting on:', recommande_par: 'the answer the assistant recommends', theme_t: 'Theme', theme_auto: 'same as the system', theme_clair: 'light', theme_sombre: 'dark', aujourdhui: 'Today', de_la_v1: 'of version 1', jour_avance: 'What moved forward', jour_attend: 'What is waiting', jour_prochaine: 'Next step', fini_quand: 'Done when:', voir_bureau: 'See the office', o_jour: 'Today', resume_matin: 'Morning summary', abs_reponses: 'Assistant replies', tout_vu: 'All seen', balayage_part: 'sent in 5 s', chap_style: 'Style', studio: 'Studio', ens_sugg: 'Suggestions from the feed', confier_assistant: 'Hand to the assistant', sugg_envoye: 'Sent', autre_reponse: 'Another answer…', equipe_avance: 'The team is moving on.', onglets_nom: 'Studio tabs', rc_titre: 'Keyboard shortcuts', rc_a: 'talk to the assistant', rc_v: 'dictate into the last field', rc_espace_k: 'Space (hold)', rc_espace: 'big microphone', rc_echap: 'close the window', rc_aide: 'this sheet', rc_actifs: 'Single-key shortcuts are on (Settings to turn them off).', rc_coupes: 'Single-key shortcuts are off (Settings to turn them on).', rc_reglage: 'Single-key keyboard shortcuts (A, V, Space)', fermer: 'Close', grp_auto: 'Automations', grp_son: 'Sound and notifications', grp_affichage: 'Display', n_notifs: '{n} new notifications', voir_notifs: 'tap to see them', plus_actions: 'More actions', conv_vide: 'Tell me what you want to move forward.', sugg_1: 'Give me a status update', sugg_2: 'What is blocking?', sugg_3: 'Start the next task', ecrire_court: 'Write to the assistant…', etat_studio: 'Studio status', serveur_coupe: 'The studio is not answering (computer asleep or server stopped). Retrying every 10 s; you can tell Claude: restart the studio.', telephone_titre: 'On a phone', telephone_aide: 'Start the server with --reseau, open the studio in the phone browser (same Wi-Fi), then “Add to Home Screen” (Safari: Share button; Chrome: ⋮ menu). It then opens full screen like an app, with its tabs at the bottom. Over http on Wi-Fi, adding works but without offline mode: the offline cache needs an https address (or the computer itself).', o_equipe: 'Team', o_conv: 'Chat', o_cloche: 'Bell', o_roadmap: 'Roadmap', o_reglages: 'Settings', role_temporaire: 'Temporary role (the original task stays reserved)', point_journal: 'New report (kept in the log: a report is already open or was just read)', points_anciens: '{n} older report(s) in the log', conv_cc: 'The same conversation as in Claude Code, read on this machine (never sent anywhere). Enter: send · Shift+Enter: new line.', tout_rallumer: 'Turn all back on', rallume_ok: 'All back on: automations resume as before.', pause_depuis: 'Automations paused since', regle: 'settled', nouvelle: 'last news from the agent:', il_y_a: '{m} min ago', a_l_instant: 'just now', app_aucune: 'none', app_casque: 'helmet', app_casquette: 'cap', app_beret: 'beret', app_lunettes: 'glasses', app_chapeau: 'hat', app_casque_audio: 'headphones', app_barbe: 'beard', a_bureau: 'The studio office', a_v1: 'Weighted roadmap progress', a_niveau: 'Studio level', a_outils: 'Tools', a_couper: 'Stop all', a_reglages: 'Settings', a_son: 'Sound', a_notifs: 'Notifications', a_equipe: 'The team', a_fermer: 'Close', a_chat: 'Chat', a_micro_t: 'Talk to the studio (or hold the space bar). The microphone stays open during dictation and 90 s after. Bluetooth headset: its microphone switches the headset to “hands-free” mode: prefer a desk microphone.', a_micro: 'Talk to the studio', a_zoom_t: 'Zoom in (mouse wheel)', a_zoom: 'Zoom in', a_dezoom: 'Zoom out', a_recentrer: 'Recenter', modele_ia: 'AI model', modele_aide: 'The change applies the next time the agent starts, not to a task in progress.', mod_haiku: 'Fast (Haiku)', mod_sonnet: 'Balanced (Sonnet)', mod_opus: 'Complex tasks (Opus)', mod_inherit: 'Same as the session', modele_t: 'model', file_moteur: 'engine queue: all work without the engine is done, the characters take a breather', sante_auto: 'PC health: the agent and its alerts', sante_auto_tt: 'shows or hides the PC health agent and its alerts; measuring and the safety brakes stay on', sante_titre: 'PC health', tout_va_bien: 'all good', charge: 'load', blague: 'Little joke at the start of the team report', noms_roles: 'Name and roles', nom_affiche: 'Display name', metiers_t: 'Trades (tyranny and assignment pick tasks from them)', role_libre: 'Free role', enregistre: 'saved ✓', m_code: 'Code', m_relecture: 'Review', m_art: 'Art', m_son: 'Sound', m_ia: 'AI', m_doc: 'Docs', m_design: 'Design', m_test: 'Tests', m_moteur: 'Engine', m_studio: 'Studio (studio backlog)', repris_du_chat: 'Picking up the answers you gave in the chat.', ouvrir_navigateur: 'Open in my browser', adresse_copiee: 'Address copied: paste it into your usual browser:', tyrannie_auto: 'Tyranny: a foreman puts idle agents back to work (assignment after 30 s, 6 per hour; hires and fires by itself)', contremaitre: 'foreman', equipe_occupee: 'team busy at', tyr_renvoi: 'The foreman let {n} go: no more {m} work', reintegrer: 'Take back (10 min)', reintegre: 'is back', trop_tard: 'Too late: use “Former staff”', chat: 'Write to the assistant (Enter: send, Shift+Enter: new line, Esc: close)', chat_titre: 'Write to the assistant', chat_ph: 'Your message… (Enter: send · Shift+Enter: new line · Esc: close)', fermer_b: 'Close', envoye: 'sent ✓', ordre_defaut: 'default order', mode_nuit: 'I’m away', je_suis_la: 'I’m back', nuit_on: 'I’m away: no more notifications; the studio keeps going, summary when you are back', absence_titre: 'While you were away', absence_sous: 'The studio kept running; here is what happened.', abs_fini: 'What got done', abs_equipe: 'Hired or let go', abs_dec: 'Decisions waiting for you', abs_pb: 'Problems', abs_decide: 'Decided for you', abs_auto: 'Started by the automations (even with no tab open)', abs_embauche: 'Hired: {n}', abs_renvoi: 'Let go: {n}', abs_partage: 'task split in {n}', abs_change: 'changed by you', changer: 'Change', rien: 'Nothing.', gros_micro: 'Talk to the studio (or hold the space bar)', jecoute: 'Listening…', ta_demande: 'Your request', pour: 'To', annuler: 'Cancel', ecrire_ici: 'Type your request here.', micro_bloque: 'The browser blocks the microphone. Click the padlock left of the address, allow the microphone for {o}, then try again.', whisper_absent: 'Local transcription (Whisper) is missing: dictation uses the browser’s speech recognition.', micro_aucun: 'Neither browser speech recognition nor local transcription is available: type your request.', micro_mode: 'Big microphone', mode_appui: 'press (click to start, click to stop)', mode_maintien: 'hold (talk while pressed)', ambiance_niv: 'Office ambience', amb_coupee: 'off', amb_douce: 'soft', amb_vivante: 'lively', babil_son: 'Bubble babble (little sounds when a character talks)', etiquettes: 'Character labels', etiq_toujours: 'always', etiq_survol: 'on hover', etiq_jamais: 'never', taille_texte: 'Text size', t_petite: 'small', t_normale: 'normal', t_grande: 'large', animations: 'Animations', notif_sys: 'System notifications (hidden tab)', notif_sys_ok: 'System notifications on', notif_sys_non: 'The browser refuses notifications', a_jour: 'up to date', fige_depuis: 'frozen for', clic_fiche: 'click: their card', repondre: 'Reply', repondre_a: 'Reply to the assistant', repondre_ph: 'Your reply… (V key to dictate)', envoyer: 'Send', envoye_ok: 'Sent ✓', version: 'Version 1', ensemble: 'Overview', journal: 'Log', optimiser: 'Optimize', journal_assistant: 'Assistant log', personnaliser: 'Customize', tout_couper: 'Stop all', optim_titre: 'The studio, improved', optim_demande: 'Optimize the studio: review the work in progress and suggest improvements (reliability, speed, tokens).', optim_envoyee: 'Optimization requested: the assistant is touring the studio.', optim_rien: 'No optimization report yet. Click “Request an optimization”.', optim_demander: 'Request an optimization', optim_faites: 'What was done', optim_props: 'Suggestions', optim_lancer: 'Launch the selection', optim_tout: 'Check all', optim_lot: 'Optimization batch to do', optim_lancees: 'suggestion(s) launched', deja_demande: 'already requested', jassist_rien: 'The assistant has not written anything here yet.', journal_rien: 'Nothing yet.', ens_postes: 'Desks', ens_systeme: 'Machine', ens_git: 'Repository', perso_maitre: 'You', perso_assistant: 'The assistant', perso_nom: 'Name', enregistrer: 'Save', perso_ok: 'Character saved', volume: 'Volume', notif_duree: 'Notification duration', ambiance: 'Office ambience (keyboards)', radio: 'Radio: the game’s music', radio_vol: 'Radio volume', radio_aucune: 'no music found in the project', babil: 'Small talk between characters', plein_ecran: 'Full screen', quitter_plein: 'Exit full screen', forfait: 'Claude plan', forfait_optim_court: 'Optimize', forfait_optim_nom: 'Optimize the plan', forfait_optim_attente: 'on: computed at the next pass', forfait_optimise: 'Optimize the plan: adds or removes parallel agents from the spending pace (aims at 90% of the short window and just under 100% of the weekly one at their reset; the critical chain is never cut)', tuto_relancer: 'Replay the tutorial', legende: 'States', enchainement_auto: 'Task chaining (the character takes the next roadmap task)', point_auto: 'Regular report from the assistant', optimisation_auto: 'Automatic optimization', msg_attente: 'waiting for the assistant for', session_absente: 'No Claude session for {m} min: your requests are waiting', session_aucune: 'No Claude session open: your requests are waiting', session_ouvre: 'open Claude Code in the project', session_dem: 'request(s)', session_msg: 'message(s)', coupe_ok: 'All automations are stopped.', auto_tournent: 'automation(s) running: click to stop all', tuto_suivant: 'Next', tuto_passer: 'Skip', tuto_fin: 'Finish', tuto_tout: 'Turn everything on', tuto_choix: 'Turn on the ones I pick', tuto_tard: 'Later', tuto_cout: 'Estimated cost', jetons_h: 'tokens per hour (rough estimate)', decisions: 'Decisions', notifs: 'Notifications', appeler: 'Call the assistant', niv: 'lvl', tout_lu: 'mark all read', aucune_notif: 'Nothing new.',
@@ -874,7 +878,7 @@ const TXT = {
     restru_attente: 'preparing the plan…', restru_pret: 'Plan ready under the bell', restru_dernier: 'Latest plan', restru_defaire: 'Undo this plan', restru_defait: 'Plan undone: hired back, old names restored',
     restru_st_ouverte: 'waiting for your answer', restru_st_en_cours: 'applied, let-go after their task pending', restru_st_appliquee: 'applied', restru_st_classe: 'filed (nothing done)', restru_st_a_modifier: 'to be redone by the auditor', restru_st_defait: 'undone', restru_st_remplace: 'replaced',
     decider: 'Decide', ouvrir_cloche: 'Open the bell', rien_cloche: 'No decision waiting.', etat_vieux: 'The studio info is {m} min old: it carries on with its own estimates.', etat_vieux_detail: 'The program that updates the studio (veille_studio.py, studio_etat.py) is not answering. “Restart” starts it again; you can also tell Claude: restart the studio.', relancer_b: 'Restart', etat_relance: '… restart requested, the info will be back in a few seconds.', masquer_30: 'Hide for 30 min', illisible: 'Unreadable file ignored',
-    cl_bouton: 'Bell', cl_an_tard: 'Later: “{t}” comes back tomorrow.', cl_an_remis: '“{t}” is back in the list.', cl_an_envoi: '“{c}”: sending…', cl_an_envoye: '“{c}”: saved ({t}).',
+    cl_bouton: 'Bell', cl_prets_1: '1 choice ready: it is sent when you close the bell.', cl_prets_n: '{n} choices ready: they are sent together when you close the bell.', cl_an_retenu: '“{c}” kept: it is sent when the bell closes.', cl_an_oublie: '“{c}” removed.', cl_an_tard: 'Later: “{t}” comes back tomorrow.', cl_an_remis: '“{t}” is back in the list.', cl_an_envoi: '“{c}”: sending…', cl_an_envoye: '“{c}”: saved ({t}).',
     cl_an_confie: 'Handed to the assistant: {t}.', cl_an_lien: 'Link opened in a new tab. When it is done, answer here.', cl_an_echec: 'Not saved ({t}): {e}. Try again, or hand it to the assistant.',
     cl_an_fiche: 'Desk not found: it no longer exists. Hand it to the assistant or put it off until later.', cl_confier: 'Hand to the assistant', cl_confier_t: 'The assistant takes care of it (a request is filed); the item leaves the list for 24 h', cl_tard: 'Later', cl_tard_t: 'Hidden for 24 h, then it comes back', cl_accepter: 'I approve the spending', cl_refuser: 'I decline', cl_autre: 'Another answer…', cl_repondre: 'Answer', cl_fait: 'Done', cl_lien: 'Open the link', cl_appliquer: 'Apply', cl_voir_poste: 'See their card', cl_bloque_titre: '{nom} is blocked', cl_msg_sans_reponse: 'Your message is waiting for an answer', cl_depuis: 'for {m} min', cl_relancer: 'Remind the assistant', cl_voir_conv: 'Open the chat', cl_agent_attend: '{nom} is waiting for your answer', cl_repondre_conv: 'Answer in the chat', cl_maj_titre: 'The studio was updated', cl_maj_detail: 'Reload the page to get the new version (drafts and settings are kept).', cl_recharger: 'Reload now', cl_remettre: 'Put back in the list', cl_recommande: 'recommended', cl_surtitre: 'For you', cl_titre: 'The bell', cl_resume_1: 'One thing is waiting for you.', cl_resume_n: '{n} things are waiting for you.', cl_vide_titre: 'Nothing is waiting for you.', cl_vide_texte: 'The team is moving on; the bell will ring when your opinion or your hand is needed.', cl_confies: 'Handed to the assistant', cl_confie_etat: 'Handed over: the assistant is on it.', cl_reportes: 'For later', cl_reporte_etat: 'Back in {h} h.', cl_g_decision: 'Decision', cl_g_depense: 'Spending approval', cl_g_afaire: 'For you to do', cl_g_blocage: 'Blocked', cl_g_demande: 'Pending request', cl_g_maj: 'Update', cl_s_fab: 'To add from Fab', cl_s_reconnexion: 'Sign back in to a site', cl_s_ecoute: 'To listen to or check in game', cl_mission_tete: 'From the bell, the user hands you ({genre}):', cl_mission_montant: 'Amount:', cl_mission_choix: 'Possible choices:', cl_mission_fin: 'Settle it as best you can (the recommended choice unless something argues against it), then close the item (decisions.json: status “repondue” with the answer).', cl_mission_depense: 'Do NOT spend anything without their approval: look for a free or already paid solution, otherwise ask again with the exact amount.', cl_mission_afaire: 'Do it without them if possible (never typing a password or paying); otherwise prepare everything and tell them step by step. Then set the item to “fait” in a_faire.json.', cl_cloche_aria: 'Bell: {n}', cl_rien_aria: 'Bell: nothing is waiting for you', cl_cloche_title: 'The bell: everything waiting for your answer or your hand, each with a one-click way out' }
 };
@@ -1184,7 +1188,9 @@ const Panneau = (() => {
       el.querySelector('.feuille').scrollTop = 0; }, 60);   // la fenêtre s'ouvre par le haut, jamais au milieu
   }
   function majFile() { let f = corps.querySelector('.file'); if (FILE.length) { if (!f) { f = document.createElement('p'); f.className = 'file'; corps.prepend(f); } f.textContent = `${FILE.length} ${t('a_suivre')}`; } else if (f) f.remove(); }
-  function fermer() { if (!ouvert) return; ouvert = null; el.classList.remove('vu'); Voix.arreter();
+  // panneau-quitte : la clé du panneau qui part (fermeture, ou remplacement par un autre) ; la cloche y envoie ses choix retenus
+  const quitte = cle => { try { document.dispatchEvent(new CustomEvent('panneau-quitte', { detail: { cle } })); } catch (e) { /* rien */ } };
+  function fermer() { if (!ouvert) return; const parti = ouvert; ouvert = null; el.classList.remove('vu'); Voix.arreter(); setTimeout(() => quitte(parti), 0);
     const r = Panneau._retour, dedans = el.contains(document.activeElement); Panneau._retour = null;
     if (dedans && r && r.isConnected && r !== document.body && !el.contains(r)) try { r.focus(); } catch (e) { /* rien */ }
     if (el.contains(document.activeElement)) { const b = [$('#bt-jour'), ...document.querySelectorAll('#entete .bt, #entete button')].find(x => x && !x.disabled && x.offsetParent !== null); if (b) b.focus({ preventScroll: true }); else document.activeElement.blur(); }   // jamais dans une fenêtre fermée
@@ -1201,7 +1207,7 @@ const Panneau = (() => {
     const b = document.elementsFromPoint(e.clientX, e.clientY).map(x => x.closest && x.closest('#entete button, #entete a')).find(x => x && !x.disabled);
     fermer(); if (b) b.click(); });
   // clic de l'utilisateur dans la barre du haut : remplace le panneau ouvert (la file des panneaux automatiques est gardée)
-  function remplacer(cle, rendu, o = {}) { if (ouvert) { ouvert = null; try { Voix.arreter(); } catch (e) { /* rien */ } } montrer(cle, rendu, o); }   // M17 : la dictée s'arrête avec le panneau remplacé
+  function remplacer(cle, rendu, o = {}) { const parti = ouvert; if (ouvert) { ouvert = null; try { Voix.arreter(); } catch (e) { /* rien */ } } montrer(cle, rendu, o); if (parti && parti !== cle) setTimeout(() => quitte(parti), 0); }   // M17 : la dictée s'arrête avec le panneau remplacé
   return { montrer, remplacer, fermer, ouvert: () => ouvert };
 })();
 
@@ -1500,6 +1506,10 @@ const CL_CLES = ['confier', 'confier_t', 'tard', 'tard_t', 'accepter', 'refuser'
   'g_decision', 'g_depense', 'g_afaire', 'g_blocage', 'g_demande', 'g_maj', 's_fab', 's_reconnexion', 's_ecoute', 'mission_tete', 'mission_montant', 'mission_choix', 'mission_fin', 'mission_depense', 'mission_afaire', 'cloche_aria', 'rien_aria', 'cloche_title'];
 const clT = () => { const o = {}; for (const k of CL_CLES) o[k] = t('cl_' + k); return o; };
 let A_FAIRE = [], CL_MAJ = null, CL_SIG0 = '', CL_ANNONCE = null;
+// choix retenus sous la cloche (clé de l'élément → id de l'issue) : ils partent ensemble à la fermeture (un seul réveil de l'assistant) ;
+// gardés dans le navigateur : une page rechargée les garde, ils partent à la fermeture suivante
+const CL_CHOIX = (() => { try { const o = LS.get('cloche_choix', {}); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } })();
+const clGarderChoix = () => { try { LS.set('cloche_choix', CL_CHOIX); } catch (e) { /* rien */ } };
 const CL_VUS = new Set(LS.get('cloche_vus', []));
 // « plus tard » et « confié » : mémoire tenue par le serveur (.studio/cloche_memo.json, la même au PC et au téléphone) ;
 // le navigateur garde une copie de secours (serveur ancien, hors ligne)
@@ -1532,8 +1542,35 @@ function rendreCloche(el, force) {
   el._clHtml = h; el.innerHTML = h;
   // le bouton se grise le temps de l'envoi, puis redevient utilisable si l'élément reste affiché (lien ouvert, envoi refusé…)
   el.querySelectorAll('[data-cl-issue]').forEach(b => b.onclick = () => { b.disabled = true; clAgir(b.dataset.clCle, b.dataset.clIssue); setTimeout(() => { if (b.isConnected) b.disabled = false; }, 1500); });
+  clMarquerChoix(el);
   if (foc) { const x = (avant && el.querySelector(`[data-cl-cle="${CSS.escape(avant)}"]`)) || el.querySelector('.cl-el .cl-issue') || el.querySelector('h2'); if (x) try { x.focus({ preventScroll: true }); } catch (e) { /* rien */ } }
 }
+// choix retenus : contour vert et ✓ (aria-pressed), bandeau « N choix prêts » ; posé après le rendu, sans toucher au bloc partagé
+function clMarquerChoix(el) {
+  if (!el) return; let n = 0;
+  el.querySelectorAll('.cl-issue.cl-i-choix').forEach(b => { const on = CL_CHOIX[b.dataset.clCle] === b.dataset.clIssue; b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('cl-retenu', on);
+    let m = b.querySelector('.cl-coche'); if (on && !m) { m = document.createElement('span'); m.className = 'cl-coche'; m.textContent = '✓ '; m.setAttribute('aria-hidden', 'true'); b.prepend(m); } else if (!on && m) m.remove(); if (on) n++; });
+  let p = el.querySelector('.cl-prets'); const a = el.querySelector('.cl-annonce');
+  if (n) { if (!p) { p = document.createElement('p'); p.className = 'cl-prets'; p.setAttribute('role', 'status'); if (a) a.after(p); else { const h = el.querySelector('h2'); if (h) h.after(p); else el.prepend(p); } }
+    const tx = (n > 1 ? t('cl_prets_n') : t('cl_prets_1')).replace('{n}', n); if (p.textContent !== tx) p.textContent = tx; }
+  else if (p) p.remove();
+}
+// à la fermeture de la cloche : tous les choix retenus partent l'un après l'autre ; un choix dont la question a disparu est oublié,
+// un envoi refusé reste retenu
+let CL_ENVOI_EN_COURS = false;
+async function clEnvoyerChoix() {
+  if (CL_ENVOI_EN_COURS || !Object.keys(CL_CHOIX).length) return; CL_ENVOI_EN_COURS = true;
+  try {
+    for (const [cle, issue] of Object.entries(CL_CHOIX)) {
+      const it = clRetrouver(cle), i = it && it.issues.find(x => x.id === issue && x.genre === 'choix');
+      if (!i) { delete CL_CHOIX[cle]; clGarderChoix(); continue; }
+      let ok = false; clAgir.envoi = true; try { ok = await clAgir(cle, issue); } catch (e) { ok = false; } finally { clAgir.envoi = false; }
+      if (ok) { delete CL_CHOIX[cle]; clGarderChoix(); }
+    }
+  } finally { CL_ENVOI_EN_COURS = false; majCloche(); }
+}
+document.addEventListener('panneau-quitte', e => { if (e.detail && e.detail.cle === 'cloche') clEnvoyerChoix(); });
+window.__clocheChoix = () => ({ ...CL_CHOIX });   // essais
 function majCloche() {
   let r; try { r = clEtat(); } catch (e) { return; }
   const b = $('#bt-decisions'); if (!b) return;
@@ -1576,17 +1613,23 @@ async function clAgir(cle, issue) {
   if (i.genre === 'remettre') { CL_ANNONCE = { texte: clDire('an_remis', { t: it.titre }) }; clMarquer('cloche_plus_tard', 'remettre', cle); suivant(); return; }
   if (i.genre === 'recharger') { location.reload(); return; }
   if (i.genre === 'lien') { try { window.open(i.lien, '_blank', 'noopener'); } catch (e) { /* rien */ } clAnnoncer(clDire('an_lien')); return; }
+  if (i.genre === 'choix' && !clAgir.envoi) {   // cloche ouverte : le choix est seulement retenu (2e clic : enlevé) ; il part à la fermeture
+    const enleve = CL_CHOIX[cle] === issue; if (enleve) delete CL_CHOIX[cle]; else CL_CHOIX[cle] = issue; clGarderChoix();
+    CL_ANNONCE = { texte: clDire(enleve ? 'an_oublie' : 'an_retenu', { c: i.libelle }) };
+    if (Panneau.ouvert() === 'cloche') { const el = $('#pn-corps'); rendreCloche(el, true); const b = el.querySelector(`[data-cl-cle="${CSS.escape(cle)}"][data-cl-issue="${CSS.escape(issue)}"]`); if (b) try { b.focus({ preventScroll: true }); } catch (e) { /* rien */ } }
+    else clEnvoyerChoix();   // cloche déjà fermée (rare) : rien ne retient le choix, il part
+    return true;
+  }
   if (i.genre === 'choix') {
     CL_ANNONCE = { texte: clDire('an_envoi', { c: i.libelle }) };
     if (it.genre === 'afaire') {
       const id = 'afaire:' + ref.id; REPONSES_DEC.push({ id, choix: i.valeur, texte_libre: '', repondu_le: new Date().toISOString().slice(0, 19) }); majCloche(); suivant();
-      try { await posterFond('/api/repondre', { id, choix: i.valeur, texte_libre: '' }); clAnnoncer(clDire('an_envoye', { c: i.libelle, t: it.titre })); toast(esc(t('reponse_envoyee'))); }
-      catch (e) { const k = REPONSES_DEC.findIndex(x => x.id === id); if (k >= 0) REPONSES_DEC.splice(k, 1); majCloche(); echec(e); suivant(); }
-      return;
+      try { await posterFond('/api/repondre', { id, choix: i.valeur, texte_libre: '' }); clAnnoncer(clDire('an_envoye', { c: i.libelle, t: it.titre })); toast(esc(t('reponse_envoyee'))); return true; }
+      catch (e) { const k = REPONSES_DEC.findIndex(x => x.id === id); if (k >= 0) REPONSES_DEC.splice(k, 1); majCloche(); echec(e); suivant(); return false; }
     }
     let ok = false; try { ok = await repondreDecision(ref, i.valeur, ''); } catch (e) { ok = false; }
     CL_ANNONCE = ok ? { texte: clDire('an_envoye', { c: i.libelle, t: it.titre }) } : { texte: clDire('an_echec', { t: it.titre, e: t('pas_envoye') }), erreur: true };
-    majCloche(); suivant(); return;
+    majCloche(); suivant(); return ok;
   }
   if (i.genre === 'ouvrir') {
     if (it.genre === 'decision' || it.genre === 'depense') { clAilleurs(() => ouvrirDecision(ref)); return; }
@@ -1604,7 +1647,10 @@ async function clAgir(cle, issue) {
 // cloche ouverte : le tutoriel et les notifications volantes ne recouvrent plus son titre (l'annonce du panneau les remplace)
 { const st = document.createElement('style'); st.id = 'cl-style'; st.textContent = Cloche.CSS + `
 body:has(#panneau.vu .cl-panneau) #tuto,body:has(#panneau.vu .cl-panneau) #toasts{visibility:hidden!important}
-body:has(#panneau.vu .cl-panneau) .tuto-cible{outline:none!important}`; document.head.appendChild(st); }
+body:has(#panneau.vu .cl-panneau) .tuto-cible{outline:none!important}
+.cl-issues button.cl-retenu{outline:3px solid var(--sapin);outline-offset:1px;box-shadow:0 0 0 1px var(--sapin) inset}
+.cl-coche{color:var(--sapin);font-weight:700;margin-right:3px}
+.cl-prets{margin:6px 0 2px;padding:8px 12px;border-radius:8px;background:rgba(47,107,63,.16);color:var(--encre);border-left:4px solid var(--sapin);font-weight:600}`; document.head.appendChild(st); }
 { const b = $('#bt-decisions'); if (b) { b.hidden = false; b.setAttribute('aria-haspopup', 'dialog'); } }
 setInterval(majCloche, 3000); setTimeout(majCloche, 800);
 setTimeout(clVerifierPage, 1500); setInterval(clVerifierPage, 120000);
@@ -2424,7 +2470,7 @@ window.__cc = () => ({ n: CC.msgs.length, offset: CC.offset, fichier: CC.fichier
 // PC fullscreen: (display-mode: fullscreen) is also true when the desktop browser goes fullscreen (F, F11); it only means
 // "app mode" on a touch screen without a mouse, otherwise the menu bar vanished in fullscreen.
 const MODE_APP = () => /[?&]app=1/.test(location.search) || ((matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches || navigator.standalone === true) && !matchMedia('(any-pointer: fine)').matches) || innerWidth <= 640
-  || matchMedia('(pointer:coarse) and (max-height:500px)').matches;
+  || matchMedia('(pointer:coarse) and (max-height:500px) and (min-width:600px)').matches;
 // T2 : clavier virtuel ouvert = la hauteur visible fond ; on efface la barre d'onglets pour garder la saisie et ses boutons en vue
 const HAUTEUR_PLEINE = { v: window.visualViewport ? visualViewport.height : innerHeight };
 function majClavier() {
@@ -2460,6 +2506,8 @@ function majOngletsApp() {
     $('#fraicheur').addEventListener('click', () => { if (MODE_APP()) toast(`<b>${esc(t('etat_studio'))}</b><br>${esc($('#fraicheur').textContent.replace(/^●\s*/, ''))}`, { seul: true }); });
     n.addEventListener('click', e => {
       const b = e.target.closest('[data-onglet]'); if (!b) return; const k = b.dataset.onglet; try { Son.clic(); } catch (err) {}
+      if (k !== 'equipe' && b.classList.contains('actif')) {   // onglet déjà ouvert : rappuyer le referme (vue de l'équipe)
+        try { if (window.Roadmap) Roadmap.fermer(); } catch (err) {} Panneau.fermer(); setTimeout(majOngletsApp, 50); return; }
       try { if (window.Roadmap && k !== 'roadmap') Roadmap.fermer(); } catch (err) {}
       if (k === 'jour') ouvrirAujourdhui(); else if (k === 'equipe') Panneau.fermer(); else if (k === 'conv') Conv.ouvrir(true); else if (k === 'cloche') { Panneau.fermer(); ouvrirCloche(); } else if (k === 'roadmap') { Panneau.fermer(); if (window.Roadmap) Roadmap.ouvrir(); } else if (k === 'reglages') ouvrirReglages();
       setTimeout(majOngletsApp, 50);
@@ -2546,22 +2594,25 @@ const Conv = (() => {
     sig = '';
     (parUtilisateur ? Panneau.remplacer : Panneau.montrer)('conv', el => {   // clic : remplace la fenêtre ouverte ; ouverture automatique : à la suite
       el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><p class="discret conv-aide">${esc(t('conv_cc'))}</p><div class="fil" data-fil></div><div class="conv-saisie">${saisieConv()}</div>`;
-      $('#panneau').classList.add('conv-app'); el.querySelector('#conv-texte').setAttribute('enterkeyhint', 'send');
+      $('#panneau').classList.add('conv-app'); el.querySelector('#conv-texte').setAttribute('enterkeyhint', TACTILE() ? 'enter' : 'send');
       if (MODE_APP()) el.querySelector('#conv-texte').placeholder = t('ecrire_court');   // T5 : pas de raccourcis clavier au téléphone
       lierMicros(el); lierPJ(el); rendreFil(el.querySelector('[data-fil]')); sig = signature();
       [60, 450].forEach(ms => setTimeout(() => { const z = el.querySelector('[data-fil]'); if (z && Panneau.ouvert() === 'conv') z.scrollTop = z.scrollHeight; }, ms));   // ouverture : le dernier message en vue
       const b = el.querySelector('[data-envoyer]'), ta = el.querySelector('#conv-texte'), res = el.querySelector('.conv-saisie [data-res]');
+      // brouillon : le texte commencé reste quand on ferme et rouvre la conversation, et après un rechargement ; effacé une fois envoyé
+      try { const br = LS.get('conv_brouillon', ''); if (br && !ta.value) ta.value = String(br).slice(0, 2000); } catch (e) { /* rien */ }
+      ta.addEventListener('input', () => { try { LS.set('conv_brouillon', ta.value); } catch (e) { /* rien */ } });
       b.onclick = async () => {
         const txt = ta.value.trim(), pj = PJ.pretes(); if (!txt && !pj.length) { ta.focus(); return; }
         if (PJ.enCours()) { res.textContent = t('pj_encours'); return; }
         PJ.purgerErreurs(); res.textContent = '';
         const corps = { cible: 'assistant', texte: txt, via: ta.dataset.via || 'ecrit' }; if (pj.length) corps.brouillon = PJ.brouillon();
         const apercu = pj.map(x => ({ nom: x.serveur || x.nom, url: x.url }));
-        if (ESSAI_SANS_ENVOI()) { document.documentElement.dataset.dernierEnvoi = JSON.stringify(corps); ta.value = ''; PJ.vider(); return; }
+        if (ESSAI_SANS_ENVOI()) { document.documentElement.dataset.dernierEnvoi = JSON.stringify(corps); ta.value = ''; LS.set('conv_brouillon', ''); PJ.vider(); return; }
         b.disabled = true;
-        try { const r = await posterFond('/api/demande', corps); const noms = Array.isArray(r.pieces) && r.pieces.length ? r.pieces.map(p => String(p).split(/[\\/]/).pop()) : apercu.map(x => x.nom); envoye(r.id, 'assistant', txt, noms); ta.value = ''; PJ.vider(); Son.clic(); } catch (e) { /* toast ; texte et pièces gardés */ } finally { b.disabled = false; PJ.rendre(); }
+        try { const r = await posterFond('/api/demande', corps); const noms = Array.isArray(r.pieces) && r.pieces.length ? r.pieces.map(p => String(p).split(/[\\/]/).pop()) : apercu.map(x => x.nom); envoye(r.id, 'assistant', txt, noms); ta.value = ''; LS.set('conv_brouillon', ''); PJ.vider(); Son.clic(); } catch (e) { /* toast ; texte et pièces gardés */ } finally { b.disabled = false; PJ.rendre(); }
       };
-      ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); b.click(); } });   // comme Claude Code
+      ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !TACTILE()) { e.preventDefault(); b.click(); } });   // PC : comme Claude Code ; téléphone : Entrée va à la ligne
       majCC().then(maj);
     });
     question = null; majPastille();
@@ -4694,7 +4745,8 @@ function ouvrirChat() {
     try { const r = await poster('/api/demande', { cible, texte: x, via: 'ecrit' }); try { Conv.envoye(r.id, cible, x); } catch (e) {} }
     catch (e) { c.querySelector('#chat-res').textContent = e.message; ta.value = x; }
   };
-  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); envoyer(); } else if (e.key === 'Escape') { e.preventDefault(); fermerC(); } });
+  ta.setAttribute('enterkeyhint', TACTILE() ? 'enter' : 'send');
+  ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !TACTILE()) { e.preventDefault(); envoyer(); } else if (e.key === 'Escape') { e.preventDefault(); fermerC(); } });
   c.querySelector('#chat-dest').addEventListener('keydown', e => { if (e.key === 'Escape') fermerC(); });
   c.querySelector('#chat-envoyer').onclick = envoyer; c.querySelector('#chat-fermer').onclick = fermerC; ta.focus();
 }
