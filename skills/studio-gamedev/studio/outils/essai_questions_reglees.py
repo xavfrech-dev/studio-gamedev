@@ -89,7 +89,7 @@ def projet(dossier, futur):
 
 
 ETAT_JS = """
-  const f = document.querySelector('#panneau [data-fil]'); if (!f) return null;
+  const f = document.querySelector('#conv-cote:not([hidden]) [data-fil]') || document.querySelector('#panneau [data-fil]'); if (!f) return null;   // PC : conversation à droite (partie 3)
   const cartes = [...f.querySelectorAll('.msg.question')].map(x => ({ id: x.dataset.dec, heure: (x.querySelector('small') || {}).textContent || '' }));
   const rp = f.querySelector('#fil-reglees'), li = rp ? [...rp.querySelectorAll('li')].map(x => x.dataset.filId.replace(/^d:/, '')) : [];
   const cl = __cloche(), p = document.getElementById('nb-decisions');
@@ -156,7 +156,7 @@ def main():
                 if a.captures:
                     nav.capture(os.path.join(a.captures, "pc_conversation.png"))
                 nb0 = e["nb"]
-                ok_clic = nav.js("const b = document.querySelector('#panneau [data-dec=\"a-repondre\"] [data-c=\"a\"]'); if (!b) return false; b.click(); return true;")
+                ok_clic = nav.js("const b = document.querySelector('#conv-cote:not([hidden]) [data-dec=\"a-repondre\"] [data-c=\"a\"]') || document.querySelector('#panneau [data-dec=\"a-repondre\"] [data-c=\"a\"]'); if (!b) return false; b.click(); return true;")
                 verifie(ok_clic is True, "PC : bouton de réponse dans la carte")
                 e3 = EH.attendre(nav, "const e = (() => {" + ETAT_JS + "})(); return e && e.nb < " + str(nb0) + " ? e : null;", 10)
                 verifie(bool(e3), "PC : la cloche baisse après la réponse")

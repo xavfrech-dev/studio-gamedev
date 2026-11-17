@@ -2,6 +2,15 @@
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) ; versions : [SemVer](https://semver.org/lang/fr/).
 
+## [0.5.8] - 2026-11-17
+
+La conversation reste ouverte à droite au PC, et les notifications deviennent des phrases de l'assistant.
+
+### Changé
+- **Conversation dans un panneau à droite (PC)** : ouverte par défaut (souris, fenêtre de 1000 px de large au moins), elle reste là pendant qu'on utilise le studio. La pièce se recentre dans la place qui reste ; les notifications, le zoom, le micro, la liste des notifications et les fenêtres (cloche, fiches…) passent à sa gauche. Le panneau est sous la barre du haut : le menu ⋯ s'ouvre par-dessus. Le bouton « Conversation » l'ouvre ou la ferme (choix gardé dans le navigateur). Glisser-déposer et Ctrl+V joignent les fichiers à la conversation ouverte. Au téléphone, rien ne change.
+- **Notifications en phrases de l'assistant** : une notification devient une phrase de l'assistant (sa bulle, ou le bandeau de parole en bas à gauche), sans redire la même chose en 3 min. Seules les erreurs et les alertes avec un bouton gardent une carte. L'historique des notifications est inchangé.
+- Essais : `essai_retours_ami.py` (partie 4 : panneau à droite à 1400 × 900 et 1920 × 1080, fenêtres à sa gauche, phrases, cartes gardées, téléphone inchangé) ; `essai_questions_reglees.py` lit la conversation dans le panneau de droite au PC.
+
 ## [0.5.7] - 2026-11-17
 
 Moins de jetons quand le studio attend, cloche groupée, version téléphone, barres en temps réel, questions réglées repliées.

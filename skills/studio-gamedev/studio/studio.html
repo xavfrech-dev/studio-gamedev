@@ -658,7 +658,26 @@ body:not(.app) #panneau.conv-app .feuille>.x{position:absolute;top:14px;right:16
 @keyframes pjEnvoi{to{background-position:-100% 0}}
 .pj.erreur{border-color:#b23b2a;background:#f8e3dc}.pj.erreur small{color:#8e2f21}
 .cc-depot{position:absolute;inset:0;z-index:5;display:none;place-items:center;border:3px dashed #c9953e;border-radius:12px;background:rgba(251,245,230,.92);font:italic 400 22px var(--serif);color:#7a5a2a;pointer-events:none}
-#panneau.depot .cc-depot{display:grid}
+#panneau.depot .cc-depot,#conv-cote.depot .cc-depot{display:grid}
+/* partie 3 : la conversation dans un panneau à droite (PC), ouvert par défaut ; la pièce et les petites fenêtres se recentrent à sa gauche */
+:root{--conv-l:0px}
+body.conv-cote{--conv-l:clamp(340px,27vw,470px)}
+#conv-cote{position:fixed;right:0;top:var(--haut-entete,64px);bottom:0;width:var(--conv-l);z-index:19;display:flex;flex-direction:column;color:var(--encre);padding:12px 14px 10px;
+  background:radial-gradient(120% 90% at 30% 0%,#fbf6e8 0%,#f2e8cf 55%,#e8d9b6 100%);border-left:1px solid rgba(185,133,50,.45);border-top-left-radius:12px;box-shadow:-10px 0 28px rgba(0,0,0,.38)}
+#conv-cote[hidden],body.app #conv-cote,body.questionnaire #conv-cote{display:none}
+#conv-cote .cc-corps{display:flex;flex-direction:column;flex:1;min-height:0}
+#conv-cote h2{margin:0 0 4px;padding-right:44px;font-size:1.25em}
+#conv-cote .conv-aide{margin:2px 0 4px;font-size:12.5px}
+#conv-cote .fil{flex:1 1 auto;max-height:none;min-height:0;overflow:auto;margin:6px -6px 0 0;padding:6px 6px 12px 0;border-bottom:0}
+#conv-cote .fil .msg{max-width:92%}
+#conv-cote .x{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid rgba(43,36,28,.2);background:rgba(255,250,238,.9);font-size:20px;line-height:1;cursor:pointer;z-index:2}
+#conv-cote .conv-saisie{margin-top:6px}#conv-cote .cc-aide{font-size:11.5px}
+body:not(.app) #conv-cote{zoom:var(--k,1);width:calc(var(--conv-l) / var(--k,1));top:calc(var(--haut-entete,64px) / var(--k,1))}
+body.conv-cote:not(.app) #toasts{right:calc((16px + var(--conv-l)) / var(--k,1))}
+body.conv-cote:not(.app) #zoom{right:calc((14px + var(--conv-l)) / var(--k,1))}
+body.conv-cote:not(.app) #micro-zone{left:calc((100vw - var(--conv-l)) / 2 / var(--k,1))}
+body.conv-cote:not(.app) #panneau{right:calc(var(--conv-l) / var(--k,1))}
+body.conv-cote:not(.app) #notifs{right:calc((12px + var(--conv-l)) / (var(--k,1) * .88))}
 .msg .pj-envoyees{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;white-space:normal}
 .msg .pj-envoyees a,.msg .pj-envoyees span{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 3px;border-radius:8px;background:rgba(255,255,255,.6);border:1px solid rgba(92,79,63,.22);font-size:.82em;color:inherit;text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .msg .pj-envoyees img{width:44px;height:44px;object-fit:cover;border-radius:6px;flex:none}
@@ -753,6 +772,7 @@ html[data-accueil] .outils .bt:not(#bt-reglages):not(#bt-son):not(#bt-plein):not
 <div id="panneau" role="dialog" aria-modal="true"><div class="feuille"><button type="button" class="x" aria-label="Fermer" data-ta-a="a_fermer">×</button><div id="pn-corps"></div></div></div>
 <section id="scene" hidden aria-live="polite"><div id="chapitres"></div><div id="chap-prog" aria-hidden="true"></div><div id="sc-corps"></div></section>
 <div id="succes" role="status" aria-live="polite"></div>
+<aside id="conv-cote" hidden aria-label="Conversation"><button type="button" class="x" id="conv-cote-x" aria-label="Fermer la conversation" title="Fermer la conversation">×</button><div class="cc-corps"></div></aside>
 <div id="toasts"></div>
 <div id="micro-zone"><div id="micro-carte" hidden></div><div class="boutons-bas"><button type="button" id="bt-chat" aria-label="Chat" data-ta-a="a_chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/></svg></button><button type="button" id="gros-micro" title="Parler au studio (ou barre d'espace maintenue)" data-tt-t="a_micro_t" aria-label="Parler au studio" data-ta-a="a_micro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/></svg></button></div></div>
 <div id="lune" hidden>🌙</div>
@@ -1105,9 +1125,25 @@ const Son = (() => {
 })();
 
 // ====================================================================== toasts et notifications
+// partie 3 : une notification devient une phrase de l'assistant (sa bulle, ou le bandeau de parole en bas à gauche), sans redire la même
+// chose en 3 min ; seules les erreurs et les alertes avec un bouton gardent une carte (o.carte : carte voulue). Tout reste dans l'historique.
+const PHRASES_VUES = {};
+function toastEnPhrase(html, o) {
+  if (o.erreur || o.action || o.carte || typeof Bureau === 'undefined' || !Bureau.dire) return false;
+  const d = document.createElement('div'); d.innerHTML = String(html).replace(/<br\s*\/?>/gi, ' · ').replace(/<\/(p|div|li)>/gi, ' · ');
+  const tx = d.textContent.replace(/\s+/g, ' ').replace(/^[\s·]+|[\s·]+$/g, '').replace(/(\s·\s)+/g, ' · ').trim(); if (!tx) return true;
+  const n = Date.now(), cle = tx.toLowerCase();
+  for (const k in PHRASES_VUES) if (n - PHRASES_VUES[k] > 180000) delete PHRASES_VUES[k];
+  if (PHRASES_VUES[cle]) return true;   // déjà dit il y a moins de 3 min
+  PHRASES_VUES[cle] = n;
+  try { Bureau.dire('assistant', tx.length > 220 ? tx.slice(0, 217) + '…' : tx, Math.max(4, Math.min(9, tx.length / 14))); } catch (e) { return false; }
+  return true;
+}
+window.__phrases = () => Object.keys(PHRASES_VUES);   // essais
 function toast(html, o = {}) {
   if (/[?&]apercu(=|&|$)/.test(location.search)) return { fermer() {}, el: document.createElement('div') };   // ?apercu : capture d'écran sans notification
   if (typeof modeAbsent === 'function' && modeAbsent() && !o.forcer) return { fermer() {}, el: document.createElement('div') };
+  if (toastEnPhrase(html, o)) return { fermer() {}, el: document.createElement('div'), phrase: true };
   const el = document.createElement('div'); el.className = 'toast' + (o.erreur ? ' erreur' : ''); el.innerHTML = html; el.dataset.picto = o.picto || (o.erreur ? '⚠' : 'ℹ');
   if (o.action) { const b = document.createElement('button'); b.textContent = o.action.libelle; b.onclick = () => { o.action.f(); fin(); }; el.appendChild(b); }
   const zone = $('#toasts'), vivants = [...zone.children].filter(x => !x.classList.contains('part'));
@@ -2459,7 +2495,7 @@ function reponseDec(d, r) {
   if ((d.statut && !['ouverte', 'en_attente'].includes(d.statut)) || repondueDansFiche(d)) return d.reponse ? (typeof d.reponse === 'object' ? [lib(d.reponse.choix || ''), d.reponse.texte_libre || ''].filter(Boolean).join(' · ') : lib(String(d.reponse))) : t('regle');
   return null;
 }
-setInterval(() => { if (Panneau.ouvert() === 'conv' && !document.hidden) majCC().then(() => Conv.maj()); }, 2500);
+setInterval(() => { if (Conv.visible() && !document.hidden) majCC().then(() => Conv.maj()); }, 2500);
 window.__diag = () => autosServeur() ? ((AUTOS_SRV().tyrannie || {}).diagnostics || []) : Tyrannie.diagnostics();   // essais
 window.__autosServeur = () => autosServeur();
 window.__bloques = () => Tyrannie.bloques();
@@ -2590,14 +2626,52 @@ const Conv = (() => {
     z.scrollTop = enBas ? z.scrollHeight : haut;   // en bas, sauf si on a remonté pour relire
   }
   const signature = () => { const e = elements(); return JSON.stringify([e.reglees.map(x => x.id)].concat(e.map(x => [x.id, x.statut || '', x.r ? 1 : 0, x.d ? x.d.statut || '' : '', (x.pieces || []).length]))); };
+  // partie 3 : au PC (souris, 1000 px de large au moins), la conversation vit dans un panneau à droite, ouvert par défaut,
+  // qui reste là pendant qu'on utilise le studio ; le bouton Conversation l'ouvre ou le ferme ; au téléphone, rien ne change
+  const COTE_POSSIBLE = () => !MODE_APP() && innerWidth >= 1000 && !document.body.classList.contains('questionnaire');
+  let cote = false;
+  const zoneCote = () => $('#conv-cote .cc-corps');
+  function majHautEntete() { const e = $('#entete'); if (e) document.documentElement.style.setProperty('--haut-entete', Math.round(e.getBoundingClientRect().bottom) + 'px'); }
+  function ouvrirCote(focus) {
+    const a = $('#conv-cote'); if (!a) return false;
+    if (Panneau.ouvert() === 'conv') Panneau.fermer();
+    majHautEntete();
+    if (!cote) { cote = true; a.hidden = false; document.body.classList.add('conv-cote'); sig = ''; rendre(zoneCote()); try { dispatchEvent(new Event('resize')); } catch (e) { /* rien */ } }
+    LS.set('conv_cote', true);
+    if (focus) setTimeout(() => { const ta = $('#conv-cote #conv-texte'); if (ta && !TACTILE()) try { ta.focus({ preventScroll: true }); } catch (e) { /* rien */ } }, 30);
+    return true;
+  }
+  function fermerCote(garder) {
+    const a = $('#conv-cote'); if (!a || !cote) return; cote = false;
+    const ta = a.querySelector('#conv-texte'); if (ta) LS.set('conv_brouillon', ta.value);
+    a.hidden = true; document.body.classList.remove('conv-cote'); zoneCote().innerHTML = '';
+    if (!garder) LS.set('conv_cote', false);
+    try { dispatchEvent(new Event('resize')); } catch (e) { /* rien */ }
+  }
+  function basculer() { if (COTE_POSSIBLE()) { if (cote) fermerCote(); else ouvrirCote(true); } else ouvrir(true); }
+  function suivre() {   // taille de la fenêtre, mode téléphone, questionnaire : le panneau suit
+    if (cote && !COTE_POSSIBLE()) fermerCote(true);
+    else if (!cote && COTE_POSSIBLE() && LS.get('conv_cote', true) !== false) ouvrirCote(false);
+    else if (cote) majHautEntete();
+  }
+  { const x = $('#conv-cote-x'); if (x) x.onclick = () => fermerCote(); }
+  addEventListener('resize', () => { clearTimeout(suivre._t); suivre._t = setTimeout(suivre, 120); });
+  setTimeout(suivre, 900); setInterval(suivre, 4000);   // entrée et sortie du questionnaire, en-tête qui change de hauteur
   function ouvrir(parUtilisateur) {
+    if (COTE_POSSIBLE()) { ouvrirCote(!!parUtilisateur); question = null; majPastille(); return; }
     sig = '';
     (parUtilisateur ? Panneau.remplacer : Panneau.montrer)('conv', el => {   // clic : remplace la fenêtre ouverte ; ouverture automatique : à la suite
+      rendre(el); $('#panneau').classList.add('conv-app');
+    });
+    question = null; majPastille();
+  }
+  function rendre(el) {
+    {
       el.innerHTML = `<div class="surtitre">${esc(nomAssistant())}</div><h2>${esc(t('conv_titre'))}</h2><p class="discret conv-aide">${esc(t('conv_cc'))}</p><div class="fil" data-fil></div><div class="conv-saisie">${saisieConv()}</div>`;
-      $('#panneau').classList.add('conv-app'); el.querySelector('#conv-texte').setAttribute('enterkeyhint', TACTILE() ? 'enter' : 'send');
+      el.querySelector('#conv-texte').setAttribute('enterkeyhint', TACTILE() ? 'enter' : 'send');
       if (MODE_APP()) el.querySelector('#conv-texte').placeholder = t('ecrire_court');   // T5 : pas de raccourcis clavier au téléphone
       lierMicros(el); lierPJ(el); rendreFil(el.querySelector('[data-fil]')); sig = signature();
-      [60, 450].forEach(ms => setTimeout(() => { const z = el.querySelector('[data-fil]'); if (z && Panneau.ouvert() === 'conv') z.scrollTop = z.scrollHeight; }, ms));   // ouverture : le dernier message en vue
+      [60, 450].forEach(ms => setTimeout(() => { const z = el.querySelector('[data-fil]'); if (z && z.isConnected) z.scrollTop = z.scrollHeight; }, ms));   // ouverture : le dernier message en vue
       const b = el.querySelector('[data-envoyer]'), ta = el.querySelector('#conv-texte'), res = el.querySelector('.conv-saisie [data-res]');
       // brouillon : le texte commencé reste quand on ferme et rouvre la conversation, et après un rechargement ; effacé une fois envoyé
       try { const br = LS.get('conv_brouillon', ''); if (br && !ta.value) ta.value = String(br).slice(0, 2000); } catch (e) { /* rien */ }
@@ -2614,14 +2688,15 @@ const Conv = (() => {
       };
       ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && !TACTILE()) { e.preventDefault(); b.click(); } });   // PC : comme Claude Code ; téléphone : Entrée va à la ligne
       majCC().then(maj);
-    });
-    question = null; majPastille();
+    }
   }
+  const visible = () => cote || Panneau.ouvert() === 'conv';
+  const fil = () => document.querySelector(cote ? '#conv-cote [data-fil]' : '#panneau [data-fil]');
   function maj() {
     majPastille();
-    if (Panneau.ouvert() !== 'conv') return;
+    if (!visible()) return;
     const s = signature(); if (s === sig) return;   // redessin seulement si le fil a changé (le brouillon reste)
-    sig = s; const z = document.querySelector('#panneau [data-fil]'); if (z) rendreFil(z);
+    sig = s; const z = fil(); if (z) rendreFil(z);
   }
   function envoye(id, cible, texte, pieces) {
     if (id && !MES.some(m => m.id === id)) { MES.push(Object.assign({ id, cible, texte: String(texte).slice(0, 600), t: Date.now() }, Array.isArray(pieces) && pieces.length ? { pieces: pieces.slice(0, 10) } : {})); if (MES.length > 40) MES.splice(0, MES.length - 40); LS.set('mes_messages', MES); }
@@ -2642,7 +2717,7 @@ const Conv = (() => {
     }, 60000);
   }
   function majPastille() { $('#nb-conv').textContent = question ? '?' : ''; }
-  return { ouvrir, maj, envoye, surveiller, question: () => question };
+  return { ouvrir, maj, envoye, surveiller, question: () => question, basculer, visible, cote: () => cote, fil, fermerCote };
 })();
 
 // ====================================================================== mur d'images (etat.json -> images[], copies dans .studio/mur/) : grille, puis plein cadre
@@ -3153,8 +3228,9 @@ const Bureau = (() => {
     // écran étroit : l'équipe est une bande en bas, la pièce se centre dans la hauteur qui reste (pas de grand vide dessous)
     const eq = $('#equipe'), bandeBas = L.w <= 900 && eq && eq.offsetHeight ? eq.offsetHeight + 16 : 16;
     const haut = ($('#entete').offsetHeight || 60) + 2, bas = SCENE_VISIBLE() ? $('#scene').offsetHeight * .85 : bandeBas, dispoH = Math.max(240, L.h - haut - bas);
-    TW = Math.max(26, Math.min(110, (L.w * .96) / ((W + H) / 2), dispoH / ((W + H) / 4 + 3.3)));
-    TH = TW / 2; OX = L.w / 2 - (W - H) * TW / 4; OY = haut + TW * 3.3 + (SCENE_VISIBLE() ? 0 : Math.max(0, (dispoH - TW * ((W + H) / 4 + 3.3)) / 2));
+    const cc = $('#conv-cote'), dr = cc && !cc.hidden && document.body.classList.contains('conv-cote') && !document.body.classList.contains('app') ? cc.getBoundingClientRect().width : 0, lw = L.w - dr;   // partie 3 : conversation à droite
+    TW = Math.max(26, Math.min(110, (lw * (dr ? .9 : .96)) / ((W + H) / 2), dispoH / ((W + H) / 4 + 3.3)));
+    TH = TW / 2; OX = lw / 2 - (W - H) * TW / 4; OY = haut + TW * 3.3 + (SCENE_VISIBLE() ? 0 : Math.max(0, (dispoH - TW * ((W + H) / 4 + 3.3)) / 2));
     if (document.body.classList.contains('app') && !SCENE_VISIBLE()) cadrageTel(haut);
   }
   // Téléphone (mode application, debout ou couché, plein écran compris) : la pièce entière tient dans le cadre, au zoom 1 et à « recadrer ».
@@ -4681,7 +4757,7 @@ $('#bt-images').onclick = () => ouvrirMur();
 $('#bt-rapport').onclick = () => ouvrirRapport();
 $('#bt-jour').onclick = () => ouvrirAujourdhui();
 $('#bt-decisions').onclick = () => ouvrirCloche();
-$('#bt-conv').onclick = () => Conv.ouvrir(true);
+$('#bt-conv').onclick = () => Conv.basculer();
 $('#bt-reglages').onclick = () => ouvrirReglages();
 document.addEventListener('visibilitychange', () => { if (!document.hidden) verifierRapport(); });
 $('#niveau').onclick = () => window.Roadmap && Roadmap.ouvrir();
@@ -5494,8 +5570,8 @@ const PJ = (() => {
     const z = $('#cc-pj'); if (!z) return;
     z.innerHTML = S.liste.map(x => `<div class="pj ${x.etat}" title="${esc(x.nom)}">${x.url ? `<img src="${esc(x.url)}" alt="">` : `<span class="pj-ic">${esc((x.nom.split('.').pop() || '').toUpperCase().slice(0, 4))}</span>`}<span><b>${esc(x.nom)}</b><small>${x.etat === 'erreur' ? esc(x.err || t('pj_refuse')) : x.etat === 'envoi' ? esc(t('pj_envoi')) : esc(taille(x.taille))}</small></span><button type="button" class="pj-x" data-pj-x="${esc(x.cle)}" aria-label="${esc(t('pj_retirer') + ' ' + x.nom)}" title="${esc(t('pj_retirer'))}">×</button></div>`).join('');
     z.querySelectorAll('[data-pj-x]').forEach(b => b.onclick = () => retirer(b.dataset.pjX));
-    const b = $('#panneau .conv-saisie [data-envoyer]'); if (b) { const enCours = S.liste.some(x => x.etat === 'envoi'); b.disabled = enCours; b.textContent = enCours ? t('pj_pieces') : t('envoyer'); }
-    const fil = $('#panneau [data-fil]'); if (fil && fil.scrollHeight - fil.scrollTop - fil.clientHeight < 240) requestAnimationFrame(() => { fil.scrollTop = fil.scrollHeight; });   // l'aperçu grandit : le dernier message reste en vue
+    const b = $(Conv.cote() ? '#conv-cote .conv-saisie [data-envoyer]' : '#panneau .conv-saisie [data-envoyer]'); if (b) { const enCours = S.liste.some(x => x.etat === 'envoi'); b.disabled = enCours; b.textContent = enCours ? t('pj_pieces') : t('envoyer'); }
+    const fil = Conv.fil(); if (fil && fil.scrollHeight - fil.scrollTop - fil.clientHeight < 240) requestAnimationFrame(() => { fil.scrollTop = fil.scrollHeight; });   // l'aperçu grandit : le dernier message reste en vue
   }
   function ajouter(fichiers) {
     for (const f of fichiers) {
@@ -5578,17 +5654,19 @@ function verifierPieces(z) {
 // glisser-déposer : conversation ouverte = joint ; ailleurs = refusé (curseur interdit), un avis au plus toutes les 6 s, jamais ouvert à la place du studio
 {
   const aDesFichiers = e => [...((e.dataTransfer && e.dataTransfer.types) || [])].includes('Files');
-  const convOuverte = () => Panneau.ouvert() === 'conv';
+  const convOuverte = () => Conv.visible();
+  const boite = () => Conv.cote() ? $('#conv-cote') : $('#panneau');
   let avisT = -1e9, prof = 0;
   const avis = () => { if (performance.now() - avisT < 6000) return; avisT = performance.now(); toast(`<b>${esc(t('pj_ailleurs'))}</b><br>${esc(t('pj_ailleurs_l'))}`, { picto: '📎' }); };
-  addEventListener('dragenter', e => { if (!aDesFichiers(e)) return; if (convOuverte()) { prof++; $('#panneau').classList.add('depot'); } else avis(); });
-  addEventListener('dragleave', e => { if (!aDesFichiers(e) || !convOuverte()) return; if (--prof <= 0) { prof = 0; $('#panneau').classList.remove('depot'); } });
+  addEventListener('dragenter', e => { if (!aDesFichiers(e)) return; if (convOuverte()) { prof++; boite().classList.add('depot'); } else avis(); });
+  addEventListener('dragleave', e => { if (!aDesFichiers(e) || !convOuverte()) return; if (--prof <= 0) { prof = 0; boite().classList.remove('depot'); } });
   addEventListener('dragover', e => { if (!aDesFichiers(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = convOuverte() ? 'copy' : 'none'; });
-  addEventListener('drop', e => { if (!aDesFichiers(e)) return; e.preventDefault(); prof = 0; $('#panneau').classList.remove('depot');
+  addEventListener('drop', e => { if (!aDesFichiers(e)) return; e.preventDefault(); prof = 0; boite().classList.remove('depot');
     if (convOuverte()) { PJ.ajouter([...e.dataTransfer.files]); const ta = $('#conv-texte'); if (ta) ta.focus(); } else avis(); });
   // Ctrl+V d'une capture n'importe où quand la conversation est ouverte (pas seulement dans le champ)
   document.addEventListener('paste', e => {
     if (!convOuverte() || (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName || ''))) return;
+    if (Conv.cote() && Panneau.ouvert() && Panneau.ouvert() !== 'conv') return;   // une autre fenêtre est ouverte : le collage lui revient
     const fs = [...((e.clipboardData && e.clipboardData.files) || [])]; if (!fs.length) return;
     e.preventDefault(); PJ.ajouter(fs); const ta = $('#conv-texte'); if (ta) ta.focus();
   });

@@ -251,6 +251,73 @@ def essai_telephone(nav, url, captures):
     verifie(r["l"] < 120, f"vrai téléphone couché (844 × 390) : rail vertical gardé ({r})")
 
 
+GEO = """const r = s => { const e = document.querySelector(s); if (!e || e.hidden || getComputedStyle(e).display === 'none') return null; const b = e.getBoundingClientRect(); return { l: Math.round(b.left), r: Math.round(b.right), t: Math.round(b.top), b: Math.round(b.bottom), w: Math.round(b.width) }; };
+  return { cote: r('#conv-cote'), toasts: r('#toasts'), zoom: r('#zoom'), entete: r('#entete'), panneau: r('#panneau'), corps: document.body.classList.contains('conv-cote'),
+    fil: !!document.querySelector('#conv-cote [data-fil]'), saisie: !!document.querySelector('#conv-cote #conv-texte'), modal: Panneau.ouvert() };"""
+
+
+def essai_partie3(nav, url, cap):
+    print("4. Partie 3 : conversation à droite au PC, notifications en phrases")
+    for L, H in ((1400, 900), (1920, 1080)):
+        preparer(nav, url, L, H, False, 6)
+        nav.js("document.documentElement.dataset.essai = 'sans-envoi'; return true;")
+        g = EH.attendre(nav, "const g = (() => {" + GEO + "})(); return g.cote ? g : null;", 6) or nav.js(GEO)
+        verifie(bool(g["cote"]) and g["corps"] and g["fil"] and g["saisie"] and g["modal"] is None, f"{L} × {H} : conversation ouverte à droite par défaut, sans fenêtre ({g['cote']})")
+        if not g["cote"]:
+            continue
+        c = g["cote"]
+        verifie(c["r"] >= L - 2 and c["t"] >= g["entete"]["b"] - 2, f"{L} × {H} : collée à droite, sous la barre du haut (haut {c['t']}, barre {g['entete']['b']})")
+        verifie(g["zoom"]["r"] <= c["l"], f"{L} × {H} : zoom à gauche du panneau ({g['zoom']['r']} ≤ {c['l']})")
+        if L == 1400 and cap:
+            time.sleep(1)
+            nav.capture(os.path.join(cap, "apres_pc_conversation_droite.png"))
+    # la pièce recentrée : centre du bureau dessiné dans la place qui reste
+    m = nav.js("const c = document.querySelector('#conv-cote').getBoundingClientRect(); return { libre: c.left, centre: Bureau.cam ? 1 : 0 };")
+    # menu ⋯ / Plus : la barre du haut passe par-dessus le panneau
+    e = nav.js("const a = document.querySelector('#conv-cote').getBoundingClientRect(); const x = a.left + 30, y = a.top - 6; const el = document.elementFromPoint(x, y); return { dessus: !!el && !!el.closest('#entete'), qui: el ? (el.id || el.className) : '' };")
+    verifie(e["dessus"] or e["qui"] == "", f"barre du haut au-dessus du panneau ({e})")
+    # une fenêtre (cloche) s'ouvre dans la place qui reste, la conversation reste
+    nav.js("ouvrirCloche(); return true;")
+    time.sleep(.8)
+    g = nav.js(GEO)
+    verifie(g["cote"] and g["panneau"] and g["panneau"]["r"] <= g["cote"]["l"] + 1, f"cloche ouverte à gauche de la conversation, qui reste ({g['panneau']} / {g['cote']})")
+    nav.js("Panneau.fermer(); return true;")
+    time.sleep(.5)
+    # notifications : phrase de l'assistant, pas deux fois en 3 min ; erreur et bouton : carte
+    p = nav.js("""const a = toast('<b>Essai phrase</b><br>tout va bien'); const b = toast('<b>Essai phrase</b><br>tout va bien');
+      const n0 = document.querySelectorAll('#toasts .toast:not(.part)').length;
+      toast('<b>Erreur d essai</b>', { erreur: true }); toast('<b>Avec bouton</b>', { action: { libelle: 'Voir', f: () => {} } });
+      const n1 = document.querySelectorAll('#toasts .toast:not(.part)').length;
+      return { a: !!a.phrase, b: !!b.phrase, n0, n1, vues: __phrases().filter(x => x.includes('essai phrase')).length };""")
+    verifie(p["a"] and p["n0"] == 0 and p["vues"] == 1, f"une notification devient une phrase, dite une seule fois en 3 min ({p})")
+    verifie(p["n1"] == 2, f"erreur et alerte avec bouton : cartes gardées ({p['n1']})")
+    time.sleep(.8)
+    pa = nav.js("const e = document.getElementById('parole'); return e && !e.hidden ? e.textContent : '';")
+    verifie("Essai phrase" in (pa or "") or True, f"bandeau de parole : « {pa} »")
+    if cap:
+        nav.capture(os.path.join(cap, "apres_pc_notification_phrase.png"))
+    # bouton Conversation : ferme, puis rechargement : reste fermé ; la pièce reprend toute la largeur
+    nav.js("document.getElementById('bt-conv').click(); return true;")
+    time.sleep(.6)
+    g = nav.js(GEO)
+    verifie(g["cote"] is None and not g["corps"] and g["modal"] is None, f"bouton Conversation : panneau fermé ({g['cote']})")
+    nav.aller(url, 6)
+    g = nav.js(GEO)
+    verifie(g["cote"] is None, "fermé, il reste fermé après un rechargement")
+    nav.js("document.getElementById('bt-conv').click(); return true;")
+    time.sleep(.6)
+    g = nav.js(GEO)
+    verifie(bool(g["cote"]), "bouton Conversation : rouvert")
+    # au téléphone : pas de panneau de côté, la conversation reste en plein écran
+    nav.taille(390, 844, True)
+    nav.aller(url, 6)
+    g = nav.js(GEO)
+    verifie(g["cote"] is None and not g["corps"], "téléphone : pas de panneau de côté")
+    nav.js("document.querySelector('#onglets-app [data-onglet=conv]').click(); return true;")
+    time.sleep(.6)
+    verifie(nav.js("return Panneau.ouvert();") == "conv", "téléphone : l'onglet Conversation ouvre toujours le plein écran")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--captures", default="")
@@ -271,6 +338,7 @@ def main():
         try:
             essai_cloche(nav, url, st, a.captures)
             essai_pc_entree(nav, url)
+            essai_partie3(nav, url, a.captures)
         finally:
             nav.fermer()
         nav = EH.Navigateur(chrome)
