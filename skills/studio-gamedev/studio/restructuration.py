@@ -123,7 +123,10 @@ def progressions_de(dossier, maintenant=None):
             continue
         d = _lire(ch, {})
         d = d if isinstance(d, dict) else {}
-        pct = d.get("pct") if isinstance(d.get("pct"), (int, float)) else None
+        if "pct" not in d:                       # « pourcentage » (ou « progression », « pourcent ») au lieu de « pct »
+            d["pct"] = next((d[k] for k in ("pourcentage", "progression", "pourcent")
+                             if isinstance(d.get(k), (int, float)) and not isinstance(d.get(k), bool)), None)
+        pct = d.get("pct") if isinstance(d.get("pct"), (int, float)) and not isinstance(d.get("pct"), bool) else None
         try:
             age = (t - os.path.getmtime(ch)) / 3600
         except OSError:

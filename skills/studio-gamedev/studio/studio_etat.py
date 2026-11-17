@@ -316,6 +316,22 @@ def restant_de(prog):
     return round(max(0.0, (t - time.time()) / 60), 1) if t else None
 
 
+# Autres noms acceptés pour le % d'une barre progression/*.json : certains agents écrivent « pourcentage » (ou
+# « progression », « pourcent ») au lieu de « pct » ; la barre est lue au lieu d'être ignorée.
+CLES_PCT = ("pourcentage", "progression", "pourcent")
+
+
+def normaliser_pct(d):
+    """Barre d'agent sans « pct » : le prend dans un autre nom connu (CLES_PCT) s'il est numérique. Rend d."""
+    if isinstance(d, dict) and "pct" not in d:
+        for cle in CLES_PCT:
+            v = d.get(cle)
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                d["pct"] = v
+                break
+    return d
+
+
 def pct_de(prog):
     if isinstance(prog, dict) and isinstance(prog.get("pct"), (int, float)) and not isinstance(prog.get("pct"), bool):
         return max(0, min(100, int(round(prog["pct"]))))
@@ -668,7 +684,7 @@ class Studio:
         for f in self.g("progression", "*.json"):
             d = self.lire_agent(f)
             if isinstance(d, dict):
-                out[os.path.basename(f)[:-5]] = (d, age_min(f) or 0)
+                out[os.path.basename(f)[:-5]] = (normaliser_pct(d), age_min(f) or 0)
         return out
 
     def recrues(self):

@@ -10,6 +10,7 @@ Vérifie :
 - le texte de la barre de l'agent n'est plus écrasé par le titre du flux ; départ inconnu : le titre du flux reste prioritaire ;
 - signe de vie (vivant_t) et départ (debut) lus dans les journaux agent-<id>.jsonl ; un run au journal immobile mais dont un
   agent écrit encore reste suivi ;
+- une barre écrite avec « pourcentage » (ou « progression », « pourcent ») au lieu de « pct » est lue ;
 - la page : « vient de commencer » seulement pour une barre écrite par l'agent, vivant_t compté dans le silence, cycle = vrai %.
 
 python -I -B essai_barres_temps_reel.py
@@ -142,6 +143,29 @@ def essai_page():
     ok("étapes faites du cycle|steps done in the post cycle" in h, "cycle du poste montré comme un vrai %, pas « en continu »")
 
 
+def essai_pourcentage(base):
+    print("4. Barre écrite avec « pourcentage » au lieu de « pct » : lue, pas ignorée")
+    import studio_etat
+    import restructuration
+    projet = os.path.join(base, "Mon jeu pourcentage")
+    st = os.path.join(projet, ".studio")
+    ecrire(os.path.join(st, "studio.config.json"), {"postes": [{"id": "rendu", "nom": "Rendu"}, {"id": "son", "nom": "Son"}]})
+    prog = os.path.join(st, "progression")
+    ecrire(os.path.join(prog, "rendu.json"), {"pourcentage": 42, "etape": "Ombres : passe 2"}, age_min=1)
+    ecrire(os.path.join(prog, "son.json"), {"pct": 70, "progression": 10, "etape": "Ambiances"}, age_min=1)
+    ecrire(os.path.join(prog, "vide.json"), {"pourcentage": True, "etape": "booléen"}, age_min=1)
+    s = studio_etat.Studio(projet)
+    pr = s.progressions()
+    ok(studio_etat.pct_de(pr.get("rendu", ({},))[0]) == 42, "« pourcentage »: 42 lu comme pct 42")
+    ok(studio_etat.pct_de(pr.get("son", ({},))[0]) == 70, "« pct » présent : il gagne sur « progression »")
+    ok(studio_etat.pct_de(pr.get("vide", ({},))[0]) is None, "booléen ignoré (pas de pct inventé)")
+    ok(not s.anomalies, f"aucune anomalie de données : {s.anomalies}")
+    q = {x["id"]: x for x in s.postes(s.config(), None, pr, {}, [], {}, [], None, None, flux={})}
+    ok(q["rendu"].get("progression") == 42, f"carte du poste : {q['rendu'].get('progression')} %")
+    rs = {b["fichier"]: b["pct"] for b in restructuration.progressions_de(st)}
+    ok(rs.get("rendu.json") == 42 and rs.get("vide.json") is None, f"restructuration.progressions_de : {rs}")
+
+
 def main(argv=None):
     argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter).parse_args(argv)
     base = tempfile.mkdtemp(prefix="essai_barres_")
@@ -149,6 +173,7 @@ def main(argv=None):
         essai_postes(base)
         essai_journaux(base)
         essai_page()
+        essai_pourcentage(base)
     finally:
         shutil.rmtree(base, ignore_errors=True)
     print(f"\n{RES['ok']} ok, {RES['echec']} échec(s)")
