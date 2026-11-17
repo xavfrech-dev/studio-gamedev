@@ -23,7 +23,7 @@
     "optimisation_auto": false,
     "attribution_auto": false,
     "embauche_auto": false,
-    "attente_max_s": 1800
+    "attente_max_s": 0
   },
   "regles_agent": [
     "Write in the project language, in short sentences.",

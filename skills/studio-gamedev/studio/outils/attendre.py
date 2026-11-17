@@ -4,10 +4,15 @@ Pourquoi : relire les fichiers toutes les 10 à 20 s coûte un tour de Claude à
 pendant un questionnaire). Ce script attend tout seul, sans jetons, et ne rend la main qu'à un vrai changement.
 
 Attente (questionnaire, demandes de la page) :
-  python -I -B attendre.py --projet <projet> [--max 1800]
-    Lance-le en arrière-plan (tu es prévenu à la fin) ; sans arrière-plan, garde --max sous le délai de l'outil (540).
+  python -I -B attendre.py --projet <projet> [--max N]
+    Sans --max (le cas normal) : attend SANS LIMITE de temps et ne rend la main qu'à un vrai changement. Lance-le en
+    arrière-plan (une tâche en arrière-plan n'a pas de délai) et relance-le à la fin de chaque tour, sans exception.
+    --max N : seulement pour un appel au premier plan, sous le délai de l'outil (540) ; c'est le seul cas du code 3.
     Code 0 + une ligne JSON : {"evenement": "changement", "fichiers": [{"f", "etat": nouveau|modifie|supprime}], "questionnaire": {…}}
-    Code 3 : rien de neuf pendant --max secondes (relance-le, sans rien écrire dans la conversation).
+    Code 3 (avec --max seulement) : rien de neuf pendant N secondes (relance-le, sans rien écrire dans la conversation).
+    economie.attente_max_s de studio.config.json est ignoré (une attente qui revient « rien » coûte un réveil entier).
+    reglages.json ne réveille que pour les clés qui changent ton travail (REGLAGES_TRAVAIL) : l'ordre de l'équipe,
+    la blague, l'affichage de la santé… ne coûtent aucun tour.
     Un changement survenu entre deux attentes n'est jamais perdu : l'état vu est gardé dans .studio/attente.etat.json.
 
 Point de suivi (avant chaque point programmé, sans attendre) :
@@ -42,6 +47,12 @@ ATTENTE = ["reponses_questionnaire.json", "profil.json", "reponses.json", "regla
 POINT = ["roadmap.json", "progression/*.json", "decisions.json", "reponses.json", "attentes.json",
          "demandes/*.json", "demandes_vocales/*.json"]
 IGNORES = {"demandes/statuts.json"}      # écrit par Claude lui-même : ne réveille pas
+# reglages.json : seules ces clés changent le travail de l'assistant ; le reste (ordre_equipe, blague, sante_auto,
+# thème, maj…) est purement visuel et ne doit pas coûter un tour.
+REGLAGES_TRAVAIL = ("attribution_auto", "embauche_auto", "enchainement_auto", "point_auto", "optimisation_auto",
+                    "tyrannie_auto", "forfait_optimise", "frequence_rapport_min", "mode_absent", "pause",
+                    "auditeur", "controle_modeles", "facteur_auto", "noms_postes", "roles_postes", "metiers_postes",
+                    "modeles_postes", "efforts_postes")
 PAS_S = 2.0
 CALME_S = 3.0                            # une rafale d'écritures (dictée, clics) donne un seul réveil
 CALME_MAX_S = 15.0
@@ -60,10 +71,24 @@ def empreintes(studio, motifs):
                 continue
             try:
                 with open(p, "rb") as f:
-                    out[rel] = hashlib.sha1(f.read(2 * 1024 * 1024)).hexdigest()[:16]
+                    brut = f.read(2 * 1024 * 1024)
             except OSError:
                 continue
+            if rel == "reglages.json":
+                brut = empreinte_reglages(brut)
+            out[rel] = hashlib.sha1(brut).hexdigest()[:16]
     return out
+
+
+def empreinte_reglages(brut):
+    """Ne garde de reglages.json que les clés de travail (triées) ; un fichier illisible garde son contenu brut."""
+    try:
+        d = json.loads(brut.decode("utf-8-sig"))
+    except (ValueError, UnicodeDecodeError):
+        return brut
+    if not isinstance(d, dict):
+        return brut
+    return json.dumps({k: d.get(k) for k in REGLAGES_TRAVAIL if k in d}, sort_keys=True, ensure_ascii=True).encode()
 
 
 def tete_git(projet):
@@ -103,7 +128,8 @@ def resume_questionnaire(studio):
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Attend un changement écrit par la page du studio, sans dépenser de jetons.")
     ap.add_argument("--projet", required=True)
-    ap.add_argument("--max", type=float, default=0, help="secondes d'attente au plus (défaut : economie.attente_max_s, sinon 1800)")
+    ap.add_argument("--max", type=float, default=0, help="secondes d'attente au plus, pour un appel au premier plan "
+                    "(défaut : sans limite ; economie.attente_max_s est ignoré)")
     ap.add_argument("--point", action="store_true", help="dire tout de suite si un point de suivi est utile (code 3 : rien de neuf)")
     a = ap.parse_args(argv)
     projet = os.path.abspath(a.projet)
@@ -125,17 +151,14 @@ def main(argv=None):
         print(json.dumps({"evenement": "changement", "fichiers": diff[:40], "nb": len(diff)}, ensure_ascii=False))
         return 0
 
-    conf = lire_json(os.path.join(studio, "studio.config.json"), {})
-    eco = conf.get("economie") if isinstance(conf, dict) and isinstance(conf.get("economie"), dict) else {}
-    defaut = eco.get("attente_max_s") if isinstance(eco.get("attente_max_s"), (int, float)) and eco.get("attente_max_s") > 0 else 1800
-    maxi = max(5.0, min(float(a.max or defaut), 6 * 3600.0))
+    maxi = max(1.0, float(a.max)) if a.max and a.max > 0 else None      # None : attente sans fin
     etat_ch = os.path.join(studio, "attente.etat.json")
     vu = lire_json(etat_ch, None)
     courant = empreintes(studio, ATTENTE)
     if not isinstance(vu, dict):          # premier appel : l'état actuel sert de départ
         vu = courant
         ecrire_etat(etat_ch, vu)
-    fin = time.time() + maxi
+    fin = time.time() + maxi if maxi else None
     while True:
         diff = differences(vu, courant)
         if diff:
@@ -153,7 +176,7 @@ def main(argv=None):
                 sortie["questionnaire"] = resume_questionnaire(studio)
             print(json.dumps(sortie, ensure_ascii=False))
             return 0
-        if time.time() >= fin:
+        if fin is not None and time.time() >= fin:
             print(json.dumps({"evenement": "rien", "attendu_s": int(maxi)}))
             return 3
         time.sleep(PAS_S)
